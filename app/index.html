@@ -92,6 +92,15 @@
   .goal-dots i.on{background:var(--accent); border-color:var(--accent);}
   .routine-btn{margin-top:12px;}
   .routine-btn{width:100%;}
+  .link-row{display:flex; justify-content:space-between; align-items:center; gap:12px;}
+  .link-btn.quiet{color:var(--text-mute); font-weight:500;}
+  .title-spacer{width:36px; flex:none;}
+  .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
+  .test-item{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px 12px; display:flex; flex-direction:column; gap:6px;}
+  .test-name{font-weight:600;}
+  .test-name small{display:block; font-weight:400; color:var(--text-mute); font-size:0.8rem; margin-top:2px;}
+  .test-go{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip-btn{background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:999px; padding:5px 10px; font:inherit; font-size:0.8rem; cursor:pointer;}
   .link-btn{background:transparent; border:none; color:var(--accent); font:inherit; font-size:0.9rem; font-weight:600; cursor:pointer; padding:6px 0;}
   .link-btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 
@@ -142,10 +151,17 @@
   .sq.dark{background:var(--board-dark);}
   .sq.last::before{content:""; position:absolute; inset:0; background:var(--cyan);}
   .sq.selected::before{content:""; position:absolute; inset:0; background:var(--cyan);}
+  .sq.check{background-image:radial-gradient(circle at center, rgba(255,40,40,1) 0%, rgba(230,0,0,.85) 28%, rgba(200,0,0,.35) 58%, rgba(170,0,0,0) 80%);}
   .sq.dest::after{content:""; position:absolute; width:26%; height:26%; border-radius:50%; background:var(--dest-dot); top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; pointer-events:none;}
   .sq.dest-capture::after{content:""; position:absolute; inset:8%; border:3px solid var(--dest-dot); border-radius:50%; z-index:1; pointer-events:none;}
   .sq .piece-w{color:var(--piece-w); text-shadow:0 0 1px #000, 0 0 2px rgba(0,0,0,.5); z-index:1;}
   .sq .piece-b{color:var(--piece-b); text-shadow:0 0 1px rgba(255,255,255,.3); z-index:1;}
+  .promo-overlay{position:absolute; inset:0; z-index:8; background:var(--scrim); container-type:inline-size; cursor:pointer;}
+  .promo-col{position:absolute; top:0; width:12.5%; display:flex; flex-direction:column; border-radius:6px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,.45);}
+  .promo-piece{aspect-ratio:1; width:100%; padding:0; border:0; background:var(--board-light); font-size:10cqw; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .promo-piece:nth-child(even){background:var(--board-dark);}
+  .promo-piece .piece-w{color:var(--piece-w); text-shadow:0 0 1px #000, 0 0 2px rgba(0,0,0,.5);}
+  .promo-piece .piece-b{color:var(--piece-b); text-shadow:0 0 1px rgba(255,255,255,.3);}
   svg.arrows{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:5;}
 
   .board-row{display:flex; gap:10px; align-items:stretch; justify-content:center; width:100%; max-width:420px; margin:0 auto;}
@@ -267,7 +283,10 @@ const PIECES = {K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♚',q:'♛',
 // entry: {key, fen, side, moveNo, title, year, last:[from,to], hist:{uci,san,from,to} (the game
 // move), final?:[uci×4]}. Replaced wholesale when the finder runs again.
 const POOLS = /*POOLS*/{"analysis":[{"key":"r2qkb1r/2pp1ppp/p1n1p1b1/1p6/1PPP4/P3P1P1/3N1P1P/R1BQKB1R w KQkq -","fen":"r2qkb1r/2pp1ppp/p1n1p1b1/1p6/1PPP4/P3P1P1/3N1P1P/R1BQKB1R w KQkq - 0 11","side":"w","moveNo":11,"title":"Kasparov – Andersson","year":"1981","last":["b6","b5"],"hist":{"uci":"c4b5","san":"cxb5","from":"c4","to":"b5"}},{"key":"r2qkb1r/n1pp1pp1/4p1bp/1p1P4/1P5P/P3P1P1/1B1N1P2/R2QKB1R b KQkq -","fen":"r2qkb1r/n1pp1pp1/4p1bp/1p1P4/1P5P/P3P1P1/1B1N1P2/R2QKB1R b KQkq - 0 14","side":"b","moveNo":14,"title":"Kasparov – Andersson","year":"1981","last":["d4","d5"],"hist":{"uci":"e6d5","san":"exd5","from":"e6","to":"d5"}},{"key":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq -","fen":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq - 2 18","side":"w","moveNo":18,"title":"Kasparov – Andersson","year":"1981","last":["f8","e7"],"hist":{"uci":"d1g4","san":"Qg4","from":"d1","to":"g4"}},{"key":"r2q3r/n2pbkp1/2p2p1p/1p5P/1P2N1Q1/P5P1/1B3P2/R3R1K1 b - -","fen":"r2q3r/n2pbkp1/2p2p1p/1p5P/1P2N1Q1/P5P1/1B3P2/R3R1K1 b - - 0 22","side":"b","moveNo":22,"title":"Kasparov – Andersson","year":"1981","last":["d2","e4"],"hist":{"uci":"a7c8","san":"Nc8","from":"a7","to":"c8"}},{"key":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/1B3P2/3RR1K1 w - -","fen":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/1B3P2/3RR1K1 w - - 2 26","side":"w","moveNo":26,"title":"Kasparov – Andersson","year":"1981","last":["f7","f8"],"hist":{"uci":"b2c1","san":"Bc1","from":"b2","to":"c1"}},{"key":"3qk2r/r3bn2/2p2pQB/1p1p3P/1P4R1/P5P1/5P2/4R1K1 w - -","fen":"3qk2r/r3bn2/2p2pQB/1p1p3P/1P4R1/P5P1/5P2/4R1K1 w - - 1 30","side":"w","moveNo":30,"title":"Kasparov – Andersson","year":"1981","last":["f8","e8"],"hist":{"uci":"h6g7","san":"Bg7","from":"h6","to":"g7"}},{"key":"r1bqkb1r/5ppp/p1p1pn2/3p4/2P1P3/3B4/PP3PPP/RNBQ1RK1 w kq -","fen":"r1bqkb1r/5ppp/p1p1pn2/3p4/2P1P3/3B4/PP3PPP/RNBQ1RK1 w kq - 1 9","side":"w","moveNo":9,"title":"Fischer – Petrosian","year":"1971","last":["g8","f6"],"hist":{"uci":"c4d5","san":"cxd5","from":"c4","to":"d5"}},{"key":"r1b1k2r/3qbppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 w kq -","fen":"r1b1k2r/3qbppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 w kq - 4 13","side":"w","moveNo":13,"title":"Fischer – Petrosian","year":"1971","last":["d8","d7"],"hist":{"uci":"f1e1","san":"Re1","from":"f1","to":"e1"}},{"key":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - -","fen":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - - 4 16","side":"b","moveNo":16,"title":"Fischer – Petrosian","year":"1971","last":["e3","c5"],"hist":{"uci":"f8e8","san":"Rfe8","from":"f8","to":"e8"}},{"key":"r1b2k2/4rppp/p4n2/2Np4/1P6/3B4/P4PPP/R3R1K1 w - -","fen":"r1b2k2/4rppp/p4n2/2Np4/1P6/3B4/P4PPP/R3R1K1 w - - 3 20","side":"w","moveNo":20,"title":"Fischer – Petrosian","year":"1971","last":["e6","c8"],"hist":{"uci":"f2f3","san":"f3","from":"f2","to":"f3"}},{"key":"r1bq1rk1/pp4bp/2n1ppp1/3pP3/3p1P2/1B1P4/PPPBN1PP/R3QRK1 w - -","fen":"r1bq1rk1/pp4bp/2n1ppp1/3pP3/3p1P2/1B1P4/PPPBN1PP/R3QRK1 w - - 0 14","side":"w","moveNo":14,"title":"Short – Gelfand","year":"1991","last":["f7","f6"],"hist":{"uci":"e5f6","san":"exf6","from":"e5","to":"f6"}},{"key":"r1b2rk1/1p5p/2nqpbp1/p2p4/P2p1P2/1B1P4/1PPB2PP/R3QRNK b - -","fen":"r1b2rk1/1p5p/2nqpbp1/p2p4/P2p1P2/1B1P4/1PPB2PP/R3QRNK b - - 2 17","side":"b","moveNo":17,"title":"Short – Gelfand","year":"1991","last":["e2","g1"],"hist":{"uci":"c8d7","san":"Bd7","from":"c8","to":"d7"}},{"key":"r4rk1/1p1b3p/2n1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/R4R1K w - -","fen":"r4rk1/1p1b3p/2n1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/R4R1K w - - 9 21","side":"w","moveNo":21,"title":"Short – Gelfand","year":"1991","last":["b4","c6"],"hist":{"uci":"a1e1","san":"Rae1","from":"a1","to":"e1"}},{"key":"r4rk1/3b3p/4pbp1/ppqp1P2/Pn1p4/1B1P1NQ1/1PPB2PP/4RR1K b - -","fen":"r4rk1/3b3p/4pbp1/ppqp1P2/Pn1p4/1B1P1NQ1/1PPB2PP/4RR1K b - - 0 24","side":"b","moveNo":24,"title":"Short – Gelfand","year":"1991","last":["f4","f5"],"hist":{"uci":"e6f5","san":"exf5","from":"e6","to":"f5"}},{"key":"r3br1k/7p/5bp1/pq1pNR2/1n1p4/1B1P2Q1/1PPB2PP/4R2K w - -","fen":"r3br1k/7p/5bp1/pq1pNR2/1n1p4/1B1P2Q1/1PPB2PP/4R2K w - - 1 28","side":"w","moveNo":28,"title":"Short – Gelfand","year":"1991","last":["g8","h8"],"hist":{"uci":"f5f6","san":"Rxf6","from":"f5","to":"f6"}}],"candidates":[{"key":"r2qkb1r/n1pp1ppp/4p1b1/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R b KQkq h3","fen":"r2qkb1r/n1pp1ppp/4p1b1/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R b KQkq h3 0 13","side":"b","moveNo":13,"title":"Kasparov – Andersson","year":"1981","last":["h2","h4"],"hist":{"uci":"h7h6","san":"h6","from":"h7","to":"h6"}},{"key":"r2qkb1r/n2p1pp1/2p3bp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QK2R w KQkq -","fen":"r2qkb1r/n2p1pp1/2p3bp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QK2R w KQkq - 0 16","side":"w","moveNo":16,"title":"Kasparov – Andersson","year":"1981","last":["c7","c6"],"hist":{"uci":"e1g1","san":"O-O","from":"e1","to":"g1"}},{"key":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq -","fen":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq - 2 18","side":"w","moveNo":18,"title":"Kasparov – Andersson","year":"1981","last":["f8","e7"],"hist":{"uci":"d1g4","san":"Qg4","from":"d1","to":"g4"}},{"key":"r2q3r/n2pbkp1/2p2pbp/1p1p3P/1P4Q1/P3P1P1/1B1N1PB1/R3R1K1 b - -","fen":"r2q3r/n2pbkp1/2p2pbp/1p1p3P/1P4Q1/P3P1P1/1B1N1PB1/R3R1K1 b - - 0 19","side":"b","moveNo":19,"title":"Kasparov – Andersson","year":"1981","last":["h4","h5"],"hist":{"uci":"g6h7","san":"Bh7","from":"g6","to":"h7"}},{"key":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/1B3P2/3RR1K1 w - -","fen":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/1B3P2/3RR1K1 w - - 2 26","side":"w","moveNo":26,"title":"Kasparov – Andersson","year":"1981","last":["f7","f8"],"hist":{"uci":"b2c1","san":"Bc1","from":"b2","to":"c1"}},{"key":"2nq1k1r/r3b3/2p2pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 b - -","fen":"2nq1k1r/r3b3/2p2pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 b - - 1 27","side":"b","moveNo":27,"title":"Kasparov – Andersson","year":"1981","last":["d1","d4"],"hist":{"uci":"c8d6","san":"Nd6","from":"c8","to":"d6"}},{"key":"3q1k1r/r3bn2/2p2pQp/1p1p3P/1P4R1/P5P1/5P2/2B1R1K1 w - -","fen":"3q1k1r/r3bn2/2p2pQp/1p1p3P/1P4R1/P5P1/5P2/2B1R1K1 w - - 4 29","side":"w","moveNo":29,"title":"Kasparov – Andersson","year":"1981","last":["d6","f7"],"hist":{"uci":"c1h6","san":"Bxh6+","from":"c1","to":"h6"}},{"key":"r1bqk2r/4bppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 b kq -","fen":"r1bqk2r/4bppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 b kq - 3 12","side":"b","moveNo":12,"title":"Fischer – Petrosian","year":"1971","last":["d1","a4"],"hist":{"uci":"d8d7","san":"Qd7","from":"d8","to":"d7"}},{"key":"r1b1k2r/4bppp/p4n2/3p4/N7/3B4/PP3PPP/R1B1R1K1 b kq -","fen":"r1b1k2r/4bppp/p4n2/3p4/N7/3B4/PP3PPP/R1B1R1K1 b kq - 0 14","side":"b","moveNo":14,"title":"Fischer – Petrosian","year":"1971","last":["c3","a4"],"hist":{"uci":"c8e6","san":"Be6","from":"c8","to":"e6"}},{"key":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - -","fen":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - - 4 16","side":"b","moveNo":16,"title":"Fischer – Petrosian","year":"1971","last":["e3","c5"],"hist":{"uci":"f8e8","san":"Rfe8","from":"f8","to":"e8"}},{"key":"r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - -","fen":"r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - - 4 25","side":"w","moveNo":25,"title":"Fischer – Petrosian","year":"1971","last":["f6","d7"],"hist":{"uci":"e5e2","san":"Re2","from":"e5","to":"e2"}},{"key":"r4k2/2R5/pn1r2p1/5p2/1P1p1P1p/3B4/P2KR1PP/8 w - -","fen":"r4k2/2R5/pn1r2p1/5p2/1P1p1P1p/3B4/P2KR1PP/8 w - - 2 31","side":"w","moveNo":31,"title":"Fischer – Petrosian","year":"1971","last":["d7","b6"],"hist":{"uci":"e2e7","san":"Ree7","from":"e2","to":"e7"}},{"key":"r3k3/2R2R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 w - -","fen":"r3k3/2R2R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 w - - 6 33","side":"w","moveNo":33,"title":"Fischer – Petrosian","year":"1971","last":["f8","e8"],"hist":{"uci":"c7b7","san":"Rb7","from":"c7","to":"b7"}},{"key":"r4rk1/3b3p/1pn1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/4RR1K w - -","fen":"r4rk1/3b3p/1pn1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/4RR1K w - - 0 22","side":"w","moveNo":22,"title":"Short – Gelfand","year":"1991","last":["b7","b6"],"hist":{"uci":"c3d2","san":"Bd2","from":"c3","to":"d2"}},{"key":"r4rk1/3b3p/4pbp1/ppqp4/Pn1p1P2/1B1P1NQ1/1PPB2PP/4RR1K w - -","fen":"r4rk1/3b3p/4pbp1/ppqp4/Pn1p1P2/1B1P1NQ1/1PPB2PP/4RR1K w - - 0 24","side":"w","moveNo":24,"title":"Short – Gelfand","year":"1991","last":["b6","b5"],"hist":{"uci":"f4f5","san":"f5","from":"f4","to":"f5"}},{"key":"r4rk1/3b3p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K b - -","fen":"r4rk1/3b3p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K b - - 1 25","side":"b","moveNo":25,"title":"Short – Gelfand","year":"1991","last":["f3","e5"],"hist":{"uci":"d7e8","san":"Be8","from":"d7","to":"e8"}},{"key":"r3brk1/7p/5bp1/pq1pNp2/1n1p4/1B1P2Q1/1PPB2PP/4RR1K w - -","fen":"r3brk1/7p/5bp1/pq1pNp2/1n1p4/1B1P2Q1/1PPB2PP/4RR1K w - - 0 27","side":"w","moveNo":27,"title":"Short – Gelfand","year":"1991","last":["c5","b5"],"hist":{"uci":"f1f5","san":"Rxf5","from":"f1","to":"f5"}},{"key":"r3b2k/7p/5rp1/pq1pN3/1n1p4/1B1P2Q1/1PPB2PP/4R2K w - -","fen":"r3b2k/7p/5rp1/pq1pN3/1n1p4/1B1P2Q1/1PPB2PP/4R2K w - - 0 29","side":"w","moveNo":29,"title":"Short – Gelfand","year":"1991","last":["f8","f6"],"hist":{"uci":"e5g4","san":"Ng4","from":"e5","to":"g4"}}],"final":[{"key":"r2qkb1r/n1pp1pp1/4p1bp/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R w KQkq -","fen":"r2qkb1r/n1pp1pp1/4p1bp/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R w KQkq - 0 14","side":"w","moveNo":14,"title":"Kasparov – Andersson","year":"1981","last":["h7","h6"],"hist":{"uci":"d4d5","san":"d5","from":"d4","to":"d5"}},{"key":"r2qkb1r/n2p1pp1/2p3bp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QK2R w KQkq -","fen":"r2qkb1r/n2p1pp1/2p3bp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QK2R w KQkq - 0 16","side":"w","moveNo":16,"title":"Kasparov – Andersson","year":"1981","last":["c7","c6"],"hist":{"uci":"e1g1","san":"O-O","from":"e1","to":"g1"}},{"key":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq -","fen":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq - 2 18","side":"w","moveNo":18,"title":"Kasparov – Andersson","year":"1981","last":["f8","e7"],"hist":{"uci":"d1g4","san":"Qg4","from":"d1","to":"g4"}},{"key":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/5P2/2BRR1K1 b - -","fen":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/5P2/2BRR1K1 b - - 3 26","side":"b","moveNo":26,"title":"Kasparov – Andersson","year":"1981","last":["b2","c1"],"hist":{"uci":"d7d5","san":"d5","from":"d7","to":"d5"}},{"key":"3q1k1r/r3b3/2pn1pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 w - -","fen":"3q1k1r/r3b3/2pn1pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 w - - 2 28","side":"w","moveNo":28,"title":"Kasparov – Andersson","year":"1981","last":["c8","d6"],"hist":{"uci":"d4g4","san":"Rg4","from":"d4","to":"g4"}},{"key":"r1bqk2r/4bppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 b kq -","fen":"r1bqk2r/4bppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 b kq - 3 12","side":"b","moveNo":12,"title":"Fischer – Petrosian","year":"1971","last":["d1","a4"],"hist":{"uci":"d8d7","san":"Qd7","from":"d8","to":"d7"}},{"key":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - -","fen":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - - 4 16","side":"b","moveNo":16,"title":"Fischer – Petrosian","year":"1971","last":["e3","c5"],"hist":{"uci":"f8e8","san":"Rfe8","from":"f8","to":"e8"}},{"key":"r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - -","fen":"r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - - 4 25","side":"w","moveNo":25,"title":"Fischer – Petrosian","year":"1971","last":["f6","d7"],"hist":{"uci":"e5e2","san":"Re2","from":"e5","to":"e2"}},{"key":"r4k2/2R5/pn1r2p1/5p2/1P1p1P1p/3B4/P2KR1PP/8 w - -","fen":"r4k2/2R5/pn1r2p1/5p2/1P1p1P1p/3B4/P2KR1PP/8 w - - 2 31","side":"w","moveNo":31,"title":"Fischer – Petrosian","year":"1971","last":["d7","b6"],"hist":{"uci":"e2e7","san":"Ree7","from":"e2","to":"e7"}},{"key":"r3k3/2R2R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 w - -","fen":"r3k3/2R2R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 w - - 6 33","side":"w","moveNo":33,"title":"Fischer – Petrosian","year":"1971","last":["f8","e8"],"hist":{"uci":"c7b7","san":"Rb7","from":"c7","to":"b7"}},{"key":"r4rk1/3b3p/1pn1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/4RR1K w - -","fen":"r4rk1/3b3p/1pn1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/4RR1K w - - 0 22","side":"w","moveNo":22,"title":"Short – Gelfand","year":"1991","last":["b7","b6"],"hist":{"uci":"c3d2","san":"Bd2","from":"c3","to":"d2"}},{"key":"r4rk1/3b3p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K b - -","fen":"r4rk1/3b3p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K b - - 1 25","side":"b","moveNo":25,"title":"Short – Gelfand","year":"1991","last":["f3","e5"],"hist":{"uci":"d7e8","san":"Be8","from":"d7","to":"e8"}},{"key":"r3brk1/7p/5bp1/pq1pNR2/1n1p4/1B1P2Q1/1PPB2PP/4R2K b - -","fen":"r3brk1/7p/5bp1/pq1pNR2/1n1p4/1B1P2Q1/1PPB2PP/4R2K b - - 0 27","side":"b","moveNo":27,"title":"Short – Gelfand","year":"1991","last":["f1","f5"],"hist":{"uci":"g8h8","san":"Kh8","from":"g8","to":"h8"}}]}/*END POOLS*/;
-Object.values(POOLS).forEach(list=>list.forEach(p=>{ p.last = p.last ? { squares:p.last } : null; }));
+// Test positions: hand-made edge cases (checks, en passant, castling, promotions, mates), opened
+// from the "Test positions" page. Played in order, and never recorded in your progress.
+const TEST_POSITIONS = /*TESTS*/[{"key":"test-0","fen":"rnbqk2r/pppp1ppp/4pn2/8/1bPP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 2 4","side":"w","moveNo":4,"title":"White in check","year":"","last":["f8","b4"],"hist":{"uci":"c1d2","san":"Bd2","from":"c1","to":"d2"}},{"key":"test-1","fen":"rnbqkbnr/ppp1pppp/3p4/1B6/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2","side":"b","moveNo":2,"title":"Black in check","year":"","last":["f1","b5"],"hist":{"uci":"c7c6","san":"c6","from":"c7","to":"c6"}},{"key":"test-2","fen":"rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3","side":"w","moveNo":3,"title":"En passant (White)","year":"","last":["d7","d5"],"hist":{"uci":"e5d6","san":"exd6","from":"e5","to":"d6"}},{"key":"test-3","fen":"rnbqkbnr/pppp1ppp/8/8/3Pp3/2N2N2/PPP1PPPP/R1BQKB1R b KQkq d3 0 3","side":"b","moveNo":3,"title":"En passant (Black)","year":"","last":["d2","d4"],"hist":{"uci":"e4d3","san":"exd3","from":"e4","to":"d3"}},{"key":"test-4","fen":"r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4","side":"w","moveNo":4,"title":"Castling","year":"","last":["f8","c5"],"hist":{"uci":"e1g1","san":"O-O","from":"e1","to":"g1"}},{"key":"test-5","fen":"8/4P1q1/3k4/8/8/2P5/1K6/8 w - - 0 50","side":"w","moveNo":50,"title":"Promotion: knight fork (White)","year":"","last":null,"hist":{"uci":"e7e8n","san":"e8=N+","from":"e7","to":"e8"}},{"key":"test-6","fen":"8/1k6/2p5/8/8/3K4/4p1Q1/8 b - - 0 50","side":"b","moveNo":50,"title":"Promotion: knight fork (Black)","year":"","last":null,"hist":{"uci":"e2e1n","san":"e1=N+","from":"e2","to":"e1"}},{"key":"test-7","fen":"r5k1/1P3ppp/8/8/8/8/5PPP/6K1 w - - 0 30","side":"w","moveNo":30,"title":"Promotion with captures","year":"","last":null,"hist":{"uci":"b7a8q","san":"bxa8=Q#","from":"b7","to":"a8"}},{"key":"test-8","fen":"6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 30","side":"w","moveNo":30,"title":"Mate in one","year":"","last":null,"hist":{"uci":"d1d8","san":"Rd8#","from":"d1","to":"d8"}},{"key":"test-9","fen":"7k/8/5K2/8/8/8/8/6Q1 w - - 0 60","side":"w","moveNo":60,"title":"Stalemate trap (game move stalemates)","year":"","last":null,"hist":{"uci":"g1g6","san":"Qg6","from":"g1","to":"g6"}}]/*END TESTS*/;
+[...Object.values(POOLS), TEST_POSITIONS].forEach(list=>list.forEach(p=>{ p.last = p.last ? { squares:p.last } : null; }));
 
 function labelColor(label){
   if(label==='Best') return 'var(--best-green)'; // a stronger, more saturated green than an ordinary Good move
@@ -597,11 +616,10 @@ function labelFromWinDrop(winDrop, isTop){
 // are converted to White's absolute perspective only at the very end, for display — the same
 // convention the eval bar uses.
 // Returns null while the evaluation is still pending (or if the move somehow isn't in it).
-function moveOutcome(baseFen, from, to, evalData){
+function moveOutcome(baseFen, uci, evalData){
   if(!evalData || !evalData.lines || !evalData.lines.length) return null;
-  const uci = from+to;
   const rank1 = evalData.lines[0];
-  const matched = evalData.lines.find(l=>l.uci && l.uci.slice(0,4)===uci);
+  const matched = evalData.lines.find(l=>l.uci===uci);   // full move code: e7e8q and e7e8n are different moves
   if(!matched) return null;
   const isTop = matched===rank1;
   const winPct = winPercent(matched.cp, matched.mate); // mover-perspective — win% of this move
@@ -630,6 +648,7 @@ function renderBoard(container, boardOverride, lastOverride, opts){
   const destSet = new Set(opts.destSquares || []);
   container.innerHTML = '';
   const flip = boardFlipped();
+  const checkSq = checkedKingSquare(pos().fen);
   for(let row=0; row<8; row++){
     const rank = flip ? row+1 : 8-row;
     for(let col=0; col<8; col++){
@@ -641,6 +660,7 @@ function renderBoard(container, boardOverride, lastOverride, opts){
       const lmHit = lm && (lm.squares ? lm.squares.includes(sq) : (sq===lm.from || sq===lm.to));
       if(lmHit) div.className += ' last';
       if(opts.selectedSq===sq) div.className += ' selected';
+      if(checkSq===sq) div.className += ' check';
       if(destSet.has(sq)) div.className += bs[sq] ? ' dest-capture' : ' dest';
       const p = bs[sq];
       if(p){
@@ -659,10 +679,38 @@ function renderBoard(container, boardOverride, lastOverride, opts){
 }
 
 
-function colorOf(p){ return p===p.toUpperCase() ? 'w' : 'b'; }
-function sanForFen(fen, from, to){
+// Promotion: a column of the four pieces over the promotion square (queen nearest the edge, as
+// on Lichess). Picking a piece adds that move; tapping anywhere else cancels.
+const PROMO_NAMES = {q:'queen', n:'knight', r:'rook', b:'bishop'};
+function showPromotionPicker(chess, addPick){
+  const {from, to} = promoPending;
+  const outer = document.querySelector('.board-outer');
+  const f = FILES.indexOf(to[0]), col = boardFlipped() ? 7-f : f;
+  const w = side==='w';
+  const ov = document.createElement('div');
+  ov.className = 'promo-overlay';
+  ov.innerHTML = `<div class="promo-col" style="left:${col*12.5}%">${['q','n','r','b'].map(k=>
+    `<button class="promo-piece" data-p="${k}" aria-label="Promote to ${PROMO_NAMES[k]}"><span class="${w?'piece-w':'piece-b'}">${PIECES[w?k.toUpperCase():k]}</span></button>`).join('')}</div>`;
+  ov.onclick = e=>{
+    const b = e.target.closest('.promo-piece');
+    if(b){ const mv = chess.moves({square:from, verbose:true}).find(m=>m.to===to && m.promotion===b.dataset.p); if(mv) addPick(mv); }
+    promoPending = null; render();
+  };
+  outer.appendChild(ov);
+}
+// The square of the side to move's king when it is in check, else null.
+function checkedKingSquare(fen){
   const g = new Chess(fen);
-  const m = g.moves({square:from, verbose:true}).find(mv=>mv.to===to);
+  if(!g.in_check()) return null;
+  const turn = g.turn();
+  for(const f of FILES) for(let r=1; r<=8; r++){ const pc = g.get(f+r); if(pc && pc.type==='k' && pc.color===turn) return f+r; }
+  return null;
+}
+function colorOf(p){ return p===p.toUpperCase() ? 'w' : 'b'; }
+// SAN of a move given by its UCI code (e2e4, e7e8q): the promotion piece picks the move.
+function sanForUci(fen, uci){
+  const g = new Chess(fen), from = uci.slice(0,2), to = uci.slice(2,4), promo = uci[4] || '';
+  const m = g.moves({square:from, verbose:true}).find(mv=>mv.to===to && (mv.promotion||'')===promo);
   return m ? m.san : to;
 }
 function drawArrows(svg, list, keyPrefix){
@@ -734,7 +782,7 @@ function topGoodLines(evalData, n){
 function pickAccuracyPct(picksIn, evalData){
   if(picksIn.length===0 || !evalData || !evalData.lines || !evalData.lines.length) return null;
   const n = picksIn.length;
-  const picks = picksIn.map(mv=>evalData.lines.find(l=>l.uci && l.uci.slice(0,4)===mv.from+mv.to)).filter(Boolean);
+  const picks = picksIn.map(mv=>evalData.lines.find(l=>l.uci===mv.uci)).filter(Boolean);
   if(picks.length===0) return null;
   const bestCp = moverScore(evalData.lines[0]);
   const cap = dubiousDistance(bestCp);
@@ -846,20 +894,25 @@ function drawRound(pool, prev){
 // ('r-analysis', …). Each has its own order, its own place in it and its own saved progress, so
 // you can leave one, use the other, and come back to exactly where you were.
 const ACTIVITIES = ['analysis', 'candidates', 'final'];
-const TRACKS = ACTIVITIES.flatMap(a=>[a, 'r-'+a]);
-const ctx = (a, r = routine) => (r ? 'r-' : '') + a;   // the open track for exercise `a`
+// A third track per exercise, 't-…', runs the test positions in their listed order.
+const TRACKS = ACTIVITIES.flatMap(a=>[a, 'r-'+a, 't-'+a]);
+let testMode = false;
+const ctx = (a, r = routine) => testMode ? 't-' + a : (r ? 'r-' : '') + a;   // the open track for exercise `a`
 const orders = {}, seqBy = {}, store = {};
-const poolOf = t=>POOLS[t.replace(/^r-/, '')];
-TRACKS.forEach(t=>{ orders[t] = drawRound(poolOf(t)); seqBy[t] = 0; store[t] = {}; });
+const isTest = t=>t.startsWith('t-');
+const poolOf = t=>isTest(t) ? TEST_POSITIONS : POOLS[t.replace(/^r-/, '')];
+const inOrder = pool=>pool.map((_, i)=>i);
+TRACKS.forEach(t=>{ orders[t] = isTest(t) ? inOrder(poolOf(t)) : drawRound(poolOf(t)); seqBy[t] = 0; store[t] = {}; });
 function posAt(track, i){
   const o = orders[track], pool = poolOf(track);
-  while(i >= o.length) o.push(...drawRound(pool, o[o.length-1]));
+  while(i >= o.length) o.push(...(isTest(track) ? inOrder(pool) : drawRound(pool, o[o.length-1])));
   return pool[o[i]];
 }
 let curPos = null, side = 'w';   // the open exercise's position and side to play (see syncPos)
 // Points curPos/side at the open exercise's own position.
 function syncPos(){ if(ACTIVITIES.includes(screen)){ const t = ctx(screen); curPos = posAt(t, seqBy[t]); side = curPos.side; } }
 let selSquare = null;          // piece being moved while entering a candidate
+let promoPending = null;       // {from, to}: a pawn move to the last rank, waiting for its piece
 let helpVisible = false;
 // `store`: per track and per position, so leaving an exercise and coming back keeps what was entered.
 function pos(){ return curPos; }
@@ -918,13 +971,13 @@ function nextPosition(){
   if(!ACTIVITIES.includes(screen)) return;
   if(routine) return openActivity(ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length]);
   advance(screen);
-  selSquare = null; helpVisible = false;
+  selSquare = null; promoPending = null; helpVisible = false;
   syncPos(); prefetchCurrent(); render();
 }
 // Opening an exercise: an unfinished question carries on where it was left; a position whose
 // review was already reached moves on to a new position.
 function openActivity(name){
-  screen = name; helpVisible = false; selSquare = null;
+  screen = name; helpVisible = false; selSquare = null; promoPending = null;
   syncPos();
   if(st(name).checked){ advance(name); syncPos(); }
   prefetchCurrent();
@@ -943,9 +996,9 @@ function candidatesEval(p, picks){
   const disc = fenEval(p.fen);
   if(!disc) return null;
   if(evalFailed(disc)) return FAILED;
-  const ucis = picks.map(m=>m.uci || m.from+m.to);
+  const ucis = picks.map(m=>m.uci);
   ucis.push(p.hist.uci);
-  disc.lines.slice(0, DISCOVERY_MULTIPV).forEach(l=>{ if(l.uci) ucis.push(l.uci.slice(0,4)); });
+  disc.lines.slice(0, DISCOVERY_MULTIPV).forEach(l=>{ if(l.uci) ucis.push(l.uci); });
   return poolEval(p.fen, Array.from(new Set(ucis)));
 }
 // Final choice: the four moves to rank — always the move played in the game, then the engine's
@@ -963,19 +1016,19 @@ function finalMoves(p){
   const best = winPercent(lines[0].cp, lines[0].mate);
   const gradeOf = l=>l ? labelFromWinDrop(best - winPercent(l.cp, l.mate), false).label : 'outside top 5';
   const picks = [];   // [{uci, grade}]
-  const add = (uci, grade)=>{ const u = uci.slice(0,4); if(!picks.some(m=>m.uci===u)) picks.push({ uci:u, grade }); };
+  const add = (uci, grade)=>{ if(!picks.some(m=>m.uci===uci)) picks.push({ uci, grade }); };
   add(lines[0].uci, 'Good');
-  add(p.hist.uci, gradeOf(lines.find(l=>l.uci.slice(0,4)===p.hist.uci.slice(0,4))));
+  add(p.hist.uci, gradeOf(lines.find(l=>l.uci===p.hist.uci)));
   const have = ()=>picks.map(m=>m.grade);
   for(const l of lines){ if(picks.length>=4) break; const g = gradeOf(l); if(!have().includes(g)) add(l.uci, g); }
   while(picks.length<4){
-    const rest = lines.filter(l=>!picks.some(m=>m.uci===l.uci.slice(0,4)));
+    const rest = lines.filter(l=>!picks.some(m=>m.uci===l.uci));
     if(!rest.length) break;
     const count = g=>have().filter(x=>x===g).length;
     rest.sort((a,b)=>count(gradeOf(a)) - count(gradeOf(b)));   // stable: best first on ties
     add(rest[0].uci, gradeOf(rest[0]));
   }
-  const list = picks.map(({uci:u})=>({ id:u, uci:u, from:u.slice(0,2), to:u.slice(2,4), san:sanForFen(p.fen, u.slice(0,2), u.slice(2,4)), historical: u===p.hist.uci.slice(0,4) }));
+  const list = picks.map(({uci:u})=>({ id:u, uci:u, from:u.slice(0,2), to:u.slice(2,4), san:sanForUci(p.fen, u), historical: u===p.hist.uci }));
   const order = stableShuffleByIds('final'+ctx('final')+p.key, list.map(m=>m.id));
   return order.map((id,i)=>({ ...list.find(m=>m.id===id), color: allCols[i] }));
 }
@@ -989,7 +1042,7 @@ function finalEval(p, moves){
 function header(title){
   return `<div class="title-row">
       <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
-      <h1>${routine ? `Routine <span class="title-badge">${title}</span>` : title}</h1>
+      <h1>${routine ? `Routine <span class="title-badge">${title}</span>` : testMode ? `Test <span class="title-badge">${title}</span>` : title}</h1>
       <button class="icon-btn" id="helpBtn" aria-label="How this exercise works">?</button>
     </div>`;
 }
@@ -1002,6 +1055,7 @@ function posBar(){
 }
 function wireCommon(helpKey, checked){
   document.getElementById('homeBtn').onclick = ()=>{
+    if(testMode){ testMode = false; screen = 'tests'; selSquare = null; promoPending = null; render(); return; }
     if(routine){ const s = st(screen); routine = false; routineNext = s.checked ? ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length] : screen; }
     screen='home'; selSquare=null; render();
   };
@@ -1228,6 +1282,7 @@ function levelNow(a){
 // review shows: the level after this position and how much it moved.
 function recordResult(s, a, acc){
   if(s.rec || acc==null) return;
+  if(testMode){ s.rec = { test:true }; return; }   // test positions never count
   const before = levelNow(a);
   const r = { a, acc: Math.round(acc), ts: Date.now() };
   results.push(r);
@@ -1240,7 +1295,7 @@ function recordResult(s, a, acc){
 function levelChip(s, show, fade){
   if(!s.rec) return '';
   const r = s.rec;
-  const body = !r.rated ? `Calibrating ${r.n}/${CALIBRATION}`
+  const body = r.test ? 'Test position · not recorded' : !r.rated ? `Calibrating ${r.n}/${CALIBRATION}`
     : `Average <strong>${pct(r.level)}</strong>` + (r.delta==null ? '' : ' ' + deltaHtml(r.delta));
   return `<span class="level${show ? (fade ? ' fade-in' : '') : ''}" style="${show ? '' : 'visibility:hidden'}">${body}</span>`;
 }
@@ -1359,13 +1414,42 @@ function renderHome(){
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b><small>Average</small>` : `<b>—</b><small>${L.n ? `${L.n}/${CALIBRATION}` : 'Average'}</small>`}</span>
         </button>`; }).join('')}
     </div>
-    <button class="link-btn" id="progressBtn">See your progress ›</button>
+    <div class="link-row"><button class="link-btn" id="progressBtn">See your progress ›</button><button class="link-btn quiet" id="testsBtn">Test positions ›</button></div>
     ${engineErrorBanner()}`;
+  document.getElementById('testsBtn').onclick = ()=>{ screen = 'tests'; render(); };
   app.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ routine = false; openActivity(c.dataset.go); });
   document.getElementById('progressBtn').onclick = ()=>{ screen = 'progress'; render(); };
   document.getElementById('routineBtn').onclick = startRoutine;
   prefetchHome();
   progressJustLoaded = false;
+}
+
+// ================= Test positions =================
+// Each edge case can be opened in any exercise; "Next position" then walks through the list.
+function renderTests(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="title-row">
+      <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
+      <h1>Test positions</h1>
+      <span class="title-spacer" aria-hidden="true"></span>
+    </div>
+    <div class="test-list">${TEST_POSITIONS.map((p,i)=>`
+      <div class="test-item">
+        <div class="test-name">${p.title}<small>${p.side==='w' ? 'White' : 'Black'} to play · game move ${p.hist.san}</small></div>
+        <div class="test-go">${ACTIVITIES.map(a=>`<button class="chip-btn" data-i="${i}" data-a="${a}">${ACT_NAMES[a]}</button>`).join('')}</div>
+      </div>`).join('')}
+    </div>`;
+  document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; render(); };
+  app.querySelectorAll('.chip-btn').forEach(b=>b.onclick = ()=>{
+    const a = b.dataset.a, t = 't-'+a, i = +b.dataset.i;
+    testMode = true; routine = false;
+    seqBy[t] = i;
+    const key = posAt(t, i).key;
+    delete store[t][key];
+    if(a==='final') delete poolShuffleCache['final'+t+key];
+    openActivity(a);
+  });
 }
 
 // ================= Board analysis =================
@@ -1488,7 +1572,7 @@ function renderCandidates(){
     const failed = evalFailed(ev0), ev = failed ? null : ev0;
     // List 1: the player's own picks. A pick the engine didn't return a line for shows "—".
     let mine = s.picks.map((m,i)=>({ ...m, num:String(i+1), color:cols[m.slot] }));
-    mine.forEach(r=>{ r.outcome = moveOutcome(p.fen, r.from, r.to, ev); r.na = (!!ev || failed) && !r.outcome; });
+    mine.forEach(r=>{ r.outcome = moveOutcome(p.fen, r.uci, ev); r.na = (!!ev || failed) && !r.outcome; });
     // Once the evaluation is in, your moves are re-ordered best → worst (animated once, below).
     const canSort = !!ev;
     if(canSort && s.sortDone){
@@ -1500,10 +1584,10 @@ function renderCandidates(){
     let nextTop = 0;
     const topN = Math.max(1, s.picks.length);
     const top = ev ? ev.lines.slice(0,topN).filter(l=>l.uci).map((l,i)=>{
-      const u = l.uci.slice(0,4), from = u.slice(0,2), to = u.slice(2,4);
-      const picked = s.picks.find(m=>m.from+m.to===u);
-      const r = { uci:u, from, to, san:sanForFen(p.fen, from, to), num:String(i+1) };
-      r.outcome = moveOutcome(p.fen, from, to, ev);
+      const u = l.uci, from = u.slice(0,2), to = u.slice(2,4);
+      const picked = s.picks.find(m=>m.uci===u);
+      const r = { uci:u, from, to, san:sanForUci(p.fen, u), num:String(i+1) };
+      r.outcome = moveOutcome(p.fen, u, ev);
       r.muted = !!(r.outcome && r.outcome.winDrop>=10);
       // A move you picked keeps your colour in this list too; the others take the engine colours.
       r.color = r.muted ? 'var(--text-mute)' : picked ? cols[picked.slot] : TOP_COLS[nextTop++];
@@ -1578,15 +1662,23 @@ function renderCandidates(){
     return !capReached || s.picks.some(m=>m.from===sq);
   };
   const freeSlot = ()=>{ for(let k=0;k<3;k++){ if(!s.picks.some(m=>m.slot===k)) return k; } return 0; };
+  const addPick = mv=>{
+    const uci = mv.from+mv.to+(mv.promotion||'');
+    const dup = s.picks.findIndex(m=>m.uci===uci);
+    if(dup>=0){ s.picks.splice(dup,1); return; }
+    if(s.picks.length<3) s.picks.push({ id:'c_'+uci, san:mv.san, from:mv.from, to:mv.to, uci, slot:freeSlot() });
+  };
   renderBoard(document.getElementById('board'), bs, p.last, {
     selectedSq: selSquare, destSquares,
     onSquareClick: sq=>{
       if(selSquare && destSquares.includes(sq)){
-        const dup = s.picks.findIndex(m=>m.from===selSquare && m.to===sq);
-        if(dup>=0) s.picks.splice(dup,1);
-        else {
-          const mv = chess.moves({square:selSquare, verbose:true}).find(m=>m.to===sq && (!m.promotion || m.promotion==='q'));
-          s.picks.push({ id:'c_'+selSquare+sq, san: mv ? mv.san : sq, from:selSquare, to:sq, uci: mv ? mv.from+mv.to+(mv.promotion||'') : selSquare+sq, slot:freeSlot() });
+        const legal = chess.moves({square:selSquare, verbose:true}).filter(m=>m.to===sq);
+        if(legal.some(m=>m.promotion) && !capReached){
+          promoPending = { from:selSquare, to:sq };   // ask which piece (below)
+        } else {
+          const dup = s.picks.findIndex(m=>m.from===selSquare && m.to===sq && (capReached || m.uci===selSquare+sq));
+          if(dup>=0) s.picks.splice(dup,1);
+          else if(legal[0]) addPick(legal[0]);
         }
         selSquare = null; render(); return;
       }
@@ -1595,6 +1687,7 @@ function renderCandidates(){
     }
   });
   drawArrows(document.getElementById('arrows'), s.picks.map(m=>({ ...m, color:cols[m.slot] })), 'ap_');
+  if(promoPending) showPromotionPicker(chess, addPick);
   const listEl = document.getElementById('moveList');
   s.picks.forEach((m,i)=>{
     const row = document.createElement('div');
@@ -1623,8 +1716,8 @@ const TOP_FADE = 550, SORT_EASE = 'cubic-bezier(.2,.8,.2,1)';
 const SORT_MOVE = 650, BEAT = 350, COUNT_MS = REVEAL_MS;   // same pace as the board-analysis reveal
 const pickSortKey = r => r.outcome ? r.outcome.moverCp : -Infinity;
 function animateSort(s, mine, acc){
-  const order = mine.slice().sort((a,b)=>pickSortKey(b) - pickSortKey(a)).map(r=>r.from+r.to);
-  const unchanged = order.every((k,i)=>k===mine[i].from+mine[i].to);
+  const order = mine.slice().sort((a,b)=>pickSortKey(b) - pickSortKey(a)).map(r=>r.uci);
+  const unchanged = order.every((k,i)=>k===mine[i].uci);
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const key = pos().key;
   const here = ()=> screen==='candidates' && pos().key===key;
@@ -1717,7 +1810,7 @@ function renderFinal(){
   const ordered = s.order.map(id=>moves.find(m=>m.id===id));
 
   if(s.checked){
-    const rows = ordered.map((m,i)=>({ ...m, num:String(i+1), outcome: moveOutcome(p.fen, m.from, m.to, ev) }));
+    const rows = ordered.map((m,i)=>({ ...m, num:String(i+1), outcome: moveOutcome(p.fen, m.uci, ev) }));
     rows.forEach(r=>{ r.na = (!!ev || failed) && !r.outcome; });
     const cpById = {};
     rows.forEach(r=>{ cpById[r.id] = r.outcome ? r.outcome.moverCp : null; });
@@ -1823,6 +1916,7 @@ function render(){
   wrap.dataset.screen = screen;
   if(screen==='home') renderHome();
   else if(screen==='progress') renderProgress();
+  else if(screen==='tests') renderTests();
   else if(screen==='analysis') renderAnalysis();
   else if(screen==='candidates') renderCandidates();
   else renderFinal();
