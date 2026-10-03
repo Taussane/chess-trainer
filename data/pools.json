@@ -1,7 +1,7 @@
 {
- "version": "2026-10-03.2",
+ "version": "2026-10-03.5",
  "engine": "Stockfish 16.1, depth 18",
- "generated": "2026-10-03T16:00:03.858Z",
+ "generated": "2026-10-03T21:36:36.019Z",
  "pools": {
   "analysis": [
    {
@@ -25,7 +25,7 @@
      "to": "b5"
     },
     "metrics": {
-     "evalWhite": 105,
+     "evalWhite": 135,
      "mate": null
     },
     "occurrences": 1
@@ -51,7 +51,7 @@
      "to": "d5"
     },
     "metrics": {
-     "evalWhite": 191,
+     "evalWhite": 198,
      "mate": null
     },
     "occurrences": 1
@@ -77,7 +77,7 @@
      "to": "g4"
     },
     "metrics": {
-     "evalWhite": 310,
+     "evalWhite": 316,
      "mate": null
     },
     "occurrences": 1
@@ -103,7 +103,7 @@
      "to": "c8"
     },
     "metrics": {
-     "evalWhite": 407,
+     "evalWhite": 373,
      "mate": null
     },
     "occurrences": 1
@@ -129,7 +129,7 @@
      "to": "c1"
     },
     "metrics": {
-     "evalWhite": 391,
+     "evalWhite": 390,
      "mate": null
     },
     "occurrences": 1
@@ -155,7 +155,7 @@
      "to": "g7"
     },
     "metrics": {
-     "evalWhite": 575,
+     "evalWhite": 560,
      "mate": null
     },
     "occurrences": 1
@@ -181,7 +181,7 @@
      "to": "d5"
     },
     "metrics": {
-     "evalWhite": 66,
+     "evalWhite": 70,
      "mate": null
     },
     "occurrences": 1
@@ -207,7 +207,7 @@
      "to": "e1"
     },
     "metrics": {
-     "evalWhite": 83,
+     "evalWhite": 70,
      "mate": null
     },
     "occurrences": 1
@@ -233,7 +233,7 @@
      "to": "e8"
     },
     "metrics": {
-     "evalWhite": 78,
+     "evalWhite": 83,
      "mate": null
     },
     "occurrences": 1
@@ -259,7 +259,7 @@
      "to": "f3"
     },
     "metrics": {
-     "evalWhite": 92,
+     "evalWhite": 93,
      "mate": null
     },
     "occurrences": 1
@@ -311,7 +311,7 @@
      "to": "d7"
     },
     "metrics": {
-     "evalWhite": 49,
+     "evalWhite": 45,
      "mate": null
     },
     "occurrences": 1
@@ -337,7 +337,7 @@
      "to": "e1"
     },
     "metrics": {
-     "evalWhite": 59,
+     "evalWhite": 55,
      "mate": null
     },
     "occurrences": 1
@@ -363,7 +363,7 @@
      "to": "f5"
     },
     "metrics": {
-     "evalWhite": 109,
+     "evalWhite": 125,
      "mate": null
     },
     "occurrences": 1
@@ -389,7 +389,7 @@
      "to": "f6"
     },
     "metrics": {
-     "evalWhite": 483,
+     "evalWhite": 486,
      "mate": null
     },
     "occurrences": 1
@@ -472,24 +472,24 @@
     "occurrences": 1
    },
    {
-    "key": "r2q3r/n2pbkp1/2p2pbp/1p1p3P/1P4Q1/P3P1P1/1B1N1PB1/R3R1K1 b - -",
-    "fen": "r2q3r/n2pbkp1/2p2pbp/1p1p3P/1P4Q1/P3P1P1/1B1N1PB1/R3R1K1 b - - 0 19",
+    "key": "r1nq3r/3pbkp1/2p2p1p/1p5P/1P2N1Q1/P5P1/1B3P2/3RR1K1 b - -",
+    "fen": "r1nq3r/3pbkp1/2p2p1p/1p5P/1P2N1Q1/P5P1/1B3P2/3RR1K1 b - - 2 23",
     "game": "g0",
     "title": "Kasparov – Andersson",
     "event": "?",
     "year": "1981",
-    "ply": 37,
-    "moveNo": 19,
+    "ply": 45,
+    "moveNo": 23,
     "side": "b",
     "last": [
-     "h4",
-     "h5"
+     "a1",
+     "d1"
     ],
     "hist": {
-     "uci": "g6h7",
-     "san": "Bh7",
-     "from": "g6",
-     "to": "h7"
+     "uci": "a8a7",
+     "san": "Ra7",
+     "from": "a8",
+     "to": "a7"
     },
     "metrics": {
      "decentMoves": 4
@@ -522,52 +522,52 @@
     "occurrences": 1
    },
    {
-    "key": "2nq1k1r/r3b3/2p2pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 b - -",
-    "fen": "2nq1k1r/r3b3/2p2pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 b - - 1 27",
+    "key": "3q1k1r/r3b3/2pn1pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 w - -",
+    "fen": "3q1k1r/r3b3/2pn1pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 w - - 2 28",
     "game": "g0",
     "title": "Kasparov – Andersson",
     "event": "?",
     "year": "1981",
-    "ply": 53,
-    "moveNo": 27,
-    "side": "b",
+    "ply": 54,
+    "moveNo": 28,
+    "side": "w",
     "last": [
-     "d1",
-     "d4"
+     "c8",
+     "d6"
     ],
     "hist": {
-     "uci": "c8d6",
-     "san": "Nd6",
-     "from": "c8",
-     "to": "d6"
+     "uci": "d4g4",
+     "san": "Rg4",
+     "from": "d4",
+     "to": "g4"
     },
     "metrics": {
-     "decentMoves": 4
+     "decentMoves": 2
     },
     "occurrences": 1
    },
    {
-    "key": "3q1k1r/r3bn2/2p2pQp/1p1p3P/1P4R1/P5P1/5P2/2B1R1K1 w - -",
-    "fen": "3q1k1r/r3bn2/2p2pQp/1p1p3P/1P4R1/P5P1/5P2/2B1R1K1 w - - 4 29",
+    "key": "3qk2r/r3bn2/2p2pQB/1p1p3P/1P4R1/P5P1/5P2/4R1K1 w - -",
+    "fen": "3qk2r/r3bn2/2p2pQB/1p1p3P/1P4R1/P5P1/5P2/4R1K1 w - - 1 30",
     "game": "g0",
     "title": "Kasparov – Andersson",
     "event": "?",
     "year": "1981",
-    "ply": 56,
-    "moveNo": 29,
+    "ply": 58,
+    "moveNo": 30,
     "side": "w",
     "last": [
-     "d6",
-     "f7"
+     "f8",
+     "e8"
     ],
     "hist": {
-     "uci": "c1h6",
-     "san": "Bxh6+",
-     "from": "c1",
-     "to": "h6"
+     "uci": "h6g7",
+     "san": "Bg7",
+     "from": "h6",
+     "to": "g7"
     },
     "metrics": {
-     "decentMoves": 2
+     "decentMoves": 4
     },
     "occurrences": 1
    },
@@ -592,7 +592,7 @@
      "to": "d7"
     },
     "metrics": {
-     "decentMoves": 3
+     "decentMoves": 2
     },
     "occurrences": 1
    },
@@ -617,7 +617,7 @@
      "to": "e6"
     },
     "metrics": {
-     "decentMoves": 3
+     "decentMoves": 1
     },
     "occurrences": 1
    },
@@ -643,31 +643,6 @@
     },
     "metrics": {
      "decentMoves": 3
-    },
-    "occurrences": 1
-   },
-   {
-    "key": "r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - -",
-    "fen": "r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - - 4 25",
-    "game": "g1",
-    "title": "Fischer – Petrosian",
-    "event": "Candidates Final",
-    "year": "1971",
-    "ply": 48,
-    "moveNo": 25,
-    "side": "w",
-    "last": [
-     "f6",
-     "d7"
-    ],
-    "hist": {
-     "uci": "e5e2",
-     "san": "Re2",
-     "from": "e5",
-     "to": "e2"
-    },
-    "metrics": {
-     "decentMoves": 4
     },
     "occurrences": 1
    },
@@ -718,6 +693,56 @@
     },
     "metrics": {
      "decentMoves": 1
+    },
+    "occurrences": 1
+   },
+   {
+    "key": "r1bq1rk1/pp4bp/2n1ppp1/3pP3/3p1P2/1B1P4/PPPBN1PP/R3QRK1 w - -",
+    "fen": "r1bq1rk1/pp4bp/2n1ppp1/3pP3/3p1P2/1B1P4/PPPBN1PP/R3QRK1 w - - 0 14",
+    "game": "g2",
+    "title": "Short – Gelfand",
+    "event": "Candidates Quarter-Final",
+    "year": "1991",
+    "ply": 26,
+    "moveNo": 14,
+    "side": "w",
+    "last": [
+     "f7",
+     "f6"
+    ],
+    "hist": {
+     "uci": "e5f6",
+     "san": "exf6",
+     "from": "e5",
+     "to": "f6"
+    },
+    "metrics": {
+     "decentMoves": 4
+    },
+    "occurrences": 1
+   },
+   {
+    "key": "r1bq1rk1/1p5p/2n1pbp1/p2p4/3p1P2/1B1P4/PPPBN1PP/R3QR1K w - a6",
+    "fen": "r1bq1rk1/1p5p/2n1pbp1/p2p4/3p1P2/1B1P4/PPPBN1PP/R3QR1K w - a6 0 16",
+    "game": "g2",
+    "title": "Short – Gelfand",
+    "event": "Candidates Quarter-Final",
+    "year": "1991",
+    "ply": 30,
+    "moveNo": 16,
+    "side": "w",
+    "last": [
+     "a7",
+     "a5"
+    ],
+    "hist": {
+     "uci": "a2a4",
+     "san": "a4",
+     "from": "a2",
+     "to": "a4"
+    },
+    "metrics": {
+     "decentMoves": 4
     },
     "occurrences": 1
    },
@@ -849,82 +874,42 @@
   ],
   "final": [
    {
-    "key": "r2qkb1r/n1pp1pp1/4p1bp/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R w KQkq -",
-    "fen": "r2qkb1r/n1pp1pp1/4p1bp/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R w KQkq - 0 14",
+    "key": "r2qkb1r/n1pp1ppp/4p1b1/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R b KQkq h3",
+    "fen": "r2qkb1r/n1pp1ppp/4p1b1/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R b KQkq h3 0 13",
     "game": "g0",
     "title": "Kasparov – Andersson",
     "event": "?",
     "year": "1981",
-    "ply": 26,
-    "moveNo": 14,
-    "side": "w",
+    "ply": 25,
+    "moveNo": 13,
+    "side": "b",
     "last": [
-     "h7",
-     "h6"
+     "h2",
+     "h4"
     ],
     "hist": {
-     "uci": "d4d5",
-     "san": "d5",
-     "from": "d4",
-     "to": "d5"
+     "uci": "h7h6",
+     "san": "h6",
+     "from": "h7",
+     "to": "h6"
     },
     "final": {
      "moves": [
-      "d4d5",
-      "h4h5",
-      "e3e4",
-      "a1c1"
+      "f7f6",
+      "h7h6",
+      "d7d5",
+      "h7h5"
      ]
     },
     "metrics": {
-     "randomAccuracy": 47,
+     "randomAccuracy": 57,
      "grades": [
       "Good",
-      "Ok",
-      "Dubious",
-      "Dubious"
-     ],
-     "gameMoveGrade": "Good"
-    },
-    "occurrences": 1
-   },
-   {
-    "key": "r2qkb1r/n2p1pp1/2p3bp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QK2R w KQkq -",
-    "fen": "r2qkb1r/n2p1pp1/2p3bp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QK2R w KQkq - 0 16",
-    "game": "g0",
-    "title": "Kasparov – Andersson",
-    "event": "?",
-    "year": "1981",
-    "ply": 30,
-    "moveNo": 16,
-    "side": "w",
-    "last": [
-     "c7",
-     "c6"
-    ],
-    "hist": {
-     "uci": "e1g1",
-     "san": "O-O",
-     "from": "e1",
-     "to": "g1"
-    },
-    "final": {
-     "moves": [
-      "e1g1",
-      "h4h5",
-      "a1c1",
-      "b2d4"
-     ]
-    },
-    "metrics": {
-     "randomAccuracy": 44,
-     "grades": [
       "Good",
       "Ok",
-      "Dubious",
       "Dubious"
      ],
-     "gameMoveGrade": "Good"
+     "gameMoveGrade": "Ok"
     },
     "occurrences": 1
    },
@@ -957,7 +942,7 @@
      ]
     },
     "metrics": {
-     "randomAccuracy": 41,
+     "randomAccuracy": 39,
      "grades": [
       "Good",
       "Ok",
@@ -969,82 +954,42 @@
     "occurrences": 1
    },
    {
-    "key": "2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/5P2/2BRR1K1 b - -",
-    "fen": "2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/5P2/2BRR1K1 b - - 3 26",
+    "key": "2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/1B3P2/3RR1K1 w - -",
+    "fen": "2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/1B3P2/3RR1K1 w - - 2 26",
     "game": "g0",
     "title": "Kasparov – Andersson",
     "event": "?",
     "year": "1981",
-    "ply": 51,
+    "ply": 50,
     "moveNo": 26,
-    "side": "b",
+    "side": "w",
     "last": [
-     "b2",
-     "c1"
+     "f7",
+     "f8"
     ],
     "hist": {
-     "uci": "d7d5",
-     "san": "d5",
-     "from": "d7",
-     "to": "d5"
+     "uci": "b2c1",
+     "san": "Bc1",
+     "from": "b2",
+     "to": "c1"
     },
     "final": {
      "moves": [
-      "d8e8",
-      "d7d5",
-      "a7a3",
-      "d7d6"
+      "e1e7",
+      "b2c1",
+      "b2d4",
+      "a3a4"
      ]
     },
     "metrics": {
-     "randomAccuracy": 46,
+     "randomAccuracy": 45,
      "grades": [
       "Good",
       "Ok",
       "Dubious",
-      "Dubious"
+      "Mistake"
      ],
      "gameMoveGrade": "Ok"
-    },
-    "occurrences": 1
-   },
-   {
-    "key": "3q1k1r/r3b3/2pn1pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 w - -",
-    "fen": "3q1k1r/r3b3/2pn1pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 w - - 2 28",
-    "game": "g0",
-    "title": "Kasparov – Andersson",
-    "event": "?",
-    "year": "1981",
-    "ply": 54,
-    "moveNo": 28,
-    "side": "w",
-    "last": [
-     "c8",
-     "d6"
-    ],
-    "hist": {
-     "uci": "d4g4",
-     "san": "Rg4",
-     "from": "d4",
-     "to": "g4"
-    },
-    "final": {
-     "moves": [
-      "d4g4",
-      "c1e3",
-      "e1e6",
-      "c1h6"
-     ]
-    },
-    "metrics": {
-     "randomAccuracy": 50,
-     "grades": [
-      "Good",
-      "Good",
-      "Dubious",
-      "Blunder"
-     ],
-     "gameMoveGrade": "Good"
     },
     "occurrences": 1
    },
@@ -1089,282 +1034,122 @@
     "occurrences": 1
    },
    {
-    "key": "r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - -",
-    "fen": "r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - - 4 16",
+    "key": "r3k3/1R3R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 b - -",
+    "fen": "r3k3/1R3R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 b - - 7 33",
     "game": "g1",
     "title": "Fischer – Petrosian",
     "event": "Candidates Final",
     "year": "1971",
-    "ply": 31,
-    "moveNo": 16,
+    "ply": 65,
+    "moveNo": 33,
     "side": "b",
     "last": [
-     "e3",
-     "c5"
+     "c7",
+     "b7"
     ],
     "hist": {
-     "uci": "f8e8",
-     "san": "Rfe8",
-     "from": "f8",
-     "to": "e8"
+     "uci": "d5b4",
+     "san": "Nxb4",
+     "from": "d5",
+     "to": "b4"
     },
     "final": {
      "moves": [
-      "f8e8",
-      "a8e8",
-      "e7d8",
-      "e6d7"
+      "a8b8",
+      "d5b4",
+      "d5b6",
+      "d6f6"
      ]
     },
     "metrics": {
-     "randomAccuracy": 34,
+     "randomAccuracy": 43,
      "grades": [
       "Good",
-      "Dubious",
+      "Ok",
+      "Ok",
+      "Mistake"
+     ],
+     "gameMoveGrade": "Mistake"
+    },
+    "occurrences": 1
+   },
+   {
+    "key": "r1bq1rk1/pp4bp/2n1ppp1/3pP3/3p1P2/1B1P4/PPPBN1PP/R3QRK1 w - -",
+    "fen": "r1bq1rk1/pp4bp/2n1ppp1/3pP3/3p1P2/1B1P4/PPPBN1PP/R3QRK1 w - - 0 14",
+    "game": "g2",
+    "title": "Short – Gelfand",
+    "event": "Candidates Quarter-Final",
+    "year": "1991",
+    "ply": 26,
+    "moveNo": 14,
+    "side": "w",
+    "last": [
+     "f7",
+     "f6"
+    ],
+    "hist": {
+     "uci": "e5f6",
+     "san": "exf6",
+     "from": "e5",
+     "to": "f6"
+    },
+    "final": {
+     "moves": [
+      "e5f6",
+      "e1g3",
+      "c2c4",
+      "b3a4"
+     ]
+    },
+    "metrics": {
+     "randomAccuracy": 57,
+     "grades": [
+      "Good",
+      "Ok",
+      "Ok",
+      "Dubious"
+     ],
+     "gameMoveGrade": "Good"
+    },
+    "occurrences": 1
+   },
+   {
+    "key": "r3brk1/7p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K w - -",
+    "fen": "r3brk1/7p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K w - - 2 26",
+    "game": "g2",
+    "title": "Short – Gelfand",
+    "event": "Candidates Quarter-Final",
+    "year": "1991",
+    "ply": 50,
+    "moveNo": 26,
+    "side": "w",
+    "last": [
+     "d7",
+     "e8"
+    ],
+    "hist": {
+     "uci": "a4b5",
+     "san": "axb5",
+     "from": "a4",
+     "to": "b5"
+    },
+    "final": {
+     "moves": [
+      "a4b5",
+      "c2c3",
+      "d2h6",
+      "d2b4"
+     ]
+    },
+    "metrics": {
+     "randomAccuracy": 42,
+     "grades": [
+      "Good",
+      "Ok",
       "Dubious",
       "Mistake"
      ],
      "gameMoveGrade": "Good"
-    },
-    "occurrences": 1
-   },
-   {
-    "key": "r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - -",
-    "fen": "r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - - 4 25",
-    "game": "g1",
-    "title": "Fischer – Petrosian",
-    "event": "Candidates Final",
-    "year": "1971",
-    "ply": 48,
-    "moveNo": 25,
-    "side": "w",
-    "last": [
-     "f6",
-     "d7"
-    ],
-    "hist": {
-     "uci": "e5e2",
-     "san": "Re2",
-     "from": "e5",
-     "to": "e2"
-    },
-    "final": {
-     "moves": [
-      "e5e2",
-      "e5h5",
-      "e5f5",
-      "e5e1"
-     ]
-    },
-    "metrics": {
-     "randomAccuracy": 58,
-     "grades": [
-      "Good",
-      "Good",
-      "Ok",
-      "Dubious"
-     ],
-     "gameMoveGrade": "Good"
-    },
-    "occurrences": 1
-   },
-   {
-    "key": "r4k2/2R5/pn1r2p1/5p2/1P1p1P1p/3B4/P2KR1PP/8 w - -",
-    "fen": "r4k2/2R5/pn1r2p1/5p2/1P1p1P1p/3B4/P2KR1PP/8 w - - 2 31",
-    "game": "g1",
-    "title": "Fischer – Petrosian",
-    "event": "Candidates Final",
-    "year": "1971",
-    "ply": 60,
-    "moveNo": 31,
-    "side": "w",
-    "last": [
-     "d7",
-     "b6"
-    ],
-    "hist": {
-     "uci": "e2e7",
-     "san": "Ree7",
-     "from": "e2",
-     "to": "e7"
-    },
-    "final": {
-     "moves": [
-      "e2e7",
-      "c7h7",
-      "g2g3",
-      "e2e5"
-     ]
-    },
-    "metrics": {
-     "randomAccuracy": 50,
-     "grades": [
-      "Good",
-      "Ok",
-      "Ok",
-      "Dubious"
-     ],
-     "gameMoveGrade": "Good"
-    },
-    "occurrences": 1
-   },
-   {
-    "key": "r3k3/2R2R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 w - -",
-    "fen": "r3k3/2R2R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 w - - 6 33",
-    "game": "g1",
-    "title": "Fischer – Petrosian",
-    "event": "Candidates Final",
-    "year": "1971",
-    "ply": 64,
-    "moveNo": 33,
-    "side": "w",
-    "last": [
-     "f8",
-     "e8"
-    ],
-    "hist": {
-     "uci": "c7b7",
-     "san": "Rb7",
-     "from": "c7",
-     "to": "b7"
-    },
-    "final": {
-     "moves": [
-      "c7b7",
-      "c7a7",
-      "a2a4",
-      "h2h3"
-     ]
-    },
-    "metrics": {
-     "randomAccuracy": 33,
-     "grades": [
-      "Good",
-      "Mistake",
-      "Blunder",
-      "Blunder"
-     ],
-     "gameMoveGrade": "Good"
-    },
-    "occurrences": 1
-   },
-   {
-    "key": "r4rk1/3b3p/1pn1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/4RR1K w - -",
-    "fen": "r4rk1/3b3p/1pn1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/4RR1K w - - 0 22",
-    "game": "g2",
-    "title": "Short – Gelfand",
-    "event": "Candidates Quarter-Final",
-    "year": "1991",
-    "ply": 42,
-    "moveNo": 22,
-    "side": "w",
-    "last": [
-     "b7",
-     "b6"
-    ],
-    "hist": {
-     "uci": "c3d2",
-     "san": "Bd2",
-     "from": "c3",
-     "to": "d2"
-    },
-    "final": {
-     "moves": [
-      "c3d2",
-      "f4f5",
-      "e1e6",
-      "f3e5"
-     ]
-    },
-    "metrics": {
-     "randomAccuracy": 35,
-     "grades": [
-      "Good",
-      "Mistake",
-      "Blunder",
-      "Blunder"
-     ],
-     "gameMoveGrade": "Good"
-    },
-    "occurrences": 1
-   },
-   {
-    "key": "r4rk1/3b3p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K b - -",
-    "fen": "r4rk1/3b3p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K b - - 1 25",
-    "game": "g2",
-    "title": "Short – Gelfand",
-    "event": "Candidates Quarter-Final",
-    "year": "1991",
-    "ply": 49,
-    "moveNo": 25,
-    "side": "b",
-    "last": [
-     "f3",
-     "e5"
-    ],
-    "hist": {
-     "uci": "d7e8",
-     "san": "Be8",
-     "from": "d7",
-     "to": "e8"
-    },
-    "final": {
-     "moves": [
-      "c5d6",
-      "d7e8",
-      "a8d8",
-      "a8a7"
-     ]
-    },
-    "metrics": {
-     "randomAccuracy": 46,
-     "grades": [
-      "Good",
-      "Ok",
-      "Dubious",
-      "Dubious"
-     ],
-     "gameMoveGrade": "Dubious"
-    },
-    "occurrences": 1
-   },
-   {
-    "key": "r3brk1/7p/5bp1/pq1pNR2/1n1p4/1B1P2Q1/1PPB2PP/4R2K b - -",
-    "fen": "r3brk1/7p/5bp1/pq1pNR2/1n1p4/1B1P2Q1/1PPB2PP/4R2K b - - 0 27",
-    "game": "g2",
-    "title": "Short – Gelfand",
-    "event": "Candidates Quarter-Final",
-    "year": "1991",
-    "ply": 53,
-    "moveNo": 27,
-    "side": "b",
-    "last": [
-     "f1",
-     "f5"
-    ],
-    "hist": {
-     "uci": "g8h8",
-     "san": "Kh8",
-     "from": "g8",
-     "to": "h8"
-    },
-    "final": {
-     "moves": [
-      "e8d7",
-      "g8h8",
-      "f6g7",
-      "b5b8"
-     ]
-    },
-    "metrics": {
-     "randomAccuracy": 53,
-     "grades": [
-      "Good",
-      "Ok",
-      "Ok",
-      "Dubious"
-     ],
-     "gameMoveGrade": "Dubious"
     },
     "occurrences": 1
    }

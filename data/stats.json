@@ -1,8 +1,8 @@
 {
- "version": "2026-10-03.2",
+ "version": "2026-10-03.5",
  "engine": {
   "depth": 18,
-  "multipv": 8,
+  "multipv": 5,
   "threads": 2,
   "hash": 256
  },
@@ -22,7 +22,7 @@
    "passedGeneral": 41,
    "analysis": 6,
    "candidates": 7,
-   "final": 5
+   "final": 3
   },
   {
    "id": "g1",
@@ -38,8 +38,8 @@
    "checked": 59,
    "passedGeneral": 49,
    "analysis": 4,
-   "candidates": 6,
-   "final": 5
+   "candidates": 5,
+   "final": 2
   },
   {
    "id": "g2",
@@ -55,8 +55,8 @@
    "checked": 53,
    "passedGeneral": 49,
    "analysis": 5,
-   "candidates": 5,
-   "final": 3
+   "candidates": 7,
+   "final": 2
   }
  ],
  "positions": 163,
@@ -68,14 +68,16 @@
   "rejected: in check": 1
  },
  "candidates": {
-  "rejected: no trap in top 5": 107,
-  "rejected: spacing": 14
+  "rejected: no trap in top 5": 108,
+  "rejected: spacing": 12
  },
  "final": {
-  "rejected: fewer than 3 grades": 110,
-  "rejected: random order scores > 60%": 3,
-  "eligible before spacing": 20,
-  "rejected: fewer than 3 grades among the 4 shown": 6,
-  "rejected: spacing": 7
+  "rejected: fewer than 3 grades": 109,
+  "eligible before spacing": 8,
+  "rejected: fewer than 4 moves": 8,
+  "rejected: two moves of the same bad grade": 6,
+  "rejected: fewer than 3 grades among the 4 shown": 5,
+  "rejected: spacing": 1,
+  "rejected: random order scores > 60%": 3
  }
 }

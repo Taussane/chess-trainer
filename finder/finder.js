@@ -212,8 +212,9 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
       const picks = [cand[0]]; if(gmLine!==cand[0]) picks.push(gmLine);
       const have = ()=>picks.map(l=>gradeOf(cDrop(l)));
       for(const l of cand){ if(picks.length>=4) break; if(!picks.includes(l) && !have().includes(gradeOf(cDrop(l)))) picks.push(l); }
+      const BAD = R.FINAL.uniqueGrades;   // at most one move of each of these grades
       while(picks.length<4){
-        const rest = cand.filter(l=>!picks.includes(l)); if(!rest.length) break;
+        const rest = cand.filter(l=>!picks.includes(l) && !(BAD.includes(gradeOf(cDrop(l))) && have().includes(gradeOf(cDrop(l))))); if(!rest.length) break;
         const count = g=>have().filter(x=>x===g).length;
         rest.sort((a,b)=>count(gradeOf(cDrop(a))) - count(gradeOf(cDrop(b))));   // stable: best first on ties
         picks.push(rest[0]);
@@ -226,6 +227,7 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
       // Re-check the grade rule on the four moves as they will be shown (after the combined search).
       const b4 = winPct(four[0].cp, four[0].mate), g4 = four.map(l=>gradeOf(b4 - winPct(l.cp, l.mate)));
       if(new Set(g4).size < R.FINAL.minGrades){ tally(stats.final, 'rejected: fewer than 3 grades among the 4 shown'); continue; }
+      if(BAD.some(g=>g4.filter(x=>x===g).length > 1)){ tally(stats.final, 'rejected: two moves of the same bad grade'); continue; }
       const rnd = randomAccuracy(cp);
       if(rnd > R.FINAL.maxRandomAccuracy){ tally(stats.final, 'rejected: random order scores > 60%'); continue; }
       tally(stats.final, 'eligible before spacing');
