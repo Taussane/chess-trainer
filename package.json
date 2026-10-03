@@ -1,0 +1,12 @@
+{
+  "name": "chess-trainer",
+  "private": true,
+  "description": "Chess strategy trainer: the app, and the position finder that feeds it.",
+  "scripts": {
+    "setup:engine": "bash scripts/setup-stockfish.sh",
+    "find": "node finder/finder.js library/gm-classics.pgn data",
+    "report": "node finder/report.js data",
+    "inject": "python3 finder/inject.py data/pools.json",
+    "test": "python3 tests/smoke.py"
+  }
+}

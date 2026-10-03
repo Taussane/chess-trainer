@@ -1,0 +1,15 @@
+const d=require(require('path').resolve(process.argv[2],'pools.json')), s=require(require('path').resolve(process.argv[2],'stats.json'));
+const P=d.pools; const count=(a,f)=>a.reduce((m,x)=>{const k=f(x);m[k]=(m[k]||0)+1;return m;},{});
+console.log('Total positions checked (moves 5-40):', s.positions, '| passed general rules:', s.games.reduce((t,g)=>t+g.passedGeneral,0));
+console.log('General rejections:', s.reasons);
+console.log('Per game:', s.games.map(g=>`${g.title} ${g.result}: checked ${g.checked}, general ok ${g.passedGeneral}, analysis ${g.analysis}, candidates ${g.candidates}, final ${g.final}`));
+console.log('Pools (after dedupe):', Object.fromEntries(Object.entries(P).map(([k,v])=>[k,v.length])));
+const band=e=>{const a=Math.abs(e.metrics.evalWhite)/100; return a<=0.5?'equal (±0.5)':a<=1.5?'small edge (0.5-1.5)':a<=3?'clear edge (1.5-3)':'decisive (>3)';};
+console.log('Board analysis bands:', count(P.analysis,band), 'favouring:', count(P.analysis,e=>e.metrics.evalWhite>50?'White':e.metrics.evalWhite<-50?'Black':'neither'));
+console.log('Board analysis evals:', P.analysis.map(e=>(e.metrics.evalWhite/100).toFixed(1)).join(' '));
+console.log('Board analysis other:', s.analysis);
+console.log('Candidates decent moves (Good/Ok in top 5):', count(P.candidates,e=>e.metrics.decentMoves), 'rejections:', s.candidates);
+const r=P.final.map(e=>e.metrics.randomAccuracy);
+console.log('Final random accuracy: avg', Math.round(r.reduce((t,x)=>t+x,0)/r.length), 'min', Math.min(...r), 'max', Math.max(...r), '| buckets', count(P.final,e=>e.metrics.randomAccuracy<40?'<40':e.metrics.randomAccuracy<50?'40-49':'50-60'));
+console.log('Final game move grade:', count(P.final,e=>e.metrics.gameMoveGrade), '| grade sets:', count(P.final,e=>e.metrics.grades.join('/')), 'rejections:', s.final);
+console.log('Side to move:', Object.fromEntries(Object.entries(P).map(([k,v])=>[k,count(v,e=>e.side)])));

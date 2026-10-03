@@ -1,0 +1,1828 @@
+<title>Chess Strategy Trainer</title>
+<style>
+  /* Layout: one narrow column, home page of three exercise cards, each exercise = position bar + board + one panel. */
+  :root{
+    color-scheme: dark;
+    --bg:#12161B; --panel:#1B2129; --panel-2:#222A33;
+    --text:#EDE7DC; --text-mute:#9A9488;
+    --board-light:#E7EFF8; --board-dark:#7096B8;
+    --accent:#C9A227; --on-accent:#1A1400;
+    --pick1:#3AA655; --pick2:#D64545; --pick3:#4A78D6; --system:#E0B93C; --top3:#B58BE8;
+    --white-fill:#E8E2D4; --black-fill:#2B241C;
+    --good:#6FAE7C; --best-green:#3FAE5C; --ok:#A4A95E; --dubious:#E8C547; --mistake:#D9A441; --bad:#C9584F;
+    --border:#2E3742;
+    --cyan:rgba(34,211,238,0.35); --dest-dot:rgba(120,128,138,0.75); --cyan-arrow:#22D3EE;
+    --best-row:rgba(224,185,60,0.14); --scrim:rgba(0,0,0,.55); --shadow:rgba(0,0,0,.4);
+    --piece-w:#F7F3EA; --piece-b:#151515;
+    --font-display:"Iowan Old Style","Palatino Linotype",Georgia,serif;
+    --font-body:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{background:var(--bg); color:var(--text); margin:0;}
+  body{font-family:var(--font-body); font-size:15px;}
+  .wrap{max-width:520px; margin:0 auto; padding-block:18px 20px; padding-inline:18px; position:relative;}
+  /* Exercise screens fill exactly one screen: header pinned to the top, panel pinned to the
+     bottom, and the board takes whatever height is left in between (square, never wider than
+     the screen, never over 420px). If even that leaves less than ~200px, the page scrolls
+     instead of shrinking the board further. */
+  .wrap.ex{height:100vh; height:100dvh; display:flex; flex-direction:column;
+    padding-block:max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-bottom));}
+  .wrap.ex > #app{flex:1 1 auto; display:flex; flex-direction:column; min-height:0;}
+  .stage{flex:1 0 200px; container-type:size; display:flex; align-items:center; justify-content:center;}
+  .stage > .board-outer{flex:none; width:min(100cqw, 100cqh, 420px); margin:0;}
+  .stage > .board-row{flex:none; width:auto; max-width:none; margin:0;}
+  .stage > .board-row .board-outer{flex:none; width:min(100cqw - 44px, 100cqh, 420px);}
+  .wrap.ex .posbar{margin:8px 0 10px;}
+  .wrap.ex .panel{flex:none; margin-top:10px; display:flex; flex-direction:column; padding:12px 14px;}
+  /* Every exercise keeps one panel height from question to review (see .panel-stack). */
+  /* Same-height panels: the visible content shares one grid cell with invisible copies of the
+     exercise's other states, so the panel is always as tall as the tallest of them — measured
+     by the phone's own fonts rather than guessed in pixels. */
+  .panel-stack{display:grid; flex:1 1 auto;}
+  .panel-stack > .layer{grid-area:1/1; display:flex; flex-direction:column; min-width:0;}
+  .panel-stack > .layer.ghost{visibility:hidden; pointer-events:none;}
+  .panel-stack > .layer > .actions-row{margin-top:auto; padding-top:5px;}
+  /* Final choice's ranking screen is the tallest panel in the app: keep its instruction and
+     Check button tight under the moves so the board keeps more room on small phones. */
+  .hint.rank-hint{margin-top:4px;}
+  .panel-stack > .layer > .hint + .actions-row{padding-top:2px;}
+
+  h1,h2{font-family:var(--font-display); font-weight:600; margin:0; text-wrap:balance;}
+  h1{font-size:1.45rem;}
+  .title-row{display:flex; align-items:center; gap:10px;}
+  .title-row h1{flex:1; min-width:0; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .title-badge{font-family:var(--font-body); font-size:0.78rem; font-weight:600; color:var(--accent); border:1px solid var(--accent); border-radius:10px; padding:2px 9px; white-space:nowrap;}
+  .icon-btn{
+    width:28px; height:28px; min-width:28px; border-radius:50%; border:1px solid var(--border);
+    background:var(--panel-2); color:var(--text-mute); font-size:0.9rem; font-weight:700;
+    display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
+  }
+  .icon-btn:focus-visible,.btn:focus-visible,.card:focus-visible,.evalbar-v:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  /* Home */
+  .home-head{margin:4px 0 18px;}
+  .link-btn#progressBtn{margin-top:8px;}
+  .home-head h1{font-size:1.9rem;}
+  .home-head p{color:var(--text-mute); margin:8px 0 0; line-height:1.5; max-width:40ch;}
+  .cards{display:flex; flex-direction:column; gap:10px;}
+  .card{
+    display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:14px;
+    width:100%; text-align:left; cursor:pointer; color:var(--text);
+    background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 14px;
+  }
+  .card:hover{border-color:var(--accent);}
+  .card-glyph{font-size:1.9rem; line-height:1; width:36px; text-align:center; color:var(--accent);}
+  .card-title{display:block; font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
+  .card-desc{display:block; margin-top:4px; color:var(--text-mute); font-size:0.88rem; line-height:1.4;}
+  .card-arrow{color:var(--text-mute); font-size:1.3rem;}
+  .card-level{display:flex; flex-direction:column; align-items:flex-end; min-width:44px; line-height:1.1;}
+  .card-level b{font-family:var(--font-display); font-size:1.45rem; font-weight:600; font-variant-numeric:tabular-nums;}
+  .card-level small{color:var(--text-mute); font-size:0.7rem; letter-spacing:0.02em;}
+
+  /* Daily routine (home) */
+  .routine{background:var(--panel); border:1px solid var(--accent); border-radius:10px; padding:14px 16px 16px; margin:-8px 0 16px;}
+  .routine.done{border-color:var(--border);}
+  .data-wait{visibility:hidden;}
+  .routine-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
+  .routine-title{font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
+  .routine-count{font-size:0.84rem; color:var(--text-mute); font-variant-numeric:tabular-nums;}
+  .routine-row{display:flex; justify-content:space-between; align-items:center; font-size:0.86rem; color:var(--text-mute); padding:3px 0;}
+  .goal-dots{display:flex; gap:5px;}
+  .goal-dots i{width:18px; height:6px; border-radius:3px; background:var(--panel-2); border:1px solid var(--border);}
+  .goal-dots i.on{background:var(--accent); border-color:var(--accent);}
+  .routine-btn{margin-top:12px;}
+  .routine-btn{width:100%;}
+  .link-btn{background:transparent; border:none; color:var(--accent); font:inherit; font-size:0.9rem; font-weight:600; cursor:pointer; padding:6px 0;}
+  .link-btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  /* Average chip in the review's score line */
+  .score .level{margin-left:auto; font-size:0.84rem; color:var(--text-mute); white-space:nowrap;}
+  .score .level strong{color:var(--text); font-weight:600;}
+  .delta-up{color:var(--good); font-weight:600;}
+  .delta-down{color:var(--bad); font-weight:600;}
+
+  /* Progress screen */
+  .seg{display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; margin:14px 0 16px;}
+  .seg-btn{flex:1; background:transparent; color:var(--text-mute); border:none; padding:9px 6px; font:inherit; font-size:0.84rem; cursor:pointer;}
+  .seg-btn + .seg-btn{border-left:1px solid var(--border);}
+  .seg-btn.active{background:var(--panel-2); color:var(--text); font-weight:600;}
+  .seg-btn:focus-visible{outline:2px solid var(--accent); outline-offset:-2px;}
+  .hero{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:12px;}
+  .hero-num{font-family:var(--font-display); font-size:2.6rem; line-height:1; font-variant-numeric:tabular-nums;}
+  .hero-tier{color:var(--text-mute); font-size:0.9rem; margin-top:4px;}
+  .hero-week{text-align:right; font-size:0.84rem; color:var(--text-mute);}
+  .chart-box{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 10px 8px; position:relative;}
+  .chart-box svg{display:block; width:100%; height:auto; overflow:visible;}
+  .chart-legend{display:flex; gap:14px; font-size:0.76rem; color:var(--text-mute); margin:2px 4px 6px;}
+  .chart-legend span{display:inline-flex; align-items:center; gap:6px;}
+  .lg-line{width:14px; height:2px; background:var(--accent); border-radius:1px;}
+  .lg-dot{width:7px; height:7px; border-radius:50%; background:var(--text-mute); opacity:.6;}
+  .chart-tip{position:absolute; pointer-events:none; background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:0.76rem; line-height:1.35; white-space:nowrap; transform:translate(-50%, -100%); color:var(--text);}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
+  .stat{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px 12px;}
+  .stat b{display:block; font-family:var(--font-display); font-size:1.3rem; font-weight:600; font-variant-numeric:tabular-nums;}
+  .stat small{color:var(--text-mute); font-size:0.74rem;}
+  .empty{color:var(--text-mute); font-size:0.9rem; line-height:1.5; padding:22px 6px; text-align:center;}
+
+  /* Position bar */
+  .posbar{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 12px; margin:12px 0 12px;}
+  .pos-title{font-size:0.86rem; color:var(--text-mute); min-width:0;}
+  .pos-title strong{color:var(--text); font-weight:600;}
+
+  /* Board */
+  .board-outer{width:100%; max-width:420px; margin:0 auto; position:relative; z-index:0;}
+  .board{
+    width:100%; max-width:100%; aspect-ratio:1/1; display:grid;
+    grid-template-columns:repeat(8, minmax(0,1fr)); grid-template-rows:repeat(8, minmax(0,1fr));
+    border:1px solid var(--border); border-radius:2px; overflow:hidden;
+  }
+  .board{container-type:inline-size;}
+  .sq{position:relative; display:flex;align-items:center;justify-content:center; font-size:10cqw; line-height:1; user-select:none;}
+  .sq.light{background:var(--board-light);}
+  .sq.dark{background:var(--board-dark);}
+  .sq.last::before{content:""; position:absolute; inset:0; background:var(--cyan);}
+  .sq.selected::before{content:""; position:absolute; inset:0; background:var(--cyan);}
+  .sq.dest::after{content:""; position:absolute; width:26%; height:26%; border-radius:50%; background:var(--dest-dot); top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; pointer-events:none;}
+  .sq.dest-capture::after{content:""; position:absolute; inset:8%; border:3px solid var(--dest-dot); border-radius:50%; z-index:1; pointer-events:none;}
+  .sq .piece-w{color:var(--piece-w); text-shadow:0 0 1px #000, 0 0 2px rgba(0,0,0,.5); z-index:1;}
+  .sq .piece-b{color:var(--piece-b); text-shadow:0 0 1px rgba(255,255,255,.3); z-index:1;}
+  svg.arrows{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:5;}
+
+  .board-row{display:flex; gap:10px; align-items:stretch; justify-content:center; width:100%; max-width:420px; margin:0 auto;}
+  .board-row .board-outer{flex:1 1 auto; max-width:none; width:auto; margin:0; min-width:0;}
+  .evalbar-wrap{flex:0 0 auto; display:flex; position:relative; width:34px;}
+  .evalbar-v{flex:1; border:1px solid var(--border); border-radius:6px; overflow:hidden; display:flex; flex-direction:column; position:relative;}
+  .evalbar-num{position:absolute; left:0; right:0; text-align:center; font-size:0.68rem; font-weight:700; font-variant-numeric:tabular-nums; pointer-events:none; letter-spacing:-0.02em;}
+  .evalbar-v .v-black{background:var(--black-fill);}
+  .evalbar-v .v-white{background:var(--white-fill);}
+  .evalbar-cursor{position:absolute; left:0; right:0; height:3px; background:var(--accent); transform:translateY(50%); pointer-events:none;}
+  .evalbar-cursor[style^="top"]{transform:translateY(-50%);}
+  .evalbar-v.interactive{border-color:var(--accent);}
+  .evalbar-wrap:has(.interactive){cursor:ns-resize; touch-action:none;}
+  /* Drag handle: a gold line with small triangles above and below, inviting an up/down drag. */
+  .evalbar-cursor.handle{height:4px; left:-3px; right:-3px; border-radius:2px; box-shadow:0 0 0 1px var(--bg);}
+  .evalbar-cursor.handle::before,.evalbar-cursor.handle::after{
+    content:""; position:absolute; left:50%; transform:translateX(-50%);
+    border-left:6px solid transparent; border-right:6px solid transparent;
+  }
+  .evalbar-cursor.handle::before{bottom:calc(100% + 3px); border-bottom:7px solid var(--accent);}
+  .evalbar-cursor.handle::after{top:calc(100% + 3px); border-top:7px solid var(--accent);}
+
+  /* Panel */
+  .panel{width:100%; max-width:420px; margin:16px auto 0; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px;}
+  .hint{color:var(--text-mute); font-size:0.86rem; line-height:1.5; margin:10px 0 0;}
+  .engine-error{color:var(--bad); margin-top:12px;}
+  .score{display:flex; align-items:baseline; gap:8px; margin-bottom:6px;}
+  .score-num{font-family:var(--font-display); font-size:1.7rem; line-height:1.15; font-variant-numeric:tabular-nums;}
+  .score-label{color:var(--text-mute); font-size:0.86rem;}
+
+  .prompt{margin:0; font-size:1rem; line-height:1.45;}
+  .recap{margin:0; font-size:1rem; line-height:1.45; min-height:2.9em;}
+  /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
+  .actions-row.pending{visibility:hidden;}
+  .fade-in{animation:fadeIn .35s ease-out both;}
+  @keyframes hidden{from,to{opacity:0;}}
+  @keyframes rowIn{from{opacity:0;}}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+  .btn{background:var(--accent); color:var(--on-accent); border:1px solid transparent; border-radius:6px; padding:10px 18px; font-size:0.94rem; line-height:1.25; font-weight:600; cursor:pointer;}
+  .btn:disabled{opacity:0.35; cursor:not-allowed;}
+  .btn.secondary{background:transparent; border:1px solid var(--border); color:var(--text); font-weight:500;}
+  a.btn{display:inline-flex; align-items:center; text-decoration:none;}
+  .actions-row{display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap;}
+  .actions-row.split{justify-content:space-between;}
+  .actions-row.split > .btn{flex:1 1 0; justify-content:center; padding-inline:12px; white-space:nowrap;}
+  @media (max-width:400px){ .actions-row.split > .btn{font-size:0.84rem; padding-inline:6px;} .actions-row.split{gap:8px;} }
+  .actions-row.split{flex-wrap:nowrap;}
+  .actions-row.split > .btn{min-width:0;}
+  @media (max-width:370px){ .actions-row.split > .btn{font-size:0.78rem; padding-inline:4px;} }
+
+  /* Move rows in every list share one look: same height, rounded ends, a line under each row
+     including the last. */
+  .rate-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 -8px; padding:2px 8px 2px 12px;
+    border-bottom:1px solid var(--border); border-left:3px solid transparent; border-radius:6px;}
+  .rate-row, .review-row.pick-row{min-height:40px; padding-block:2px;}
+  .rev-list .review-row{min-height:34px; padding-block:2px;}
+  .move-tag{display:flex;align-items:center;gap:8px; font-size:0.96rem; min-width:0; flex-wrap:wrap;}
+  .move-tag .num{opacity:.6; min-width:1ch; font-variant-numeric:tabular-nums;}
+  .del-btn{width:26px; height:26px; margin-block:-4px; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; padding:0;
+    background:transparent; border:none; border-radius:50%; color:var(--text-mute); font-size:0.9rem; line-height:1; cursor:pointer;}
+  .del-btn:hover{color:var(--text); background:var(--panel-2);}
+  .del-btn:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .drag-handle{color:var(--text-mute); font-size:1.1rem; cursor:grab; padding:4px 6px; user-select:none; line-height:1;}
+  #ranked .rate-row{position:relative; cursor:grab;}
+  #ranked .rate-row.dragging{cursor:grabbing; z-index:5; background:var(--panel-2); border-radius:6px; box-shadow:0 6px 18px var(--shadow);}
+
+  .review-row{padding:3px 8px 3px 12px; margin:0 -8px; border-bottom:1px solid var(--border); border-left:3px solid transparent; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px 10px; border-radius:6px;}
+
+  .review-cols{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:4px;}
+  .review-col{min-width:0;}
+  .col-toggle{display:flex; align-items:center; gap:7px; width:100%; background:transparent; border:none;
+    color:var(--text-mute); font:inherit; font-size:0.82rem; font-weight:600; letter-spacing:0.02em; padding:2px 2px 4px; cursor:pointer; text-align:left;}
+  .col-toggle.on{color:var(--text);}
+  .col-toggle:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .col-toggle-box{width:13px; height:13px; border:1.5px solid var(--text-mute); border-radius:3px; flex:0 0 auto; position:relative;}
+  .col-toggle.on .col-toggle-box{background:var(--accent); border-color:var(--accent);}
+  .col-toggle.on .col-toggle-box::after{content:""; position:absolute; left:3.5px; top:0.5px; width:3px; height:7px; border:solid var(--on-accent); border-width:0 2px 2px 0; transform:rotate(45deg);}
+  .mini-row{display:grid; grid-template-columns:auto auto 1fr; align-items:center; gap:7px; padding:2px 6px 2px 4px; border-bottom:1px solid var(--border); border-left:3px solid transparent; border-radius:5px;}
+  .mini-row .num{opacity:.6; font-size:0.85rem; font-variant-numeric:tabular-nums;}
+  .mini-row.best-row{background:var(--best-row); border-left-color:var(--system);}
+  .mini-row.best-in{animation:bestIn .5s ease-out both;}
+  @keyframes bestIn{from{background:transparent; border-left-color:transparent;}}
+  .mini-row.muted{opacity:.45;}
+  .mini-row{transition:transform .55s cubic-bezier(.2,.8,.2,1);}
+  .mini-row.sorting{position:relative; z-index:2; background:var(--panel);}
+  .move-chip{color:var(--bg); font-weight:700; font-size:0.86rem; padding:2px 8px; border-radius:10px; white-space:nowrap;}
+  .mini-result{display:flex; flex-direction:column; align-items:flex-end; line-height:1.2; min-width:0;}
+  .mini-label{font-size:0.74rem; font-weight:600; color:var(--text-mute);}
+  .grade{font-size:0.8rem; font-weight:600; color:var(--text-mute);}
+  .mini-result .move-eval{font-size:0.78rem; min-width:0;}
+  .review-row.best-row{background:var(--best-row); border-left-color:var(--system);}
+  .badges{display:flex; flex-wrap:wrap; gap:6px;}
+  .badge{font-size:0.72rem; padding:2px 9px; border-radius:10px; border:1px solid var(--border); color:var(--text-mute); background:var(--panel-2); white-space:nowrap;}
+  .move-result{display:flex; align-items:center; gap:8px;}
+  .move-eval{font-size:0.85rem; color:var(--text-mute); font-variant-numeric:tabular-nums; min-width:3.6em; text-align:right;}
+
+  .modal-backdrop{position:fixed; inset:0; background:var(--scrim); z-index:10;}
+  .modal-backdrop-inner{height:100%; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .modal-box{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; max-width:380px; max-height:90%; overflow:auto;}
+  .modal-box h3{margin:0 0 10px; font-size:1.05rem; font-family:var(--font-display);}
+  .modal-box p{font-size:0.88rem; color:var(--text); line-height:1.55; margin:0 0 10px;}
+  .modal-box p.eval-note{color:var(--text-mute);}
+  .modal-actions{display:flex; justify-content:flex-end; margin-top:4px;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important;} }
+</style>
+
+<div class="wrap">
+  <div id="app"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chess.js@0.12.1/chess.js"></script>
+<script>
+const FILES = "abcdefgh";
+const PIECES = {K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
+
+// ---- Positions: one pool per activity, made by the position finder ----
+// Generated from master games by the finder (rules in the "Position finder rules" doc); each
+// entry: {key, fen, side, moveNo, title, year, last:[from,to], hist:{uci,san,from,to} (the game
+// move), final?:[uci×4]}. Replaced wholesale when the finder runs again.
+const POOLS = /*POOLS*/{"analysis":[{"key":"r2qkb1r/2pp1ppp/p1n1p1b1/1p6/1PPP4/P3P1P1/3N1P1P/R1BQKB1R w KQkq -","fen":"r2qkb1r/2pp1ppp/p1n1p1b1/1p6/1PPP4/P3P1P1/3N1P1P/R1BQKB1R w KQkq - 0 11","side":"w","moveNo":11,"title":"Kasparov – Andersson","year":"1981","last":["b6","b5"],"hist":{"uci":"c4b5","san":"cxb5","from":"c4","to":"b5"}},{"key":"r2qkb1r/n1pp1pp1/4p1bp/1p1P4/1P5P/P3P1P1/1B1N1P2/R2QKB1R b KQkq -","fen":"r2qkb1r/n1pp1pp1/4p1bp/1p1P4/1P5P/P3P1P1/1B1N1P2/R2QKB1R b KQkq - 0 14","side":"b","moveNo":14,"title":"Kasparov – Andersson","year":"1981","last":["d4","d5"],"hist":{"uci":"e6d5","san":"exd5","from":"e6","to":"d5"}},{"key":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq -","fen":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq - 2 18","side":"w","moveNo":18,"title":"Kasparov – Andersson","year":"1981","last":["f8","e7"],"hist":{"uci":"d1g4","san":"Qg4","from":"d1","to":"g4"}},{"key":"r2q3r/n2pbkp1/2p2p1p/1p5P/1P2N1Q1/P5P1/1B3P2/R3R1K1 b - -","fen":"r2q3r/n2pbkp1/2p2p1p/1p5P/1P2N1Q1/P5P1/1B3P2/R3R1K1 b - - 0 22","side":"b","moveNo":22,"title":"Kasparov – Andersson","year":"1981","last":["d2","e4"],"hist":{"uci":"a7c8","san":"Nc8","from":"a7","to":"c8"}},{"key":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/1B3P2/3RR1K1 w - -","fen":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/1B3P2/3RR1K1 w - - 2 26","side":"w","moveNo":26,"title":"Kasparov – Andersson","year":"1981","last":["f7","f8"],"hist":{"uci":"b2c1","san":"Bc1","from":"b2","to":"c1"}},{"key":"3qk2r/r3bn2/2p2pQB/1p1p3P/1P4R1/P5P1/5P2/4R1K1 w - -","fen":"3qk2r/r3bn2/2p2pQB/1p1p3P/1P4R1/P5P1/5P2/4R1K1 w - - 1 30","side":"w","moveNo":30,"title":"Kasparov – Andersson","year":"1981","last":["f8","e8"],"hist":{"uci":"h6g7","san":"Bg7","from":"h6","to":"g7"}},{"key":"r1bqkb1r/5ppp/p1p1pn2/3p4/2P1P3/3B4/PP3PPP/RNBQ1RK1 w kq -","fen":"r1bqkb1r/5ppp/p1p1pn2/3p4/2P1P3/3B4/PP3PPP/RNBQ1RK1 w kq - 1 9","side":"w","moveNo":9,"title":"Fischer – Petrosian","year":"1971","last":["g8","f6"],"hist":{"uci":"c4d5","san":"cxd5","from":"c4","to":"d5"}},{"key":"r1b1k2r/3qbppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 w kq -","fen":"r1b1k2r/3qbppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 w kq - 4 13","side":"w","moveNo":13,"title":"Fischer – Petrosian","year":"1971","last":["d8","d7"],"hist":{"uci":"f1e1","san":"Re1","from":"f1","to":"e1"}},{"key":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - -","fen":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - - 4 16","side":"b","moveNo":16,"title":"Fischer – Petrosian","year":"1971","last":["e3","c5"],"hist":{"uci":"f8e8","san":"Rfe8","from":"f8","to":"e8"}},{"key":"r1b2k2/4rppp/p4n2/2Np4/1P6/3B4/P4PPP/R3R1K1 w - -","fen":"r1b2k2/4rppp/p4n2/2Np4/1P6/3B4/P4PPP/R3R1K1 w - - 3 20","side":"w","moveNo":20,"title":"Fischer – Petrosian","year":"1971","last":["e6","c8"],"hist":{"uci":"f2f3","san":"f3","from":"f2","to":"f3"}},{"key":"r1bq1rk1/pp4bp/2n1ppp1/3pP3/3p1P2/1B1P4/PPPBN1PP/R3QRK1 w - -","fen":"r1bq1rk1/pp4bp/2n1ppp1/3pP3/3p1P2/1B1P4/PPPBN1PP/R3QRK1 w - - 0 14","side":"w","moveNo":14,"title":"Short – Gelfand","year":"1991","last":["f7","f6"],"hist":{"uci":"e5f6","san":"exf6","from":"e5","to":"f6"}},{"key":"r1b2rk1/1p5p/2nqpbp1/p2p4/P2p1P2/1B1P4/1PPB2PP/R3QRNK b - -","fen":"r1b2rk1/1p5p/2nqpbp1/p2p4/P2p1P2/1B1P4/1PPB2PP/R3QRNK b - - 2 17","side":"b","moveNo":17,"title":"Short – Gelfand","year":"1991","last":["e2","g1"],"hist":{"uci":"c8d7","san":"Bd7","from":"c8","to":"d7"}},{"key":"r4rk1/1p1b3p/2n1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/R4R1K w - -","fen":"r4rk1/1p1b3p/2n1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/R4R1K w - - 9 21","side":"w","moveNo":21,"title":"Short – Gelfand","year":"1991","last":["b4","c6"],"hist":{"uci":"a1e1","san":"Rae1","from":"a1","to":"e1"}},{"key":"r4rk1/3b3p/4pbp1/ppqp1P2/Pn1p4/1B1P1NQ1/1PPB2PP/4RR1K b - -","fen":"r4rk1/3b3p/4pbp1/ppqp1P2/Pn1p4/1B1P1NQ1/1PPB2PP/4RR1K b - - 0 24","side":"b","moveNo":24,"title":"Short – Gelfand","year":"1991","last":["f4","f5"],"hist":{"uci":"e6f5","san":"exf5","from":"e6","to":"f5"}},{"key":"r3br1k/7p/5bp1/pq1pNR2/1n1p4/1B1P2Q1/1PPB2PP/4R2K w - -","fen":"r3br1k/7p/5bp1/pq1pNR2/1n1p4/1B1P2Q1/1PPB2PP/4R2K w - - 1 28","side":"w","moveNo":28,"title":"Short – Gelfand","year":"1991","last":["g8","h8"],"hist":{"uci":"f5f6","san":"Rxf6","from":"f5","to":"f6"}}],"candidates":[{"key":"r2qkb1r/n1pp1ppp/4p1b1/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R b KQkq h3","fen":"r2qkb1r/n1pp1ppp/4p1b1/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R b KQkq h3 0 13","side":"b","moveNo":13,"title":"Kasparov – Andersson","year":"1981","last":["h2","h4"],"hist":{"uci":"h7h6","san":"h6","from":"h7","to":"h6"}},{"key":"r2qkb1r/n2p1pp1/2p3bp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QK2R w KQkq -","fen":"r2qkb1r/n2p1pp1/2p3bp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QK2R w KQkq - 0 16","side":"w","moveNo":16,"title":"Kasparov – Andersson","year":"1981","last":["c7","c6"],"hist":{"uci":"e1g1","san":"O-O","from":"e1","to":"g1"}},{"key":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq -","fen":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq - 2 18","side":"w","moveNo":18,"title":"Kasparov – Andersson","year":"1981","last":["f8","e7"],"hist":{"uci":"d1g4","san":"Qg4","from":"d1","to":"g4"}},{"key":"r2q3r/n2pbkp1/2p2pbp/1p1p3P/1P4Q1/P3P1P1/1B1N1PB1/R3R1K1 b - -","fen":"r2q3r/n2pbkp1/2p2pbp/1p1p3P/1P4Q1/P3P1P1/1B1N1PB1/R3R1K1 b - - 0 19","side":"b","moveNo":19,"title":"Kasparov – Andersson","year":"1981","last":["h4","h5"],"hist":{"uci":"g6h7","san":"Bh7","from":"g6","to":"h7"}},{"key":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/1B3P2/3RR1K1 w - -","fen":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/1B3P2/3RR1K1 w - - 2 26","side":"w","moveNo":26,"title":"Kasparov – Andersson","year":"1981","last":["f7","f8"],"hist":{"uci":"b2c1","san":"Bc1","from":"b2","to":"c1"}},{"key":"2nq1k1r/r3b3/2p2pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 b - -","fen":"2nq1k1r/r3b3/2p2pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 b - - 1 27","side":"b","moveNo":27,"title":"Kasparov – Andersson","year":"1981","last":["d1","d4"],"hist":{"uci":"c8d6","san":"Nd6","from":"c8","to":"d6"}},{"key":"3q1k1r/r3bn2/2p2pQp/1p1p3P/1P4R1/P5P1/5P2/2B1R1K1 w - -","fen":"3q1k1r/r3bn2/2p2pQp/1p1p3P/1P4R1/P5P1/5P2/2B1R1K1 w - - 4 29","side":"w","moveNo":29,"title":"Kasparov – Andersson","year":"1981","last":["d6","f7"],"hist":{"uci":"c1h6","san":"Bxh6+","from":"c1","to":"h6"}},{"key":"r1bqk2r/4bppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 b kq -","fen":"r1bqk2r/4bppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 b kq - 3 12","side":"b","moveNo":12,"title":"Fischer – Petrosian","year":"1971","last":["d1","a4"],"hist":{"uci":"d8d7","san":"Qd7","from":"d8","to":"d7"}},{"key":"r1b1k2r/4bppp/p4n2/3p4/N7/3B4/PP3PPP/R1B1R1K1 b kq -","fen":"r1b1k2r/4bppp/p4n2/3p4/N7/3B4/PP3PPP/R1B1R1K1 b kq - 0 14","side":"b","moveNo":14,"title":"Fischer – Petrosian","year":"1971","last":["c3","a4"],"hist":{"uci":"c8e6","san":"Be6","from":"c8","to":"e6"}},{"key":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - -","fen":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - - 4 16","side":"b","moveNo":16,"title":"Fischer – Petrosian","year":"1971","last":["e3","c5"],"hist":{"uci":"f8e8","san":"Rfe8","from":"f8","to":"e8"}},{"key":"r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - -","fen":"r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - - 4 25","side":"w","moveNo":25,"title":"Fischer – Petrosian","year":"1971","last":["f6","d7"],"hist":{"uci":"e5e2","san":"Re2","from":"e5","to":"e2"}},{"key":"r4k2/2R5/pn1r2p1/5p2/1P1p1P1p/3B4/P2KR1PP/8 w - -","fen":"r4k2/2R5/pn1r2p1/5p2/1P1p1P1p/3B4/P2KR1PP/8 w - - 2 31","side":"w","moveNo":31,"title":"Fischer – Petrosian","year":"1971","last":["d7","b6"],"hist":{"uci":"e2e7","san":"Ree7","from":"e2","to":"e7"}},{"key":"r3k3/2R2R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 w - -","fen":"r3k3/2R2R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 w - - 6 33","side":"w","moveNo":33,"title":"Fischer – Petrosian","year":"1971","last":["f8","e8"],"hist":{"uci":"c7b7","san":"Rb7","from":"c7","to":"b7"}},{"key":"r4rk1/3b3p/1pn1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/4RR1K w - -","fen":"r4rk1/3b3p/1pn1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/4RR1K w - - 0 22","side":"w","moveNo":22,"title":"Short – Gelfand","year":"1991","last":["b7","b6"],"hist":{"uci":"c3d2","san":"Bd2","from":"c3","to":"d2"}},{"key":"r4rk1/3b3p/4pbp1/ppqp4/Pn1p1P2/1B1P1NQ1/1PPB2PP/4RR1K w - -","fen":"r4rk1/3b3p/4pbp1/ppqp4/Pn1p1P2/1B1P1NQ1/1PPB2PP/4RR1K w - - 0 24","side":"w","moveNo":24,"title":"Short – Gelfand","year":"1991","last":["b6","b5"],"hist":{"uci":"f4f5","san":"f5","from":"f4","to":"f5"}},{"key":"r4rk1/3b3p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K b - -","fen":"r4rk1/3b3p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K b - - 1 25","side":"b","moveNo":25,"title":"Short – Gelfand","year":"1991","last":["f3","e5"],"hist":{"uci":"d7e8","san":"Be8","from":"d7","to":"e8"}},{"key":"r3brk1/7p/5bp1/pq1pNp2/1n1p4/1B1P2Q1/1PPB2PP/4RR1K w - -","fen":"r3brk1/7p/5bp1/pq1pNp2/1n1p4/1B1P2Q1/1PPB2PP/4RR1K w - - 0 27","side":"w","moveNo":27,"title":"Short – Gelfand","year":"1991","last":["c5","b5"],"hist":{"uci":"f1f5","san":"Rxf5","from":"f1","to":"f5"}},{"key":"r3b2k/7p/5rp1/pq1pN3/1n1p4/1B1P2Q1/1PPB2PP/4R2K w - -","fen":"r3b2k/7p/5rp1/pq1pN3/1n1p4/1B1P2Q1/1PPB2PP/4R2K w - - 0 29","side":"w","moveNo":29,"title":"Short – Gelfand","year":"1991","last":["f8","f6"],"hist":{"uci":"e5g4","san":"Ng4","from":"e5","to":"g4"}}],"final":[{"key":"r2qkb1r/n1pp1pp1/4p1bp/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R w KQkq -","fen":"r2qkb1r/n1pp1pp1/4p1bp/1p6/1P1P3P/P3P1P1/1B1N1P2/R2QKB1R w KQkq - 0 14","side":"w","moveNo":14,"title":"Kasparov – Andersson","year":"1981","last":["h7","h6"],"hist":{"uci":"d4d5","san":"d5","from":"d4","to":"d5"},"final":["d4d5","h4h5","e3e4","a1c1"]},{"key":"r2qkb1r/n2p1pp1/2p3bp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QK2R w KQkq -","fen":"r2qkb1r/n2p1pp1/2p3bp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QK2R w KQkq - 0 16","side":"w","moveNo":16,"title":"Kasparov – Andersson","year":"1981","last":["c7","c6"],"hist":{"uci":"e1g1","san":"O-O","from":"e1","to":"g1"},"final":["e1g1","h4h5","a1c1","b2d4"]},{"key":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq -","fen":"r2qk2r/n2pb1p1/2p2pbp/1p1p4/1P5P/P3P1P1/1B1N1PB1/R2QR1K1 w kq - 2 18","side":"w","moveNo":18,"title":"Kasparov – Andersson","year":"1981","last":["f8","e7"],"hist":{"uci":"d1g4","san":"Qg4","from":"d1","to":"g4"},"final":["d1g4","e3e4","h4h5","g2h3"]},{"key":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/5P2/2BRR1K1 b - -","fen":"2nq1k1r/r2pb3/2p2pQp/1p5P/1P6/P5P1/5P2/2BRR1K1 b - - 3 26","side":"b","moveNo":26,"title":"Kasparov – Andersson","year":"1981","last":["b2","c1"],"hist":{"uci":"d7d5","san":"d5","from":"d7","to":"d5"},"final":["d8e8","d7d5","a7a3","d7d6"]},{"key":"3q1k1r/r3b3/2pn1pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 w - -","fen":"3q1k1r/r3b3/2pn1pQp/1p1p3P/1P1R4/P5P1/5P2/2B1R1K1 w - - 2 28","side":"w","moveNo":28,"title":"Kasparov – Andersson","year":"1981","last":["c8","d6"],"hist":{"uci":"d4g4","san":"Rg4","from":"d4","to":"g4"},"final":["d4g4","c1e3","e1e6","c1h6"]},{"key":"r1bqk2r/4bppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 b kq -","fen":"r1bqk2r/4bppp/p4n2/3p4/Q7/2NB4/PP3PPP/R1B2RK1 b kq - 3 12","side":"b","moveNo":12,"title":"Fischer – Petrosian","year":"1971","last":["d1","a4"],"hist":{"uci":"d8d7","san":"Qd7","from":"d8","to":"d7"},"final":["c8d7","d8d7","e8f8","f6d7"]},{"key":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - -","fen":"r4rk1/4bppp/p3bn2/2Bp4/N7/3B4/PP3PPP/R3R1K1 b - - 4 16","side":"b","moveNo":16,"title":"Fischer – Petrosian","year":"1971","last":["e3","c5"],"hist":{"uci":"f8e8","san":"Rfe8","from":"f8","to":"e8"},"final":["f8e8","a8e8","e7d8","e6d7"]},{"key":"r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - -","fen":"r4k2/2Rn1ppp/p2r4/3pR3/1P6/3B1P2/P5PP/6K1 w - - 4 25","side":"w","moveNo":25,"title":"Fischer – Petrosian","year":"1971","last":["f6","d7"],"hist":{"uci":"e5e2","san":"Re2","from":"e5","to":"e2"},"final":["e5e2","e5h5","e5f5","e5e1"]},{"key":"r4k2/2R5/pn1r2p1/5p2/1P1p1P1p/3B4/P2KR1PP/8 w - -","fen":"r4k2/2R5/pn1r2p1/5p2/1P1p1P1p/3B4/P2KR1PP/8 w - - 2 31","side":"w","moveNo":31,"title":"Fischer – Petrosian","year":"1971","last":["d7","b6"],"hist":{"uci":"e2e7","san":"Ree7","from":"e2","to":"e7"},"final":["e2e7","c7h7","g2g3","e2e5"]},{"key":"r3k3/2R2R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 w - -","fen":"r3k3/2R2R2/p2r2p1/3n1p2/1P1p1P1p/3B4/P2K2PP/8 w - - 6 33","side":"w","moveNo":33,"title":"Fischer – Petrosian","year":"1971","last":["f8","e8"],"hist":{"uci":"c7b7","san":"Rb7","from":"c7","to":"b7"},"final":["c7b7","c7a7","a2a4","h2h3"]},{"key":"r4rk1/3b3p/1pn1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/4RR1K w - -","fen":"r4rk1/3b3p/1pn1pbp1/p1qp4/P2p1P2/1BBP1N2/1PP2QPP/4RR1K w - - 0 22","side":"w","moveNo":22,"title":"Short – Gelfand","year":"1991","last":["b7","b6"],"hist":{"uci":"c3d2","san":"Bd2","from":"c3","to":"d2"},"final":["c3d2","f4f5","e1e6","f3e5"]},{"key":"r4rk1/3b3p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K b - -","fen":"r4rk1/3b3p/5bp1/ppqpNp2/Pn1p4/1B1P2Q1/1PPB2PP/4RR1K b - - 1 25","side":"b","moveNo":25,"title":"Short – Gelfand","year":"1991","last":["f3","e5"],"hist":{"uci":"d7e8","san":"Be8","from":"d7","to":"e8"},"final":["c5d6","d7e8","a8d8","a8a7"]},{"key":"r3brk1/7p/5bp1/pq1pNR2/1n1p4/1B1P2Q1/1PPB2PP/4R2K b - -","fen":"r3brk1/7p/5bp1/pq1pNR2/1n1p4/1B1P2Q1/1PPB2PP/4R2K b - - 0 27","side":"b","moveNo":27,"title":"Short – Gelfand","year":"1991","last":["f1","f5"],"hist":{"uci":"g8h8","san":"Kh8","from":"g8","to":"h8"},"final":["e8d7","g8h8","f6g7","b5b8"]}]}/*END POOLS*/;
+Object.values(POOLS).forEach(list=>list.forEach(p=>{ p.last = p.last ? { squares:p.last } : null; }));
+
+function labelColor(label){
+  if(label==='Best') return 'var(--best-green)'; // a stronger, more saturated green than an ordinary Good move
+  if(label==='Good') return 'var(--good)';
+  if(label==='Ok') return 'var(--ok)';
+  if(label==='Dubious') return 'var(--dubious)';
+  if(label==='Mistake') return 'var(--mistake)';
+  if(label==='Blunder') return 'var(--bad)';
+  return 'var(--text-mute)';
+}
+
+
+const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
+const HELP = {
+  analysis: {
+    title:'Board analysis',
+    what:"Judge who's better and by how much, from the position's features (king safety, material, space, activity) rather than by calculating. Drag the bar to your estimate.",
+    eval:"Your cursor is compared with the engine's evaluation: each board square off costs 25%.",
+  },
+  candidates: {
+    title:'Candidate moves',
+    what:"Find the strongest moves for the side to play: pick 1 to 3.",
+    eval:"Each move is scored by how much it gives up compared with the engine's best. Don't pick Dubious or worse moves: they count as fully missed, so you're better off picking fewer moves.",
+    grades: GRADES + " Tap a list's title to show its arrows. Greyed-out top moves are Dubious or worse.",
+  },
+  final: {
+    title:'Final choice',
+    what:"Rank the four moves from best to worst. One of them is the move played in the game.",
+    eval:"Each of your first three places is compared with the best move you haven't placed yet: 1st counts 50%, 2nd 30%, 3rd 20%. As strong as that move earns the place in full; a Dubious difference or more below it earns nothing.",
+    grades: GRADES + " <strong>Game move</strong> marks the move actually played.",
+  },
+};
+
+function boardObjFromGame(g){
+  const obj = {};
+  g.board().forEach((row,ri)=>row.forEach((cell,fi)=>{
+    if(!cell) return;
+    const sq = FILES[fi] + (8-ri);
+    const ch = cell.type.toUpperCase();
+    obj[sq] = cell.color==='w' ? ch : ch.toLowerCase();
+  }));
+  return obj;
+}
+
+// --- Real evaluation, via Stockfish running in a Web Worker over the UCI protocol ---
+// Loaded from a single-file build (older Stockfish, asm.js/WASM hybrid with the engine
+// binary embedded) so there's no separate .wasm fetch to wire up — good enough strength
+// for this app's purposes, per the "doesn't need to be state of the art" brief.
+// Two CDN copies of the exact same file: cdnjs first (the sandbox's preferred allowlisted
+// host), jsdelivr as a fallback if that fetch fails for any reason.
+const SF_URLS = [
+  "https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js",
+  "https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js"
+];
+// MultiPV is set per query (see pumpEngineQueue): an unrestricted "discovery" search asks for
+// the top DISCOVERY_MULTIPV lines; a combined search restricted to N specific moves asks for
+// exactly N lines, so every one of those moves gets its own ranked, comparable score.
+const DISCOVERY_MULTIPV = 5;
+let sfWorker = null;
+let sfState = 'loading'; // 'loading' | 'ready' | 'error'
+let sfLastError = null;  // human-readable reason, only set on 'error' — surfaced in the UI for debugging
+let sfQueue = [];        // {fen, resolve}
+let sfBusy = false;
+let sfCurrentResolve = null;
+let sfCurrentLines = {}; // rank (1..N) -> {cp, mate, uci} for the search currently in flight
+
+// fetch() to either CDN is blocked in this sandbox (confirmed: both attempts failed before
+// even reaching the Worker), so the engine source text can't be fetched from page JS and
+// wrapped in a blob directly. Two other transports don't go through page-level fetch/XHR
+// at all, so they aren't subject to the same restriction:
+//  - "bootstrap": a same-origin blob: worker whose only content is `importScripts(url)` —
+//    that import is a script load (governed by script-src, which already allows these CDNs
+//    for the chess.js <script> tag), not a fetch/XHR (governed by connect-src).
+//  - "direct": `new Worker(url)` straight at the cross-origin CDN URL, no blob at all.
+// Try both transports against both CDNs before giving up.
+function initEngine(){ attemptEngineLoad(0); }
+const ENGINE_ATTEMPTS = [
+  {url: SF_URLS[0], mode:'bootstrap'},
+  {url: SF_URLS[1], mode:'bootstrap'},
+  {url: SF_URLS[0], mode:'direct'},
+  {url: SF_URLS[1], mode:'direct'}
+];
+function attemptEngineLoad(i){
+  if(i>=ENGINE_ATTEMPTS.length){
+    failEngine('the engine could not be loaded from any source (fetch, importScripts and direct Worker construction were all blocked)');
+    return;
+  }
+  const {url, mode} = ENGINE_ATTEMPTS[i];
+  let worker;
+  try{
+    if(mode==='bootstrap'){
+      const blob = new Blob(['importScripts('+JSON.stringify(url)+');'], {type:'application/javascript'});
+      worker = new Worker(URL.createObjectURL(blob));
+    } else {
+      worker = new Worker(url);
+    }
+  } catch(err){
+    attemptEngineLoad(i+1);
+    return;
+  }
+  let settled = false;
+  const timeoutId = setTimeout(()=>{
+    if(settled) return;
+    settled = true;
+    try{ worker.terminate(); }catch(err){}
+    attemptEngineLoad(i+1);
+  }, 6000);
+  // Handshake-only handler: watches for uciok/readyok, then hands off to the persistent
+  // onEngineMessage handler for real queries once this transport is proven to work.
+  worker.onmessage = (e)=>{
+    const raw = typeof e.data==='string' ? e.data : '';
+    raw.split('\n').forEach(rawLine=>{
+      const line = rawLine.trim();
+      if(!line) return;
+      if(line==='uciok'){ worker.postMessage('setoption name MultiPV value '+DISCOVERY_MULTIPV); worker.postMessage('isready'); return; }
+      if(line==='readyok' && !settled){
+        settled = true; clearTimeout(timeoutId);
+        sfWorker = worker;
+        sfWorker.onmessage = onEngineMessage;
+        sfWorker.onerror = ()=>{ failEngine('the engine crashed after starting'); };
+        sfState = 'ready'; sfLastError = null;
+        render(); pumpEngineQueue();
+      }
+    });
+  };
+  worker.onerror = ()=>{
+    if(settled) return;
+    settled = true; clearTimeout(timeoutId);
+    attemptEngineLoad(i+1);
+  };
+  worker.postMessage('uci');
+}
+// Persistent handler for the working transport: parses MultiPV info lines (one per ranked
+// line Stockfish is tracking) and the closing bestmove for pumpEngineQueue.
+function onEngineMessage(e){
+  const raw = typeof e.data==='string' ? e.data : '';
+  raw.split('\n').forEach(rawLine=>{
+    const line = rawLine.trim();
+    if(!line) return;
+    if(line.indexOf('info')===0 && line.indexOf('score')!==-1){
+      const mpvM = line.match(/multipv (\d+)/);
+      const rank = mpvM ? parseInt(mpvM[1],10) : 1; // MultiPV always tags its lines; rank 1 if somehow absent
+      const mateM = line.match(/score mate (-?\d+)/);
+      const cpM = line.match(/score cp (-?\d+)/);
+      const pvM = line.match(/ pv (\S+)/); // first move of that line's principal variation
+      sfCurrentLines[rank] = {
+        cp: mateM ? null : (cpM ? parseInt(cpM[1],10) : null),
+        mate: mateM ? parseInt(mateM[1],10) : null,
+        uci: pvM ? pvM[1] : null
+      };
+      return;
+    }
+    if(line.indexOf('bestmove')===0){
+      const bestUci = line.split(/\s+/)[1] || null;
+      // Collected in rank-label order (1..N), dropping any rank MultiPV never got to report.
+      const collected = Object.keys(sfCurrentLines).map(Number).sort((a,b)=>a-b).map(r=>sfCurrentLines[r]);
+      // MultiPV's own rank label is *supposed* to already be best-first, but under a
+      // movetime-bounded search that's not guaranteed: different ranks can finish their last
+      // deepening pass at slightly different moments, so whatever was last printed under
+      // "rank 1" when time ran out can occasionally be a shallower (and lower-scoring) read
+      // than what's sitting under "rank 2" — the exact bug that let a lower-scoring move wear
+      // the "Best" badge. Re-sorting by actual win% here — the same curve every other
+      // comparison in the app already uses — makes lines[0] the true strongest line regardless
+      // of which label the engine happened to leave it under, rather than trusting a rank
+      // number that only holds once every line has finished converging.
+      const lines = collected.slice().sort((a,b)=> winPercent(b.cp,b.mate) - winPercent(a.cp,a.mate));
+      const result = lines.length ? { lines, bestUci } : FAILED;
+      sfCurrentLines = {};
+      const resolve = sfCurrentResolve;
+      sfBusy = false; sfCurrentResolve = null;
+      if(resolve) resolve(result);
+      pumpEngineQueue();
+    }
+  });
+}
+// No engine = no evaluation: every waiting request (including the one in flight) resolves as
+// FAILED, never as a made-up 0.00 — screens show "evaluation unavailable" instead of a score.
+const FAILED = { lines:[], bestUci:null, failed:true };
+function failEngine(reason){
+  sfState = 'error';
+  sfLastError = reason || 'unknown error';
+  const pending = sfQueue.splice(0, sfQueue.length);
+  if(sfCurrentResolve){ pending.push({ resolve: sfCurrentResolve }); sfCurrentResolve = null; }
+  sfBusy = false; sfCurrentLines = {};
+  pending.forEach(({resolve})=>resolve(FAILED));
+  render();
+}
+const evalFailed = d => !!(d && d.failed);
+function pumpEngineQueue(){
+  if(sfBusy || sfState!=='ready' || sfQueue.length===0) return;
+  const {fen, searchmoves, resolve} = sfQueue.shift();
+  sfBusy = true; sfCurrentResolve = resolve; sfCurrentLines = {};
+  // One ranked line per restricted move (so every move in a combined search gets its own
+  // comparable score), or the top DISCOVERY_MULTIPV lines for an unrestricted search.
+  const mpv = searchmoves ? searchmoves.split(' ').length : DISCOVERY_MULTIPV;
+  sfWorker.postMessage('setoption name MultiPV value '+mpv);
+  sfWorker.postMessage('position fen '+fen);
+  // `searchmoves` restricts the root search to a specific set of moves, still from `fen`'s own
+  // side-to-move perspective — same kind of query as an unrestricted one, just narrowed.
+  sfWorker.postMessage('go movetime 1200'+(searchmoves ? ' searchmoves '+searchmoves : ''));
+}
+// Raw engine call for one position (optionally restricted to a set of root moves): returns
+// { lines: [{cp,mate,uci}, ...] (best first, all from the perspective of whichever side
+// is to move in `fen`), bestUci }.
+function engineEval(fen, searchmoves){
+  return new Promise(resolve=>{
+    if(sfState==='error'){ resolve(FAILED); return; }
+    sfQueue.push({fen, searchmoves, resolve});
+    pumpEngineQueue();
+  });
+}
+// Only ever renders something when the engine failed to load — silent otherwise.
+// Placed at the very bottom of an exercise's panel, below the action buttons.
+function engineErrorBanner(){
+  if(sfState!=='error') return '';
+  return `<p class="hint engine-error">The chess engine couldn't be loaded, so positions can't be evaluated. Try reloading the page.</p>`;
+}
+
+// Cache of engine results keyed by FEN, with a synchronous read: returns the result once
+// it's in, or null while still loading (kicking off the request on first ask). render()
+// is called again the moment a pending request resolves, so callers just re-check next paint.
+// The entry also keeps the underlying promise, so a prefetch can chain more work onto the
+// same request instead of issuing a second, duplicate search for the same position.
+let fenEvalStore = {};
+function fenEvalEntry(fen){
+  let entry = fenEvalStore[fen];
+  if(!entry){
+    entry = { status:'pending', data:null };
+    fenEvalStore[fen] = entry;
+    engineEval(fen).then(data=>{ entry.status='done'; entry.data=data; render(); });
+  }
+  return entry;
+}
+function fenEval(fen){
+  const entry = fenEvalEntry(fen);
+  return entry.status==='done' ? entry.data : null;
+}
+// One combined search over an exact SET of candidate moves, restricted via UCI's own
+// multi-move `searchmoves` (a space-separated list — the UCI protocol allows more than one
+// move there, not just the single-move restriction used elsewhere), with MultiPV ranking them
+// against each other in a single search. This is what every displayed move's grade reads from
+// (see moveOutcome below): two moves shown side by side always come from the SAME engine
+// invocation, so they can never disagree the way comparing numbers from two independent
+// searches sometimes could — a real-time-bounded search (`movetime`, not a fixed depth)
+// naturally reaches a slightly different depth call to call, so a move scored via its own
+// separate search could come back a hair better or worse than another move's number from a
+// different search of the same position, even though nothing was actually wrong with either
+// search on its own. One shared search removes that possibility entirely, still using nothing
+// but Stockfish's own ranking.
+let poolEvalStore = {};
+function poolEval(baseFen, ucis){
+  const key = baseFen+'|pool:'+ucis.slice().sort().join(',');
+  let entry = poolEvalStore[key];
+  if(!entry){
+    entry = { status:'pending', data:null };
+    poolEvalStore[key] = entry;
+    engineEval(baseFen, ucis.join(' ')).then(data=>{ entry.status='done'; entry.data=data; render(); });
+  }
+  return entry.status==='done' ? entry.data : null;
+}
+
+// {cp,mate} for `fen` reported from Black's/White's perspective as UCI gives it — flip to
+// White's absolute perspective when `fen`'s side to move is Black.
+function toWhitePerspective(info, fen){
+  if(!info) return null;
+  const turn = fen.split(' ')[1];
+  if(turn==='w') return info;
+  return { cp: info.cp!=null ? -info.cp : null, mate: info.mate!=null ? -info.mate : null };
+}
+// The eval bar's height (and the Board analysis score built from it) uses the same win% curve
+// as move grading (winPercent, below). Clamped to 1-99 so the bar always keeps a sliver of the
+// other colour, even at a reported mate.
+function cpToPct(cp, mate){
+  return Math.max(1, Math.min(99, winPercent(cp, mate)));
+}
+// Every score in the app: one decimal, a real minus sign ("+0.4", "−1.6", "0.0", "+M3").
+function fmtSigned(info){
+  if(!info) return '…';
+  if(info.mate!=null) return (info.mate>0 ? '+' : '−')+'M'+Math.abs(info.mate);
+  const r = Math.round(info.cp/10)/10;
+  return (r>0 ? '+' : r<0 ? '−' : '') + Math.abs(r).toFixed(1);
+}
+
+// Lichess's own model for turning a centipawn/mate score into an estimated win percentage for
+// whoever is to move (the exact curve their client and server code both use — a logistic over
+// centipawns, saturating at 0/100 for a mate score). The single source of truth for "win%"
+// throughout the app — the Dubious/Mistake/Blunder thresholds below, the eval bar (cpToPct,
+// above), and the Board-analysis accuracy score all read from this one curve.
+function winPercent(cp, mate){
+  if(mate!=null) return mate>0 ? 100 : 0;
+  const raw = 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1);
+  return Math.max(0, Math.min(100, raw));
+}
+// "Best" means exactly one thing: this move IS the engine's own rank-1 line for baseFen —
+// never a "close enough" bucket, so two different moves can't both show "Best" just because
+// their scores happen to land within a few centipawns of each other. If two moves genuinely
+// tie in evaluation, only the actual top line gets the badge; the other still gets full
+// credit through the numeric accuracy score (pickAccuracyPct/rankAccuracyPct compare evaluations
+// values, not labels), it just doesn't also claim to be "the" best.
+//
+// Everything else is graded the way Lichess grades it: by how many points of win% a move gives
+// up against the best line, not by a fixed centipawn amount — the same numeric slip matters far
+// more near an even position than once one side is already close to winning or losing, and a
+// win%-based cutoff tracks that automatically. Lichess's own published thresholds only start at
+// >=30 points → Blunder, >=20 → Mistake, >=10 → Dubious (their "Inaccuracy") — anything under 10
+// is just "not annotated" on their site, which in practice lumps a near-perfect move together
+// with one that's already given up most of that 10-point budget. "Ok" splits that unannotated
+// range in two — there's no published standard for where, so it's our own extension, done the
+// same way (win%, not raw centipawns) rather than a new metric. Good is deliberately kept
+// narrow (under 3 points) so it means "essentially the top choice," not just "in the same
+// ballpark" — anything giving up more of that budget reads as Ok rather than still Good.
+function labelFromWinDrop(winDrop, isTop){
+  if(isTop) return {label:'Best', category:'good'};
+  if(winDrop>=30) return {label:'Blunder', category:'bad'};
+  if(winDrop>=20) return {label:'Mistake', category:'bad'};
+  if(winDrop>=10) return {label:'Dubious', category:'dubious'};
+  if(winDrop>=3) return {label:'Ok', category:'ok'};
+  return {label:'Good', category:'good'};
+}
+
+// Grades one move by reading it out of an exercise's single evaluation (candidatesEval /
+// finalEval — one combined search), never by firing a search of its own. So every move
+// on screen, the Best flag and the accuracy baseline all come from that one result, and can
+// never disagree with each other. Best = the evaluation's own rank 1 (lines are sorted by
+// win%, see onEngineMessage).
+// The win% drop is computed in baseFen's own side-to-move perspective throughout, then cp/mate
+// are converted to White's absolute perspective only at the very end, for display — the same
+// convention the eval bar uses.
+// Returns null while the evaluation is still pending (or if the move somehow isn't in it).
+function moveOutcome(baseFen, from, to, evalData){
+  if(!evalData || !evalData.lines || !evalData.lines.length) return null;
+  const uci = from+to;
+  const rank1 = evalData.lines[0];
+  const matched = evalData.lines.find(l=>l.uci && l.uci.slice(0,4)===uci);
+  if(!matched) return null;
+  const isTop = matched===rank1;
+  const winPct = winPercent(matched.cp, matched.mate); // mover-perspective — win% of this move
+  const winDrop = Math.max(0, winPercent(rank1.cp, rank1.mate) - winPct);
+  const {label, category} = labelFromWinDrop(winDrop, isTop);
+  const turn = baseFen.split(' ')[1];
+  const cp = matched.mate!=null ? null : (turn==='w' ? matched.cp : -matched.cp);
+  const mate = matched.mate!=null ? (turn==='w' ? matched.mate : -matched.mate) : null;
+  const moverCp = moverScore(matched); // side-to-move perspective, in centipawns — what your moves are sorted by
+  return { cp, mate, isTop, label, category, winDrop, winPct, moverCp };
+}
+
+
+// Board seen from the side to play: when Black is to play, Black's pieces sit at the bottom.
+function boardFlipped(){ return pos().side==='b'; }
+function squareCenter(sq){
+  const file = FILES.indexOf(sq[0]);
+  const rank = parseInt(sq[1],10);
+  return boardFlipped() ? { x: (7-file)*60+30, y: (rank-1)*60+30 } : { x: file*60+30, y: (8-rank)*60+30 };
+}
+
+function renderBoard(container, boardOverride, lastOverride, opts){
+  const bs = boardOverride || {};
+  const lm = lastOverride || null;
+  opts = opts || {};
+  const destSet = new Set(opts.destSquares || []);
+  container.innerHTML = '';
+  const flip = boardFlipped();
+  for(let row=0; row<8; row++){
+    const rank = flip ? row+1 : 8-row;
+    for(let col=0; col<8; col++){
+      const f = flip ? 7-col : col;
+      const sq = FILES[f]+rank;
+      const light = (f+rank)%2===0;
+      const div = document.createElement('div');
+      div.className = 'sq '+(light?'light':'dark');
+      const lmHit = lm && (lm.squares ? lm.squares.includes(sq) : (sq===lm.from || sq===lm.to));
+      if(lmHit) div.className += ' last';
+      if(opts.selectedSq===sq) div.className += ' selected';
+      if(destSet.has(sq)) div.className += bs[sq] ? ' dest-capture' : ' dest';
+      const p = bs[sq];
+      if(p){
+        const span = document.createElement('span');
+        span.className = p === p.toUpperCase() ? 'piece-w' : 'piece-b';
+        span.textContent = PIECES[p];
+        div.appendChild(span);
+      }
+      if(opts.onSquareClick){
+        div.style.cursor = 'pointer';
+        div.onclick = ()=>opts.onSquareClick(sq);
+      }
+      container.appendChild(div);
+    }
+  }
+}
+
+
+function colorOf(p){ return p===p.toUpperCase() ? 'w' : 'b'; }
+function sanForFen(fen, from, to){
+  const g = new Chess(fen);
+  const m = g.moves({square:from, verbose:true}).find(mv=>mv.to===to);
+  return m ? m.san : to;
+}
+function drawArrows(svg, list, keyPrefix){
+  const defs = list.map((m,i)=>
+    `<marker id="${keyPrefix}${i}" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="${m.color}"/></marker>`
+  ).join('');
+  const lines = list.map((m,i)=>{
+    const a = squareCenter(m.from), b = squareCenter(m.to);
+    const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
+    const ex = b.x - dx/len*14, ey = b.y - dy/len*14;
+    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="7" stroke-linecap="round" marker-end="url(#${keyPrefix}${i})" opacity="0.9"/>`;
+  }).join('');
+  svg.innerHTML = `<defs>${defs}</defs>${lines}`;
+}
+
+
+let poolShuffleCache = {};
+// Random order for a set of ids, kept per key so it stays put across redraws; it reshuffles if
+// the set itself changes. nextPosition clears Final choice's entry so a revisit gets a new order.
+function stableShuffleByIds(poolKey, ids){
+  const sig = ids.slice().sort().join(',');
+  const cached = poolShuffleCache[poolKey];
+  if(!cached || cached.sig!==sig){
+    const shuffled = ids.slice();
+    for(let i=shuffled.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [shuffled[i],shuffled[j]] = [shuffled[j],shuffled[i]];
+    }
+    poolShuffleCache[poolKey] = { sig, order: shuffled };
+  }
+  return poolShuffleCache[poolKey].order;
+}
+
+
+// Board analysis score: only the two positions on the bar are compared. Same spot = 100%;
+// half the bar or more apart = 0%, linear in between. The bar's usable range is 1–99%
+// (both ends keep a sliver of the other colour), so "half the bar" is 49 points: in an equal
+// position only a cursor at either end scores 0%, and against a forced mate, calling it equal
+// (or giving the other side the edge) scores 0%.
+function evalAccuracyPct(guess, truePct){
+  return Math.max(0, Math.round(100 * (1 - Math.abs(guess - truePct) / 49)));
+}
+// A line's score in centipawns from the side to move's point of view. Mates (and anything
+// beyond ±10 pawns) count as ±10 pawns, so a mating line stays comparable with the others.
+function moverScore(l){
+  if(l.mate!=null) return l.mate>0 ? 1000 : -1000;
+  return Math.max(-1000, Math.min(1000, l.cp));
+}
+// Candidate moves accuracy — distance from the position's evaluation.
+// The position's evaluation is the evaluation of the engine's best move (#1), so a move's
+// "distance" is how far below #1 it lands, from the side to move's point of view, capped at the
+// Dubious distance: how far a move has to fall to lose 10 points of winning chances (the same
+// line where the review labels a move Dubious). N = how many moves the player picked (1–3).
+//   100% = the engine's top N added up (#1 is 0; its #2/#3 count only if not Dubious or worse)
+//     0% = N × the Dubious distance (every pick Dubious or worse)
+//   Yours = your picks' capped distances added up; accuracy is where that falls between the two.
+// No pairing, no ranks. Everything comes from the one combined evaluation.
+function dubiousDistance(bestCp){
+  const k = 0.00368208, target = winPercent(bestCp, null) - 10;
+  if(target <= 0.5) return 1000; // side to move already almost lost: nothing is "10 points worse"
+  const w = target/100;
+  return bestCp - Math.log(w/(1-w))/k;
+}
+function topGoodLines(evalData, n){
+  if(!evalData || !evalData.lines || !evalData.lines.length) return null;
+  const rank1Pct = winPercent(evalData.lines[0].cp, evalData.lines[0].mate);
+  return evalData.lines.slice(0, n).filter(l => l.uci && (rank1Pct - winPercent(l.cp, l.mate)) < 10);
+}
+function pickAccuracyPct(picksIn, evalData){
+  if(picksIn.length===0 || !evalData || !evalData.lines || !evalData.lines.length) return null;
+  const n = picksIn.length;
+  const picks = picksIn.map(mv=>evalData.lines.find(l=>l.uci && l.uci.slice(0,4)===mv.from+mv.to)).filter(Boolean);
+  if(picks.length===0) return null;
+  const bestCp = moverScore(evalData.lines[0]);
+  const cap = dubiousDistance(bestCp);
+  const dist = l => Math.min(cap, Math.max(0, bestCp - moverScore(l)));
+  const zero = n * cap;                                                  // 0%
+  const full = topGoodLines(evalData, n).reduce((t,l)=>t+dist(l), 0);    // 100%
+  const yours = picks.reduce((t,l)=>t+dist(l), 0) + (n - picks.length) * cap;
+  if(zero - full <= 0) return yours <= full ? 100 : 0;
+  return Math.round(100 * Math.max(0, Math.min(1, (zero - yours) / (zero - full))));
+}
+// Final choice accuracy — each place against the best move not placed yet.
+// Going down your ranking, each of your first three places compares the move you put there with
+// the best of the moves you haven't placed so far: how far below it your move is (side to move,
+// centipawns), capped at the Dubious distance as in Candidate moves. Same strength = the place's
+// full weight, a Dubious distance or more below = 0. Places weigh 50/30/20% — your first choice,
+// the move you'd play, counts most; the 4th place is whatever is left, so it isn't scored.
+const RANK_WEIGHTS = [0.5, 0.3, 0.2];
+function rankAccuracyPct(orderIds, cpById){
+  const ids = orderIds.filter(id=>cpById[id]!=null);
+  if(ids.length<2) return null;
+  const left = ids.slice().sort((a,b)=>cpById[b]-cpById[a]);
+  const cap = dubiousDistance(cpById[left[0]]);
+  const weights = RANK_WEIGHTS.slice(0, ids.length-1);   // fewer moves evaluated: fewer places scored
+  let got = 0;
+  ids.forEach((id,i)=>{
+    if(i < weights.length) got += weights[i] * (1 - Math.min(cap, Math.max(0, cpById[left[0]] - cpById[id])) / cap);
+    left.splice(left.indexOf(id), 1);
+  });
+  const total = weights.reduce((t,w)=>t+w, 0);
+  return total>0 ? Math.round(100*got/total) : null;
+}
+function pctOrDash(v){ return v!=null ? v+'%' : '—'; }
+
+
+function wireDragReorder(listEl, orderArr, onDrop){
+  const rows = Array.from(listEl.children);
+  const rowH = rows[0] ? rows[0].getBoundingClientRect().height : 0;
+  let dragRow = null, startIndex = -1, hoverIndex = -1, startY = 0;
+
+  rows.forEach((row, i)=>{
+    row.style.touchAction = 'none';
+    row.addEventListener('pointerdown', e=>{
+      if(parseFloat(getComputedStyle(row).opacity) < 0.5) return;   // still fading in: not grabbable yet
+      dragRow = row; startIndex = i; hoverIndex = i; startY = e.clientY;
+      row.setPointerCapture(e.pointerId);
+      row.classList.add('dragging');
+    });
+    row.addEventListener('pointermove', e=>{
+      if(dragRow!==row) return;
+      const dy = e.clientY - startY;
+      row.style.transform = `translateY(${dy}px)`;
+      const shift = Math.round(dy / rowH);
+      const newHover = Math.max(0, Math.min(rows.length-1, startIndex + shift));
+      if(newHover !== hoverIndex){
+        hoverIndex = newHover;
+        rows.forEach((r,j)=>{
+          if(r===dragRow) return;
+          let offset = 0;
+          if(startIndex < hoverIndex && j>startIndex && j<=hoverIndex) offset = -rowH;
+          else if(startIndex > hoverIndex && j>=hoverIndex && j<startIndex) offset = rowH;
+          r.style.transform = offset ? `translateY(${offset}px)` : '';
+        });
+      }
+    });
+    const finish = e=>{
+      if(dragRow!==row) return;
+      row.classList.remove('dragging');
+      row.style.transform = '';
+      rows.forEach(r=>{ if(r!==row) r.style.transform=''; });
+      if(hoverIndex!==startIndex){
+        const [id] = orderArr.splice(startIndex,1);
+        orderArr.splice(hoverIndex,0,id);
+      }
+      dragRow = null; startIndex = -1; hoverIndex = -1;
+      onDrop();
+    };
+    row.addEventListener('pointerup', finish);
+    row.addEventListener('pointercancel', finish);
+  });
+}
+
+
+
+// ================= App state =================
+const cols = ['var(--pick1)','var(--pick2)','var(--pick3)'];
+const allCols = ['var(--pick1)','var(--pick2)','var(--pick3)','var(--system)']; // Final choice's four moves
+const TOP_COLS = ['var(--system)','var(--cyan-arrow)','var(--top3)']; // engine's top 3, distinct from the pick colors
+let screen = 'home';           // 'home' | 'analysis' | 'candidates' | 'final'
+// Each exercise has its own random order of positions: every position once per round, in
+// random order (White or Black to play, whichever comes), never the same game twice in a row
+// (across rounds too). When a round is about to run out the next one is drawn and appended, so
+// the next position is always known in advance (for prefetching).
+function shuffled(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
+// A round = every position of the activity's pool once, in random order, never two positions
+// from the same game in a row when the pool allows it (across rounds too).
+function drawRound(pool, prev){
+  const all = pool.map((p,i)=>i);
+  const game = i=>pool[i].title + pool[i].year;
+  let best = null, bestBad = Infinity;
+  for(let tries=0; tries<300; tries++){
+    const round = shuffled(all), seq = prev!=null ? [prev, ...round] : round;
+    const bad = seq.filter((x,i)=>i>0 && game(x)===game(seq[i-1])).length;
+    if(bad < bestBad){ best = round; bestBad = bad; }
+    if(!bad) break;
+  }
+  return best || all;
+}
+// Two separate tracks per exercise: practising it on its own ('analysis', …) and the routine
+// ('r-analysis', …). Each has its own order, its own place in it and its own saved progress, so
+// you can leave one, use the other, and come back to exactly where you were.
+const ACTIVITIES = ['analysis', 'candidates', 'final'];
+const TRACKS = ACTIVITIES.flatMap(a=>[a, 'r-'+a]);
+const ctx = (a, r = routine) => (r ? 'r-' : '') + a;   // the open track for exercise `a`
+const orders = {}, seqBy = {}, store = {};
+const poolOf = t=>POOLS[t.replace(/^r-/, '')];
+TRACKS.forEach(t=>{ orders[t] = drawRound(poolOf(t)); seqBy[t] = 0; store[t] = {}; });
+function posAt(track, i){
+  const o = orders[track], pool = poolOf(track);
+  while(i >= o.length) o.push(...drawRound(pool, o[o.length-1]));
+  return pool[o[i]];
+}
+let curPos = null, side = 'w';   // the open exercise's position and side to play (see syncPos)
+// Points curPos/side at the open exercise's own position.
+function syncPos(){ if(ACTIVITIES.includes(screen)){ const t = ctx(screen); curPos = posAt(t, seqBy[t]); side = curPos.side; } }
+let selSquare = null;          // piece being moved while entering a candidate
+let helpVisible = false;
+// `store`: per track and per position, so leaving an exercise and coming back keeps what was entered.
+function pos(){ return curPos; }
+function st(activity){
+  const p = pos(), bucket = store[ctx(activity)];
+  if(!bucket[p.key]){
+    bucket[p.key] = activity==='analysis' ? { guess:50, checked:false, animT:null }
+                  : activity==='candidates' ? { picks:[], checked:false, sortDone:false, countDone:false, sortStarted:false }
+                  : { order:null, checked:false };
+  }
+  return bucket[p.key];
+}
+
+// When searches start (each position's top-5 search is stored, so it only ever runs once):
+//  - the open exercise's own position, as soon as the exercise is on screen;
+//  - that exercise's NEXT position, only once its review is under way (the evaluation is in and
+//    the reveal has started), so it never delays the current review.
+//  - from the home page, the positions Board analysis and Final choice will open on (Candidate
+//    moves only needs its evaluation at the review, with your picks in it).
+function prefetchCurrent(){ if(ACTIVITIES.includes(screen)) fenEval(pos().fen); }
+function prefetchNext(){
+  if(!ACTIVITIES.includes(screen)) return;
+  const [t, i] = routine ? upcomingFor(ctx(ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length])) : [ctx(screen), seqBy[ctx(screen)]+1];
+  fenEval(posAt(t, i).fen);
+}
+// Where a track will open next: its current position if that question is still open, the
+// one after it if its review was already reached.
+function upcomingFor(t){
+  const cur = posAt(t, seqBy[t]), s = store[t][cur.key];
+  return [t, seqBy[t] + (s && s.checked ? 1 : 0)];
+}
+// From the home page: where Board analysis and Final choice would open, and where the routine
+// resumes (unless that's Candidate moves, which is only evaluated at its review).
+function prefetchHome(){
+  const ts = ['analysis', 'final'];
+  if(routineNext!=='candidates') ts.push('r-'+routineNext);
+  ts.forEach(t=>{ const [x, i] = upcomingFor(t); fenEval(posAt(x, i).fen); });
+}
+// Moves exercise `a`, on the open track, on to its next position, fresh.
+function advance(a){
+  const t = ctx(a);
+  seqBy[t]++;
+  const key = posAt(t, seqBy[t]).key;
+  delete store[t][key];
+  if(a==='final') delete poolShuffleCache['final'+t+key];   // a fresh order for the four moves
+}
+// ROUTINE MODE: the healthy thought process, one exercise after the other — judge the position,
+// find the candidate moves, choose between them — then round again. Each step is on that
+// exercise's own next position (doing them on one position would let Candidate moves' review
+// give away the Final choice answer).
+const ROUTINE = ['analysis', 'candidates', 'final'];
+let routine = false;
+// "Next" button: in routine mode, on to the next exercise of the loop; otherwise this exercise's
+// next position.
+function nextPosition(){
+  if(!ACTIVITIES.includes(screen)) return;
+  if(routine) return openActivity(ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length]);
+  advance(screen);
+  selSquare = null; helpVisible = false;
+  syncPos(); prefetchCurrent(); render();
+}
+// Opening an exercise: an unfinished question carries on where it was left; a position whose
+// review was already reached moves on to a new position.
+function openActivity(name){
+  screen = name; helpVisible = false; selSquare = null;
+  syncPos();
+  if(st(name).checked){ advance(name); syncPos(); }
+  prefetchCurrent();
+  render();
+}
+let routineNext = 'analysis';   // where the routine resumes from the home page
+function startRoutine(){ routine = true; openActivity(routineNext); }
+function nextLabel(){
+  return routine ? ACT_NAMES[ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length]] + ' ›' : 'Next position';
+}
+
+// ================= Evaluations — exactly one per exercise =================
+// Candidate moves: ONE combined search over the player's picks + the game move + the engine's
+// top 5 lines. Grades, Best, and the accuracy baseline all come from that one result.
+function candidatesEval(p, picks){
+  const disc = fenEval(p.fen);
+  if(!disc) return null;
+  if(evalFailed(disc)) return FAILED;
+  const ucis = picks.map(m=>m.uci || m.from+m.to);
+  ucis.push(p.hist.uci);
+  disc.lines.slice(0, DISCOVERY_MULTIPV).forEach(l=>{ if(l.uci) ucis.push(l.uci.slice(0,4)); });
+  return poolEval(p.fen, Array.from(new Set(ucis)));
+}
+// Final choice: the four moves to rank — always the move played in the game, then the engine's
+// top moves in order (skipping the game move if it's already one of them) until there are four.
+// Shuffled so the list never gives the answer away.
+function finalMoves(p){
+  if(p.final){   // chosen by the position finder: best move, game move, then varied grades
+    const list = p.final.map(u=>({ id:u.slice(0,4), uci:u, from:u.slice(0,2), to:u.slice(2,4), san:sanForFen(p.fen, u.slice(0,2), u.slice(2,4)), historical: u===p.hist.uci }));
+    const order = stableShuffleByIds('final'+ctx('final')+p.key, list.map(m=>m.id));
+    return order.map((id,i)=>({ ...list.find(m=>m.id===id), color: allCols[i] }));
+  }
+  const disc = fenEval(p.fen);
+  if(!disc) return null;
+  if(evalFailed(disc)) return FAILED;
+  const list = [];
+  const add = uci=>{
+    if(!uci) return;
+    const u = uci.slice(0,4);
+    if(list.some(m=>m.uci===u)) return;
+    list.push({ id:u, uci:u, from:u.slice(0,2), to:u.slice(2,4), san:sanForFen(p.fen, u.slice(0,2), u.slice(2,4)), historical: u===p.hist.uci });
+  };
+  add(p.hist.uci);
+  disc.lines.forEach(l=>add(l.uci));
+  const four = list.slice(0,4);
+  const order = stableShuffleByIds('final'+ctx('final')+p.key, four.map(m=>m.id));
+  return order.map((id,i)=>({ ...four.find(m=>m.id===id), color: allCols[i] }));
+}
+// ...and ONE combined search over exactly those four moves — the only thing its review reads.
+function finalEval(p, moves){
+  return moves && !evalFailed(moves) ? poolEval(p.fen, moves.map(m=>m.uci)) : null;
+}
+
+// ================= Shared pieces of UI =================
+// In the routine the title is "Routine", with the current exercise as a badge beside it.
+function header(title){
+  return `<div class="title-row">
+      <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
+      <h1>${routine ? `Routine <span class="title-badge">${title}</span>` : title}</h1>
+      <button class="icon-btn" id="helpBtn" aria-label="How this exercise works">?</button>
+    </div>`;
+}
+function posBar(){
+  const p = pos();
+  const moveLabel = p.side==='w' ? `${p.moveNo}. White to play` : `${p.moveNo}… Black to play`;
+  return `<div class="posbar">
+      <div class="pos-title"><strong>${p.title}</strong> ${p.year}<br>${moveLabel}</div>
+    </div>`;
+}
+function wireCommon(helpKey, checked){
+  document.getElementById('homeBtn').onclick = ()=>{
+    if(routine){ const s = st(screen); routine = false; routineNext = s.checked ? ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length] : screen; }
+    screen='home'; selSquare=null; render();
+  };
+  document.getElementById('helpBtn').onclick = ()=>{ helpVisible = true; render(); };
+  const next = document.getElementById('nextPos');
+  if(next) next.onclick = nextPosition;
+  if(helpVisible){
+    const h = HELP[helpKey];
+    const div = document.createElement('div');
+    div.className = 'modal-backdrop';
+    div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box" role="dialog" aria-label="${h.title}">
+        <h3>${h.title}</h3>
+        <p>${h.what}</p>
+        <p class="eval-note">${h.eval}</p>
+        ${checked && h.grades ? `<p class="eval-note">${h.grades}</p>` : ''}
+        <div class="modal-actions"><button class="btn" id="closeHelp">Got it</button></div>
+      </div></div>`;
+    document.getElementById('app').appendChild(div);
+    div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')){ helpVisible=false; render(); } });
+    document.getElementById('closeHelp').onclick = ()=>{ helpVisible=false; render(); };
+  }
+}
+// Opens the exact position on Lichess's analysis board, seen from the side to play.
+function lichessLink(p){
+  const url = 'https://lichess.org/analysis/standard/' + p.fen.replace(/ /g,'_') + '?color=' + (p.side==='b' ? 'black' : 'white');
+  return `<a class="btn secondary" href="${url}" target="_blank" rel="noopener">Analyze in Lichess ↗</a>`;
+}
+// Vertical bar beside the board, full board height, oriented like the board: White's share at
+// the bottom when White is at the bottom, at the top when the board is flipped. `pct` = White's
+// winning chances; `text` is the score written inside the bar, at the winning side's end (like
+// Lichess). `cursorPct` draws the player's guess; `interactive` makes the bar draggable.
+function evalBarHtml(pct, text, cursorPct, interactive){
+  const flip = boardFlipped();
+  const black = `<div class="v-black" id="barBlack" style="height:${100-pct}%"></div>`;
+  const white = `<div class="v-white" id="barWhite" style="height:${pct}%"></div>`;
+  const cursor = cursorPct!=null
+    ? `<div class="evalbar-cursor${interactive ? ' handle' : ''}" id="barCursor" style="${flip ? 'top' : 'bottom'}:${cursorPct}%"></div>` : '';
+  return `<div class="evalbar-wrap">
+      <div class="evalbar-v${interactive ? ' interactive' : ''}" id="evalBar"${interactive ? ' role="slider" aria-label="Your evaluation" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(pct)+'" aria-valuetext="'+text+'" tabindex="0"' : ''}>
+        ${flip ? white+black : black+white}
+      </div>
+      <div class="evalbar-num" id="barNum" style="${barNumStyle(pct)}">${text}</div>
+      ${cursor}
+    </div>`;
+}
+// The number sits at the end of whoever is ahead, on that side's colour.
+function barNumStyle(pct){
+  const whiteAhead = pct>=50;
+  const atBottom = whiteAhead !== boardFlipped();
+  return `${atBottom ? 'bottom' : 'top'}:4px; color:${whiteAhead ? 'var(--black-fill)' : 'var(--white-fill)'};`;
+}
+// The player's guess is dragged in win% (that's what the bar shows), but read out as an
+// evaluation score, converted with the inverse of the same win% curve the engine's own numbers
+// use — so "+0.8" on your bar means the same thing as "+0.8" from the engine. Clamped to 1–99%
+// (about ±12.5) since the ends of the curve run off to infinity.
+function pctToCp(pct){
+  const w = Math.max(1, Math.min(99, pct)) / 100;
+  return Math.log(w/(1-w)) / 0.00368208;
+}
+function fmtGuess(pct){
+  const v = pctToCp(pct)/100;
+  const r = Math.round(v*10)/10;
+  return (r>0 ? '+' : r<0 ? '−' : '') + Math.abs(r).toFixed(1);
+}
+function fmtBarScore(info){
+  if(info.mate!=null) return 'M'+Math.abs(info.mate);
+  const r = Math.round(info.cp/10)/10;
+  return (r>0 ? '+' : r<0 ? '−' : '') + Math.abs(r).toFixed(1);
+}
+// ---- Board analysis recap: "<verdict>, <explanation>." ----
+// Table 1 — verdict, from the accuracy (25% per board square the cursor is off).
+const RECAP_VERDICTS = [
+  { min:88, text:'Spot on' },               // within ½ square — no explanation added
+  { min:63, text:'Close' },                 // ½ to 1½ squares off
+  { min:38, text:'Estimation slightly off' },// 1½ to 2½ squares off
+  { min:13, text:'Estimation off' },        // 2½ to 3½ squares off
+  { min:0,  text:'Estimation way off' },    // 3½ squares or more
+];
+// Table 2 — explanation, from how the guess compares with the engine. "Balanced" = within
+// 5 win% points of the middle (about ±0.5).
+// Checked in this order; the side named is always the one the engine favours.
+function recapExplanation(guess, truth){
+  const gs = guess-50, ts = truth-50, BAL = 5;
+  const side = ts>0 ? 'White' : 'Black', other = ts>0 ? 'Black' : 'White';
+  if(Math.abs(ts)<=BAL) return Math.abs(gs)<=BAL ? 'the position is roughly balanced' : 'the position is more balanced than that';
+  if(Math.abs(gs)<=BAL) return Math.abs(ts)>=30 ? `${side} is winning here` : `${side} has the advantage here`; // 30 = "clearly winning" (about ±2.5)
+  if(Math.sign(gs)!==Math.sign(ts)) return `it's ${side} who's better, not ${other}`;
+  return Math.abs(ts)>Math.abs(gs) ? `${side}'s advantage is bigger than that` : `${side}'s advantage is smaller than that`;
+}
+function analysisRecap(guess, truth){
+  const acc = evalAccuracyPct(guess, truth);
+  const verdict = RECAP_VERDICTS.find(v=>acc>=v.min).text;
+  return acc>=88 ? verdict+'.' : `${verdict}, ${recapExplanation(guess, truth)}.`;
+}
+// A panel whose height never changes within an exercise: `inner` is what's shown, `ghosts` are
+// invisible stand-ins for the exercise's other states (no ids, not focusable), stacked in the
+// same spot so the panel takes the tallest one's height.
+function stackedPanel(inner, ghosts, extra){
+  return `<div class="panel"><div class="panel-stack"><div class="layer">${inner}</div>${
+    ghosts.map(g=>`<div class="layer ghost" aria-hidden="true" inert>${g}</div>`).join('')}</div>${extra||''}</div>`;
+}
+const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Analyze in Lichess ↗</span><span class="btn">Next position</span></div>`;
+const GHOST_ANALYSIS = [
+  `<p class="prompt">Set the bar where you think the evaluation stands.</p><div class="actions-row"><span class="btn">Check</span></div>`,
+  `<div class="score"><span class="score-num">100%</span><span class="score-label">accuracy</span></div><p class="recap">x</p>${GHOST_ACTIONS}`,
+];
+function ghostCandidates(){
+  const mini = `<div class="mini-row"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span><span class="mini-result"><span class="mini-label">Dubious</span><span class="move-eval">−1.6</span></span></div>`;
+  const col = `<div class="review-col"><div class="col-toggle"><span class="col-toggle-box"></span>Top moves</div>${mini.repeat(3)}</div>`;
+  const pick = `<div class="review-row pick-row"><div class="move-tag"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span></div><span class="del-btn">✕</span></div>`;
+  return [
+    `<div class="score"><span class="score-num">100%</span><span class="score-label">accuracy</span></div><div class="review-cols">${col}${col}</div>${GHOST_ACTIONS}`,
+    `<div>${pick.repeat(3)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
+  ];
+}
+function ghostFinal(){
+  const chip = `<span class="move-chip" style="background:var(--text-mute)">Qxd8+</span>`;
+  const rank = `<div class="rate-row"><div class="move-tag"><span class="num">1</span>${chip}</div><span class="drag-handle">⠿</span></div>`;
+  const rev = tag=>`<div class="review-row"><div class="move-tag"><span class="num">1</span>${chip}${tag ? '<span class="badges"><span class="badge">Game move</span></span>' : ''}</div><div class="move-result"><span class="grade">Dubious</span><span class="move-eval">−1.6</span></div></div>`;
+  return [
+    `<div>${rank.repeat(4)}</div><p class="hint rank-hint">Drag the moves into order, best at the top.</p><div class="actions-row"><span class="btn">Check</span></div>`,
+    `<div class="score"><span class="score-num">100%</span><span class="score-label">accuracy</span></div><div class="rev-list">${rev(true)}${rev(false).repeat(3)}</div>${GHOST_ACTIONS}`,
+  ];
+}
+function boardHtml(withBar, barHtml){
+  const b = `<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>`;
+  return `<div class="stage">${withBar ? `<div class="board-row">${b}${barHtml}</div>` : b}</div>`;
+}
+// The position's own evaluation, White's perspective, from whichever single evaluation the
+// exercise reads — so the bar always agrees with the Best row.
+function positionInfo(p, evalData){
+  const info = toWhitePerspective(evalData ? evalData.lines[0] : null, p.fen);
+  return info ? { info, pct: cpToPct(info.cp, info.mate), label: fmtSigned(info) } : null;
+}
+// Final choice review row: grade as plain coloured text, like the Candidate moves lists.
+function reviewRowHtml(m){
+  const label = m.outcome ? m.outcome.label : m.na ? '—' : '…';
+  const tags = m.historical ? ['Game move'] : [];
+  const labelStyle = m.outcome ? `color:${labelColor(label)};` : '';
+  return `<div class="review-row${label==='Best' ? ' best-row' : ''}">
+      <div class="move-tag"><span class="num">${m.num}</span><span class="move-chip" style="background:${m.color}">${m.san}</span>${tags.length ? `<span class="badges">${tags.map(t=>`<span class="badge">${t}</span>`).join('')}</span>` : ''}</div>
+      <div class="move-result"><span class="grade" style="${labelStyle}">${label}</span><span class="move-eval">${m.outcome ? fmtSigned(m.outcome) : m.na ? '—' : '…'}</span></div>
+    </div>`;
+}
+
+// Compact review row for the two side-by-side lists: the move itself is the coloured chip
+// (same colour as its arrow), the grade and evaluation sit stacked on the right.
+function miniRowHtml(m, highlight, fadeIn){
+  const label = m.outcome ? m.outcome.label : m.na ? '—' : '…';
+  const best = highlight && label==='Best';
+  return `<div class="mini-row${best ? ' best-row' : ''}${best && fadeIn ? ' best-in' : ''}${m.muted ? ' muted' : ''}" data-key="${m.from}${m.to}">
+      <span class="num">${m.num}</span>
+      <span class="move-chip" style="background:${m.color}">${m.san}</span>
+      <span class="mini-result"><span class="mini-label" style="${m.outcome ? 'color:'+labelColor(label) : ''}">${label}</span><span class="move-eval">${m.outcome ? fmtSigned(m.outcome) : m.na ? '' : '…'}</span></span>
+    </div>`;
+}
+
+// ================= Progress: level and daily routine =================
+// Each finished position records {a: activity, acc: accuracy %, ts}. Kept privately per person
+// in the artifact's database (data/users/<id>/trainer/results), or in this browser when that isn't
+// available (e.g. outside claude.ai).
+//
+// LEVEL (0–100, one per activity) = your accuracy, smoothed over recent positions: the first
+// CALIBRATION positions are a plain average, after that each new position moves the level
+// LEVEL_K (15%) of the way toward its accuracy. So one bad position costs a little, a run of
+// good ones lifts it steadily, and old results fade out. Not Elo: there's no win/lose, just how
+// close you were — and no opponent rating, since every position is scored on the same scale.
+const ACTS = ['analysis', 'candidates', 'final'];
+const ACT_NAMES = { analysis:'Board analysis', candidates:'Candidate moves', final:'Final choice' };
+const CALIBRATION = 5, LEVEL_K = 0.15, DAILY_GOAL = 5;
+// Shown as "Average 71%"; changes are whole points of the shown value ("▲ 3%").
+const pct = v => Math.round(v) + '%';
+function deltaHtml(d){
+  if(d==null) return '';
+  return d===0 ? '<span>±0%</span>' : `<span class="${d>0 ? 'delta-up' : 'delta-down'}">${d>0 ? '▲' : '▼'} ${Math.abs(d)}%</span>`;
+}
+let resultsDb = null;      // db collection when the database is available
+let progressTab = 'analysis';
+// This browser keeps a copy of the results too, so the home page can show the right routine and
+// averages instantly on launch instead of starting empty while the database answers.
+const LS_KEY = 'cst.results.v1';
+function loadLocal(){ try{ const r = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); return Array.isArray(r) ? r : null; }catch(e){ return null; } }
+function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(results)); }catch(e){} }
+const cached = loadLocal();
+let results = cached || [];   // every recorded position, oldest first
+// Without a copy in this browser (first launch here), the routine card's progress and the
+// averages stay hidden until the database answers, then fade in — never an empty state first.
+let progressLoaded = !!cached, progressJustLoaded = false;
+function progressReady(){ if(!progressLoaded){ progressLoaded = true; progressJustLoaded = true; } }
+async function initProgress(){
+  try{
+    if(window.claude && claude.use){
+      const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+      const id = user ? await user.id() : null;
+      if(db && id){
+        const col = db.collection('data/users/' + id + '/trainer/results');
+        const snap = await col.orderBy('ts').limit(1000).get();
+        const fromDb = snap.docs.map(d=>d.data()).filter(r=>r && ACTS.includes(r.a) && typeof r.acc==='number');
+        // Anything played before the database answered is kept too.
+        const pending = results.filter(r=>!fromDb.some(x=>x.ts===r.ts && x.a===r.a));
+        results = fromDb.concat(pending).sort((x,y)=>x.ts-y.ts);
+        resultsDb = col;
+        pending.forEach(r=>col.add(r).catch(()=>{}));
+        saveLocal(); progressReady(); render();
+        return;
+      }
+    }
+  }catch(e){ /* fall back to this browser */ }
+  progressReady(); render();
+}
+function levelSeries(a){
+  let L = null;
+  return results.filter(r=>r.a===a).map((r,i)=>{
+    const k = Math.max(1/(i+1), LEVEL_K);
+    L = L==null ? r.acc : L + k*(r.acc - L);
+    return { ...r, level:L, n:i+1 };
+  });
+}
+function levelNow(a){
+  const sr = levelSeries(a), last = sr[sr.length-1];
+  return { n: sr.length, level: last ? last.level : null, rated: sr.length >= CALIBRATION, series: sr };
+}
+// Records a finished position once (the review's state remembers it) and returns what the
+// review shows: the level after this position and how much it moved.
+function recordResult(s, a, acc){
+  if(s.rec || acc==null) return;
+  const before = levelNow(a);
+  const r = { a, acc: Math.round(acc), ts: Date.now() };
+  results.push(r);
+  if(resultsDb) resultsDb.add(r).catch(()=>{});
+  saveLocal();
+  const after = levelNow(a);
+  s.rec = { n: after.n, level: after.level, delta: before.rated ? Math.round(after.level) - Math.round(before.level) : null, rated: after.rated };
+}
+// "Average 71% ▲ 3%" (or "Calibrating 3/5") in the review's score line, shown with the buttons.
+function levelChip(s, show, fade){
+  if(!s.rec) return '';
+  const r = s.rec;
+  const body = !r.rated ? `Calibrating ${r.n}/${CALIBRATION}`
+    : `Average <strong>${pct(r.level)}</strong>` + (r.delta==null ? '' : ' ' + deltaHtml(r.delta));
+  return `<span class="level${show ? (fade ? ' fade-in' : '') : ''}" style="${show ? '' : 'visibility:hidden'}">${body}</span>`;
+}
+const dayKey = ts=>{ const d = new Date(ts); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+// The daily routine: DAILY_GOAL positions of EACH exercise in the day, in as many sittings as
+// you like. Done = all three reached; you can stop for the day, or keep training.
+function todayBy(){ const k = dayKey(Date.now()), c = {analysis:0, candidates:0, final:0}; results.forEach(r=>{ if(dayKey(r.ts)===k) c[r.a]++; }); return c; }
+// Data-driven parts of the home page: hidden until the results are known, faded in once.
+function dataCls(){ return !progressLoaded ? ' data-wait' : progressJustLoaded ? ' fade-in' : ''; }
+function routineCard(){
+  const c = todayBy(), done = progressLoaded && ACTS.every(a=>c[a]>=DAILY_GOAL);
+  const total = ACTS.reduce((t,a)=>t+Math.min(c[a], DAILY_GOAL), 0), started = total>0;
+  return `<div class="routine${done ? ' done' : ''}">
+      <div class="routine-head"><span class="routine-title">Today's routine</span><span class="routine-count${dataCls()}">${done ? 'Done ✓' : `${total}/${DAILY_GOAL*3}`}</span></div>
+      ${ACTS.map(a=>`<div class="routine-row"><span>${ACT_NAMES[a]}</span><span class="goal-dots${dataCls()}" aria-label="${Math.min(c[a],DAILY_GOAL)} of ${DAILY_GOAL}">${Array.from({length:DAILY_GOAL}, (_,i)=>`<i class="${i<c[a]?'on':''}"></i>`).join('')}</span></div>`).join('')}
+      <button class="btn${done ? ' secondary' : ''} routine-btn" id="routineBtn"><span class="${dataCls().trim()}">${done ? 'Keep training' : started ? 'Continue routine' : 'Start routine'}</span></button>
+    </div>`;
+}
+
+// ================= Progress screen =================
+function renderProgress(){
+  const app = document.getElementById('app');
+  const a = progressTab, info = levelNow(a), sr = info.series;
+  const weekAgo = Date.now() - 7*864e5;
+  const beforeWeek = sr.filter(r=>r.ts < weekAgo).pop();
+  const weekDelta = info.rated && beforeWeek && beforeWeek.n >= CALIBRATION ? Math.round(info.level) - Math.round(beforeWeek.level) : null;
+  const last10 = sr.slice(-10);
+  const avg10 = last10.length ? Math.round(last10.reduce((t,r)=>t+r.acc,0)/last10.length) : null;
+  const best = sr.filter(r=>r.n>=CALIBRATION).reduce((m,r)=>Math.max(m, r.level), -1);
+  app.innerHTML = `
+    <div class="title-row">
+      <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
+      <h1>Progress</h1>
+    </div>
+    <div class="seg" role="tablist">${ACTS.map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_NAMES[x]}</button>`).join('')}</div>
+    ${info.n===0 ? `<p class="empty">No ${ACT_NAMES[a]} positions played yet.<br>Your average appears after ${CALIBRATION} positions.</p>` : `
+    <div class="hero">
+      <div>
+        <div class="hero-num">${info.rated ? pct(info.level) : '—'}</div>
+        <div class="hero-tier">${info.rated ? 'Average' : `Calibrating · ${info.n}/${CALIBRATION} positions`}</div>
+      </div>
+      <div class="hero-week">${weekDelta==null ? '' : `${deltaHtml(weekDelta)}<br>this week`}</div>
+    </div>
+    <div class="chart-box" id="chartBox">
+      <div class="chart-legend"><span><i class="lg-line"></i>Average</span><span><i class="lg-dot"></i>Accuracy per position</span></div>
+      ${levelChartSvg(sr)}
+    </div>
+    <div class="stats">
+      <div class="stat"><b>${info.n}</b><small>positions</small></div>
+      <div class="stat"><b>${avg10==null ? '—' : avg10+'%'}</b><small>last 10 avg</small></div>
+      <div class="stat"><b>${best<0 ? '—' : pct(best)}</b><small>best average</small></div>
+    </div>`}`;
+  document.getElementById('homeBtn').onclick = ()=>{ screen='home'; render(); };
+  app.querySelectorAll('.seg-btn').forEach(b=>b.onclick = ()=>{ progressTab = b.dataset.tab; render(); });
+  wireChartHover(sr);
+}
+// Level over the positions played (line) with each position's accuracy (faint dots), last 60.
+const CH = { w:340, h:170, l:26, r:8, t:8, b:18 };
+function chartX(i, n){ return CH.l + (n<=1 ? (CH.w-CH.l-CH.r)/2 : i*(CH.w-CH.l-CH.r)/(n-1)); }
+function chartY(v){ return CH.t + (100-v)*(CH.h-CH.t-CH.b)/100; }
+function levelChartSvg(sr){
+  const pts = sr.slice(-60), n = pts.length;
+  const grid = [0,25,50,75,100].map(v=>`<line x1="${CH.l}" x2="${CH.w-CH.r}" y1="${chartY(v)}" y2="${chartY(v)}" stroke="var(--border)" stroke-width="1"/><text x="${CH.l-6}" y="${chartY(v)+3.5}" text-anchor="end" font-size="10" fill="var(--text-mute)">${v}</text>`).join('');
+  const dots = pts.map((r,i)=>`<circle cx="${chartX(i,n)}" cy="${chartY(r.acc)}" r="2.6" fill="var(--text-mute)" opacity=".55"/>`).join('');
+  const line = pts.map((r,i)=>`${i?'L':'M'}${chartX(i,n).toFixed(1)},${chartY(r.level).toFixed(1)}`).join('');
+  const first = sr.length - n + 1;
+  return `<svg viewBox="0 0 ${CH.w} ${CH.h}" id="levelChart" role="img" aria-label="Average after each position">
+      ${grid}${dots}
+      <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${chartX(n-1,n)}" cy="${chartY(pts[n-1].level)}" r="4" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>
+      <text x="${CH.l}" y="${CH.h-4}" font-size="10" fill="var(--text-mute)">#${first}</text>
+      <text x="${CH.w-CH.r}" y="${CH.h-4}" font-size="10" fill="var(--text-mute)" text-anchor="end">#${sr.length}</text>
+      <line id="chCross" x1="0" x2="0" y1="${CH.t}" y2="${CH.h-CH.b}" stroke="var(--text-mute)" stroke-width="1" opacity="0"/>
+    </svg>`;
+}
+// Hover / tap: the nearest position's level and accuracy.
+function wireChartHover(sr){
+  const svg = document.getElementById('levelChart'), box = document.getElementById('chartBox');
+  if(!svg) return;
+  const pts = sr.slice(-60), n = pts.length, first = sr.length - n;
+  let tip = null;
+  const show = e=>{
+    const rect = svg.getBoundingClientRect(), x = (e.clientX - rect.left) * CH.w / rect.width;
+    const i = Math.max(0, Math.min(n-1, Math.round(n<=1 ? 0 : (x-CH.l)/((CH.w-CH.l-CH.r)/(n-1)))));
+    const r = pts[i], cx = chartX(i,n), cross = document.getElementById('chCross');
+    cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.setAttribute('opacity', '.5');
+    if(!tip){ tip = document.createElement('div'); tip.className = 'chart-tip'; box.appendChild(tip); }
+    const bx = box.getBoundingClientRect();
+    tip.style.left = Math.max(60, Math.min(bx.width-60, rect.left - bx.left + cx*rect.width/CH.w)) + 'px';
+    tip.style.top = (rect.top - bx.top + chartY(Math.max(r.level, r.acc))*rect.height/CH.h - 8) + 'px';
+    tip.innerHTML = `#${first+i+1} · ${new Date(r.ts).toLocaleDateString(undefined,{month:'short', day:'numeric'})}<br>Accuracy ${r.acc}% · Average ${r.n>=CALIBRATION ? pct(r.level) : '—'}`;
+  };
+  const hide = ()=>{ const c = document.getElementById('chCross'); if(c) c.setAttribute('opacity','0'); if(tip){ tip.remove(); tip = null; } };
+  svg.addEventListener('pointermove', show);
+  svg.addEventListener('pointerdown', show);
+  svg.addEventListener('pointerleave', hide);
+}
+
+// ================= Home =================
+function renderHome(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="home-head">
+      <h1>Chess Strategy Trainer</h1>
+      <p>Three short exercises on positions from real master games, each checked by Stockfish.</p>
+    </div>
+    ${routineCard()}
+    <div class="cards">
+      ${[['analysis','⚖',"Who's better, and by how much?"],
+         ['candidates','♘','Find the strongest moves.'],
+         ['final','♔','Rank four moves, best to worst.']].map(([a, glyph, desc])=>{
+        const L = levelNow(a);
+        return `<button class="card" data-go="${a}">
+          <span class="card-glyph" aria-hidden="true">${glyph}</span>
+          <span><span class="card-title">${ACT_NAMES[a]}</span><span class="card-desc">${desc}</span></span>
+          <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b><small>Average</small>` : `<b>—</b><small>${L.n ? `${L.n}/${CALIBRATION}` : 'Average'}</small>`}</span>
+        </button>`; }).join('')}
+    </div>
+    <button class="link-btn" id="progressBtn">See your progress ›</button>
+    ${engineErrorBanner()}`;
+  app.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ routine = false; openActivity(c.dataset.go); });
+  document.getElementById('progressBtn').onclick = ()=>{ screen = 'progress'; render(); };
+  document.getElementById('routineBtn').onclick = startRoutine;
+  prefetchHome();
+  progressJustLoaded = false;
+}
+
+// ================= Board analysis =================
+// The reveal: once the engine's number is in, the bar and its score slide from your guess to
+// the engine's value while the accuracy counts down from 100%; the recap and buttons appear
+// when it lands. `s.animT` (0→1) is the progress, so a re-render mid-way just redraws the
+// current frame instead of restarting.
+const REVEAL_MS = 1400;
+const easeOut = t=>1-Math.pow(1-t, 3);
+function renderAnalysis(){
+  const app = document.getElementById('app');
+  const p = pos(), s = st('analysis');
+  const disc = s.checked ? fenEval(p.fen) : null;
+  const failed = evalFailed(disc);
+  const truth = s.checked && !failed ? positionInfo(p, disc) : null;
+  if(truth && s.animT==null){ recordResult(s, 'analysis', evalAccuracyPct(s.guess, truth.pct)); startReveal(p, s, truth); prefetchNext(); }
+  const t = truth ? easeOut(s.animT ?? 1) : 0;
+  const done = !!truth && (s.animT ?? 1) >= 1;
+  const acc = truth ? evalAccuracyPct(s.guess, truth.pct) : null;
+  const barPct = truth ? s.guess + (truth.pct - s.guess)*t : s.guess;
+  const bar = s.checked
+    ? evalBarHtml(barPct, done ? fmtBarScore(truth.info) : truth ? fmtGuess(barPct) : '…', s.guess, false)
+    : evalBarHtml(s.guess, fmtGuess(s.guess), s.guess, true);
+  app.innerHTML = `
+    ${header('Board analysis')}
+    ${posBar()}
+    ${boardHtml(true, bar)}
+    ${stackedPanel(`
+      ${s.checked ? `
+        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(100 + (acc-100)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'accuracy' : failed ? 'evaluation unavailable' : 'evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
+        ${done ? `<p class="recap${s.justDone ? ' fade-in' : ''}">${analysisRecap(s.guess, truth.pct)}</p>`
+               : `<p class="recap">&nbsp;</p>`}
+        <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
+      : `
+        <p class="prompt" id="anaPrompt">Set the bar where you think the evaluation stands.</p>
+        <div class="actions-row" id="anaCheckRow"><button class="btn" id="check">Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
+  renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
+  if(!s.checked){
+    setupGauge(s);
+    introFade(s, ['anaPrompt', 'anaCheckRow']);
+    document.getElementById('check').onclick = ()=>{ s.checked = true; s.animT = null; s.justDone = false; fenEval(p.fen); render(); };
+  }
+  wireCommon('analysis', s.checked);
+  s.justDone = false;   // the recap/buttons fade plays once, when the reveal lands — not on later redraws
+}
+function startReveal(p, s, truth){
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduced){ s.animT = 1; return; }
+  s.animT = 0;
+  const key = p.key, acc = evalAccuracyPct(s.guess, truth.pct);
+  let start = null;
+  const step = ts=>{
+    if(start===null) start = ts;
+    s.animT = Math.min(1, (ts-start)/REVEAL_MS);
+    // Left the screen or moved on mid-reveal: just finish it silently.
+    if(screen!=='analysis' || pos().key!==key){ s.animT = 1; return; }
+    const t = easeOut(s.animT), pct = s.guess + (truth.pct - s.guess)*t;
+    const w = document.getElementById('barWhite'), b = document.getElementById('barBlack'),
+          n = document.getElementById('barNum'), a = document.getElementById('revealAcc');
+    if(w){ w.style.height = pct+'%'; b.style.height = (100-pct)+'%'; }
+    if(n){ n.textContent = fmtGuess(pct); n.setAttribute('style', barNumStyle(pct)); }
+    if(a) a.textContent = Math.round(100 + (acc-100)*t)+'%';
+    if(s.animT<1) requestAnimationFrame(step); else { s.justDone = true; render(); }
+  };
+  requestAnimationFrame(step);
+}
+let gaugeState = null, gaugeDragging = false;
+function setupGauge(s){
+  const bar = document.getElementById('evalBar');
+  const update = pct=>{
+    s.guess = Math.max(1, Math.min(99, pct));
+    const w = document.getElementById('barWhite'), b = document.getElementById('barBlack'), c = document.getElementById('barCursor'),
+          n = document.getElementById('barNum');
+    if(!w) return;
+    w.style.height = s.guess+'%'; b.style.height = (100-s.guess)+'%';
+    c.style[boardFlipped() ? 'top' : 'bottom'] = s.guess+'%';
+    n.textContent = fmtGuess(s.guess);
+    n.setAttribute('style', barNumStyle(s.guess));
+    bar.setAttribute('aria-valuenow', Math.round(s.guess));
+    bar.setAttribute('aria-valuetext', fmtGuess(s.guess));
+  };
+  gaugeState = { bar, update };
+  update(s.guess);
+  bar.parentElement.addEventListener('pointerdown', e=>{ gaugeDragging = true; update(gaugePos(e)); e.preventDefault(); });
+  bar.addEventListener('keydown', e=>{
+    const step = e.shiftKey ? 10 : 2;
+    const up = boardFlipped() ? -step : step; // "up" on screen = more of whatever is at the bottom's opposite
+    if(e.key==='ArrowUp'){ update(s.guess + up); e.preventDefault(); }
+    if(e.key==='ArrowDown'){ update(s.guess - up); e.preventDefault(); }
+  });
+}
+// White's share from the pointer's height on the bar: bottom = 100% White when White is at the
+// bottom; the reverse when the board (and bar) are flipped.
+function gaugePos(e){
+  const rect = gaugeState.bar.getBoundingClientRect();
+  const fromTop = (e.clientY - rect.top) / rect.height * 100;
+  return boardFlipped() ? fromTop : 100 - fromTop;
+}
+// Registered once: the bar is rebuilt on every render, the window listeners aren't.
+window.addEventListener('pointermove', e=>{ if(gaugeDragging && gaugeState) gaugeState.update(gaugePos(e)); });
+window.addEventListener('pointerup', ()=>{ gaugeDragging = false; });
+
+// ================= Candidate moves =================
+function pickHint(count){
+  const who = side==='w' ? 'White' : 'Black';
+  if(count===0) return `Tap a ${who.toLowerCase()} piece, then its destination. Suggest at least one strong move for ${who}.`;
+  if(count===1) return 'You can add up to three moves.';
+  if(count===2) return 'Any last move worth considering?';
+  return '';
+}
+function renderCandidates(){
+  const app = document.getElementById('app');
+  const p = pos(), s = st('candidates');
+  const chess = new Chess(p.fen);
+  const bs = boardObjFromGame(chess);
+
+  if(s.checked){
+    // Everything below reads the one combined search (picks + game move + engine top 5).
+    const ev0 = candidatesEval(p, s.picks);
+    const failed = evalFailed(ev0), ev = failed ? null : ev0;
+    // List 1: the player's own picks. A pick the engine didn't return a line for shows "—".
+    let mine = s.picks.map((m,i)=>({ ...m, num:String(i+1), color:cols[m.slot] }));
+    mine.forEach(r=>{ r.outcome = moveOutcome(p.fen, r.from, r.to, ev); r.na = (!!ev || failed) && !r.outcome; });
+    // Once the evaluation is in, your moves are re-ordered best → worst (animated once, below).
+    const canSort = !!ev;
+    if(canSort && s.sortDone){
+      mine = mine.slice().sort((a,b)=>pickSortKey(b) - pickSortKey(a)).map((r,i)=>({ ...r, num:String(i+1) }));
+    }
+    // List 2: the engine's top N, N = how many moves the player picked (the same reference the
+    // accuracy uses). Anything already Dubious or worse (10+ win% points behind the best) is
+    // greyed out: it's in the list only because there aren't that many good moves.
+    let nextTop = 0;
+    const topN = Math.max(1, s.picks.length);
+    const top = ev ? ev.lines.slice(0,topN).filter(l=>l.uci).map((l,i)=>{
+      const u = l.uci.slice(0,4), from = u.slice(0,2), to = u.slice(2,4);
+      const picked = s.picks.find(m=>m.from+m.to===u);
+      const r = { uci:u, from, to, san:sanForFen(p.fen, from, to), num:String(i+1) };
+      r.outcome = moveOutcome(p.fen, from, to, ev);
+      r.muted = !!(r.outcome && r.outcome.winDrop>=10);
+      // A move you picked keeps your colour in this list too; the others take the engine colours.
+      r.color = r.muted ? 'var(--text-mute)' : picked ? cols[picked.slot] : TOP_COLS[nextTop++];
+      return r;
+    }) : [];
+    const acc = pickAccuracyPct(s.picks, ev);
+    // Both lists are always shown; the two headers only switch each list's arrows on the board.
+    // By default only your own moves are drawn, so the board doesn't start out crowded.
+    const showMine = s.showMine!==false, showTop = !!s.showTop;
+    const arrowList = [];
+    [...(showMine ? mine : []), ...(showTop ? top : [])].forEach(m=>{
+      if(!arrowList.some(a=>a.from===m.from && a.to===m.to)) arrowList.push(m);
+    });
+    const col = (title, key, on, rows, emptyText)=>`
+      <div class="review-col">
+        <button class="col-toggle ${on?'on':''}" data-toggle="${key}" aria-pressed="${on}">
+          <span class="col-toggle-box" aria-hidden="true"></span>${title}
+        </button>
+        ${rows.length ? rows.map(r=>miniRowHtml(r, !!s.sortDone, !!s.justSorted)).join('') : `<p class="hint">${emptyText}</p>`}
+      </div>`;
+    app.innerHTML = `
+      ${header('Candidate moves')}
+      ${posBar()}
+      ${boardHtml(false)}
+      ${stackedPanel(`
+        <div class="score"><span class="score-num" id="candAcc">${s.countDone ? pctOrDash(acc) : s.countStarted ? '0%' : '—'}</span><span class="score-label" id="candAccLabel">${failed ? 'evaluation unavailable' : s.countStarted || s.countDone ? 'accuracy' : 'evaluating…'}</span>${levelChip(s, s.countDone, s.justCounted)}</div>
+        <div class="review-cols">
+          ${col('Your moves', 'mine', showMine, mine, '')}
+          ${col('Top moves', 'top', showTop, top, failed ? 'Unavailable' : 'Evaluating…')}
+        </div>
+        <div class="actions-row split${s.countDone ? (s.justCounted ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`,
+        ghostCandidates(), engineErrorBanner())}`;
+    renderBoard(document.getElementById('board'), bs, p.last);
+    drawArrows(document.getElementById('arrows'), arrowList, 'ac_');
+    document.querySelectorAll('.col-toggle').forEach(b=>b.onclick = ()=>{
+      if(b.dataset.toggle==='mine') s.showMine = !showMine; else s.showTop = !showTop;
+      render();
+    });
+    wireCommon('candidates', true);
+    // "Top moves" fade in together (no slide) once the evaluation is in, while your moves re-order.
+    if(top.length && s.topAt==null){ s.topAt = performance.now(); prefetchNext(); }
+    if(s.topAt!=null){
+      const el = performance.now() - s.topAt;
+      document.querySelectorAll('.review-col')[1]?.querySelectorAll('.mini-row')
+        .forEach(r=>timedFade(r, 30, el, TOP_FADE, 'rowIn', SORT_EASE));   // same start, length and curve as the re-order
+      // ...and the grades + scores of your own moves fade in with them, all at once.
+      document.querySelectorAll('.review-col')[0]?.querySelectorAll('.mini-result')
+        .forEach(r=>timedFade(r, 30, el, TOP_FADE, 'rowIn', SORT_EASE));
+    }
+    s.justSorted = false; s.justCounted = false;
+    if(canSort && !s.sortStarted){ s.sortStarted = true; recordResult(s, 'candidates', acc); animateSort(s, mine, acc); }
+    return;
+  }
+
+  const capReached = s.picks.length>=3;
+  const destSquares = selSquare
+    ? (capReached ? s.picks.filter(m=>m.from===selSquare).map(m=>m.to)
+                  : chess.moves({square:selSquare, verbose:true}).map(m=>m.to))
+    : [];
+  app.innerHTML = `
+    ${header('Candidate moves')}
+    ${posBar()}
+    ${boardHtml(false)}
+    ${stackedPanel(`
+      <div id="moveList"></div>
+      ${pickHint(s.picks.length) ? `<p class="hint" id="candHint">${pickHint(s.picks.length)}</p>` : ''}
+      <div class="actions-row" id="candCheckRow"><button class="btn" id="check" ${s.picks.length ? '' : 'disabled'}>Check</button></div>`,
+      ghostCandidates(), engineErrorBanner())}`;
+  const canSelect = sq=>{
+    const piece = bs[sq];
+    if(!piece || colorOf(piece)!==side) return false;
+    return !capReached || s.picks.some(m=>m.from===sq);
+  };
+  const freeSlot = ()=>{ for(let k=0;k<3;k++){ if(!s.picks.some(m=>m.slot===k)) return k; } return 0; };
+  renderBoard(document.getElementById('board'), bs, p.last, {
+    selectedSq: selSquare, destSquares,
+    onSquareClick: sq=>{
+      if(selSquare && destSquares.includes(sq)){
+        const dup = s.picks.findIndex(m=>m.from===selSquare && m.to===sq);
+        if(dup>=0) s.picks.splice(dup,1);
+        else {
+          const mv = chess.moves({square:selSquare, verbose:true}).find(m=>m.to===sq && (!m.promotion || m.promotion==='q'));
+          s.picks.push({ id:'c_'+selSquare+sq, san: mv ? mv.san : sq, from:selSquare, to:sq, uci: mv ? mv.from+mv.to+(mv.promotion||'') : selSquare+sq, slot:freeSlot() });
+        }
+        selSquare = null; render(); return;
+      }
+      selSquare = canSelect(sq) && sq!==selSquare ? sq : null;
+      render();
+    }
+  });
+  drawArrows(document.getElementById('arrows'), s.picks.map(m=>({ ...m, color:cols[m.slot] })), 'ap_');
+  const listEl = document.getElementById('moveList');
+  s.picks.forEach((m,i)=>{
+    const row = document.createElement('div');
+    row.className = 'review-row pick-row';
+    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${cols[m.slot]}">${m.san}</span></div>`;
+    const rm = document.createElement('button');
+    rm.className = 'del-btn'; rm.textContent = '✕';
+    rm.setAttribute('aria-label', 'Remove ' + m.san);
+    rm.onclick = ()=>{ s.picks.splice(i,1); render(); };
+    row.appendChild(rm);
+    listEl.appendChild(row);
+  });
+  introFade(s, ['candHint', 'candCheckRow']);
+  document.getElementById('check').onclick = ()=>{ s.checked = true; s.sortDone = false; s.countStarted = false; s.countDone = false; s.sortStarted = false; s.topAt = null; selSquare = null; candidatesEval(p, s.picks); render(); };
+  wireCommon('candidates', false);
+}
+
+// The review's reveal, once the evaluation is in — one step at a time:
+//   1. "Your moves" slide into best → worst order, like a drag-and-drop (moving rows lift, same
+//      look as a dragged row in Final choice);
+//   2. the list is redrawn in its new order and the Best highlight fades in;
+//   3. the accuracy counts up from 0% to the final value;
+//   4. the buttons fade in.
+// Runs once per review; with reduced motion everything shows at once.
+const TOP_FADE = 550, SORT_EASE = 'cubic-bezier(.2,.8,.2,1)';
+const SORT_MOVE = 650, BEAT = 350, COUNT_MS = REVEAL_MS;   // same pace as the board-analysis reveal
+const pickSortKey = r => r.outcome ? r.outcome.moverCp : -Infinity;
+function animateSort(s, mine, acc){
+  const order = mine.slice().sort((a,b)=>pickSortKey(b) - pickSortKey(a)).map(r=>r.from+r.to);
+  const unchanged = order.every((k,i)=>k===mine[i].from+mine[i].to);
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const key = pos().key;
+  const here = ()=> screen==='candidates' && pos().key===key;
+  if(reduced || acc==null){ s.sortDone = s.countStarted = s.countDone = true; if(here()) render(); return; }
+
+  const countUp = ()=>{
+    // "evaluating…" stays up until this point — the count is the first sign of the score.
+    s.countStarted = true;
+    const label = document.getElementById('candAccLabel'), num = document.getElementById('candAcc');
+    if(here() && label){ label.textContent = 'accuracy'; num.textContent = '0%'; }
+    let start = null;
+    const step = ts=>{
+      if(start===null) start = ts;
+      const t = Math.min(1, (ts-start)/COUNT_MS);
+      const el = document.getElementById('candAcc');
+      if(el && here()) el.textContent = Math.round(acc * easeOut(t)) + '%';
+      if(t<1) requestAnimationFrame(step);
+      else { s.countDone = true; s.justCounted = true; if(here()) render(); }   // 4. buttons
+    };
+    requestAnimationFrame(step);
+  };
+  const afterSort = ()=>{
+    s.sortDone = true; s.justSorted = true; s.countStarted = true;             // 2. order + Best
+    if(here()) render();
+    countUp();                                                                  // 3. accuracy, alongside the highlight
+  };
+  // Already in order: still wait the length of a re-order, so the Top moves fade has finished
+  // before the Best highlight starts (both animate the same row when your best is the top move).
+  if(unchanged){ setTimeout(afterSort, SORT_MOVE); return; }
+
+  const col = document.querySelector('.review-col');
+  const rows = col ? Array.from(col.querySelectorAll('.mini-row')) : [];
+  if(rows.length!==mine.length){ afterSort(); return; }
+  const tops = rows.map(r=>r.offsetTop);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{                         // 1. reorder, right away
+    rows.forEach(r=>{
+      const target = order.indexOf(r.dataset.key), current = rows.indexOf(r);
+      if(target===current) return;
+      r.classList.add('sorting');
+      r.style.transform = `translateY(${tops[target]-tops[current]}px)`;
+    });
+    setTimeout(afterSort, SORT_MOVE);
+  }));
+}
+
+// ================= Final choice =================
+// Timed fade for one element: starts `delay` ms after a sequence began, `elapsed` ms ago. Done by
+// elapsed time rather than on first paint, so a re-render mid-sequence carries on where it was.
+// `kind` is rowIn (plain fade) or fadeIn (fade with a small rise).
+function timedFade(el, delay, elapsed, dur, kind, easing){
+  if(!el || elapsed >= delay + dur) return;
+  el.style.animation = `${kind} ${dur}ms ${easing || 'ease-out'} ${delay - elapsed}ms both`;
+  // Only this element's own animation ending counts — a child's animationend bubbles up too.
+  const done = ev=>{ if(ev.target!==el) return; el.style.animation = ''; el.removeEventListener('animationend', done); };
+  el.addEventListener('animationend', done);
+}
+const SLIDE_MS = 350;   // = .fade-in, the Board analysis recap/buttons fade-and-rise
+// Question screens of Board analysis and Candidate moves: the instruction and Check button fade
+// and rise in together, once per position, as soon as the screen opens.
+function introFade(s, ids){
+  if(s.introAt==null) s.introAt = performance.now();
+  const el = performance.now() - s.introAt;
+  ids.forEach(id=>timedFade(document.getElementById(id), 0, el, SLIDE_MS, 'fadeIn'));
+}
+const INTRO_START = 400, INTRO_STEP = 450, INTRO_FADE = 650;
+const REV_START = INTRO_START, REV_STEP = INTRO_STEP, REV_FADE = INTRO_FADE;   // same pace as the moves' intro
+function renderFinal(){
+  const app = document.getElementById('app');
+  const p = pos(), s = st('final');
+  const moves = finalMoves(p);
+  const bs = boardObjFromGame(new Chess(p.fen));
+  if(!moves || evalFailed(moves)){
+    // Waiting for the engine's top moves — or no engine at all, in which case there's nothing to
+    // rank and the only way on is the next position.
+    const none = evalFailed(moves);
+    app.innerHTML = `
+      ${header('Final choice')}
+      ${posBar()}
+      ${boardHtml(false)}
+      ${stackedPanel(`<p class="hint" style="margin:0">${none ? 'No moves to rank: the position couldn\'t be evaluated.' : 'Preparing four candidate moves…'}</p>
+        ${none ? `<div class="actions-row split">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>` : ''}`, ghostFinal(), engineErrorBanner())}`;
+    renderBoard(document.getElementById('board'), bs, p.last);
+    wireCommon('final', false);
+    return;
+  }
+  // The four moves are known: start their one evaluation now, while the player ranks them.
+  const ev0 = finalEval(p, moves);
+  const failed = evalFailed(ev0), ev = failed ? null : ev0;
+  if(!s.order || s.order.length!==moves.length || !moves.every(m=>s.order.includes(m.id))) s.order = moves.map(m=>m.id);
+  const ordered = s.order.map(id=>moves.find(m=>m.id===id));
+
+  if(s.checked){
+    const rows = ordered.map((m,i)=>({ ...m, num:String(i+1), outcome: moveOutcome(p.fen, m.from, m.to, ev) }));
+    rows.forEach(r=>{ r.na = (!!ev || failed) && !r.outcome; });
+    const cpById = {};
+    rows.forEach(r=>{ cpById[r.id] = r.outcome ? r.outcome.moverCp : null; });
+    const acc = ev ? rankAccuracyPct(s.order, cpById) : null;
+    // The reveal, timed from when the evaluation is in (so re-renders pick it up mid-way):
+    //   1. each move's grade + score (and the Best highlight, on its row) fades in, row 1 to 4;
+    //   2. then the accuracy counts up from 0%;
+    //   3. the buttons fade and slide in.
+    const ready = !!ev;
+    if(ready && s.revAt==null){
+      s.revAt = performance.now();
+      recordResult(s, 'final', acc);
+      prefetchNext();
+      if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) s.revAt -= 1e6;
+    }
+    const e = s.revAt==null ? -1 : performance.now() - s.revAt;
+    const tCount = REV_START + (rows.length-1)*REV_STEP + REV_FADE, tEnd = tCount + COUNT_MS;
+    if(e >= tEnd && !s.revDone){ s.revDone = true; s.justDone = true; }
+    const counting = e >= tCount;
+    const scoreText = !counting ? '—' : s.revDone ? pctOrDash(acc) : Math.round(acc * easeOut((e - tCount)/COUNT_MS)) + '%';
+    app.innerHTML = `
+      ${header('Final choice')}
+      ${posBar()}
+      ${boardHtml(false)}
+      ${stackedPanel(`
+        <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'evaluation unavailable' : counting ? 'accuracy' : 'evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}</div>
+        <div id="reviewRows" class="rev-list">${rows.map(reviewRowHtml).join('')}</div>
+        <div class="actions-row split${s.revDone ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`, ghostFinal(), engineErrorBanner())}`;
+    renderBoard(document.getElementById('board'), bs, p.last);
+    drawArrows(document.getElementById('arrows'), rows, 'af_');
+    wireCommon('final', true);
+    s.justDone = false;
+    if(ready && !s.revDone){
+      const els = document.querySelectorAll('#reviewRows .review-row');
+      els.forEach((row,i)=>{
+        const d = REV_START + i*REV_STEP;
+        row.querySelectorAll('.move-result, .badges').forEach(x=>timedFade(x, d, e, REV_FADE, 'rowIn'));
+        if(row.classList.contains('best-row')) timedFade(row, d, e, REV_FADE, 'bestIn');
+      });
+      if(!s.revLoop){
+        s.revLoop = true;
+        const key = p.key;
+        const tick = ()=>{
+          if(screen!=='final' || pos().key!==key || !s.checked){ s.revLoop = false; return; }
+          const t = performance.now() - s.revAt;
+          if(t >= tEnd){ s.revLoop = false; render(); return; }
+          if(t >= tCount){
+            const num = document.getElementById('finalAcc'), lab = document.getElementById('finalAccLabel');
+            if(num) num.textContent = Math.round(acc * easeOut((t - tCount)/COUNT_MS)) + '%';
+            if(lab) lab.textContent = 'accuracy';
+          }
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+    }
+    return;
+  }
+
+  app.innerHTML = `
+    ${header('Final choice')}
+    ${posBar()}
+    ${boardHtml(false)}
+    ${stackedPanel(`
+      <div id="ranked"></div>
+      <p class="hint rank-hint" id="finalHint">Drag the moves into order, best at the top.</p>
+      <div class="actions-row" id="finalCheckRow"><button class="btn" id="check">Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
+  renderBoard(document.getElementById('board'), bs, p.last);
+  drawArrows(document.getElementById('arrows'), ordered, 'ar_');
+  const rankedEl = document.getElementById('ranked');
+  // Intro: the four moves fade in one after another, then the Check button. Timed from the
+  // first time they're shown, so a re-render mid-way picks the animation up where it was.
+  if(s.introAt==null) s.introAt = performance.now();
+  const introEl = performance.now() - s.introAt;
+  // Moves: plain fade. Instruction + Check: fade with the small rise used in Board analysis.
+  const fadeAt = (el, delay, kind)=>timedFade(el, delay, introEl, INTRO_FADE, kind || 'rowIn');
+  ordered.forEach((m,i)=>{
+    const row = document.createElement('div');
+    row.className = 'rate-row';
+    row.dataset.id = m.id;
+    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${m.color}">${m.san}</span></div><span class="drag-handle" aria-hidden="true">⠿</span>`;
+    rankedEl.appendChild(row);
+    fadeAt(row, INTRO_START + i*INTRO_STEP);
+  });
+  // Each move's arrow simply appears (no fade) as its row starts fading in.
+  document.querySelectorAll('#arrows line').forEach((ln,i)=>{
+    const wait = INTRO_START + i*INTRO_STEP - introEl;
+    if(wait > 0) ln.style.animation = `hidden ${wait}ms linear`;
+  });
+  // The instruction and the Check button fade in together, last.
+  const tLast = INTRO_START + ordered.length*INTRO_STEP + 100;
+  timedFade(document.getElementById('finalHint'), tLast, introEl, SLIDE_MS, 'fadeIn');
+  timedFade(document.getElementById('finalCheckRow'), tLast, introEl, SLIDE_MS, 'fadeIn');
+  wireDragReorder(rankedEl, s.order, ()=>render());
+  document.getElementById('check').onclick = ()=>{ s.checked = true; s.revAt = null; s.revDone = false; render(); };
+  wireCommon('final', false);
+}
+
+function render(){
+  syncPos();
+  const wrap = document.querySelector('.wrap');
+  wrap.classList.toggle('ex', ACTIVITIES.includes(screen));
+  wrap.dataset.screen = screen;
+  if(screen==='home') renderHome();
+  else if(screen==='progress') renderProgress();
+  else if(screen==='analysis') renderAnalysis();
+  else if(screen==='candidates') renderCandidates();
+  else renderFinal();
+}
+
+render();
+initEngine();
+initProgress();
+</script>

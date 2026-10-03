@@ -1,0 +1,81 @@
+{
+ "version": "2026-10-03.2",
+ "engine": {
+  "depth": 18,
+  "multipv": 8,
+  "threads": 2,
+  "hash": 256
+ },
+ "games": [
+  {
+   "id": "g0",
+   "white": "Kasparov, G",
+   "black": "Andersson, U",
+   "event": "?",
+   "year": "1981",
+   "result": "1-0",
+   "title": "Kasparov – Andersson",
+   "plies": 59,
+   "middlegame": 20,
+   "endgame": -1,
+   "checked": 51,
+   "passedGeneral": 41,
+   "analysis": 6,
+   "candidates": 7,
+   "final": 5
+  },
+  {
+   "id": "g1",
+   "white": "Fischer, R",
+   "black": "Petrosian, T",
+   "event": "Candidates Final",
+   "year": "1971",
+   "result": "1-0",
+   "title": "Fischer – Petrosian",
+   "plies": 67,
+   "middlegame": 16,
+   "endgame": 44,
+   "checked": 59,
+   "passedGeneral": 49,
+   "analysis": 4,
+   "candidates": 6,
+   "final": 5
+  },
+  {
+   "id": "g2",
+   "white": "Short, N",
+   "black": "Gelfand, B",
+   "event": "Candidates Quarter-Final",
+   "year": "1991",
+   "result": "1-0",
+   "title": "Short – Gelfand",
+   "plies": 61,
+   "middlegame": 26,
+   "endgame": -1,
+   "checked": 53,
+   "passedGeneral": 49,
+   "analysis": 5,
+   "candidates": 5,
+   "final": 3
+  }
+ ],
+ "positions": 163,
+ "reasons": {
+  "mid-exchange": 19,
+  "fewer than 4 legal moves": 5
+ },
+ "analysis": {
+  "rejected: in check": 1
+ },
+ "candidates": {
+  "rejected: no trap in top 5": 107,
+  "rejected: spacing": 14
+ },
+ "final": {
+  "rejected: fewer than 3 grades": 110,
+  "rejected: random order scores > 60%": 3,
+  "eligible before spacing": 20,
+  "rejected: fewer than 3 grades among the 4 shown": 6,
+  "rejected: spacing": 7
+ }
+}
