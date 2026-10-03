@@ -717,10 +717,16 @@ function drawArrows(svg, list, keyPrefix){
   const defs = list.map((m,i)=>
     `<marker id="${keyPrefix}${i}" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="${m.color}"/></marker>`
   ).join('');
+  // Arrows sharing the same squares (promotions to different pieces) are spread sideways, a few
+  // units apart, so a strip of each colour stays visible.
+  const SPREAD = 5;
   const lines = list.map((m,i)=>{
     const a = squareCenter(m.from), b = squareCenter(m.to);
     const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
-    const ex = b.x - dx/len*14, ey = b.y - dy/len*14;
+    const same = list.filter(o=>o.from===m.from && o.to===m.to), k = same.indexOf(m);
+    const shift = (k - (same.length-1)/2) * SPREAD, nx = -dy/len*shift, ny = dx/len*shift;
+    a.x += nx; a.y += ny;
+    const ex = b.x + nx - dx/len*14, ey = b.y + ny - dy/len*14;
     return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="7" stroke-linecap="round" marker-end="url(#${keyPrefix}${i})" opacity="0.9"/>`;
   }).join('');
   svg.innerHTML = `<defs>${defs}</defs>${lines}`;
@@ -1599,7 +1605,7 @@ function renderCandidates(){
     const showMine = s.showMine!==false, showTop = !!s.showTop;
     const arrowList = [];
     [...(showMine ? mine : []), ...(showTop ? top : [])].forEach(m=>{
-      if(!arrowList.some(a=>a.from===m.from && a.to===m.to)) arrowList.push(m);
+      if(!arrowList.some(a=>a.uci===m.uci)) arrowList.push(m);
     });
     const col = (title, key, on, rows, emptyText)=>`
       <div class="review-col">
