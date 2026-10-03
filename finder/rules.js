@@ -1,9 +1,9 @@
 // Position finder rules — every threshold the finder uses, and nothing else.
 // Mirrors the "Position finder rules" doc. Change a rule here (and in the doc), bump VERSION.
 module.exports = {
-  VERSION: '2026-10-03.2',
+  VERSION: '2026-10-03.3',
 
-  ENGINE: { depth: 18, multipv: 8, threads: 2, hash: 256 },
+  ENGINE: { depth: 18, multipv: 5, threads: 2, hash: 256 },
 
   // Grades: points of winning chances (Lichess win% curve) below the best move.
   GRADES: [ ['Good', 0], ['Ok', 3], ['Dubious', 10], ['Mistake', 20], ['Blunder', 30] ],
@@ -32,7 +32,7 @@ module.exports = {
   },
 
   FINAL: {
-    topN: 5,                       // moves are picked from the top 5 (+ the game move)
+    topN: 5,                       // moves are picked from the top 5 (+ the game move); the app re-picks them at runtime by the same rule
     minGrades: 3,                  // at least 3 different grades among top 5 + game move
     spacingPlies: 3,               // 3 half-moves between kept positions from the same game
     maxRandomAccuracy: 60,         // average accuracy of all 24 orders must be at most this

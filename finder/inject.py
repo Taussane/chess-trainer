@@ -1,4 +1,4 @@
-# Copies the pools from a finder run into the app (the /*POOLS*/ ... /*END POOLS*/ block of app/index.html).
+# Copies the pools from a finder run (positions only; the app picks and evaluates moves itself) into the app (the /*POOLS*/ ... /*END POOLS*/ block of app/index.html).
 # Usage: python3 finder/inject.py data/pools.json
 import json, re, sys, pathlib
 src = sys.argv[1]
@@ -6,7 +6,6 @@ app = pathlib.Path(__file__).resolve().parent.parent / 'app' / 'index.html'
 d = json.load(open(src))
 def slim(e):
     o = {k: e[k] for k in ('key','fen','side','moveNo','title','year','last','hist')}
-    if 'final' in e: o['final'] = e['final']['moves']
     return o
 pools = {k: [slim(e) for e in v] for k, v in d['pools'].items()}
 s = app.read_text()
