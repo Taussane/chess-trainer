@@ -1,7 +1,7 @@
 // Position finder rules — every threshold the finder uses, and nothing else.
 // Mirrors the "Position finder rules" doc. Change a rule here (and in the doc), bump VERSION.
 module.exports = {
-  VERSION: '2026-10-03.3',
+  VERSION: '2026-10-03.4',
 
   ENGINE: { depth: 18, multipv: 5, threads: 2, hash: 256 },
 

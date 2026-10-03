@@ -198,20 +198,24 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
       } else tally(stats.candidates, 'rejected: no trap in top 5');
 
       // Final choice
+      // The game move is always judged inside ONE search with the top 5: the discovery search when
+      // it is already among them, otherwise one combined search over the top 5 + the game move.
       const gm = hist[ply], gmUci = gm.from+gm.to+(gm.promotion||'');
-      let gmLine = ls.find(l=>l.uci===gmUci);
-      if(!gmLine) gmLine = (await analyse(fens[ply], [gmUci]))[0];
-      const pool = top5.slice(); if(!pool.some(l=>l.uci===gmUci)) pool.push(gmLine);
-      const grades = new Set(pool.map(l=>gradeOf(drop(l))));
+      const cand = top5.some(l=>l.uci===gmUci) ? top5
+                 : (await analyse(fens[ply], [...top5.map(l=>l.uci), gmUci])).slice().sort((a,b)=>winPct(b.cp,b.mate)-winPct(a.cp,a.mate));
+      const gmLine = cand.find(l=>l.uci===gmUci);
+      if(!gmLine){ tally(stats.final, 'rejected: search lost the game move'); continue; }
+      const cBest = winPct(cand[0].cp, cand[0].mate), cDrop = l=>cBest - winPct(l.cp, l.mate);
+      const grades = new Set(cand.map(l=>gradeOf(cDrop(l))));
       if(grades.size < R.FINAL.minGrades){ tally(stats.final, 'rejected: fewer than 3 grades'); continue; }
       // Pick: best, game move, then new grades best to worst, then least-represented grades.
-      const picks = [ls[0]]; if(gmUci!==ls[0].uci) picks.push(gmLine);
-      const have = ()=>picks.map(l=>gradeOf(drop(l)));
-      for(const l of top5){ if(picks.length>=4) break; if(!picks.includes(l) && !have().includes(gradeOf(drop(l)))) picks.push(l); }
+      const picks = [cand[0]]; if(gmLine!==cand[0]) picks.push(gmLine);
+      const have = ()=>picks.map(l=>gradeOf(cDrop(l)));
+      for(const l of cand){ if(picks.length>=4) break; if(!picks.includes(l) && !have().includes(gradeOf(cDrop(l)))) picks.push(l); }
       while(picks.length<4){
-        const rest = top5.filter(l=>!picks.includes(l)); if(!rest.length) break;
+        const rest = cand.filter(l=>!picks.includes(l)); if(!rest.length) break;
         const count = g=>have().filter(x=>x===g).length;
-        rest.sort((a,b)=>count(gradeOf(drop(a))) - count(gradeOf(drop(b))));   // stable: best first on ties
+        rest.sort((a,b)=>count(gradeOf(cDrop(a))) - count(gradeOf(cDrop(b))));   // stable: best first on ties
         picks.push(rest[0]);
       }
       if(picks.length<4){ tally(stats.final, 'rejected: fewer than 4 moves'); continue; }
@@ -228,7 +232,7 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
       if(ply - lastFinal < R.FINAL.spacingPlies){ tally(stats.final, 'rejected: spacing'); continue; }
       lastFinal = ply;
       add(pools.final, { ...base(ply), final:{ moves: picks.map(l=>l.uci) },
-        metrics:{ randomAccuracy: Math.round(rnd), grades: g4, gameMoveGrade: gradeOf(drop(gmLine)) } });
+        metrics:{ randomAccuracy: Math.round(rnd), grades: g4, gameMoveGrade: gradeOf(cDrop(gmLine)) } });
       gs.final++;
     }
   }
