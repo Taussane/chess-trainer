@@ -1,7 +1,7 @@
 // Position finder rules — every threshold the finder uses, and nothing else.
 // Mirrors the "Position finder rules" doc. Change a rule here (and in the doc), bump VERSION.
 module.exports = {
-  VERSION: '2026-10-03.5',
+  VERSION: '2026-10-03.6',
 
   ENGINE: { depth: 18, multipv: 5, threads: 2, hash: 256 },
 
@@ -35,7 +35,6 @@ module.exports = {
     topN: 5,                       // moves are picked from the top 5 (+ the game move); the app re-picks them at runtime by the same rule
     minGrades: 3,                  // at least 3 different grades among top 5 + game move
     uniqueGrades: ['Dubious', 'Mistake', 'Blunder'],   // at most one of the four moves per bad grade
-    spacingPlies: 3,               // 3 half-moves between kept positions from the same game
     maxRandomAccuracy: 60,         // average accuracy of all 24 orders must be at most this
     weights: [0.5, 0.3, 0.2],      // the app's scoring rule (best remaining move, Dubious cap)
   },

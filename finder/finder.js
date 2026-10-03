@@ -30,7 +30,7 @@ const send = s=>sf.stdin.write(s+'\n');
 const until = t=>new Promise(r=>{ waiter = {t, r}; if(buf.includes(t)){ waiter = null; const o = buf; buf = ''; r(o); } });
 const winPct = (cp, mate)=> mate!=null ? (mate>0 ? 100 : 0) : 50 + 50*(2/(1+Math.exp(-0.00368208*cp)) - 1);
 const moverScore = l=> l.mate!=null ? (l.mate>0 ? 1000 : -1000) : Math.max(-1000, Math.min(1000, l.cp));
-async function analyse(fen, searchmoves){
+async function search(fen, searchmoves){
   const mpv = searchmoves ? searchmoves.length : R.ENGINE.multipv;
   send('setoption name MultiPV value '+mpv); send('position fen '+fen);
   send('go depth '+R.ENGINE.depth + (searchmoves ? ' searchmoves '+searchmoves.join(' ') : ''));
@@ -43,8 +43,22 @@ async function analyse(fen, searchmoves){
   });
   return Object.values(L).sort((a,b)=>winPct(b.cp,b.mate) - winPct(a.cp,a.mate));   // mover's view, best first
 }
-const cache = {};
-async function lines(fen){ return cache[fen] || (cache[fen] = await analyse(fen)); }
+// Every search is kept on disk (one JSON line each), keyed by depth, MultiPV, position and move
+// restriction, so a re-run (new rules, more games, or after an interruption) only searches what
+// it hasn't seen. Delete the file to start fresh.
+const CACHE_FILE = process.env.CACHE || path.join(__dirname, '.cache', 'searches.jsonl');
+const cache = new Map();
+fs.mkdirSync(path.dirname(CACHE_FILE), {recursive:true});
+if(fs.existsSync(CACHE_FILE)) fs.readFileSync(CACHE_FILE,'utf8').split('\n').forEach(l=>{ if(l){ try{ const [k,v] = JSON.parse(l); cache.set(k,v); }catch(e){} } });
+let searched = 0, reused = 0;
+async function analyse(fen, searchmoves){
+  const k = [R.ENGINE.depth, searchmoves ? searchmoves.length : R.ENGINE.multipv, fen, (searchmoves||[]).join(' ')].join('|');
+  if(cache.has(k)){ reused++; return cache.get(k); }
+  const v = await search(fen, searchmoves); searched++;
+  cache.set(k, v); fs.appendFileSync(CACHE_FILE, JSON.stringify([k,v])+'\n');
+  return v;
+}
+async function lines(fen){ return analyse(fen); }
 
 // ---------- Board helpers ----------
 const VAL = { p:1, n:3, b:3, r:5, q:9, k:0 };
@@ -129,7 +143,7 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
     const div = divide(fens);
     const gs = { ...game, plies:hist.length, middlegame:div.mid, endgame:div.end, checked:0, passedGeneral:0, analysis:0, candidates:0, final:0 };
     stats.games.push(gs);
-    process.stderr.write(`${game.title}: ${hist.length} plies, middlegame ply ${div.mid}, endgame ply ${div.end}\n`);
+    process.stderr.write(`[${gi+1}/${games.length}] ${game.title}: ${hist.length} plies, middlegame ply ${div.mid}, endgame ply ${div.end}\n`);
 
     // General rules, per ply (position before hist[ply] is played).
     const general = {};   // ply -> { ok, ls, reason }
@@ -181,7 +195,7 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
     } else if(!decisive) tally(stats.analysis, 'games skipped: draw');
 
     // ----- Candidate moves and Final choice, ply by ply.
-    let lastCand = -99, lastFinal = -99;
+    let lastCand = -99;
     for(let ply=0; ply<hist.length; ply++){
       const gen = general[ply]; if(!gen || !gen.ok) continue;
       const ls = gen.ls, best = winPct(ls[0].cp, ls[0].mate);
@@ -230,9 +244,6 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
       if(BAD.some(g=>g4.filter(x=>x===g).length > 1)){ tally(stats.final, 'rejected: two moves of the same bad grade'); continue; }
       const rnd = randomAccuracy(cp);
       if(rnd > R.FINAL.maxRandomAccuracy){ tally(stats.final, 'rejected: random order scores > 60%'); continue; }
-      tally(stats.final, 'eligible before spacing');
-      if(ply - lastFinal < R.FINAL.spacingPlies){ tally(stats.final, 'rejected: spacing'); continue; }
-      lastFinal = ply;
       add(pools.final, { ...base(ply), final:{ moves: picks.map(l=>l.uci) },
         metrics:{ randomAccuracy: Math.round(rnd), grades: g4, gameMoveGrade: gradeOf(cDrop(gmLine)) } });
       gs.final++;
@@ -244,6 +255,7 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
   fs.mkdirSync(outDir, {recursive:true});
   fs.writeFileSync(path.join(outDir,'pools.json'), JSON.stringify(out, null, 1));
   fs.writeFileSync(path.join(outDir,'stats.json'), JSON.stringify(stats, null, 1));
+  process.stderr.write(`searches: ${searched} new, ${reused} reused from the cache\n`);
   console.log(JSON.stringify({ counts: Object.fromEntries(Object.entries(out.pools).map(([k,v])=>[k,v.length])), stats }, null, 1));
   send('quit');
 })();

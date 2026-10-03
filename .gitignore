@@ -3,3 +3,4 @@ engine/
 __pycache__/
 *.log
 tests/shots/
+finder/.cache/
