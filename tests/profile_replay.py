@@ -1,6 +1,7 @@
 # Profile page (joined date, positions completed, this week, replay button, progress) and the
 # replay loop: a position played below your average joins the list; replaying it at or above
-# your average takes it off; replays don't count in averages or the log.
+# your average takes it off; replays count like any position; a position played today isn't
+# offered again until tomorrow.
 import asyncio, sys, pathlib
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
@@ -24,12 +25,15 @@ async def main():
         txt = await pg.inner_text('.pf-scroll')
         print(txt.split('\n')[:6])
         if 'Training since' not in txt or '9 positions completed' not in txt: fails.append('profile header wrong')
-        if 'Replay 1' not in txt: fails.append('replay button missing')
+        if 'All played today' not in txt: fails.append('a position played today was offered for replay')
         rows = await pg.evaluate("[...document.querySelectorAll('.wk-table tbody tr')].map(r=>r.innerText.replace(/\\s+/g,' '))")
         print('week:', rows[:3])
         if not rows[0].startswith('Today 5') : fails.append(f'today row: {rows[0]}')
         await pg.screenshot(path=str(T.SHOTS/'profile.png'), full_page=True)
-        # Replay it well -> off the list; nothing added to results.
+        # Next day: the position is offered again. Replay it well -> off the list, and it counts.
+        await pg.evaluate("played = { day: todayKey(), keys: [] }; render()")
+        txt = await pg.inner_text('.pf-scroll')
+        if 'Replay 1' not in txt: fails.append('replay button missing the next day')
         n_before = await pg.evaluate("results.length")
         await pg.click('#replayBtn'); await pg.wait_for_timeout(300)
         title = await pg.inner_text('h1')
@@ -39,13 +43,15 @@ async def main():
         await pg.click('#check'); await pg.wait_for_timeout(2500)
         chip = await pg.inner_text('.layer:not(.ghost) .score')
         print('replay review:', chip.replace('\n',' '))
-        if 'off your list' not in chip: fails.append('replay review should say off the list')
+        if 'Average' not in chip: fails.append('replay review should show the average')
         if await pg.evaluate("replayList.length"): fails.append('position still on the list after a good replay')
-        if await pg.evaluate("results.length") != n_before: fails.append('a replay was recorded in the results')
+        if await pg.evaluate("results.length") != n_before + 1: fails.append('a replay was not recorded in the results')
         nxt = await pg.inner_text('#nextPos')
         if nxt != 'Finish replay': fails.append(f'next label: {nxt}')
         await pg.click('#nextPos'); await pg.wait_for_timeout(200)
         if await pg.evaluate("screen") != 'progress': fails.append('finishing the replay should return to the profile')
+        txt = await pg.inner_text('.pf-scroll')
+        if '10 positions completed' not in txt: fails.append('the replay is not in the positions completed')
         await b.close()
     errs = [e for e in errs if 'importScripts' not in e]
     if errs: fails.append(f'page errors: {errs}')

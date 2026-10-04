@@ -1136,6 +1136,7 @@ let routine = false;
 // next position.
 function nextPosition(){
   if(replayMode){
+    while(replayIdx + 1 < replayQueue.length && isPlayed(replayQueue[replayIdx+1].key)) replayIdx++;
     if(replayIdx + 1 < replayQueue.length){ replayIdx++; openReplayAt(replayIdx); }
     else { replayMode = false; screen = 'progress'; render(); }
     return;
@@ -1457,9 +1458,11 @@ function updateReplay(key, a, lost){
   else if(!lost && i>=0){ replayList.splice(i, 1); saveReplay(); }
 }
 function findPosition(key, a){ return POOLS[a].find(p=>p.key===key) || myPositions.find(p=>p.key===key && p.acts.includes(a)) || null; }
-const replayable = ()=>replayList.map(e=>({ ...e, pos: findPosition(e.key, e.a) })).filter(e=>e.pos);
+// Missed positions still in the app; positions played today wait for tomorrow.
+const missedOf = a=>replayList.filter(e=>e.a===a).map(e=>({ ...e, pos: findPosition(e.key, e.a) })).filter(e=>e.pos);
+const replayable = a=>missedOf(a).filter(e=>!isPlayed(e.key));
 function startReplay(a){
-  replayQueue = replayable().filter(e=>!a || e.a===a);
+  replayQueue = replayable(a);
   if(!replayQueue.length) return;
   replayMode = true; routine = false; testMode = false; replayIdx = 0;
   openReplayAt(0);
@@ -1526,12 +1529,6 @@ function recordResult(s, a, acc){
   if(s.rec || acc==null) return;
   markPlayed(pos().key);
   if(testMode){ s.rec = { test:true }; return; }   // test positions never count
-  if(replayMode){   // replays update the replay list only, never your averages or the log
-    const L = levelNow(a).level, lost = L!=null && acc < L;
-    updateReplay(pos().key, a, lost);
-    s.rec = { replay:true, lost };
-    return;
-  }
   const before = levelNow(a);
   const r = { a, acc: Math.round(acc), ts: Date.now(), src: pos().gameId ? 'mine' : 'masters' };   // where the position came from (results before this have none: masters)
   results.push(r);
@@ -1545,7 +1542,7 @@ function recordResult(s, a, acc){
 function levelChip(s, show, fade){
   if(!s.rec) return '';
   const r = s.rec;
-  const body = r.test ? 'Test position · not recorded' : r.replay ? (r.lost ? 'Replay · stays on your list' : 'Replay · off your list ✓') : !r.rated ? `Calibrating ${r.n}/${CALIBRATION}`
+  const body = r.test ? 'Test position · not recorded' : !r.rated ? `Calibrating ${r.n}/${CALIBRATION}`
     : `Average <strong>${pct(r.level)}</strong>` + (r.delta==null ? '' : ' ' + deltaHtml(r.delta));
   return `<span class="level${show ? (fade ? ' fade-in' : '') : ''}" style="${show ? '' : 'visibility:hidden'}">${body}</span>`;
 }
@@ -1581,7 +1578,7 @@ function renderProgress(){
   const dayName = (d,i)=>i===0 ? 'Today' : i===1 ? 'Yesterday' : d.toLocaleDateString(undefined, { weekday:'short', day:'numeric', month:'short' });
   const weekRows = days.map((d,i)=>{ const c = byDay[dayKey(d.getTime())] || {analysis:0, candidates:0, final:0}, done = ACTS.every(x=>c[x]>=DAILY_GOAL), any = ACTS.some(x=>c[x]);
     return `<tr class="${any ? '' : 'idle'}"><th scope="row">${dayName(d,i)}</th>${ACTS.map(x=>`<td>${c[x] || '·'}</td>`).join('')}<td class="wk-done">${done ? '✓' : ''}</td></tr>`; }).join('');
-  const nReplay = replayable().filter(e=>e.a===a).length;   // for the exercise selected below
+  const nMissed = missedOf(a).length, nReplay = replayable(a).length;   // for the exercise selected below
   const since = new Date(joinedAt()).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
   app.innerHTML = `
     <div class="title-row">
@@ -1621,8 +1618,8 @@ function renderProgress(){
       <div class="stat"><b>${best<0 ? '—' : pct(best)}</b><small>best average</small></div>
     </div>`}
     <section class="pf-card pf-replay">
-      <div><h2>Missed positions</h2><p>${ACT_NAMES[a]} positions where you scored below your average. Getting one at or above your average takes it off the list.</p></div>
-      <button class="btn small" id="replayBtn" ${nReplay ? '' : 'disabled'}>${nReplay ? `Replay ${nReplay} ›` : 'None yet'}</button>
+      <div><h2>Missed positions</h2><p>${ACT_NAMES[a]} positions you scored below your average on. They count like any position; at or above your average clears one. Played today: back tomorrow.</p></div>
+      <button class="btn small" id="replayBtn" ${nReplay ? '' : 'disabled'}>${nReplay ? `Replay ${nReplay} ›` : nMissed ? 'All played today' : 'None yet'}</button>
     </section>
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; render(); };
