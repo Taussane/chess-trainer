@@ -1458,8 +1458,8 @@ function updateReplay(key, a, lost){
 }
 function findPosition(key, a){ return POOLS[a].find(p=>p.key===key) || myPositions.find(p=>p.key===key && p.acts.includes(a)) || null; }
 const replayable = ()=>replayList.map(e=>({ ...e, pos: findPosition(e.key, e.a) })).filter(e=>e.pos);
-function startReplay(){
-  replayQueue = replayable();
+function startReplay(a){
+  replayQueue = replayable().filter(e=>!a || e.a===a);
   if(!replayQueue.length) return;
   replayMode = true; routine = false; testMode = false; replayIdx = 0;
   openReplayAt(0);
@@ -1581,7 +1581,7 @@ function renderProgress(){
   const dayName = (d,i)=>i===0 ? 'Today' : i===1 ? 'Yesterday' : d.toLocaleDateString(undefined, { weekday:'short', day:'numeric', month:'short' });
   const weekRows = days.map((d,i)=>{ const c = byDay[dayKey(d.getTime())] || {analysis:0, candidates:0, final:0}, done = ACTS.every(x=>c[x]>=DAILY_GOAL), any = ACTS.some(x=>c[x]);
     return `<tr class="${any ? '' : 'idle'}"><th scope="row">${dayName(d,i)}</th>${ACTS.map(x=>`<td>${c[x] || '·'}</td>`).join('')}<td class="wk-done">${done ? '✓' : ''}</td></tr>`; }).join('');
-  const nReplay = replayable().length;
+  const nReplay = replayable().filter(e=>e.a===a).length;   // for the exercise selected below
   const since = new Date(joinedAt()).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
   app.innerHTML = `
     <div class="title-row">
@@ -1600,10 +1600,6 @@ function renderProgress(){
         <thead><tr><th></th>${ACTS.map(x=>`<th scope="col" title="${ACT_NAMES[x]}"><span aria-hidden="true">${ACT_GLYPHS[x]}</span><span class="sr">${ACT_NAMES[x]}</span></th>`).join('')}<th scope="col" title="Daily routine done"><span class="sr">Routine</span></th></tr></thead>
         <tbody>${weekRows}</tbody>
       </table>
-    </section>
-    <section class="pf-card pf-replay">
-      <div><h2>Missed positions</h2><p>Positions where you scored below your average. Getting one at or above your average takes it off the list.</p></div>
-      <button class="btn small" id="replayBtn" ${nReplay ? '' : 'disabled'}>${nReplay ? `Replay ${nReplay} ›` : 'None yet'}</button>
     </section>
     <h2 class="pf-h">Progress</h2>
     <div class="seg" role="tablist">${ACTS.map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_NAMES[x]}</button>`).join('')}</div>
@@ -1624,9 +1620,13 @@ function renderProgress(){
       <div class="stat"><b>${avg10==null ? '—' : avg10+'%'}</b><small>last 10 avg</small></div>
       <div class="stat"><b>${best<0 ? '—' : pct(best)}</b><small>best average</small></div>
     </div>`}
+    <section class="pf-card pf-replay">
+      <div><h2>Missed positions</h2><p>${ACT_NAMES[a]} positions where you scored below your average. Getting one at or above your average takes it off the list.</p></div>
+      <button class="btn small" id="replayBtn" ${nReplay ? '' : 'disabled'}>${nReplay ? `Replay ${nReplay} ›` : 'None yet'}</button>
+    </section>
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; render(); };
-  document.getElementById('replayBtn').onclick = startReplay;
+  document.getElementById('replayBtn').onclick = ()=>startReplay(a);
   app.querySelectorAll('.seg-btn').forEach(b=>b.onclick = ()=>{ progressTab = b.dataset.tab; render(); });
   wireChartHover(sr);
 }
