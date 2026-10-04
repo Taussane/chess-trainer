@@ -1,7 +1,7 @@
 // Position finder rules — every threshold the finder uses, and nothing else.
 // Mirrors the "Position finder rules" doc. Change a rule here (and in the doc), bump VERSION.
 module.exports = {
-  VERSION: '2026-10-04.1',
+  VERSION: '2026-10-04.2',
 
   ENGINE: { depth: 18, multipv: 5, threads: 2, hash: 256 },
 
@@ -28,7 +28,7 @@ module.exports = {
   CANDIDATES: {
     trapTopN: 5,                   // at least 1 Dubious-or-worse move among the top 5
     trapMinDrop: 10,
-    spacingPlies: 3,               // 3 half-moves between kept positions from the same game
+    spacingPlies: 7,               // 7 half-moves between kept positions from the same game
   },
 
   FINAL: {
