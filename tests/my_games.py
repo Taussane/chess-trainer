@@ -1,6 +1,6 @@
 # "My games": uploads a Lichess-style PGN (tests/lichess-sample.pgn), checks what is skipped,
 # that Lichess-analysed games give positions at once, that the background scan analyses the rest,
-# that mistakes are sorted into Candidate moves / Final choice, that "My games" positions open in
+# that every mistake goes into both Candidate moves and Final choice, that "My games" positions open in
 # the exercises, and that everything survives a reload. Uses a stand-in engine (scores from
 # material, so a lost piece reads as a mistake).
 # Needs: pip install playwright (with a Chromium browser).
@@ -53,15 +53,15 @@ async def main():
         if 'Added 9 games' not in note or '5 already analysed' not in note or '1 bullet' not in note or '1 variant' not in note: fails.append('import note: '+note)
         await pg.screenshot(path=str(SHOTS/'mg_1_after_upload.png'))
         for _ in range(60):
-            st = await pg.evaluate("({queued:myGames.filter(g=>g.status==='queued').length, pending:myGames.flatMap(g=>g.positions).filter(p=>p.act==='pending').length, running:myBgRunning})")
+            st = await pg.evaluate("({queued:myGames.filter(g=>g.status==='queued').length, pending:0, running:myBgRunning})")
             if not st['queued'] and not st['pending'] and not st['running']: break
             await pg.wait_for_timeout(500)
         counts = await pg.evaluate("countsOf(myPositions)"); print('my positions:', counts)
         if st['queued'] or st['pending']: fails.append(f'background not finished: {st}')
         if counts['analysis'] < 5: fails.append(f'too few Board analysis positions: {counts}')
         if counts['candidates'] + counts['final'] < 3: fails.append(f'too few mistake positions: {counts}')
-        mine_only = await pg.evaluate("myPositions.every(p=>p.act!=='analysis' ? p.side===myGames.find(g=>g.id===p.gameId).me : true)")
-        if not mine_only: fails.append('a mistake position is not the player to move')
+        mine_only = await pg.evaluate("myPositions.every(p=>!p.acts.includes('analysis') ? p.side===myGames.find(g=>g.id===p.gameId).me : true) && myPositions.filter(p=>p.acts.includes('candidates')).every(p=>p.acts.includes('final') || new Chess(p.fen).moves().length<4)")
+        if not mine_only: fails.append('a mistake position is not the player to move, or not in both exercises')
         excl = await pg.evaluate("new Set(myPositions.map(p=>p.key)).size===myPositions.length")
         if not excl: fails.append('a position is used twice')
         await pg.screenshot(path=str(SHOTS/'mg_2_done.png'))

@@ -1,5 +1,5 @@
 {
- "version": "2026-10-03.7",
+ "version": "2026-10-04.2",
  "engine": {
   "depth": 18,
   "multipv": 5,
@@ -38,7 +38,7 @@
    "checked": 59,
    "passedGeneral": 49,
    "analysis": 4,
-   "candidates": 2,
+   "candidates": 3,
    "final": 3
   },
   {
@@ -72,7 +72,7 @@
    "checked": 67,
    "passedGeneral": 56,
    "analysis": 7,
-   "candidates": 12,
+   "candidates": 7,
    "final": 7
   },
   {
@@ -89,8 +89,8 @@
    "checked": 65,
    "passedGeneral": 56,
    "analysis": 9,
-   "candidates": 12,
-   "final": 5
+   "candidates": 8,
+   "final": 4
   },
   {
    "id": "g5",
@@ -106,7 +106,7 @@
    "checked": 41,
    "passedGeneral": 31,
    "analysis": 4,
-   "candidates": 7,
+   "candidates": 6,
    "final": 7
   },
   {
@@ -123,7 +123,7 @@
    "checked": 72,
    "passedGeneral": 59,
    "analysis": 9,
-   "candidates": 6,
+   "candidates": 7,
    "final": 4
   },
   {
@@ -140,7 +140,7 @@
    "checked": 67,
    "passedGeneral": 53,
    "analysis": 6,
-   "candidates": 6,
+   "candidates": 7,
    "final": 5
   },
   {
@@ -157,7 +157,7 @@
    "checked": 45,
    "passedGeneral": 34,
    "analysis": 2,
-   "candidates": 8,
+   "candidates": 7,
    "final": 9
   },
   {
@@ -191,7 +191,7 @@
    "checked": 33,
    "passedGeneral": 28,
    "analysis": 4,
-   "candidates": 3,
+   "candidates": 2,
    "final": 2
   },
   {
@@ -208,7 +208,7 @@
    "checked": 51,
    "passedGeneral": 42,
    "analysis": 6,
-   "candidates": 7,
+   "candidates": 5,
    "final": 3
   },
   {
@@ -225,7 +225,7 @@
    "checked": 41,
    "passedGeneral": 32,
    "analysis": 3,
-   "candidates": 3,
+   "candidates": 4,
    "final": 3
   },
   {
@@ -258,8 +258,8 @@
    "endgame": 47,
    "checked": 59,
    "passedGeneral": 49,
-   "analysis": 4,
-   "candidates": 8,
+   "analysis": 5,
+   "candidates": 6,
    "final": 6
   },
   {
@@ -275,7 +275,7 @@
    "endgame": -1,
    "checked": 51,
    "passedGeneral": 42,
-   "analysis": 4,
+   "analysis": 5,
    "candidates": 6,
    "final": 11
   },
@@ -293,7 +293,7 @@
    "checked": 72,
    "passedGeneral": 59,
    "analysis": 8,
-   "candidates": 11,
+   "candidates": 7,
    "final": 7
   },
   {
@@ -310,7 +310,7 @@
    "checked": 57,
    "passedGeneral": 33,
    "analysis": 4,
-   "candidates": 5,
+   "candidates": 4,
    "final": 6
   },
   {
@@ -327,7 +327,7 @@
    "checked": 72,
    "passedGeneral": 56,
    "analysis": 2,
-   "candidates": 9,
+   "candidates": 7,
    "final": 4
   },
   {
@@ -344,7 +344,7 @@
    "checked": 55,
    "passedGeneral": 46,
    "analysis": 7,
-   "candidates": 5,
+   "candidates": 4,
    "final": 4
   },
   {
@@ -360,8 +360,8 @@
    "endgame": 54,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 4,
-   "candidates": 11,
+   "analysis": 5,
+   "candidates": 8,
    "final": 15
   },
   {
@@ -378,7 +378,7 @@
    "checked": 72,
    "passedGeneral": 56,
    "analysis": 6,
-   "candidates": 10,
+   "candidates": 7,
    "final": 10
   },
   {
@@ -395,7 +395,7 @@
    "checked": 72,
    "passedGeneral": 60,
    "analysis": 4,
-   "candidates": 9,
+   "candidates": 6,
    "final": 8
   },
   {
@@ -412,7 +412,7 @@
    "checked": 66,
    "passedGeneral": 57,
    "analysis": 5,
-   "candidates": 5,
+   "candidates": 4,
    "final": 3
   },
   {
@@ -429,7 +429,7 @@
    "checked": 72,
    "passedGeneral": 57,
    "analysis": 3,
-   "candidates": 9,
+   "candidates": 7,
    "final": 6
   },
   {
@@ -445,8 +445,8 @@
    "endgame": -1,
    "checked": 68,
    "passedGeneral": 61,
-   "analysis": 7,
-   "candidates": 2,
+   "analysis": 8,
+   "candidates": 6,
    "final": 9
   },
   {
@@ -462,8 +462,8 @@
    "endgame": 64,
    "checked": 72,
    "passedGeneral": 58,
-   "analysis": 5,
-   "candidates": 8,
+   "analysis": 6,
+   "candidates": 6,
    "final": 5
   },
   {
@@ -497,7 +497,7 @@
    "checked": 62,
    "passedGeneral": 50,
    "analysis": 3,
-   "candidates": 6,
+   "candidates": 4,
    "final": 1
   },
   {
@@ -513,8 +513,8 @@
    "endgame": 50,
    "checked": 46,
    "passedGeneral": 31,
-   "analysis": 3,
-   "candidates": 6,
+   "analysis": 4,
+   "candidates": 4,
    "final": 3
   },
   {
@@ -531,7 +531,7 @@
    "checked": 56,
    "passedGeneral": 50,
    "analysis": 6,
-   "candidates": 6,
+   "candidates": 5,
    "final": 7
   },
   {
@@ -548,7 +548,7 @@
    "checked": 38,
    "passedGeneral": 29,
    "analysis": 4,
-   "candidates": 3,
+   "candidates": 5,
    "final": 1
   },
   {
@@ -565,7 +565,7 @@
    "checked": 72,
    "passedGeneral": 58,
    "analysis": 2,
-   "candidates": 7,
+   "candidates": 5,
    "final": 4
   },
   {
@@ -598,8 +598,8 @@
    "endgame": 48,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 4,
-   "candidates": 12,
+   "analysis": 5,
+   "candidates": 8,
    "final": 6
   },
   {
@@ -616,7 +616,7 @@
    "checked": 72,
    "passedGeneral": 62,
    "analysis": 3,
-   "candidates": 4,
+   "candidates": 5,
    "final": 3
   },
   {
@@ -633,7 +633,7 @@
    "checked": 34,
    "passedGeneral": 24,
    "analysis": 4,
-   "candidates": 4,
+   "candidates": 3,
    "final": 2
   },
   {
@@ -666,7 +666,7 @@
    "endgame": 51,
    "checked": 62,
    "passedGeneral": 48,
-   "analysis": 4,
+   "analysis": 5,
    "candidates": 6,
    "final": 2
   },
@@ -684,7 +684,7 @@
    "checked": 72,
    "passedGeneral": 60,
    "analysis": 4,
-   "candidates": 7,
+   "candidates": 5,
    "final": 3
   }
  ],
@@ -694,15 +694,18 @@
   "fewer than 4 legal moves": 63,
   "mate already under way": 9
  },
+ "eligible": {
+  "analysis": 1046,
+  "candidates": 635,
+  "final": 206,
+  "anchors": 64
+ },
  "analysis": {
-  "moved on: position used by Final choice": 27,
-  "rejected: material": 2,
-  "rejected: in check": 1
+  "rejected: in check": 22,
+  "rejected: material": 19
  },
  "candidates": {
-  "rejected: no trap in top 5": 1166,
-  "skipped: position used by another exercise": 398,
-  "rejected: spacing": 114
+  "rejected: no trap in top 5": 1298
  },
  "final": {
   "rejected: fewer than 3 grades": 1413,
@@ -710,5 +713,6 @@
   "rejected: fewer than 4 moves": 159,
   "rejected: fewer than 3 grades among the 4 shown": 64,
   "rejected: two moves of the same bad grade": 48
- }
+ },
+ "multi": 496
 }

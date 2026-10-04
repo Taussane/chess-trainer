@@ -19,7 +19,7 @@ Players can also add their own Lichess games in the app ("My games"): the app fi
 | `data/` | The latest finder output: `pools.json` (positions with their measurements and the rules version) and `stats.json`. |
 | `tests/` | Browser tests with a stand-in engine: `smoke.py` (a few positions of each exercise), `edge_cases.py` (the test positions: checks, en passant, castling, promotions) and `my_games.py` (uploading `lichess-sample.pgn`, background analysis, your positions in the exercises). |
 | `vendor/` | chess.js 0.12.1 (BSD licence), the same version the app loads. |
-| `scripts/` | `setup-stockfish.sh` builds Stockfish 16.1 into `engine/` (not committed); `make-test-positions.js` and `make-lichess-sample.js` build the test data. |
+| `scripts/` | `setup-stockfish.sh` builds Stockfish 16.1 into `engine/` (not committed); `make-test-positions.js` and `make-lichess-sample.js` build the test data; `make-owner-seed.js` builds the owner's built-in games from `finder/own.js`'s analysis. |
 
 The rules are explained in plain words in the **Position finder rules** doc. When a rule changes, change `finder/rules.js` and the doc together, and bump `VERSION`.
 

@@ -26,11 +26,12 @@ async def main():
         await b.close()
         b, pg, errs = await run(p, owner=True)
         for _ in range(120):
-            st = await pg.evaluate("({games:myGames.length, pending:myGames.flatMap(g=>g.positions).filter(p=>p.act==='pending').length, queued:myGames.filter(g=>g.status==='queued').length})")
+            st = await pg.evaluate("({games:myGames.length, pending:0, queued:myGames.filter(g=>g.status==='queued').length})")
             if st['games'] and not st['pending'] and not st['queued']: break
             await pg.wait_for_timeout(500)
         c = await pg.evaluate("countsOf(myPositions)"); print('owner:', st, c, await pg.evaluate("myName"))
-        if st['games'] != 50 or st['pending'] or st['queued']: fails.append(f'owner: {st}')
+        if st['games'] != 50 or st['queued']: fails.append(f'owner: {st}')
+        if c != {'analysis':126, 'candidates':131, 'final':127}: fails.append(f'owner positions: {c}')
         await pg.click('#myGamesBtn'); await pg.wait_for_timeout(200)
         await pg.screenshot(path=str(T.SHOTS/'owner_mygames.png'))
         # remove: must not come back on the next load
