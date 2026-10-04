@@ -965,7 +965,8 @@ let source = 'masters';
 try{ const v = localStorage.getItem('cst.source'); if(SOURCES[v]) source = v; }catch(e){}
 let myPositions = [];   // positions found in your games (see "My games")
 function sourcePool(a){
-  const mine = myPositions.filter(p=>p.act===a);
+  // Mistakes still waiting for the Final choice check can already be used in Candidate moves.
+  const mine = myPositions.filter(p=>p.act===a || (a==='candidates' && p.act==='pending'));
   const pool = source==='mine' ? mine : source==='both' ? POOLS[a].concat(mine) : POOLS[a];
   return pool.length ? pool : POOLS[a];
 }
@@ -980,10 +981,11 @@ function posAt(track, i){
 // The pools changed (new source, or new positions from your games): every track keeps what it
 // has already shown, including the open position, and draws the rest from the new pool.
 // On a change of source, an open position you haven't started gives way too.
+function hasProgress(s){ return !!(s && (s.checked || (s.picks && s.picks.length) || s.order!=null || (s.guess!=null && s.guess!==50))); }
 function refreshPools(sourceChanged){
   TRACKS.forEach(t=>{
     if(isTest(t)) return;
-    const cur = orders[t][seqBy[t]], started = cur && store[t][cur.key];
+    const cur = orders[t][seqBy[t]], started = cur && hasProgress(store[t][cur.key]);
     const keep = orders[t].slice(0, seqBy[t] + (sourceChanged && !started ? 0 : 1));
     orders[t] = keep.concat(drawRound(poolOf(t), keep[keep.length-1]));
   });
@@ -996,7 +998,11 @@ function setSource(v){
 }
 let curPos = null, side = 'w';   // the open exercise's position and side to play (see syncPos)
 // Points curPos/side at the open exercise's own position.
-function syncPos(){ if(ACTIVITIES.includes(screen)){ const t = ctx(screen); curPos = posAt(t, seqBy[t]); side = curPos.side; } }
+function syncPos(){
+  if(ACTIVITIES.includes(screen)){ const t = ctx(screen); curPos = posAt(t, seqBy[t]); side = curPos.side; }
+  // One of your mistakes shown in Candidate moves stays there (Final choice must never reuse it).
+  if(screen==='candidates' && curPos && curPos.act==='pending') keepInCandidates(curPos);
+}
 let selSquare = null;          // piece being moved while entering a candidate
 let promoPending = null;       // {from, to}: a pawn move to the last rank, waiting for its piece
 let helpVisible = false;
@@ -1739,8 +1745,13 @@ function divideGame(fens){
 }
 
 // --- Background work: scan games without evaluations, then check each mistake ---
+function keepInCandidates(p){
+  const g = myGames.find(x=>x.id===p.gameId), e = g && g.positions.find(x=>x.key===p.key);
+  p.act = 'candidates';
+  if(e && e.act==='pending'){ e.act = 'candidates'; saveMyGame(g); }
+}
 function onOwnPositionsChanged(){
-  myPositions = myGames.flatMap(g=>(g.positions||[]).filter(p=>ACTIVITIES.includes(p.act)))
+  myPositions = myGames.flatMap(g=>(g.positions||[]).filter(p=>ACTIVITIES.includes(p.act) || p.act==='pending'))
     .map(p=>({ ...p, last: p.last ? { squares:p.last } : null }));
   refreshPools();
   if(screen==='mygames' || screen==='home') render();
