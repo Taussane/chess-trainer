@@ -955,7 +955,9 @@ const ACTIVITIES = ['analysis', 'candidates', 'final'];
 // A third track per exercise, 't-…', runs the test positions in their listed order.
 const TRACKS = ACTIVITIES.flatMap(a=>[a, 'r-'+a, 't-'+a]);
 let testMode = false;
-const ctx = (a, r = routine) => testMode ? 't-' + a : (r ? 'r-' : '') + a;   // the open track for exercise `a`
+// Each source of positions (Masters, My games, Both) has its own tracks, so switching source and
+// back returns you to exactly where you were in each.
+const ctx = (a, r = routine) => testMode ? 't-' + a : (r ? 'r-' : '') + a + (source==='masters' ? '' : '@' + source);   // the open track for exercise `a`
 const orders = {}, seqBy = {}, store = {};
 const isTest = t=>t.startsWith('t-');
 // Where positions come from: the master games built into the app, your own games, or both.
@@ -964,16 +966,19 @@ const SOURCES = { masters:'Masters', mine:'My games', both:'Both' };
 let source = 'masters';
 try{ const v = localStorage.getItem('cst.source'); if(SOURCES[v]) source = v; }catch(e){}
 let myPositions = [];   // positions found in your games (see "My games")
-function sourcePool(a){
-  // Mistakes still waiting for the Final choice check can already be used in Candidate moves.
-  const mine = myPositions.filter(p=>p.act===a || (a==='candidates' && p.act==='pending'));
-  const pool = source==='mine' ? mine : source==='both' ? POOLS[a].concat(mine) : POOLS[a];
+function sourcePool(a, src){
+  // Your mistakes not yet given to Candidate moves or Final choice are offered to both; the first
+  // exercise that shows one keeps it (see claimOwn).
+  const mine = myPositions.filter(p=>p.act===a || (a!=='analysis' && p.act==='pending'));
+  const pool = src==='mine' ? mine : src==='both' ? POOLS[a].concat(mine) : POOLS[a];
   return pool.length ? pool : POOLS[a];
 }
-const poolOf = t=>isTest(t) ? TEST_POSITIONS : sourcePool(t.replace(/^r-/, ''));
+const poolOf = t=>{ if(isTest(t)) return TEST_POSITIONS; const [a, src] = t.replace(/^r-/, '').split('@'); return sourcePool(a, src || 'masters'); };
+function ensureTrack(t){ if(!orders[t]){ orders[t] = isTest(t) ? inOrder(poolOf(t)) : drawRound(poolOf(t)); seqBy[t] = 0; store[t] = {}; } }
 const inOrder = pool=>pool.slice();
-TRACKS.forEach(t=>{ orders[t] = isTest(t) ? inOrder(poolOf(t)) : drawRound(poolOf(t)); seqBy[t] = 0; store[t] = {}; });
+TRACKS.forEach(ensureTrack);
 function posAt(track, i){
+  ensureTrack(track);
   const o = orders[track], pool = poolOf(track);
   while(i >= o.length) o.push(...(isTest(track) ? inOrder(pool) : drawRound(pool, o[o.length-1])));
   return o[i];
@@ -982,11 +987,12 @@ function posAt(track, i){
 // has already shown, including the open position, and draws the rest from the new pool.
 // On a change of source, an open position you haven't started gives way too.
 function hasProgress(s){ return !!(s && (s.checked || (s.picks && s.picks.length) || s.order!=null || (s.guess!=null && s.guess!==50))); }
-function refreshPools(sourceChanged){
-  TRACKS.forEach(t=>{
-    if(isTest(t)) return;
-    const cur = orders[t][seqBy[t]], started = cur && hasProgress(store[t][cur.key]);
-    const keep = orders[t].slice(0, seqBy[t] + (sourceChanged && !started ? 0 : 1));
+// New positions from your games: tracks that use them keep what they have shown, including the
+// open position, and draw the rest again.
+function refreshPools(){
+  Object.keys(orders).forEach(t=>{
+    if(isTest(t) || !t.includes('@')) return;
+    const keep = orders[t].slice(0, seqBy[t] + 1);
     orders[t] = keep.concat(drawRound(poolOf(t), keep[keep.length-1]));
   });
 }
@@ -994,14 +1000,22 @@ function setSource(v){
   if(!SOURCES[v] || v===source) return;
   source = v;
   try{ localStorage.setItem('cst.source', v); }catch(e){}
-  refreshPools(true); render();
+  render();
 }
 let curPos = null, side = 'w';   // the open exercise's position and side to play (see syncPos)
 // Points curPos/side at the open exercise's own position.
 function syncPos(){
-  if(ACTIVITIES.includes(screen)){ const t = ctx(screen); curPos = posAt(t, seqBy[t]); side = curPos.side; }
-  // One of your mistakes shown in Candidate moves stays there (Final choice must never reuse it).
-  if(screen==='candidates' && curPos && curPos.act==='pending') keepInCandidates(curPos);
+  if(!ACTIVITIES.includes(screen)) return;
+  const t = ctx(screen);
+  ensureTrack(t);
+  curPos = posAt(t, seqBy[t]);
+  // One of your mistakes already kept by the other exercise is skipped (and not started here).
+  for(let n=0; n<500 && curPos.gameId && ownAct(curPos)!==screen && ownAct(curPos)!=='pending' && !hasProgress(store[t][curPos.key]); n++){
+    seqBy[t]++; curPos = posAt(t, seqBy[t]);
+  }
+  side = curPos.side;
+  // Candidate moves keeps one of your mistakes as soon as it shows it.
+  if(screen==='candidates' && ownAct(curPos)==='pending') claimOwn(curPos, 'candidates');
 }
 let selSquare = null;          // piece being moved while entering a candidate
 let promoPending = null;       // {from, to}: a pawn move to the last rank, waiting for its piece
@@ -1009,6 +1023,7 @@ let helpVisible = false;
 // `store`: per track and per position, so leaving an exercise and coming back keeps what was entered.
 function pos(){ return curPos; }
 function st(activity){
+  ensureTrack(ctx(activity));
   const p = pos(), bucket = store[ctx(activity)];
   if(!bucket[p.key]){
     bucket[p.key] = activity==='analysis' ? { guess:50, checked:false, animT:null }
@@ -1033,19 +1048,21 @@ function prefetchNext(){
 // Where a track will open next: its current position if that question is still open, the
 // one after it if its review was already reached.
 function upcomingFor(t){
+  ensureTrack(t);
   const cur = posAt(t, seqBy[t]), s = store[t][cur.key];
   return [t, seqBy[t] + (s && s.checked ? 1 : 0)];
 }
 // From the home page: where Board analysis and Final choice would open, and where the routine
 // resumes (unless that's Candidate moves, which is only evaluated at its review).
 function prefetchHome(){
-  const ts = ['analysis', 'final'];
-  if(routineNext!=='candidates') ts.push('r-'+routineNext);
+  const ts = [ctx('analysis', false), ctx('final', false)];
+  if(routineNext!=='candidates') ts.push(ctx(routineNext, true));
   ts.forEach(t=>{ const [x, i] = upcomingFor(t); fenEval(posAt(x, i).fen); });
 }
 // Moves exercise `a`, on the open track, on to its next position, fresh.
 function advance(a){
   const t = ctx(a);
+  ensureTrack(t);
   seqBy[t]++;
   const key = posAt(t, seqBy[t]).key;
   delete store[t][key];
@@ -1745,10 +1762,16 @@ function divideGame(fens){
 }
 
 // --- Background work: scan games without evaluations, then check each mistake ---
-function keepInCandidates(p){
+// Where one of your positions currently belongs (read from your saved games, the reference).
+function ownAct(p){
   const g = myGames.find(x=>x.id===p.gameId), e = g && g.positions.find(x=>x.key===p.key);
-  p.act = 'candidates';
-  if(e && e.act==='pending'){ e.act = 'candidates'; saveMyGame(g); }
+  return e ? e.act : p.act;
+}
+// One of your mistakes is given to one exercise for good.
+function claimOwn(p, act){
+  const g = myGames.find(x=>x.id===p.gameId), e = g && g.positions.find(x=>x.key===p.key);
+  p.act = act;
+  if(e && e.act==='pending'){ e.act = act; saveMyGame(g); }
 }
 function onOwnPositionsChanged(){
   myPositions = myGames.flatMap(g=>(g.positions||[]).filter(p=>ACTIVITIES.includes(p.act) || p.act==='pending'))
@@ -1824,7 +1847,7 @@ async function classifyMistake(p){
     if(!poolEvalStore[key]) poolEvalStore[key] = { status:'done', data:four };
     if(finalSetOk(four)) act = 'final';
   }
-  p.act = act;
+  if(p.act==='pending') p.act = act;   // unless an exercise already kept it meanwhile
   return true;
 }
 
@@ -1895,9 +1918,11 @@ function renderMyGames(){
   const status = !myGames.length ? ''
     : sfState==='error' ? 'The engine is unavailable, so analysis is paused.'
     : myScanning ? `Analysing game ${analysed+1} of ${myGames.length}: ${myGames[scanIdx].white} – ${myGames[scanIdx].black}…`
-    : checking ? `Checking ${checking} mistake${checking===1?'':'s'} for Final choice…`
     : queued ? `${queued} game${queued===1?'':'s'} waiting for the engine…`
     : 'All games analysed.';
+  const mistakes = mine.candidates + mine.final + checking;
+  const mistakeNote = mistakes ? `${mistakes} mistake${mistakes===1?'':'s'} of yours found (moves that lost 10+ points of winning chances).` +
+    (checking ? ` ${checking} not given to an exercise yet: they are offered to both Candidate moves and Final choice, and the first to show one keeps it.` : '') : '';
   const row = (label, games, c)=>`<tr><th scope="row">${label}</th><td>${games}</td><td>${c.analysis}</td><td>${c.candidates}</td><td>${c.final}</td></tr>`;
   app.innerHTML = `
     <div class="title-row">
@@ -1925,6 +1950,7 @@ function renderMyGames(){
           <thead><tr><th></th><th>Games</th><th>Board analysis</th><th>Candidate moves</th><th>Final choice</th></tr></thead>
           <tbody>${row('My games', myGames.length, mine)}${row('Masters', MASTER_GAMES, masters)}</tbody>
         </table></div>
+        ${mistakeNote ? `<p class="mg-status">${mistakeNote}</p>` : ''}
         ${status ? `<p class="mg-status">${status}</p>` : ''}
         ${myGames.length ? (myConfirmClear
           ? `<div class="mg-confirm"><span>Remove all your games and their positions?</span><button class="btn small danger" id="clearYes">Remove</button><button class="btn small ghost" id="clearNo">Keep</button></div>`
@@ -2336,6 +2362,12 @@ function renderFinal(){
   // The four moves are known: start their one evaluation now, while the player ranks them.
   const ev0 = finalEval(p, moves);
   const failed = evalFailed(ev0), ev = failed ? null : ev0;
+  // One of your mistakes not given to an exercise yet: Final choice keeps it only if its four
+  // moves pass Final choice's rules; otherwise it goes to Candidate moves and the next position comes.
+  if(p.gameId && ev0 && ownAct(p)==='pending'){
+    if(!failed && finalSetOk(ev0)) claimOwn(p, 'final');
+    else if(!s.checked){ claimOwn(p, 'candidates'); advance('final'); syncPos(); prefetchCurrent(); render(); return; }
+  }
   if(!s.order || s.order.length!==moves.length || !moves.every(m=>s.order.includes(m.id))) s.order = moves.map(m=>m.id);
   const ordered = s.order.map(id=>moves.find(m=>m.id===id));
 
