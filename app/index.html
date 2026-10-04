@@ -116,6 +116,7 @@
   .seg-btn + .seg-btn{border-left:1px solid var(--border);}
   .seg-btn.active{background:var(--panel-2); color:var(--text); font-weight:600;}
   .seg-btn:disabled{opacity:.45; cursor:default;}
+  .card:disabled{opacity:.55; cursor:default;}
   .source-row{display:flex; align-items:center; gap:10px;}
   .source-label{font-size:0.8rem; color:var(--text-mute); white-space:nowrap;}
   .seg.seg-sm{flex:1; margin:0;}
@@ -968,8 +969,7 @@ try{ const v = localStorage.getItem('cst.source'); if(SOURCES[v]) source = v; }c
 let myPositions = [];   // positions found in your games (see "My games")
 function sourcePool(a, src){
   const mine = myPositions.filter(p=>p.acts.includes(a));
-  const pool = src==='mine' ? mine : src==='both' ? POOLS[a].concat(mine) : POOLS[a];
-  return pool.length ? pool : POOLS[a];
+  return src==='mine' ? mine : src==='both' ? POOLS[a].concat(mine) : POOLS[a];
 }
 const poolOf = t=>{ if(isTest(t)) return TEST_POSITIONS; const [a, src] = t.replace(/^r-/, '').split('@'); return sourcePool(a, src || 'masters'); };
 function ensureTrack(t){ if(!orders[t]){ orders[t] = isTest(t) ? inOrder(poolOf(t)) : drawRound(poolOf(t)); seqBy[t] = 0; store[t] = {}; } }
@@ -978,6 +978,7 @@ TRACKS.forEach(ensureTrack);
 function posAt(track, i){
   ensureTrack(track);
   const o = orders[track], pool = poolOf(track);
+  if(!pool.length && i >= o.length) return null;   // nothing to show yet (your games still being analysed)
   while(i >= o.length) o.push(...(isTest(track) ? inOrder(pool) : drawRound(pool, o[o.length-1])));
   return o[i];
 }
@@ -1015,22 +1016,37 @@ function markPlayed(key){
   played.keys.push(key);
   try{ localStorage.setItem(PLAYED_LS, JSON.stringify(played)); }catch(e){}
 }
-// The first position from index i on that wasn't played today (or that you already started).
-function skipPlayed(t, i){
+// The first position from index i on that wasn't played today (or that you already started);
+// -1 when there is none: every position was played today, or none exists yet.
+function firstAvailable(t, i){
   if(isTest(t)) return i;
-  const len = poolOf(t).length;
+  ensureTrack(t);
+  const len = poolOf(t).length + Math.max(0, orders[t].length - i);
   for(let n=0; n<len; n++, i++){
     const p = posAt(t, i);
-    if(!isPlayed(p.key) || hasProgress(store[t][p.key])) return i;
+    if(!p) return -1;
+    const s = store[t][p.key];
+    if(!isPlayed(p.key) || (hasProgress(s) && !s.checked)) return i;   // started but not finished: carry on
   }
-  return i - len;   // everything was played today: allow repeats
+  return -1;
 }
+// Is there anything still being worked on in your games (likely mistakes to check, games to scan)?
+function myWorkPending(){ return myGames.some(g=>g.status==='queued' || (g.positions||[]).some(p=>p.pending)); }
+// Why an exercise can't go on: positions are still coming, or everything was played today.
+function waitText(a, r, short){
+  const t = ctx(a, r), none = !poolOf(t).length;
+  if(source!=='masters' && myWorkPending()) return short ? 'Waiting for positions…' : 'Waiting for new positions…';
+  return none ? 'No positions yet' : short ? 'All played today' : 'All positions played today';
+}
+const canOpen = (a, r)=>upcomingFor(ctx(a, r))[1] >= 0;
 function syncPos(){
   if(!ACTIVITIES.includes(screen)) return;
   const t = ctx(screen);
   ensureTrack(t);
-  seqBy[t] = skipPlayed(t, seqBy[t]);
+  const open = posAt(t, seqBy[t]), os = open && store[t][open.key];
+  if(!(os && os.checked)){ const j = firstAvailable(t, seqBy[t]); if(j>=0) seqBy[t] = j; }   // a review on screen stays
   curPos = posAt(t, seqBy[t]);
+  if(!curPos){ screen = 'home'; return; }
   side = curPos.side;
 }
 let selSquare = null;          // piece being moved while entering a candidate
@@ -1058,22 +1074,24 @@ function st(activity){
 function prefetchCurrent(){ if(ACTIVITIES.includes(screen)) fenEval(pos().fen); }
 function prefetchNext(){
   if(!ACTIVITIES.includes(screen)) return;
-  const [t, i] = routine ? upcomingFor(ctx(ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length])) : [ctx(screen), skipPlayed(ctx(screen), seqBy[ctx(screen)]+1)];
-  fenEval(posAt(t, i).fen);
+  const [t, i] = nextTarget();
+  if(i>=0) fenEval(posAt(t, i).fen);
 }
 // Where a track will open next: its current position if that question is still open, the
 // one after it if its review was already reached.
 function upcomingFor(t){
   ensureTrack(t);
-  const cur = posAt(t, seqBy[t]), s = store[t][cur.key];
-  return [t, skipPlayed(t, seqBy[t] + (s && s.checked ? 1 : 0))];
+  const cur = posAt(t, seqBy[t]);
+  if(!cur) return [t, -1];
+  const s = store[t][cur.key];
+  return [t, firstAvailable(t, seqBy[t] + (s && s.checked ? 1 : 0))];
 }
 // From the home page: where Board analysis and Final choice would open, and where the routine
 // resumes (unless that's Candidate moves, which is only evaluated at its review).
 function prefetchHome(){
   const ts = [ctx('analysis', false), ctx('final', false)];
   if(routineNext!=='candidates') ts.push(ctx(routineNext, true));
-  ts.forEach(t=>{ const [x, i] = upcomingFor(t); fenEval(posAt(x, i).fen); });
+  ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0) fenEval(posAt(x, i).fen); });
 }
 // Moves exercise `a`, on the open track, on to its next position, fresh.
 function advance(a){
@@ -1093,7 +1111,7 @@ let routine = false;
 // "Next" button: in routine mode, on to the next exercise of the loop; otherwise this exercise's
 // next position.
 function nextPosition(){
-  if(!ACTIVITIES.includes(screen)) return;
+  if(!ACTIVITIES.includes(screen) || nextTarget()[1] < 0) return;
   if(routine) return openActivity(ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length]);
   advance(screen);
   selSquare = null; promoPending = null; helpVisible = false;
@@ -1109,7 +1127,12 @@ function openActivity(name){
   render();
 }
 let routineNext = 'analysis';   // where the routine resumes from the home page
-function startRoutine(){ routine = true; openActivity(routineNext); }
+function startRoutine(){ if(!canOpen(routineNext, true)) return; routine = true; openActivity(routineNext); }
+// Where "Next" leads: the routine's next exercise, or this exercise's next position.
+function nextTarget(){
+  return routine ? upcomingFor(ctx(ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length]))
+                 : [ctx(screen), firstAvailable(ctx(screen), seqBy[ctx(screen)]+1)];
+}
 function nextLabel(){
   return routine ? ACT_NAMES[ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length]] + ' ›' : 'Next position';
 }
@@ -1197,7 +1220,11 @@ function wireCommon(helpKey, checked){
   };
   document.getElementById('helpBtn').onclick = ()=>{ helpVisible = true; render(); };
   const next = document.getElementById('nextPos');
-  if(next) next.onclick = nextPosition;
+  if(next){
+    next.onclick = nextPosition;
+    // Nothing to go on to yet: say why; the button comes back by itself when positions arrive.
+    if(nextTarget()[1] < 0){ next.disabled = true; next.textContent = waitText(routine ? ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length] : screen, routine, true); }
+  }
   if(helpVisible){
     const h = HELP[helpKey];
     const div = document.createElement('div');
@@ -1448,7 +1475,7 @@ function routineCard(){
   return `<div class="routine${done ? ' done' : ''}">
       <div class="routine-head"><span class="routine-title">Today's routine</span><span class="routine-count${dataCls()}">${done ? 'Done ✓' : `${total}/${DAILY_GOAL*3}`}</span></div>
       ${ACTS.map(a=>`<div class="routine-row"><span>${ACT_NAMES[a]}</span><span class="goal-dots${dataCls()}" aria-label="${Math.min(c[a],DAILY_GOAL)} of ${DAILY_GOAL}">${Array.from({length:DAILY_GOAL}, (_,i)=>`<i class="${i<c[a]?'on':''}"></i>`).join('')}</span></div>`).join('')}
-      <button class="btn${done ? ' secondary' : ''} routine-btn" id="routineBtn"><span class="${dataCls().trim()}">${done ? 'Keep training' : started ? 'Continue routine' : 'Start routine'}</span></button>
+      <button class="btn${done ? ' secondary' : ''} routine-btn" id="routineBtn" ${canOpen(routineNext, true) ? '' : 'disabled'}><span class="${dataCls().trim()}">${!canOpen(routineNext, true) ? waitText(routineNext, true) : done ? 'Keep training' : started ? 'Continue routine' : 'Start routine'}</span></button>
     </div>`;
 }
 
@@ -1549,8 +1576,9 @@ function renderHome(){
       ${[['analysis','⚖',"Who's better, and by how much?"],
          ['candidates','♘','Find the strongest moves.'],
          ['final','♔','Rank four moves, best to worst.']].map(([a, glyph, desc])=>{
-        const L = levelNow(a);
-        return `<button class="card" data-go="${a}">
+        const L = levelNow(a), open = canOpen(a, false);
+        if(!open) desc = waitText(a, false);
+        return `<button class="card" data-go="${a}" ${open ? '' : 'disabled'}>
           <span class="card-glyph" aria-hidden="true">${glyph}</span>
           <span><span class="card-title">${ACT_NAMES[a]}</span><span class="card-desc">${desc}</span></span>
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b><small>Average</small>` : `<b>—</b><small>${L.n ? `${L.n}/${CALIBRATION}` : 'Average'}</small>`}</span>
@@ -1561,7 +1589,7 @@ function renderHome(){
   document.getElementById('testsBtn').onclick = ()=>{ screen = 'tests'; render(); };
   document.getElementById('myGamesBtn').onclick = ()=>{ screen = 'mygames'; render(); };
   app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>setSource(b.dataset.src));
-  app.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ routine = false; openActivity(c.dataset.go); });
+  app.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
   document.getElementById('progressBtn').onclick = ()=>{ screen = 'progress'; render(); };
   document.getElementById('routineBtn').onclick = startRoutine;
   prefetchHome();
@@ -1580,7 +1608,9 @@ function renderHome(){
 // found at once. The others are scanned in the background, one quick search per position,
 // only while the engine has nothing else to do. Everything is saved privately to your account.
 const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacingPlies:7, retryPlies:3, maxMaterialDiff:3,
-              candidatesMinLegal:2, finalMinLegal:4, scanMs:300, maxGamesPerUpload:200 };
+              candidatesMinLegal:2, finalMinLegal:4, scanMs:300, maxGamesPerUpload:200,
+              flagDrop:7,        // quick evaluations flag a likely mistake from 7 points (the check then needs 10)
+              checkMs:1200 };    // the check: the app's usual search (top 5, then your move with them)
 const SPEED_NAMES = { ultraBullet:'UltraBullet', bullet:'Bullet', blitz:'Blitz', rapid:'Rapid', classical:'Classical', correspondence:'Correspondence' };
 let myGames = [];              // {id, white, black, me, year, speed, result, sans, evals|null, status, positions}
 let myName = '', includeBullet = false;
@@ -1659,7 +1689,7 @@ function importPgnText(text){
     const full = evals.filter(Boolean).length >= sans.length - 1;   // the last move may have none
     const g = { id, white:h.White||'?', black:h.Black||'?', me:side, year:(h.UTCDate||h.Date||'').slice(0,4), speed, result:h.Result||'*',
                 sans, evals: full ? evals : null, status: full ? 'evaluated' : 'queued', positions:[] };
-    if(full) extractOwnPositions(g);
+    extractOwnPositions(g);   // Board analysis positions need no evaluation; likely mistakes are flagged if Lichess analysed the game
     added.push(g);
   }
   const meName = spelled[me] || me;
@@ -1704,12 +1734,19 @@ function extractOwnPositions(g){
     const fen = fens[ply], turn = fen.split(' ')[1], moves = new Chess(fen).moves({verbose:true});
     // Your mistakes: every move of yours that lost 10+ points of winning chances, at any move
     // number. They go into both Candidate moves and Final choice (Final choice needs 4+ legal moves).
+    // A move only counts once the app's engine has checked it (g.checks), unless the game's
+    // evaluations are already full-strength (g.verified). A move the quick evaluations (Lichess's,
+    // or the app's quick scan) flag as a likely mistake waits for that check ("pending").
     if(turn===g.me && moves.length >= OWN.candidatesMinLegal && ply>0){
-      const before = winForMover(g.evals[ply-1], turn), after = winForMover(g.evals[ply], turn);
-      if(before!=null && after!=null && before - after >= OWN.mistakeDrop){
-        out.push(entry(ply, moves.length >= OWN.finalMinLegal ? ['candidates','final'] : ['candidates'], { drop: Math.round(before - after) }));
+      const checked = g.checks && g.checks[ply]!=null ? g.checks[ply] : null;
+      const before = g.evals ? winForMover(g.evals[ply-1], turn) : null, after = g.evals ? winForMover(g.evals[ply], turn) : null;
+      const quick = before!=null && after!=null ? before - after : null;
+      const drop = checked!=null ? checked : g.verified ? quick : null;
+      if(drop!=null && drop >= OWN.mistakeDrop){
+        out.push(entry(ply, moves.length >= OWN.finalMinLegal ? ['candidates','final'] : ['candidates'], { drop: Math.round(drop) }));
         continue;   // a mistake position is never a Board analysis position
       }
+      if(drop==null && quick!=null && quick >= OWN.flagDrop){ out.push(entry(ply, [], { pending:true })); continue; }
     }
     // Board analysis: middlegame start to endgame start, general rules, not in check, material within 3.
     if(baFrom<0 || ply<baFrom || ply>baTo) continue;
@@ -1727,7 +1764,6 @@ function extractOwnPositions(g){
   ba.filter(p=>p<=baLast).forEach(take);
   kept.sort((a,b)=>a-b).forEach(ply=>out.push(entry(ply, ['analysis'])));
   g.positions = out;
-  g.status = 'evaluated';
 }
 // Lichess's game phases (scalachess Divider), as in the position finder.
 const PIECE_VAL = { p:1, n:3, b:3, r:5, q:9, k:0 };
@@ -1766,22 +1802,48 @@ function onOwnPositionsChanged(){
     .map(p=>({ ...p, last: p.last ? { squares:p.last } : null }));
   refreshPools();
   if(screen==='mygames' || screen==='home') render();
+  else if(ACTIVITIES.includes(screen) && curPos && st(screen).checked){ const n = document.getElementById('nextPos'); if(n && n.disabled) render(); }
 }
 let myBgRunning = false;
+// Order of work, so the pools grow fast: first check the likely mistakes already flagged (games
+// Lichess analysed come with their flags at once); only then quick-scan a game Lichess didn't
+// analyse, which flags its likely mistakes for checking in turn.
 async function myBackground(){
   if(myBgRunning || sfState!=='ready') return;
   myBgRunning = true;
   try{
     while(sfState==='ready'){
-      const g = myGames.find(x=>x.status==='queued');
-      if(!g) break;
-      myScanning = g.id; if(screen==='mygames') render();
-      const ok = await scanOwnGame(g);
+      const g1 = myGames.find(x=>(x.positions||[]).some(p=>p.pending));
+      if(g1){
+        const ok = await checkMistake(g1, g1.positions.find(p=>p.pending));
+        if(!ok) break;
+        extractOwnPositions(g1); saveMyGame(g1); onOwnPositionsChanged(); continue;
+      }
+      const g2 = myGames.find(x=>x.status==='queued');
+      if(!g2) break;
+      myScanning = g2.id; if(screen==='mygames') render();
+      const ok = await scanOwnGame(g2);
       myScanning = null;
       if(!ok) break;
-      saveMyGame(g); onOwnPositionsChanged();
+      g2.status = 'evaluated'; extractOwnPositions(g2); saveMyGame(g2); onOwnPositionsChanged();
     }
   } finally { myBgRunning = false; myScanning = null; if(screen==='mygames') render(); }
+}
+// The check of one likely mistake: the app's usual search of the position (top 5), and your move
+// judged in the same search as the top 5. Kept for the exercises, which then open without waiting.
+async function checkMistake(g, p){
+  const disc = await bgEval(p.fen, { multipv:DISCOVERY_MULTIPV, movetime:OWN.checkMs });
+  if(evalFailed(disc) || !disc.lines.length) return false;
+  if(!fenEvalStore[p.fen]) fenEvalStore[p.fen] = { status:'done', data:disc };
+  let lines = disc.lines, gm = lines.find(l=>l.uci===p.hist.uci);
+  if(!gm){
+    const both = await bgEval(p.fen, { searchmoves: lines.slice(0,5).map(l=>l.uci).concat(p.hist.uci).join(' ') });
+    if(evalFailed(both) || !both.lines.length) return false;
+    lines = both.lines; gm = lines.find(l=>l.uci===p.hist.uci);
+  }
+  const drop = gm ? winPercent(lines[0].cp, lines[0].mate) - winPercent(gm.cp, gm.mate) : 0;
+  (g.checks = g.checks || {})[p.ply] = Math.round(drop*10)/10;
+  return true;
 }
 // One quick search before and after each of your moves, for a game Lichess hasn't analysed:
 // enough to spot a move that lost 10+ points of winning chances.
@@ -1801,7 +1863,6 @@ async function scanOwnGame(g){
     evals[k-1] = l.mate!=null ? { mate:sgn*l.mate } : { cp:sgn*l.cp };
   }
   g.evals = evals;
-  extractOwnPositions(g);
   return true;
 }
 
@@ -1819,7 +1880,7 @@ async function addOwnerSeed(user, db, id){
   const flag = db && id ? db.doc('data/users/' + id + '/trainer/meta/seed-' + SEED_VERSION) : null;
   if(!done && flag){ try{ done = (await flag.get()).exists; }catch(e){} }
   if(done) return;
-  const fresh = OWNER_SEED.map(g=>JSON.parse(JSON.stringify(g)));
+  const fresh = OWNER_SEED.map(g=>({ ...JSON.parse(JSON.stringify(g)), verified:true }));
   fresh.forEach(extractOwnPositions);
   myGames = myGames.filter(x=>!fresh.some(g=>g.id===x.id)).concat(fresh);
   fresh.forEach(saveMyGame);
@@ -1829,7 +1890,7 @@ async function addOwnerSeed(user, db, id){
 }
 // Positions are always worked out again from each game's evaluations when loading, so games
 // saved under earlier rules follow the current ones.
-function reextractAll(){ myGames.forEach(g=>{ if(g.evals && g.status==='evaluated') extractOwnPositions(g); }); }
+function reextractAll(){ myGames.forEach(g=>{ if(Array.isArray(g.sans)) extractOwnPositions(g); }); }
 async function initMyGames(){
   try{ const r = JSON.parse(localStorage.getItem(MY_LS) || 'null'); if(Array.isArray(r)) myGames = r; }catch(e){}
   reextractAll();
@@ -1876,10 +1937,12 @@ function renderMyGames(){
   const analysed = myGames.filter(g=>g.status==='evaluated').length;
   const queued = myGames.length - analysed;
   const scanIdx = myScanning ? myGames.findIndex(g=>g.id===myScanning) : -1;
+  const toCheck = myGames.reduce((t,g)=>t + (g.positions||[]).filter(p=>p.pending).length, 0);
   const status = !myGames.length ? ''
     : sfState==='error' ? 'The engine is unavailable, so analysis is paused.'
-    : myScanning ? `Analysing game ${analysed+1} of ${myGames.length}: ${myGames[scanIdx].white} – ${myGames[scanIdx].black}…`
-    : queued ? `${queued} game${queued===1?'':'s'} waiting for the engine…`
+    : toCheck ? `Checking ${toCheck} likely mistake${toCheck===1?'':'s'} with the engine…` + (queued ? ` Then a quick scan of ${queued} game${queued===1?'':'s'} Lichess didn't analyse.` : '')
+    : myScanning ? `Quick scan of game ${analysed+1} of ${myGames.length}: ${myGames[scanIdx].white} – ${myGames[scanIdx].black}…`
+    : queued ? `${queued} game${queued===1?'':'s'} waiting for a quick scan…`
     : 'All games analysed.';
   const mistakes = mine.candidates;
   const mistakeNote = mistakes ? `${mistakes} mistake${mistakes===1?'':'s'} of yours found (moves that lost 10+ points of winning chances), each in both Candidate moves and Final choice.` : '';
