@@ -8,6 +8,6 @@
     "report": "node finder/report.js data",
     "inject": "python3 finder/inject.py data/pools.json",
     "test": "python3 tests/smoke.py",
-    "test:all": "for t in smoke edge_cases my_games owner_seed owner_upgrade played_today fast_start profile_replay review_fixes; do echo \"== $t\"; out=$(python3 tests/$t.py 2>&1) || { echo \"$out\"; exit 1; }; echo \"$out\" | tail -1; done"
+    "test:all": "for t in smoke edge_cases my_games owner_seed owner_upgrade played_today fast_start profile_replay review_fixes lichess_link; do echo \"== $t\"; out=$(python3 tests/$t.py 2>&1) || { echo \"$out\"; exit 1; }; echo \"$out\" | tail -1; done"
   }
 }

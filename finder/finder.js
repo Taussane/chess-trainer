@@ -33,7 +33,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
     game.title = surname(game.white)+' – '+surname(game.black);
     const decisive = !R.ANALYSIS.decisiveGamesOnly || game.result==='1-0' || game.result==='0-1';
     const div = L.divide(fens);
-    const gs = { ...game, plies:hist.length, middlegame:div.mid, endgame:div.end, checked:0, passedGeneral:0, analysis:0, candidates:0, final:0 };
+    const gs = { ...game, sans:hist.map(m=>m.san), plies:hist.length, middlegame:div.mid, endgame:div.end, checked:0, passedGeneral:0, analysis:0, candidates:0, final:0 };
     stats.games.push(gs);
     process.stderr.write(`[${gi+1}/${games.length}] ${game.title}: ${hist.length} plies, middlegame ply ${div.mid}, endgame ply ${div.end}\n`);
 
