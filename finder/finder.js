@@ -122,6 +122,7 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
   let games = splitGames(fs.readFileSync(pgnFile,'utf8'));
   if(filter) games = games.filter(g=>new RegExp(filter).test(header(g,'White')+' - '+header(g,'Black')));
   const pools = { analysis:new Map(), candidates:new Map(), final:new Map() };
+  const taken = new Set();   // positions already given to an exercise (see below)
   const stats = { version:R.VERSION, engine:R.ENGINE, games:[], positions:0, reasons:{}, analysis:{}, candidates:{}, final:{} };
   const why = r=>{ stats.reasons[r] = (stats.reasons[r]||0) + 1; };
   const tally = (o,k)=>{ o[k] = (o[k]||0) + 1; };
@@ -175,41 +176,15 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
                hist:{ uci:m.from+m.to+(m.promotion||''), san:m.san, from:m.from, to:m.to } };
     };
 
-    // ----- Board analysis: middlegame start, then every 4 full moves, up to the endgame start.
-    if(decisive && div.mid>=0){
-      const last = div.end>=0 ? div.end : hist.length-1;
-      let target = div.mid;
-      while(target <= last){
-        let kept = -1;
-        for(let ply=target; ply<=Math.min(target+R.ANALYSIS.retryPlies, last); ply++){
-          const gen = general[ply]; if(!gen || !gen.ok) continue;
-          const c = new Chess(fens[ply]);
-          if(R.ANALYSIS.notInCheck && c.in_check()){ tally(stats.analysis,'rejected: in check'); continue; }
-          if(Math.abs(materialDiff(c)) > R.ANALYSIS.maxMaterialDiff){ tally(stats.analysis,'rejected: material'); continue; }
-          const top = gen.ls[0], whiteCp = (fens[ply].split(" ")[1]==="w" ? 1 : -1) * moverScore(top);
-          add(pools.analysis, { ...base(ply), metrics:{ evalWhite: whiteCp, mate: top.mate ?? null } });
-          gs.analysis++; kept = ply; break;
-        }
-        target = (kept>=0 ? kept : target) + R.ANALYSIS.spacingPlies;
-      }
-    } else if(!decisive) tally(stats.analysis, 'games skipped: draw');
-
-    // ----- Candidate moves and Final choice, ply by ply.
-    let lastCand = -99;
+    // Each position goes to one exercise only, so one review never gives away another's answer:
+    // Final choice first (its rules are the strictest), then Board analysis (which moves on to the
+    // next half-move when Final choice already has one), then Candidate moves with what is left.
+    // ----- Final choice, ply by ply.
     for(let ply=0; ply<hist.length; ply++){
       const gen = general[ply]; if(!gen || !gen.ok) continue;
       const ls = gen.ls, best = winPct(ls[0].cp, ls[0].mate);
       const drop = l=>best - winPct(l.cp, l.mate);
       const top5 = ls.slice(0, R.CANDIDATES.trapTopN);
-
-      // Candidate moves
-      if(top5.some(l=>drop(l) >= R.CANDIDATES.trapMinDrop)){
-        if(ply - lastCand >= R.CANDIDATES.spacingPlies){
-          const decent = top5.filter(l=>drop(l) < 10).length;
-          add(pools.candidates, { ...base(ply), metrics:{ decentMoves: decent } });
-          gs.candidates++; lastCand = ply;
-        } else tally(stats.candidates, 'rejected: spacing');
-      } else tally(stats.candidates, 'rejected: no trap in top 5');
 
       // Final choice
       // The game move is always judged inside ONE search with the top 5: the discovery search when
@@ -244,12 +219,56 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
       if(BAD.some(g=>g4.filter(x=>x===g).length > 1)){ tally(stats.final, 'rejected: two moves of the same bad grade'); continue; }
       const rnd = randomAccuracy(cp);
       if(rnd > R.FINAL.maxRandomAccuracy){ tally(stats.final, 'rejected: random order scores > 60%'); continue; }
+      taken.add(posKey(fens[ply]));
       add(pools.final, { ...base(ply), final:{ moves: picks.map(l=>l.uci) },
         metrics:{ randomAccuracy: Math.round(rnd), grades: g4, gameMoveGrade: gradeOf(cDrop(gmLine)) } });
       gs.final++;
     }
+
+    // ----- Board analysis: middlegame start, then every 7 half-moves, up to the endgame start.
+    if(decisive && div.mid>=0){
+      const last = div.end>=0 ? div.end : hist.length-1;
+      let target = div.mid;
+      while(target <= last){
+        let kept = -1;
+        for(let ply=target; ply<=Math.min(target+R.ANALYSIS.retryPlies, last); ply++){
+          const gen = general[ply]; if(!gen || !gen.ok) continue;
+          if(taken.has(posKey(fens[ply]))){ tally(stats.analysis,'moved on: position used by Final choice'); continue; }
+          const c = new Chess(fens[ply]);
+          if(R.ANALYSIS.notInCheck && c.in_check()){ tally(stats.analysis,'rejected: in check'); continue; }
+          if(Math.abs(materialDiff(c)) > R.ANALYSIS.maxMaterialDiff){ tally(stats.analysis,'rejected: material'); continue; }
+          const top = gen.ls[0], whiteCp = (fens[ply].split(" ")[1]==="w" ? 1 : -1) * moverScore(top);
+          add(pools.analysis, { ...base(ply), metrics:{ evalWhite: whiteCp, mate: top.mate ?? null } });
+          taken.add(posKey(fens[ply])); gs.analysis++; kept = ply; break;
+        }
+        target = (kept>=0 ? kept : target) + R.ANALYSIS.spacingPlies;
+      }
+    } else if(!decisive) tally(stats.analysis, 'games skipped: draw');
+
+    // ----- Candidate moves, ply by ply, on positions no other exercise uses.
+    let lastCand = -99;
+    for(let ply=0; ply<hist.length; ply++){
+      const gen = general[ply]; if(!gen || !gen.ok) continue;
+      if(taken.has(posKey(fens[ply]))){ tally(stats.candidates, 'skipped: position used by another exercise'); continue; }
+      const ls = gen.ls, best = winPct(ls[0].cp, ls[0].mate);
+      const drop = l=>best - winPct(l.cp, l.mate);
+      const top5 = ls.slice(0, R.CANDIDATES.trapTopN);
+
+      // Candidate moves
+      if(top5.some(l=>drop(l) >= R.CANDIDATES.trapMinDrop)){
+        if(ply - lastCand >= R.CANDIDATES.spacingPlies){
+          const decent = top5.filter(l=>drop(l) < 10).length;
+          add(pools.candidates, { ...base(ply), metrics:{ decentMoves: decent } });
+          gs.candidates++; lastCand = ply;
+        } else tally(stats.candidates, 'rejected: spacing');
+      } else tally(stats.candidates, 'rejected: no trap in top 5');
+
+    }
   }
 
+  // A position reached in two games could still sit in two pools: keep it in the first in priority.
+  for(const k of pools.final.keys()){ pools.analysis.delete(k); pools.candidates.delete(k); }
+  for(const k of pools.analysis.keys()) pools.candidates.delete(k);
   const out = { version:R.VERSION, engine:'Stockfish 16.1, depth '+R.ENGINE.depth, generated:new Date().toISOString(),
     pools: Object.fromEntries(Object.entries(pools).map(([k,m])=>[k, [...m.values()]])) };
   fs.mkdirSync(outDir, {recursive:true});
