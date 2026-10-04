@@ -41,6 +41,10 @@ async def main():
         print('work order:', ''.join('C' if x=='check' else 's' for x in log)[:80], '…', len(log), 'searches')
         if 'scan' in log and log[:first_scan].count('check') < st['flagged']: fails.append('a game was scanned before the flagged mistakes were checked')
         c = await pg.evaluate("countsOf(myPositions)"); print('finally:', c)
+        tried = await pg.evaluate("[...myTried].filter(k=>!k.startsWith('scan:')).length")
+        checks = log.count('check')
+        print('distinct mistakes checked:', tried, '| check searches:', checks)
+        if checks > 2*tried: fails.append(f'a likely mistake was checked more than once ({checks} searches for {tried})')
         if not c['candidates']: fails.append('no mistakes after the checks')
         # Waiting at the review: everything but one Board analysis position already played today.
         await pg.evaluate("(()=>{ const t=ctx('analysis',false); ensureTrack(t); const pool=poolOf(t); const cur=posAt(t, firstAvailable(t, seqBy[t])); pool.forEach(p=>{ if(p.key!==cur.key) markPlayed(p.key); }); })()")

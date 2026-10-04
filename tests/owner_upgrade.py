@@ -10,7 +10,13 @@ async def main():
     from playwright.async_api import async_playwright
     async with async_playwright() as p:
         b, pg, errs = await O.run(p, owner=True, storage=store)
-        await pg.evaluate("myBgRunning=true")   # look before any background work
-        print('at load:', await pg.evaluate("({c:countsOf(myPositions), pending:myGames.flatMap(g=>g.positions).filter(p=>p.pending).length, queued:myGames.filter(g=>g.status==='queued').length, verified:myGames.filter(g=>g.verified).length})"))
-        print([e for e in errs if 'importScripts' not in e]); await b.close()
-asyncio.run(main())
+        await pg.wait_for_timeout(1500)
+        st = await pg.evaluate("({c:countsOf(myPositions), pending:myGames.flatMap(g=>g.positions).filter(p=>p.pending).length, queued:myGames.filter(g=>g.status==='queued').length, verified:myGames.filter(g=>g.verified).length, running:myBgRunning, tried:myTried.size})")
+        print('after load:', st)
+        fails = []
+        if st['c'] != {'analysis':126, 'candidates':131, 'final':127} or st['pending'] or st['tried'] or st['running']: fails.append(f'owner games not complete at once: {st}')
+        errs = [e for e in errs if 'importScripts' not in e]
+        if errs: fails.append(f'page errors: {errs}')
+        await b.close()
+        print('\n'.join(['FAIL '+f for f in fails]) or 'ok'); sys.exit(1 if fails else 0)
+if __name__=='__main__': asyncio.run(main())
