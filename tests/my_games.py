@@ -46,7 +46,9 @@ async def main():
         await pg.fill('#lichessUser', 'TestPlayer')
         href = await pg.get_attribute('#exportLink', 'href')
         if 'games/user/TestPlayer' not in href or 'evals=true' not in href or 'bullet' in href: fails.append('export link: '+href)
-        await pg.set_input_files('#pgnFile', SAMPLE); await pg.wait_for_timeout(400)
+        async with pg.expect_file_chooser(timeout=3000) as fc:   # a real tap must open the browser's file chooser
+            await pg.click('.file-btn')
+        await (await fc.value).set_files(SAMPLE); await pg.wait_for_timeout(400)
         note = await pg.inner_text('.mg-note'); print('note:', note)
         if 'Added 9 games' not in note or '5 already analysed' not in note or '1 bullet' not in note or '1 variant' not in note: fails.append('import note: '+note)
         await pg.screenshot(path=str(SHOTS/'mg_1_after_upload.png'))
@@ -89,6 +91,11 @@ async def main():
         await pg.click('#myGamesBtn'); await pg.set_input_files('#pgnFile', SAMPLE); await pg.wait_for_timeout(300)
         note = await pg.inner_text('.mg-note')
         if 'Added 0 games' not in note or '9 already added' not in note: fails.append('re-upload note: '+note)
+        # Paste route: remove, then paste the same file's text
+        await pg.click('#clearBtn'); await pg.click('#clearYes'); await pg.wait_for_timeout(200)
+        await pg.click('#pasteToggle'); await pg.fill('#pgnPaste', pathlib.Path(SAMPLE).read_text()); await pg.click('#pasteAdd'); await pg.wait_for_timeout(300)
+        note = await pg.inner_text('.mg-note'); print('paste note:', note)
+        if 'Added 9 games' not in note: fails.append('paste: '+note)
         # Remove
         await pg.click('#clearBtn'); await pg.click('#clearYes'); await pg.wait_for_timeout(200)
         n = await pg.evaluate("[myGames.length, myPositions.length, source]")

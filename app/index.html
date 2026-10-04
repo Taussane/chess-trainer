@@ -133,6 +133,13 @@
   .mg-steps a{color:var(--accent); font-weight:600; text-decoration:none;}
   .mg-steps small{display:block; color:var(--text-mute); font-size:0.78rem; margin-top:2px;}
   .btn.small{padding:7px 12px; font-size:0.86rem;}
+  .file-btn{position:relative; display:inline-flex; overflow:hidden;}
+  .file-input{position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:0;}
+  .file-btn:focus-within{outline:2px solid var(--text); outline-offset:2px;}
+  .link-inline{background:none; border:none; padding:0; font:inherit; color:var(--accent); text-decoration:underline; cursor:pointer;}
+  .mg-paste{display:flex; flex-direction:column; gap:8px; margin-top:8px;}
+  .mg-paste textarea{font:0.8rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:8px; resize:vertical; min-width:0;}
+  .mg-paste .btn{align-self:flex-start;}
   .btn.ghost{background:transparent; color:var(--text); border-color:var(--border);}
   .btn.danger{background:var(--bad); color:#fff;}
   .mg-note, .mg-status{margin:0; font-size:0.84rem; color:var(--text-mute);}
@@ -1552,7 +1559,7 @@ const SPEED_NAMES = { ultraBullet:'UltraBullet', bullet:'Bullet', blitz:'Blitz',
 let myGames = [];              // {id, white, black, me, year, speed, result, sans, evals|null, status, positions}
 let myName = '', includeBullet = false;
 try{ myName = localStorage.getItem('cst.lichess') || ''; includeBullet = localStorage.getItem('cst.bullet')==='1'; }catch(e){}
-let myGamesCol = null, myGamesLoaded = false, myImportNote = '', myScanning = null, myConfirmClear = false;
+let myGamesCol = null, myGamesLoaded = false, myImportNote = '', myScanning = null, myConfirmClear = false, myPasteOpen = false;
 const MY_LS = 'cst.mygames.v1';
 function saveMyLocal(){ try{ localStorage.setItem(MY_LS, JSON.stringify(myGames)); }catch(e){} }
 function saveMyGame(g){ saveMyLocal(); if(myGamesCol) myGamesCol.doc(g.id).set(g).catch(()=>{}); }
@@ -1876,7 +1883,9 @@ function renderMyGames(){
         <label class="mg-check" for="bulletBox"><input id="bulletBox" type="checkbox" ${includeBullet ? 'checked' : ''}> Include bullet games</label>
         <ol class="mg-steps">
           <li><a id="exportLink" href="${lichessExportUrl(myName)}" target="_blank" rel="noopener">Download your last 50 games from Lichess ↗</a><small>Blitz, rapid and classical${includeBullet ? ', and bullet' : ''}, with Lichess's analysis where you have one.</small></li>
-          <li><button class="btn small" id="pickFile">Choose the downloaded file</button><input id="pgnFile" type="file" accept=".pgn,application/x-chess-pgn,text/plain" hidden></li>
+          <li><label class="btn small file-btn" for="pgnFile">Choose the downloaded file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>
+            <small>Or drop the file on this page, or <button class="link-inline" id="pasteToggle">paste the games instead</button>.</small>
+            ${myPasteOpen ? `<div class="mg-paste"><textarea id="pgnPaste" rows="5" placeholder="[Event &quot;Rated Blitz game&quot;] …" spellcheck="false"></textarea><button class="btn small" id="pasteAdd">Add these games</button></div>` : ''}</li>
         </ol>
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
       </section>
@@ -1896,15 +1905,20 @@ function renderMyGames(){
   const user = document.getElementById('lichessUser'), link = document.getElementById('exportLink');
   user.oninput = ()=>{ myName = user.value.trim(); try{ localStorage.setItem('cst.lichess', myName); }catch(e){} link.href = lichessExportUrl(myName); };
   document.getElementById('bulletBox').onchange = e=>{ includeBullet = e.target.checked; try{ localStorage.setItem('cst.bullet', includeBullet ? '1' : '0'); }catch(e){} render(); };
-  const file = document.getElementById('pgnFile');
-  document.getElementById('pickFile').onclick = ()=>file.click();
-  file.onchange = ()=>{
-    const f = file.files && file.files[0]; if(!f) return;
+  const readFile = f=>{
+    if(!f) return;
     const rd = new FileReader();
     rd.onload = ()=>{ importPgnText(String(rd.result || '')); render(); };
     rd.onerror = ()=>{ myImportNote = 'This file could not be read. Try downloading it again.'; render(); };
     rd.readAsText(f);
   };
+  const file = document.getElementById('pgnFile');
+  file.onchange = ()=>readFile(file.files && file.files[0]);
+  app.ondragover = e=>{ e.preventDefault(); };
+  app.ondrop = e=>{ e.preventDefault(); readFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]); };
+  document.getElementById('pasteToggle').onclick = ()=>{ myPasteOpen = !myPasteOpen; render(); };
+  const pa = document.getElementById('pasteAdd');
+  if(pa) pa.onclick = ()=>{ const t = document.getElementById('pgnPaste').value; if(t.trim()){ myPasteOpen = false; importPgnText(t); render(); } };
   const cb = document.getElementById('clearBtn'); if(cb) cb.onclick = ()=>{ myConfirmClear = true; render(); };
   const cy = document.getElementById('clearYes'); if(cy) cy.onclick = ()=>clearMyGames();
   const cn = document.getElementById('clearNo'); if(cn) cn.onclick = ()=>{ myConfirmClear = false; render(); };
