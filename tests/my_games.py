@@ -105,4 +105,4 @@ async def main():
     if errs: fails.append(f'page errors: {errs}')
     print('\n'.join(['FAIL '+f for f in fails]) or 'ok')
     sys.exit(1 if fails else 0)
-asyncio.run(main())
+if __name__=="__main__": asyncio.run(main())
