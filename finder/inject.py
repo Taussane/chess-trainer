@@ -11,5 +11,9 @@ pools = {k: [slim(e) for e in v] for k, v in d['pools'].items()}
 s = app.read_text()
 assert '/*POOLS*/' in s and '/*END POOLS*/' in s, 'POOLS markers not found in app/index.html'
 s = re.sub(r'/\*POOLS\*/.*?/\*END POOLS\*/', lambda m: '/*POOLS*/' + json.dumps(pools, ensure_ascii=False, separators=(',',':')) + '/*END POOLS*/', s, flags=re.S)
+stats = pathlib.Path(src).with_name('stats.json')
+if stats.exists():
+    n = len(json.load(open(stats))['games'])
+    s = re.sub(r'/\*POOLS_GAMES\*/.*?/\*END POOLS_GAMES\*/', '/*POOLS_GAMES*/%d/*END POOLS_GAMES*/' % n, s)
 app.write_text(s)
 print({k: len(v) for k, v in pools.items()}, 'rules', d.get('version'))
