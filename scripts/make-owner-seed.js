@@ -7,12 +7,12 @@ const L = require('../finder/lib.js');
 const { fs, Chess, header, analyse, winPct } = L;
 const [pgnFile, player, out] = process.argv.slice(2);
 (async()=>{
-  L.send('uci'); await L.until('uciok'); L.send('isready'); await L.until('readyok');
+  await L.start();   // the same engine settings as finder/own.js
   const me = player.toLowerCase(), games = [];
   for(const g of L.splitGames(fs.readFileSync(pgnFile,'utf8'))){
     const h = k=>header(g,k);
     const side = h('White').toLowerCase()===me ? 'w' : h('Black').toLowerCase()===me ? 'b' : null;
-    if(!side || (h('Variant') && h('Variant')!=='Standard')) continue;
+    if(!side || (h('Variant') && h('Variant')!=='Standard') || h('FEN')) continue;   // as finder/own.js
     const c = new Chess(), sans = [], fens = [c.fen()];
     for(const t of L.mainline(g)){ const m = c.move(t) || c.move(t,{sloppy:true}); if(!m) break; sans.push(m.san); fens.push(c.fen()); }
     const evals = new Array(sans.length).fill(null);
@@ -27,7 +27,7 @@ const [pgnFile, player, out] = process.argv.slice(2);
       evals[ply] = toWhite(gm);                 // after your move
     }
     const site = h('Site').match(/lichess\.org\/(\w{8})/);
-    const speed = (h('Event').match(/(ultraBullet|bullet|blitz|rapid|classical|correspondence)/i)||[,''])[1].toLowerCase();
+    const speed = (w=>w==='ultrabullet' ? 'ultraBullet' : w)((h('Event').match(/(ultraBullet|bullet|blitz|rapid|classical|correspondence)/i)||[,''])[1].toLowerCase());   // as the app names them
     games.push({ id: site ? site[1] : 'g'+games.length, white:h('White'), black:h('Black'), me:side, year:(h('UTCDate')||h('Date')).slice(0,4),
                  speed, result:h('Result'), sans, evals, status:'evaluated', positions:[] });
   }

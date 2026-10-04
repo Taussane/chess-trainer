@@ -19,9 +19,7 @@ const OWN = { candidatesMinLegal:2, finalMinLegal:4, mistakeDrop:10 };
 (async()=>{
   const [pgnFile, player, outDir] = process.argv.slice(2);
   const me = (player||'').toLowerCase();
-  L.send('uci'); await L.until('uciok');
-  L.send('setoption name Threads value '+R.ENGINE.threads); L.send('setoption name Hash value '+R.ENGINE.hash);
-  L.send('isready'); await L.until('readyok');
+  await L.start();
   const games = L.splitGames(fs.readFileSync(pgnFile,'utf8'));
   const stats = { player, games:[], mistakes:{ total:0, byGrade:{}, finalEligible:0 }, analysis:{ anchors:0, eligible:0 }, skipped:{} };
   const items = [];
@@ -35,7 +33,7 @@ const OWN = { candidatesMinLegal:2, finalMinLegal:4, mistakeDrop:10 };
     for(const t of toks){ const m = ch.move(t) || ch.move(t,{sloppy:true}); if(!m) break; hist.push(m); }
     const fens = [new Chess().fen()]; { const r = new Chess(); hist.forEach(m=>{ r.move(m.san); fens.push(r.fen()); }); }
     const site = h('Site').match(/lichess\.org\/(\w{8})/), id = site ? site[1] : 'g'+gi;
-    const speed = (h('Event').match(/(bullet|blitz|rapid|classical|correspondence)/i)||[,''])[1].toLowerCase();
+    const speed = (w=>w==='ultrabullet' ? 'ultraBullet' : w)((h('Event').match(/(ultraBullet|bullet|blitz|rapid|classical|correspondence)/i)||[,''])[1].toLowerCase());   // as the app names them
     const game = { id, white:h('White'), black:h('Black'), me:side, year:(h('UTCDate')||h('Date')).slice(0,4), speed, result:h('Result') };
     game.title = `${game.white} – ${game.black}`;
     const div = L.divide(fens);
@@ -48,7 +46,7 @@ const OWN = { candidatesMinLegal:2, finalMinLegal:4, mistakeDrop:10 };
                moveNo:+fen.split(' ')[5], side:fen.split(' ')[1], last: prev ? [prev.from, prev.to] : null,
                hist:{ uci:m.from+m.to+(m.promotion||''), san:m.san, from:m.from, to:m.to } };
     };
-    const baFrom = div.mid, baLast = div.end>=0 ? div.end : hist.length-1, baTo = div.end>=0 ? div.end + R.ANALYSIS.retryPlies : baLast;
+    const baFrom = div.mid>=0 ? div.mid : div.end, baLast = div.end>=0 ? div.end : hist.length-1, baTo = div.end>=0 ? div.end + R.ANALYSIS.retryPlies : baLast;
     // ----- One pass: every half-move is checked once, with early exits. The player's moves are
     // checked for a mistake (one analysis each); any position that isn't a mistake can be a Board
     // analysis position (no analysis needed to qualify).

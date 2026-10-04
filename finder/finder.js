@@ -1,23 +1,21 @@
 // Position finder: library games (PGN) -> training positions for each exercise, by rules.js.
 // Usage: node finder/finder.js <games.pgn> <out-dir> [filter-regex on "White - Black"]
 // Engine: engine/stockfish (scripts/setup-stockfish.sh), or set STOCKFISH=/path/to/stockfish.
-// Output: pools.json (what the app reads) and stats.json.
+// Output: pools.json (copied into the app by inject.py) and stats.json.
 //
 // 1. Every position is checked against each exercise's rules and keeps every exercise it
 //    qualifies for, in ONE pass over the game's half-moves (each position analysed once, early
 //    exits on the general rules). Board analysis then marks two anchors per game: the middlegame
 //    start and the endgame start (or the next half-move that qualifies, up to 3).
 // 2. Each exercise keeps every position it qualifies for (lib.choosePools), keeping its spacing
-//    within a game: Board analysis 7 half-moves (anchors first), Candidate moves 3. A position
+//    within a game: Board analysis 7 half-moves (anchors first), Candidate moves 7, Final choice none. A position
 //    can be in several exercises.
 const L = require('./lib.js');
 const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore, gradeOf, randomAccuracy, posKey } = L;
 
 (async()=>{
   const [pgnFile, outDir, filter] = process.argv.slice(2);
-  L.send('uci'); await L.until('uciok');
-  L.send('setoption name Threads value '+R.ENGINE.threads); L.send('setoption name Hash value '+R.ENGINE.hash);
-  L.send('isready'); await L.until('readyok');
+  await L.start();
 
   let games = L.splitGames(fs.readFileSync(pgnFile,'utf8'));
   if(filter) games = games.filter(g=>new RegExp(filter).test(header(g,'White')+' - '+header(g,'Black')));
@@ -33,7 +31,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
     const surname = s=>s.split(',')[0].trim();
     const game = { id:'g'+gi, white:header(g,'White'), black:header(g,'Black'), event:header(g,'Event'), year:header(g,'Date').slice(0,4), result:header(g,'Result') };
     game.title = surname(game.white)+' – '+surname(game.black);
-    const decisive = game.result==='1-0' || game.result==='0-1';
+    const decisive = !R.ANALYSIS.decisiveGamesOnly || game.result==='1-0' || game.result==='0-1';
     const div = L.divide(fens);
     const gs = { ...game, plies:hist.length, middlegame:div.mid, endgame:div.end, checked:0, passedGeneral:0, analysis:0, candidates:0, final:0 };
     stats.games.push(gs);
@@ -48,7 +46,8 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
     };
     // Board analysis range: decisive games, middlegame start to endgame start (a few half-moves
     // more at the endgame start, for its anchor).
-    const baFrom = decisive ? div.mid : -1, baLast = div.end>=0 ? div.end : hist.length-1;
+    // (When the middlegame and endgame start together, the range starts at the endgame start.)
+    const baFrom = decisive ? (div.mid>=0 ? div.mid : div.end) : -1, baLast = div.end>=0 ? div.end : hist.length-1;
     const baTo = baFrom<0 ? -2 : (div.end>=0 ? div.end + R.ANALYSIS.retryPlies : baLast);
     if(!decisive) tally(stats.analysis, 'games skipped: draw');
 
@@ -78,7 +77,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
         else { e.options.add('analysis'); e.metrics.evalWhite = (fen.split(' ')[1]==='w' ? 1 : -1) * moverScore(ls[0]); e.metrics.mate = ls[0].mate ?? null; }
       }
       // Candidate moves: a trap (Dubious or worse) among the top 5.
-      if(top5.some(l=>drop(l) >= R.CANDIDATES.trapMinDrop)){ e.options.add('candidates'); e.metrics.decentMoves = top5.filter(l=>drop(l) < 10).length; }
+      if(top5.some(l=>drop(l) >= R.CANDIDATES.trapMinDrop)){ e.options.add('candidates'); e.metrics.decentMoves = top5.filter(l=>drop(l) < R.CANDIDATES.trapMinDrop).length; }
       else tally(stats.candidates, 'rejected: no trap in top 5');
       // Final choice (the only check needing more searches, so it comes last).
       const f = await finalCheck(ply, top5);

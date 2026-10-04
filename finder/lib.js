@@ -26,6 +26,16 @@ const sf = spawn(SF); let buf = '', waiter = null;
 sf.stdout.on('data', d=>{ buf += d; if(waiter && buf.includes(waiter.t)){ const w = waiter; waiter = null; const o = buf; buf = ''; w.r(o); } });
 const send = s=>sf.stdin.write(s+'\n');
 const until = t=>new Promise(r=>{ waiter = {t, r}; if(buf.includes(t)){ waiter = null; const o = buf; buf = ''; r(o); } });
+// Starts the engine with the rules' settings; every finder script calls this first. The engine's
+// name goes into every saved search's key, so results from another engine are never reused.
+let engineName = null;
+async function start(){
+  send('uci'); const id = await until('uciok');
+  engineName = ((id.match(/id name (.+)/)||[])[1] || 'unknown').trim();
+  send('setoption name Threads value '+R.ENGINE.threads); send('setoption name Hash value '+R.ENGINE.hash);
+  send('isready'); await until('readyok');
+  return engineName;
+}
 const winPct = (cp, mate)=> mate!=null ? (mate>0 ? 100 : 0) : 50 + 50*(2/(1+Math.exp(-0.00368208*cp)) - 1);
 const moverScore = l=> l.mate!=null ? (l.mate>0 ? 1000 : -1000) : Math.max(-1000, Math.min(1000, l.cp));
 async function search(fen, searchmoves){
@@ -41,16 +51,18 @@ async function search(fen, searchmoves){
   });
   return Object.values(L).sort((a,b)=>winPct(b.cp,b.mate) - winPct(a.cp,a.mate));   // mover's view, best first
 }
-// Every search is kept on disk (one JSON line each), keyed by depth, MultiPV, position and move
-// restriction, so a re-run (new rules, more games, or after an interruption) only searches what
+// Every search is kept on disk (one JSON line each), keyed by engine, depth, MultiPV, position
+// and move restriction (lines saved before the engine was in the key are Stockfish 16.1's), so a re-run (new rules, more games, or after an interruption) only searches what
 // it hasn't seen. Delete the file to start fresh.
 const CACHE_FILE = process.env.CACHE || path.join(__dirname, '.cache', 'searches.jsonl');
 const cache = new Map();
 fs.mkdirSync(path.dirname(CACHE_FILE), {recursive:true});
-if(fs.existsSync(CACHE_FILE)) fs.readFileSync(CACHE_FILE,'utf8').split('\n').forEach(l=>{ if(l){ try{ const [k,v] = JSON.parse(l); cache.set(k,v); }catch(e){} } });
+const LEGACY_ENGINE = 'Stockfish 16.1';
+if(fs.existsSync(CACHE_FILE)) fs.readFileSync(CACHE_FILE,'utf8').split('\n').forEach(l=>{ if(l){ try{ const [k,v] = JSON.parse(l); cache.set(/^\d+\|/.test(k) ? LEGACY_ENGINE+'|'+k : k, v); }catch(e){} } });
 let searched = 0, reused = 0;
 async function analyse(fen, searchmoves){
-  const k = [R.ENGINE.depth, searchmoves ? searchmoves.length : R.ENGINE.multipv, fen, (searchmoves||[]).join(' ')].join('|');
+  if(!engineName) throw new Error('call start() before analysing');
+  const k = [engineName, R.ENGINE.depth, searchmoves ? searchmoves.length : R.ENGINE.multipv, fen, (searchmoves||[]).join(' ')].join('|');
   if(cache.has(k)){ reused++; return cache.get(k); }
   const v = await search(fen, searchmoves); searched++;
   cache.set(k, v); fs.appendFileSync(CACHE_FILE, JSON.stringify([k,v])+'\n');
@@ -106,9 +118,6 @@ function rankAccuracy(order, cp){        // order: ids; cp: id -> mover-view cen
 function perms(a){ return a.length<2 ? [a] : a.flatMap((x,i)=>perms([...a.slice(0,i), ...a.slice(i+1)]).map(p=>[x,...p])); }
 const randomAccuracy = cp=>{ const ps = perms(Object.keys(cp)); return ps.reduce((t,p)=>t+rankAccuracy(p,cp),0)/ps.length; };
 
-// Seeded random, so the same run gives the same rotation choices.
-let seed = [...R.VERSION].reduce((h,c)=>(h*31 + c.charCodeAt(0))>>>0, 7);
-const rand = ()=>((seed = (seed*1664525 + 1013904223)>>>0) / 4294967296);
 const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
 
 
@@ -117,7 +126,8 @@ const posKey = fen=>fen.split(' ').slice(0,4).join(' ');
 // goes into EVERY exercise it qualifies for (no exclusivity between exercises). Within one
 // exercise: Board analysis anchors (middlegame and endgame starts) first, then each game in move
 // order, keeping that exercise's spacing (half-moves from its other positions of the same game);
-// a position reached in several games is kept once. spacing: { analysis:7, candidates:3, final:0 }.
+// a position reached in several games is kept once (from the first game in order). spacing: e.g.
+// { analysis:7, candidates:7, final:0 }.
 function choosePools(items, spacing){
   const pools = { analysis:[], candidates:[], final:[] };
   const byOrder = (a,b)=>String(a.game).localeCompare(String(b.game), undefined, {numeric:true}) || a.ply - b.ply;
@@ -134,4 +144,4 @@ function choosePools(items, spacing){
 }
 
 module.exports = { fs, path, Chess, R, splitGames, header, mainline, send, until, winPct, moverScore, analyse, lines,
-  stats: ()=>({ searched, reused }), pieces, materialDiff, divide, gradeOf, rankAccuracy, randomAccuracy, rand, posKey, choosePools };
+  stats: ()=>({ searched, reused }), pieces, materialDiff, divide, gradeOf, rankAccuracy, randomAccuracy, posKey, choosePools, start };
