@@ -1004,10 +1004,34 @@ function setSource(v){
 }
 let curPos = null, side = 'w';   // the open exercise's position and side to play (see syncPos)
 // Points curPos/side at the open exercise's own position.
+// Positions played today (their review reached), in any exercise: an exercise skips them when it
+// picks its next position, so the same position never comes back the same day. Kept on this
+// device; a new day starts a new list. If every position of an exercise was played, repeats come.
+const PLAYED_LS = 'cst.played.v1';
+const todayKey = ()=>{ const d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+let played = { day: todayKey(), keys: [] };
+try{ const v = JSON.parse(localStorage.getItem(PLAYED_LS) || 'null'); if(v && v.day===played.day && Array.isArray(v.keys)) played = v; }catch(e){}
+function isPlayed(key){ if(played.day!==todayKey()) played = { day: todayKey(), keys: [] }; return played.keys.includes(key); }
+function markPlayed(key){
+  if(testMode || isPlayed(key)) return;
+  played.keys.push(key);
+  try{ localStorage.setItem(PLAYED_LS, JSON.stringify(played)); }catch(e){}
+}
+// The first position from index i on that wasn't played today (or that you already started).
+function skipPlayed(t, i){
+  if(isTest(t)) return i;
+  const len = poolOf(t).length;
+  for(let n=0; n<len; n++, i++){
+    const p = posAt(t, i);
+    if(!isPlayed(p.key) || hasProgress(store[t][p.key])) return i;
+  }
+  return i - len;   // everything was played today: allow repeats
+}
 function syncPos(){
   if(!ACTIVITIES.includes(screen)) return;
   const t = ctx(screen);
   ensureTrack(t);
+  seqBy[t] = skipPlayed(t, seqBy[t]);
   curPos = posAt(t, seqBy[t]);
   // One of your mistakes already kept by the other exercise is skipped (and not started here).
   for(let n=0; n<500 && curPos.gameId && ownAct(curPos)!==screen && ownAct(curPos)!=='pending' && !hasProgress(store[t][curPos.key]); n++){
@@ -1042,7 +1066,7 @@ function st(activity){
 function prefetchCurrent(){ if(ACTIVITIES.includes(screen)) fenEval(pos().fen); }
 function prefetchNext(){
   if(!ACTIVITIES.includes(screen)) return;
-  const [t, i] = routine ? upcomingFor(ctx(ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length])) : [ctx(screen), seqBy[ctx(screen)]+1];
+  const [t, i] = routine ? upcomingFor(ctx(ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length])) : [ctx(screen), skipPlayed(ctx(screen), seqBy[ctx(screen)]+1)];
   fenEval(posAt(t, i).fen);
 }
 // Where a track will open next: its current position if that question is still open, the
@@ -1050,7 +1074,7 @@ function prefetchNext(){
 function upcomingFor(t){
   ensureTrack(t);
   const cur = posAt(t, seqBy[t]), s = store[t][cur.key];
-  return [t, seqBy[t] + (s && s.checked ? 1 : 0)];
+  return [t, skipPlayed(t, seqBy[t] + (s && s.checked ? 1 : 0))];
 }
 // From the home page: where Board analysis and Final choice would open, and where the routine
 // resumes (unless that's Candidate moves, which is only evaluated at its review).
@@ -1416,6 +1440,7 @@ function levelNow(a){
 // review shows: the level after this position and how much it moved.
 function recordResult(s, a, acc){
   if(s.rec || acc==null) return;
+  markPlayed(pos().key);
   if(testMode){ s.rec = { test:true }; return; }   // test positions never count
   const before = levelNow(a);
   const r = { a, acc: Math.round(acc), ts: Date.now() };
