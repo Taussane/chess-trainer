@@ -117,6 +117,25 @@
   .seg-btn.active{background:var(--panel-2); color:var(--text); font-weight:600;}
   .seg-btn:disabled{opacity:.45; cursor:default;}
   .card:disabled{opacity:.55; cursor:default;}
+  /* Profile */
+  .pf-scroll{display:flex; flex-direction:column; gap:12px; overflow-y:auto; min-height:0; padding-bottom:16px;}
+  .pf-card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; min-width:0;}
+  .pf-card h2, .pf-h{margin:0; font-size:1rem;}
+  .pf-h{margin-top:4px;}
+  .pf-name{font-size:1.25rem; font-weight:700;}
+  .pf-facts{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:0.86rem; color:var(--text-mute);}
+  .pf-facts b{color:var(--text); font-weight:600; font-variant-numeric:tabular-nums;}
+  .wk-table{border-collapse:collapse; width:100%; font-size:0.86rem; font-variant-numeric:tabular-nums;}
+  .wk-table th, .wk-table td{padding:5px 4px; text-align:center; border-bottom:1px solid var(--border);}
+  .wk-table thead th{font-weight:500; color:var(--text-mute); font-size:1rem;}
+  .wk-table tbody th{text-align:left; font-weight:500; white-space:nowrap;}
+  .wk-table tr:last-child th, .wk-table tr:last-child td{border-bottom:none;}
+  .wk-table tr.idle td, .wk-table tr.idle th{color:var(--text-mute);}
+  .wk-done{color:var(--good); font-weight:700;}
+  .pf-replay{flex-direction:row; align-items:center; justify-content:space-between; gap:12px;}
+  .pf-replay p{margin:4px 0 0; font-size:0.8rem; color:var(--text-mute);}
+  .pf-replay .btn{flex:none; white-space:nowrap;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
   .source-row{display:flex; align-items:center; gap:10px;}
   .source-label{font-size:0.8rem; color:var(--text-mute); white-space:nowrap;}
   .seg.seg-sm{flex:1; margin:0;}
@@ -957,11 +976,14 @@ const ACTIVITIES = ['analysis', 'candidates', 'final'];
 // A third track per exercise, 't-…', runs the test positions in their listed order.
 const TRACKS = ACTIVITIES.flatMap(a=>[a, 'r-'+a, 't-'+a]);
 let testMode = false;
+// REPLAY: positions where you scored below your average, played again one after the other, each
+// in its own exercise (see replayList).
+let replayMode = false, replayQueue = [], replayIdx = 0;
 // Each source of positions (Masters, My games, Both) has its own tracks, so switching source and
 // back returns you to exactly where you were in each.
-const ctx = (a, r = routine) => testMode ? 't-' + a : (r ? 'r-' : '') + a + (source==='masters' ? '' : '@' + source);   // the open track for exercise `a`
+const ctx = (a, r = routine) => testMode ? 't-' + a : replayMode ? 'x-' + a : (r ? 'r-' : '') + a + (source==='masters' ? '' : '@' + source);   // the open track for exercise `a`
 const orders = {}, seqBy = {}, store = {};
-const isTest = t=>t.startsWith('t-');
+const isTest = t=>t.startsWith('t-') || t.startsWith('x-');   // fixed tracks: test positions, and the replay ('x-')
 // Where positions come from: the master games built into the app, your own games, or both.
 // An exercise with nothing of yours yet falls back to the master games.
 const SOURCES = { masters:'Masters', mine:'My games', both:'Both' };
@@ -972,7 +994,7 @@ function sourcePool(a, src){
   const mine = myPositions.filter(p=>p.acts.includes(a));
   return src==='mine' ? mine : src==='both' ? POOLS[a].concat(mine) : POOLS[a];
 }
-const poolOf = t=>{ if(isTest(t)) return TEST_POSITIONS; const [a, src] = t.replace(/^r-/, '').split('@'); return sourcePool(a, src || 'masters'); };
+const poolOf = t=>{ if(t.startsWith('x-')) return (orders[t] || []).slice(0, 1); if(isTest(t)) return TEST_POSITIONS; const [a, src] = t.replace(/^r-/, '').split('@'); return sourcePool(a, src || 'masters'); };
 function ensureTrack(t){ if(!orders[t]){ orders[t] = isTest(t) ? inOrder(poolOf(t)) : drawRound(poolOf(t)); seqBy[t] = 0; store[t] = {}; } }
 const inOrder = pool=>pool.slice();
 TRACKS.forEach(ensureTrack);
@@ -1075,6 +1097,7 @@ function st(activity){
 function prefetchCurrent(){ if(ACTIVITIES.includes(screen)) fenEval(pos().fen); }
 function prefetchNext(){
   if(!ACTIVITIES.includes(screen)) return;
+  if(replayMode){ const e = replayQueue[replayIdx+1]; if(e) fenEval(e.pos.fen); return; }
   const [t, i] = nextTarget();
   if(i>=0) fenEval(posAt(t, i).fen);
 }
@@ -1112,6 +1135,11 @@ let routine = false;
 // "Next" button: in routine mode, on to the next exercise of the loop; otherwise this exercise's
 // next position.
 function nextPosition(){
+  if(replayMode){
+    if(replayIdx + 1 < replayQueue.length){ replayIdx++; openReplayAt(replayIdx); }
+    else { replayMode = false; screen = 'progress'; render(); }
+    return;
+  }
   if(!ACTIVITIES.includes(screen) || nextTarget()[1] < 0) return;
   if(routine) return openActivity(ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length]);
   advance(screen);
@@ -1131,10 +1159,12 @@ let routineNext = 'analysis';   // where the routine resumes from the home page
 function startRoutine(){ if(!canOpen(routineNext, true)) return; routine = true; openActivity(routineNext); }
 // Where "Next" leads: the routine's next exercise, or this exercise's next position.
 function nextTarget(){
+  if(replayMode) return [ctx(screen), 0];   // a replay always goes on (or finishes)
   return routine ? upcomingFor(ctx(ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length]))
                  : [ctx(screen), firstAvailable(ctx(screen), seqBy[ctx(screen)]+1)];
 }
 function nextLabel(){
+  if(replayMode) return replayIdx + 1 < replayQueue.length ? `Next replay (${replayIdx+2}/${replayQueue.length}) ›` : 'Finish replay';
   return routine ? ACT_NAMES[ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length]] + ' ›' : 'Next position';
 }
 
@@ -1202,7 +1232,7 @@ function finalEval(p, moves){
 function header(title){
   return `<div class="title-row">
       <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
-      <h1>${routine ? `Routine <span class="title-badge">${title}</span>` : testMode ? `Test <span class="title-badge">${title}</span>` : title}</h1>
+      <h1>${routine ? `Routine <span class="title-badge">${title}</span>` : testMode ? `Test <span class="title-badge">${title}</span>` : replayMode ? `Replay <span class="title-badge">${title}</span>` : title}</h1>
       <button class="icon-btn" id="helpBtn" aria-label="How this exercise works">?</button>
     </div>`;
 }
@@ -1216,6 +1246,7 @@ function posBar(){
 function wireCommon(helpKey, checked){
   document.getElementById('homeBtn').onclick = ()=>{
     if(testMode){ testMode = false; screen = 'tests'; selSquare = null; promoPending = null; render(); return; }
+    if(replayMode){ replayMode = false; screen = 'progress'; selSquare = null; promoPending = null; render(); return; }
     if(routine){ const s = st(screen); routine = false; routineNext = s.checked ? ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length] : screen; }
     screen='home'; selSquare=null; render();
   };
@@ -1388,6 +1419,7 @@ function miniRowHtml(m, highlight, fadeIn){
 // good ones lifts it steadily, and old results fade out. Not Elo: there's no win/lose, just how
 // close you were — and no opponent rating, since every position is scored on the same scale.
 const ACTS = ['analysis', 'candidates', 'final'];
+const ACT_GLYPHS = { analysis:'⚖', candidates:'♘', final:'♔' };
 const ACT_NAMES = { analysis:'Board analysis', candidates:'Candidate moves', final:'Final choice' };
 const CALIBRATION = 5, LEVEL_K = 0.15, DAILY_GOAL = 5;
 // Shown as "Average 71%"; changes are whole points of the shown value ("▲ 3%").
@@ -1409,6 +1441,50 @@ let results = cached || [];   // every recorded position, oldest first
 // averages stay hidden until the database answers, then fade in — never an empty state first.
 let progressLoaded = !!cached, progressJustLoaded = false;
 function progressReady(){ if(!progressLoaded){ progressLoaded = true; progressJustLoaded = true; } }
+// ---------- Profile: when you joined, and the replay list ----------
+// The replay list: positions where your accuracy was below your average for that exercise at the
+// time (your average went down). Playing one again at or above your average takes it off.
+const PROFILE_LS = 'cst.profile.v1', REPLAY_LS = 'cst.replay.v1';
+let profile = { joinedAt:null }, replayList = [], metaCol = null;
+try{ const v = JSON.parse(localStorage.getItem(PROFILE_LS) || 'null'); if(v) profile = v; }catch(e){}
+try{ const v = JSON.parse(localStorage.getItem(REPLAY_LS) || 'null'); if(Array.isArray(v)) replayList = v; }catch(e){}
+function joinedAt(){ return Math.min(...[profile.joinedAt, results.length ? results[0].ts : null, Date.now()].filter(x=>x!=null)); }
+function saveProfile(){ try{ localStorage.setItem(PROFILE_LS, JSON.stringify(profile)); }catch(e){} if(metaCol) metaCol.doc('profile').set(profile).catch(()=>{}); }
+function saveReplay(){ try{ localStorage.setItem(REPLAY_LS, JSON.stringify(replayList)); }catch(e){} if(metaCol) metaCol.doc('replay').set({ items: replayList }).catch(()=>{}); }
+function updateReplay(key, a, lost){
+  const i = replayList.findIndex(x=>x.key===key && x.a===a);
+  if(lost && i<0){ replayList.push({ key, a, ts: Date.now() }); saveReplay(); }
+  else if(!lost && i>=0){ replayList.splice(i, 1); saveReplay(); }
+}
+function findPosition(key, a){ return POOLS[a].find(p=>p.key===key) || myPositions.find(p=>p.key===key && p.acts.includes(a)) || null; }
+const replayable = ()=>replayList.map(e=>({ ...e, pos: findPosition(e.key, e.a) })).filter(e=>e.pos);
+function startReplay(){
+  replayQueue = replayable();
+  if(!replayQueue.length) return;
+  replayMode = true; routine = false; testMode = false; replayIdx = 0;
+  openReplayAt(0);
+}
+function openReplayAt(i){
+  const e = replayQueue[i], t = 'x-' + e.a;
+  orders[t] = [e.pos]; seqBy[t] = 0; store[t] = {};
+  delete poolShuffleCache['final' + t + e.pos.key];
+  openActivity(e.a);
+}
+async function loadProfileMeta(db, id){
+  metaCol = db.collection('data/users/' + id + '/trainer/meta');
+  try{
+    const [pd, rd] = await Promise.all([metaCol.doc('profile').get(), metaCol.doc('replay').get()]);
+    const p = pd.exists ? pd.data() : null, r = rd.exists ? rd.data() : null;
+    if(p && p.joinedAt) profile.joinedAt = profile.joinedAt ? Math.min(profile.joinedAt, p.joinedAt) : p.joinedAt;
+    if(r && Array.isArray(r.items)){
+      const merged = r.items.slice();
+      replayList.forEach(x=>{ if(!merged.some(y=>y.key===x.key && y.a===x.a)) merged.push(x); });
+      replayList = merged;
+    }
+  }catch(e){}
+  if(!profile.joinedAt) profile.joinedAt = joinedAt();
+  saveProfile(); saveReplay();
+}
 async function initProgress(){
   try{
     if(window.claude && claude.use){
@@ -1423,11 +1499,13 @@ async function initProgress(){
         results = fromDb.concat(pending).sort((x,y)=>x.ts-y.ts);
         resultsDb = col;
         pending.forEach(r=>col.add(r).catch(()=>{}));
+        await loadProfileMeta(db, id);
         saveLocal(); progressReady(); render();
         return;
       }
     }
   }catch(e){ /* fall back to this browser */ }
+  if(!profile.joinedAt){ profile.joinedAt = joinedAt(); saveProfile(); }
   progressReady(); render();
 }
 function levelSeries(a){
@@ -1448,11 +1526,18 @@ function recordResult(s, a, acc){
   if(s.rec || acc==null) return;
   markPlayed(pos().key);
   if(testMode){ s.rec = { test:true }; return; }   // test positions never count
+  if(replayMode){   // replays update the replay list only, never your averages or the log
+    const L = levelNow(a).level, lost = L!=null && acc < L;
+    updateReplay(pos().key, a, lost);
+    s.rec = { replay:true, lost };
+    return;
+  }
   const before = levelNow(a);
   const r = { a, acc: Math.round(acc), ts: Date.now(), src: pos().gameId ? 'mine' : 'masters' };   // where the position came from (results before this have none: masters)
   results.push(r);
   if(resultsDb) resultsDb.add(r).catch(()=>{});
   saveLocal();
+  updateReplay(pos().key, a, before.level!=null && acc < before.level);   // below your average: to replay
   const after = levelNow(a);
   s.rec = { n: after.n, level: after.level, delta: before.rated ? Math.round(after.level) - Math.round(before.level) : null, rated: after.rated };
 }
@@ -1460,7 +1545,7 @@ function recordResult(s, a, acc){
 function levelChip(s, show, fade){
   if(!s.rec) return '';
   const r = s.rec;
-  const body = r.test ? 'Test position · not recorded' : !r.rated ? `Calibrating ${r.n}/${CALIBRATION}`
+  const body = r.test ? 'Test position · not recorded' : r.replay ? (r.lost ? 'Replay · stays on your list' : 'Replay · off your list ✓') : !r.rated ? `Calibrating ${r.n}/${CALIBRATION}`
     : `Average <strong>${pct(r.level)}</strong>` + (r.delta==null ? '' : ' ' + deltaHtml(r.delta));
   return `<span class="level${show ? (fade ? ' fade-in' : '') : ''}" style="${show ? '' : 'visibility:hidden'}">${body}</span>`;
 }
@@ -1490,11 +1575,37 @@ function renderProgress(){
   const last10 = sr.slice(-10);
   const avg10 = last10.length ? Math.round(last10.reduce((t,r)=>t+r.acc,0)/last10.length) : null;
   const best = sr.filter(r=>r.n>=CALIBRATION).reduce((m,r)=>Math.max(m, r.level), -1);
+  // This week: the last 7 days, today first.
+  const days = Array.from({length:7}, (_,i)=>{ const d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-i); return d; });
+  const byDay = {}; results.forEach(r=>{ const k = dayKey(r.ts); (byDay[k] = byDay[k] || {analysis:0, candidates:0, final:0})[r.a]++; });
+  const dayName = (d,i)=>i===0 ? 'Today' : i===1 ? 'Yesterday' : d.toLocaleDateString(undefined, { weekday:'short', day:'numeric', month:'short' });
+  const weekRows = days.map((d,i)=>{ const c = byDay[dayKey(d.getTime())] || {analysis:0, candidates:0, final:0}, done = ACTS.every(x=>c[x]>=DAILY_GOAL), any = ACTS.some(x=>c[x]);
+    return `<tr class="${any ? '' : 'idle'}"><th scope="row">${dayName(d,i)}</th>${ACTS.map(x=>`<td>${c[x] || '·'}</td>`).join('')}<td class="wk-done">${done ? '✓' : ''}</td></tr>`; }).join('');
+  const nReplay = replayable().length;
+  const since = new Date(joinedAt()).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
-      <h1>Progress</h1>
+      <h1>Profile</h1>
+      <span class="title-spacer" aria-hidden="true"></span>
     </div>
+    <div class="pf-scroll">
+    <section class="pf-card pf-id">
+      <div class="pf-name">${myName ? myName.replace(/</g,'&lt;') : 'You'}</div>
+      <div class="pf-facts"><span>Training since <b>${since}</b></span><span><b>${results.length}</b> position${results.length===1?'':'s'} completed</span></div>
+    </section>
+    <section class="pf-card">
+      <h2>This week</h2>
+      <table class="wk-table">
+        <thead><tr><th></th>${ACTS.map(x=>`<th scope="col" title="${ACT_NAMES[x]}"><span aria-hidden="true">${ACT_GLYPHS[x]}</span><span class="sr">${ACT_NAMES[x]}</span></th>`).join('')}<th scope="col" title="Daily routine done"><span class="sr">Routine</span></th></tr></thead>
+        <tbody>${weekRows}</tbody>
+      </table>
+    </section>
+    <section class="pf-card pf-replay">
+      <div><h2>Missed positions</h2><p>Positions where you scored below your average. Getting one at or above your average takes it off the list.</p></div>
+      <button class="btn small" id="replayBtn" ${nReplay ? '' : 'disabled'}>${nReplay ? `Replay ${nReplay} ›` : 'None yet'}</button>
+    </section>
+    <h2 class="pf-h">Progress</h2>
     <div class="seg" role="tablist">${ACTS.map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_NAMES[x]}</button>`).join('')}</div>
     ${info.n===0 ? `<p class="empty">No ${ACT_NAMES[a]} positions played yet.<br>Your average appears after ${CALIBRATION} positions.</p>` : `
     <div class="hero">
@@ -1512,8 +1623,10 @@ function renderProgress(){
       <div class="stat"><b>${info.n}</b><small>positions</small></div>
       <div class="stat"><b>${avg10==null ? '—' : avg10+'%'}</b><small>last 10 avg</small></div>
       <div class="stat"><b>${best<0 ? '—' : pct(best)}</b><small>best average</small></div>
-    </div>`}`;
+    </div>`}
+    </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; render(); };
+  document.getElementById('replayBtn').onclick = startReplay;
   app.querySelectorAll('.seg-btn').forEach(b=>b.onclick = ()=>{ progressTab = b.dataset.tab; render(); });
   wireChartHover(sr);
 }
@@ -1586,7 +1699,7 @@ function renderHome(){
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b><small>Average</small>` : `<b>—</b><small>${L.n ? `${L.n}/${CALIBRATION}` : 'Average'}</small>`}</span>
         </button>`; }).join('')}
     </div>
-    <div class="link-row"><button class="link-btn" id="progressBtn">See your progress ›</button><button class="link-btn" id="myGamesBtn">My games ›</button><button class="link-btn quiet" id="testsBtn">Tests ›</button></div>
+    <div class="link-row"><button class="link-btn" id="progressBtn">Your profile ›</button><button class="link-btn" id="myGamesBtn">My games ›</button><button class="link-btn quiet" id="testsBtn">Tests ›</button></div>
     ${engineErrorBanner()}`;
   document.getElementById('testsBtn').onclick = ()=>{ screen = 'tests'; render(); };
   document.getElementById('myGamesBtn').onclick = ()=>{ screen = 'mygames'; render(); };
