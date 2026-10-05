@@ -15,6 +15,8 @@ On the website, players can **log in with Lichess** (Lichess's own sign-in, OAut
 
 GitHub Pages serves it: Settings › Pages › Deploy from a branch › `main` / root. On the website, progress is kept in the browser (per device) until accounts are added.
 
+The plan for accounts and for more game sites (Chess.com) is in `docs/accounts.md`.
+
 ## Layout
 
 | Folder | What it holds |
