@@ -17,6 +17,17 @@ GitHub Pages serves it: Settings › Pages › Deploy from a branch › `main` /
 
 The plan for accounts and for more game sites (Chess.com) is in `docs/accounts.md`.
 
+## Accounts (the account server)
+
+`worker/` is a small Cloudflare Worker with a D1 database: players log in with Lichess on the website, and their progress and games are saved to their account, on every device (plan: `docs/accounts.md`; privacy: `privacy.html`). Cloudflare deploys it from this repository on every push. The website talks to it once its address is set in `app/index.html` (`/*API_BASE*/`); until then everything stays in the browser.
+
+Tests run it here without Cloudflare (`worker/test/local.mjs`: the same code on Node's built-in SQLite, with a stand-in Lichess): `npm run test:server` for its rules, `tests/accounts.py` for the website with it.
+
+One-time setup on Cloudflare:
+1. Storage & databases › D1 › Create database `chess-trainer`; put its Database ID in `worker/wrangler.toml`.
+2. Workers & Pages › Create › Import a repository › this repository. Root directory `worker`; deploy command `npx wrangler d1 migrations apply chess-trainer --remote && npx wrangler deploy`.
+3. Put the Worker's address (`https://chess-trainer-api.<your-subdomain>.workers.dev`) in `app/index.html` and rebuild the site.
+
 ## Layout
 
 | Folder | What it holds |
@@ -25,7 +36,7 @@ The plan for accounts and for more game sites (Chess.com) is in `docs/accounts.m
 | `library/` | Source games as PGN, moves only. `gm-classics.pgn` holds the 40 master games; its `Tags` header says which collection a game belongs to: `gm-annotated`, `fischer-my-60-memorable-games` and `tal-life-and-games` (the last two from the CC0 collection at github.com/brianerdelyi/ChessPGN). |
 | `finder/` | `finder.js` (master games), `own.js` (a player's own games, offline, to gauge the rules), `lib.js` (what both share: engine, saved searches, phases, grades, choosing positions), `rules.js` (every threshold), `report.js` (statistics, master output only), `inject.py` (copies the master pools into the app). |
 | `data/` | The latest master finder output: `pools.json` (positions with their measurements and the rules version) and `stats.json` (per game, with its moves). |
-| `tests/` | Browser tests with a stand-in engine: `smoke.py` (a few positions of each exercise), `edge_cases.py` (the test positions: checks, en passant, castling, promotions), `my_games.py` (adding `lichess-sample.pgn` as a file, background analysis, your positions in the exercises), `played_today.py`, `fast_start.py` (instant Board analysis, checks before scans, waiting states), `profile_replay.py` (profile page, missed positions), `review_fixes.py` (results paging, unrecorded reviews, removed games, routine skipping, engine watchdog, with a stand-in account database), `lichess_link.py` ("Open in Lichess" opens each position's whole game at the right move) `website.py` (the website page, and games downloaded from a stand-in Lichess) `pgn_import.py` (games are read in full, including b-pawn captures, and games saved cut short are completed) and `lichess_login.py` ("Log in with Lichess" against a stand-in Lichess that checks the sign-in like the real one). `npm run test:all` runs them all (needs: `pip install playwright`). |
+| `tests/` | Browser tests with a stand-in engine: `smoke.py` (a few positions of each exercise), `edge_cases.py` (the test positions: checks, en passant, castling, promotions), `my_games.py` (adding `lichess-sample.pgn` as a file, background analysis, your positions in the exercises), `played_today.py`, `fast_start.py` (instant Board analysis, checks before scans, waiting states), `profile_replay.py` (profile page, missed positions), `review_fixes.py` (results paging, unrecorded reviews, removed games, routine skipping, engine watchdog, with a stand-in account database), `lichess_link.py` ("Open in Lichess" opens each position's whole game at the right move) `website.py` (the website page, and games downloaded from a stand-in Lichess) `pgn_import.py` (games are read in full, including b-pawn captures, and games saved cut short are completed) `accounts.py` (logging in, syncing between devices, logging out, deleting the account, against the account server) and `lichess_login.py` ("Log in with Lichess" against a stand-in Lichess that checks the sign-in like the real one). `npm run test:all` runs them all (needs: `pip install playwright`). |
 | `vendor/` | chess.js 0.12.1 (BSD licence), the same version the app loads. |
 | `scripts/` | `build-site.py` builds `index.html`; `setup-stockfish.sh` builds Stockfish 16.1 into `engine/` (not committed; if the build can't download its networks, it takes them from the networks repository through git); `make-test-positions.js` and `make-lichess-sample.js` build the test data. |
 

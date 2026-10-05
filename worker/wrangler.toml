@@ -1,0 +1,15 @@
+# The account server: a Cloudflare Worker with a D1 database (see docs/accounts.md).
+# Deployed by Cloudflare's GitHub connection on every push (root directory: worker).
+name = "chess-trainer-api"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+# Websites allowed to call this server (comma-separated).
+ALLOWED_ORIGINS = "https://taussane.github.io"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "chess-trainer"
+database_id = "REPLACE_WITH_DATABASE_ID"
+migrations_dir = "migrations"

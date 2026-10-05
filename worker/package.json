@@ -1,0 +1,12 @@
+{
+  "name": "chess-trainer-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler d1 migrations apply chess-trainer --remote && wrangler deploy",
+    "test": "node --test test/api.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

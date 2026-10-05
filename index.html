@@ -142,6 +142,9 @@
   .pf-facts{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:0.86rem; color:var(--text-mute);}
   .pf-lichess{display:flex; gap:12px; align-items:center; margin-top:6px; font-size:0.86rem; color:var(--text-mute);}
   .pf-lichess b{color:var(--text);}
+  .pf-note{margin:6px 0 0; font-size:0.8rem; color:var(--text-mute);}
+  .pf-note a{color:var(--accent);}
+  .pf-delete{font-size:0.8rem; padding:4px 0; color:var(--text-mute);}
   .btn.lichess-btn{background:#fff; color:#161512; display:flex; align-items:center; gap:8px; justify-content:center;}
   .lichess-btn span{font-size:1.2rem; line-height:1;}
   .mg-account{display:flex; justify-content:space-between; gap:12px; align-items:center; margin:0; font-size:0.9rem;}
@@ -1556,10 +1559,10 @@ async function loadProfileMeta(db, id){
 }
 async function initProgress(){
   try{
-    if(window.claude && claude.use){
-      const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
-      const id = user ? await user.id() : null;
-      if(db && id){
+    const store = await getStore();
+    if(store){
+      const { db, id } = store;
+      {
         const col = db.collection('data/users/' + id + '/trainer/results');
         // Every row, 1000 at a time (a query returns at most 1000).
         const fromDb = [];
@@ -1638,6 +1641,7 @@ function routineCard(){
 }
 
 // ================= Progress screen =================
+let pfConfirmDelete = false;
 function renderProgress(){
   const app = document.getElementById('app');
   const a = progressTab, info = levelNow(a), sr = info.series;
@@ -1665,7 +1669,11 @@ function renderProgress(){
     <section class="pf-card pf-id">
       <div class="pf-name">${myName ? myName.replace(/</g,'&lt;') : 'You'}</div>
       <div class="pf-facts"><span>Training since <b>${since}</b></span><span><b>${results.length}</b> position${results.length===1?'':'s'} completed</span></div>
-      ${DIRECT_LICHESS ? `<div class="pf-lichess">${lichessAuth ? `<span>Lichess: <b>${lichessAuth.username.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="pfLogout">Log out</button>` : `<button class="link-inline" id="pfLogin">♞ Log in with Lichess</button>`}</div>` : ''}
+      ${DIRECT_LICHESS ? `<div class="pf-lichess">${lichessAuth ? `<span>Lichess: <b>${lichessAuth.username.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="pfLogout">Log out</button>` : `<button class="link-inline" id="pfLogin">♞ Log in with Lichess</button>`}</div>
+      <p class="pf-note">${API_BASE ? (lichessAuth ? 'Your progress and games are saved to your account, on every device you log in.' : 'Log in to keep your progress on all your devices. Until then it stays in this browser only.') : 'Your progress is kept in this browser only.'} <a href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
+      ${API_BASE && lichessAuth ? (pfConfirmDelete
+        ? `<div class="mg-confirm"><span>Delete your account, progress and games for good?</span><button class="btn small danger" id="pfDeleteYes">Delete</button><button class="btn small ghost" id="pfDeleteNo">Keep</button></div>`
+        : `<button class="link-btn quiet pf-delete" id="pfDelete">Delete my account</button>`) : ''}` : ''}
     </section>
     <section class="pf-card">
       <h2>This week</h2>
@@ -1701,6 +1709,9 @@ function renderProgress(){
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; render(); };
   document.getElementById('replayBtn').onclick = ()=>startReplay(a);
   const pli = document.getElementById('pfLogin'); if(pli) pli.onclick = lichessLogin;
+  const pd = document.getElementById('pfDelete'); if(pd) pd.onclick = ()=>{ pfConfirmDelete = true; render(); };
+  const pdn = document.getElementById('pfDeleteNo'); if(pdn) pdn.onclick = ()=>{ pfConfirmDelete = false; render(); };
+  const pdy = document.getElementById('pfDeleteYes'); if(pdy) pdy.onclick = deleteMyAccount;
   const plo = document.getElementById('pfLogout'); if(plo) plo.onclick = lichessLogout;
   app.querySelectorAll('.seg-btn').forEach(b=>b.onclick = ()=>{ progressTab = b.dataset.tab; render(); });
   wireChartHover(sr);
@@ -1903,13 +1914,102 @@ async function finishLichessLogin(){
     if(!acc || !acc.username) throw new Error('account');
     setLichessAuth({ token:tok.access_token, username:acc.username });
     myImportNote = '';
-    if(myGamesLoaded){ if(!myGames.length) fetchLichessGames(); } else fetchAfterLogin = true;   // first login: your games right away
+    fetchAfterLogin = true;   // no games yet (here or in your account): your games right away
   }catch(e){ myImportNote = "Lichess login didn't go through. Try again."; }
   render();
 }
+// Log out: when your progress is kept in your account, this browser's copy is cleared (it is safe
+// in the account, and the next person to log in here must not get it); otherwise it stays here.
 async function lichessLogout(){
-  const a = lichessAuth; setLichessAuth(null); render();
+  const a = lichessAuth, synced = !!localOwner();
+  if(a && synced) try{ await serverCall(a, 'DELETE', '/api/session'); }catch(e){}
+  setLichessAuth(null);
   if(a) try{ await fetch(LICHESS + '/api/token', { method:'DELETE', headers:{ Authorization:'Bearer ' + a.token } }); }catch(e){}
+  if(synced){ clearLocalData(); location.reload(); return; }
+  render();
+}
+
+// ---- Where your progress is kept ----
+// This browser always keeps a copy (the app opens at once and works offline). Besides it: inside
+// Claude, your Claude account; on the website, logged in with Lichess, the account server
+// (worker/, see docs/accounts.md) once its address is set below. Both are used through the same
+// small interface (collections and documents), so loading, merging and saving are shared.
+const API_BASE = (()=>{ try{ return localStorage.getItem('cst.api') || ''; }catch(e){ return ''; } })() || /*API_BASE*/''/*END API_BASE*/;
+const OWNER_LS = 'cst.owner';   // which account this browser's copy belongs to ('' = none yet)
+const localOwner = ()=>{ try{ return localStorage.getItem(OWNER_LS) || ''; }catch(e){ return ''; } };
+function clearLocalData(){
+  [LS_KEY, MY_LS, PROFILE_LS, REPLAY_LS, PLAYED_LS, 'cst.routineNext', 'cst.lichess', OWNER_LS].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+}
+let storePromise = null;
+function getStore(){ return storePromise || (storePromise = openStore().catch(()=>null)); }
+async function openStore(){
+  if(window.claude && claude.use){
+    const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+    const id = user ? await user.id() : null;
+    return db && id ? { db, id } : null;
+  }
+  if(!API_BASE || !lichessAuth) return null;
+  const db = serverDb(lichessAuth), me = await db.me();
+  if(!me || !me.account) return null;
+  const owner = localOwner();
+  if(owner && owner!==me.account.id){
+    // This browser's copy is someone else's account: start from yours only.
+    clearLocalData(); results = []; myGames = []; profile = { joinedAt:null }; legacyMissed = []; played = { day: todayKey(), keys: [] };
+  }
+  try{ localStorage.setItem(OWNER_LS, me.account.id); }catch(e){}   // a copy with no owner yet joins your account
+  return { db, id: me.account.id, server: true };
+}
+async function serverCall(auth, method, path, body){
+  const headers = { Authorization:'Bearer ' + auth.token, 'X-Auth-Site':'lichess' };
+  if(body!==undefined) headers['Content-Type'] = 'application/json';
+  const r = await fetch(API_BASE + path, { method, headers, body: body===undefined ? undefined : JSON.stringify(body) });
+  if(!r.ok) throw new Error('server ' + r.status);
+  return r.json();
+}
+// The account server behind the same interface as Claude's database (only what the app uses).
+// Results and games are sent in batches, a moment after they change.
+function serverDb(auth){
+  const call = (m, p, b)=>serverCall(auth, m, p, b);
+  const snap = list=>({ docs: list.map(x=>({ data: ()=>x })) });
+  const queue = { results: [], games: new Map() }; let timer = null;
+  const flush = ()=>{
+    timer = null;
+    const rs = queue.results.splice(0), gs = [...queue.games.values()]; queue.games.clear();
+    for(let i=0; i<rs.length; i+=500) call('POST', '/api/results', { rows: rs.slice(i, i+500) }).catch(()=>{});   // a failed send is sent again on the next launch
+    for(let i=0; i<gs.length; i+=50) call('POST', '/api/games', { games: gs.slice(i, i+50) }).catch(()=>{});
+  };
+  const later = ()=>{ if(!timer) timer = setTimeout(flush, 400); };
+  const meta = name=>({
+    get: async()=>{ const r = await call('GET', '/api/meta/' + name); return { exists: r.exists, data: ()=>r.data }; },
+    set: v=>call('PUT', '/api/meta/' + name, { data: v }),
+  });
+  const last = path=>path.split('/').pop();
+  const resultsQuery = (after = -1, n = 1000)=>({
+    where: (f, op, v)=>resultsQuery(v, n), orderBy: ()=>resultsQuery(after, n), limit: k=>resultsQuery(after, k),
+    get: async()=>snap((await call('GET', `/api/results?after=${after}&limit=${n}`)).rows),
+  });
+  return {
+    me: ()=>call('GET', '/api/me').catch(()=>null),
+    collection: path=>{
+      const kind = last(path);
+      if(kind==='results') return Object.assign(resultsQuery(), { add: async r=>{ queue.results.push(r); later(); } });
+      if(kind==='games') return {
+        limit: ()=>({ get: async()=>snap((await call('GET', '/api/games')).games) }),
+        doc: id=>({ set: async g=>{ queue.games.set(g.id, g); later(); }, delete: ()=>call('DELETE', '/api/games/' + encodeURIComponent(id)) }),
+      };
+      return { doc: meta };   // meta documents
+    },
+    doc: path=>meta(last(path)),
+    deleteAccount: ()=>call('DELETE', '/api/account'),
+  };
+}
+async function deleteMyAccount(){
+  const store = await getStore();
+  if(!store || !store.server) return;
+  try{ await store.db.deleteAccount(); }catch(e){ alert("The account couldn't be deleted. Try again."); return; }
+  const a = lichessAuth; setLichessAuth(null);
+  if(a) try{ await fetch(LICHESS + '/api/token', { method:'DELETE', headers:{ Authorization:'Bearer ' + a.token } }); }catch(e){}
+  clearLocalData(); location.reload();
 }
 
 async function fetchLichessGames(){
@@ -1962,7 +2062,8 @@ function importPgnText(text){
     if(old || added.some(g=>g.id===id)){ skipped.already++; continue; }
     const full = evals.filter(Boolean).length >= sans.length - 1;   // the last move may have none
     const g = { id, white:h.White||'?', black:h.Black||'?', me:side, year:(h.UTCDate||h.Date||'').slice(0,4), speed, result:h.Result||'*',
-                sans, evals: full ? evals : null, status: full ? 'evaluated' : 'queued', positions:[], addedAt: Date.now() };
+                sans, evals: full ? evals : null, status: full ? 'evaluated' : 'queued', positions:[], addedAt: Date.now(),
+                site: /lichess\.org\//.test(h.Site || '') ? 'lichess' : 'file' };
     extractOwnPositions(g);   // Board analysis positions need no evaluation; likely mistakes are flagged if Lichess analysed the game
     added.push(g);
   }
@@ -2167,10 +2268,10 @@ async function initMyGames(){
   reextractAll();
   onOwnPositionsChanged();
   try{
-    if(window.claude && claude.use){
-      const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
-      const id = user ? await user.id() : null;
-      if(db && id){
+    const store = await getStore();
+    if(store){
+      const { db, id } = store;
+      {
         const col = db.collection('data/users/' + id + '/trainer/games');
         myClearedDoc = db.doc('data/users/' + id + '/trainer/meta/games-cleared');
         const [snap, cd] = await Promise.all([col.limit(1000).get(), myClearedDoc.get()]);
@@ -2788,9 +2889,11 @@ function render(){
 
 render();
 initEngine();
-initProgress();
-initMyGames();
-if(DIRECT_LICHESS) finishLichessLogin();
+(async()=>{
+  if(DIRECT_LICHESS) await finishLichessLogin();   // back from lichess.org: signed in before anything loads
+  initProgress();
+  initMyGames();
+})();
 </script>
 
 </body>
