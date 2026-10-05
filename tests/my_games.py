@@ -24,7 +24,9 @@ engineEval = (fen, sm)=>new Promise(res=>setTimeout(()=>res(__fakeSearch(fen, sm
 bgEval = (fen, o)=>new Promise(res=>setTimeout(()=>res(__fakeSearch(fen, o&&o.searchmoves, o&&o.multipv)), 2));
 failEngine = ()=>{}; sfState = 'ready'; engineErrorBanner = ()=>'';
 """
-async def page_with_app(p, storage=None):
+async def page_with_app(p, storage=None, in_claude=True):
+    # in_claude: the page as published inside Claude (window.claude present, nothing granted);
+    # False: the website, where games are fetched from Lichess directly.
     b = await p.chromium.launch(); ctx = await b.new_context(viewport={'width':390,'height':760})
     pg = await ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
     async def route(r):
@@ -32,6 +34,7 @@ async def page_with_app(p, storage=None):
         elif r.request.url.startswith('https://app.test/'): await r.fulfill(body='<!doctype html><html><head><meta charset="utf-8"></head><body>'+SRC+'</body></html>', content_type='text/html')
         else: await r.abort()
     await pg.route('http*://**/*', lambda r: asyncio.ensure_future(route(r)))
+    if in_claude: await pg.add_init_script("window.claude = { use: async()=>null };")
     if storage: await pg.add_init_script(f"localStorage.setItem('cst.mygames.v1', {storage!r});")
     await pg.goto('https://app.test/'); await pg.wait_for_timeout(300)
     await pg.evaluate("(()=>{"+FAKE+" render(); myBackground(); })()")

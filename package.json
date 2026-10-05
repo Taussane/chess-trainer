@@ -1,13 +1,14 @@
 {
   "name": "chess-trainer",
   "private": true,
-  "description": "Chess strategy trainer: the app, and the position finder that feeds it.",
+  "description": "Chess strategy trainer: the app (website and Claude page), and the position finder that feeds it.",
   "scripts": {
     "setup:engine": "bash scripts/setup-stockfish.sh",
     "find": "node finder/finder.js library/gm-classics.pgn data",
     "report": "node finder/report.js data",
     "inject": "python3 finder/inject.py data/pools.json",
     "test": "python3 tests/smoke.py",
-    "test:all": "for t in smoke edge_cases my_games owner_seed owner_upgrade played_today fast_start profile_replay review_fixes lichess_link; do echo \"== $t\"; out=$(python3 tests/$t.py 2>&1) || { echo \"$out\"; exit 1; }; echo \"$out\" | tail -1; done"
+    "test:all": "for t in smoke edge_cases my_games played_today fast_start profile_replay review_fixes lichess_link website; do echo \"== $t\"; out=$(python3 tests/$t.py 2>&1) || { echo \"$out\"; exit 1; }; echo \"$out\" | tail -1; done",
+    "site": "python3 scripts/build-site.py"
   }
 }
