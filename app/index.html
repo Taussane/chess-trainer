@@ -1923,7 +1923,7 @@ async function lichessLogout(){
 // Claude, your Claude account; on the website, logged in with Lichess, the account server
 // (worker/, see docs/accounts.md) once its address is set below. Both are used through the same
 // small interface (collections and documents), so loading, merging and saving are shared.
-const API_BASE = (()=>{ try{ return localStorage.getItem('cst.api') || ''; }catch(e){ return ''; } })() || /*API_BASE*/''/*END API_BASE*/;
+const API_BASE = (()=>{ try{ return localStorage.getItem('cst.api') || ''; }catch(e){ return ''; } })() || /*API_BASE*/'https://chess-trainer-api.sauveur-guillaume.workers.dev'/*END API_BASE*/;
 const OWNER_LS = 'cst.owner';   // which account this browser's copy belongs to ('' = none yet)
 const localOwner = ()=>{ try{ return localStorage.getItem(OWNER_LS) || ''; }catch(e){ return ''; } };
 function clearLocalData(){

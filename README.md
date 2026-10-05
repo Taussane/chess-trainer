@@ -26,7 +26,7 @@ Tests run it here without Cloudflare (`worker/test/local.mjs`: the same code on 
 One-time setup on Cloudflare:
 1. Storage & databases › D1 › Create database `chess-trainer`; put its Database ID in `worker/wrangler.toml`.
 2. Workers & Pages › Create › Import a repository › this repository. Root directory `worker`; deploy command `npx wrangler d1 migrations apply chess-trainer --remote && npx wrangler deploy`.
-3. Put the Worker's address (`https://chess-trainer-api.<your-subdomain>.workers.dev`) in `app/index.html` and rebuild the site.
+3. Put the Worker's address in `app/index.html` (`/*API_BASE*/`, now `https://chess-trainer-api.sauveur-guillaume.workers.dev`) and rebuild the site.
 
 ## Layout
 
