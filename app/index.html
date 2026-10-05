@@ -129,6 +129,13 @@
   .pf-h{margin-top:4px;}
   .pf-name{font-size:1.25rem; font-weight:700;}
   .pf-facts{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:0.86rem; color:var(--text-mute);}
+  .pf-lichess{display:flex; gap:12px; align-items:center; margin-top:6px; font-size:0.86rem; color:var(--text-mute);}
+  .pf-lichess b{color:var(--text);}
+  .btn.lichess-btn{background:#fff; color:#161512; display:flex; align-items:center; gap:8px; justify-content:center;}
+  .lichess-btn span{font-size:1.2rem; line-height:1;}
+  .mg-account{display:flex; justify-content:space-between; gap:12px; align-items:center; margin:0; font-size:0.9rem;}
+  .mg-account b{color:var(--text);}
+  .mg-account .link-inline{white-space:nowrap;}
   .pf-facts b{color:var(--text); font-weight:600; font-variant-numeric:tabular-nums;}
   .wk-table{border-collapse:collapse; width:100%; font-size:0.86rem; font-variant-numeric:tabular-nums;}
   .wk-table th, .wk-table td{padding:5px 4px; text-align:center; border-bottom:1px solid var(--border);}
@@ -1647,6 +1654,7 @@ function renderProgress(){
     <section class="pf-card pf-id">
       <div class="pf-name">${myName ? myName.replace(/</g,'&lt;') : 'You'}</div>
       <div class="pf-facts"><span>Training since <b>${since}</b></span><span><b>${results.length}</b> position${results.length===1?'':'s'} completed</span></div>
+      ${DIRECT_LICHESS ? `<div class="pf-lichess">${lichessAuth ? `<span>Lichess: <b>${lichessAuth.username.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="pfLogout">Log out</button>` : `<button class="link-inline" id="pfLogin">♞ Log in with Lichess</button>`}</div>` : ''}
     </section>
     <section class="pf-card">
       <h2>This week</h2>
@@ -1681,6 +1689,8 @@ function renderProgress(){
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; render(); };
   document.getElementById('replayBtn').onclick = ()=>startReplay(a);
+  const pli = document.getElementById('pfLogin'); if(pli) pli.onclick = lichessLogin;
+  const plo = document.getElementById('pfLogout'); if(plo) plo.onclick = lichessLogout;
   app.querySelectorAll('.seg-btn').forEach(b=>b.onclick = ()=>{ progressTab = b.dataset.tab; render(); });
   wireChartHover(sr);
 }
@@ -1834,13 +1844,71 @@ function gameIdOf(h, sans){
 // Inside Claude the page can't reach Lichess, so the file download/upload steps are shown instead.
 const DIRECT_LICHESS = !window.claude;
 let myFetching = false;
+
+// ---- Log in with Lichess (website only) ----
+// Lichess's own sign-in (OAuth 2 with PKCE): the page sends you to lichess.org, you approve, and
+// Lichess sends you back with a one-time code that this page swaps for a token. No password ever
+// reaches this site, no scope is asked (only your public profile and games), no server is involved.
+// The token stays in this browser; "Log out" revokes it on Lichess.
+const LICHESS = 'https://lichess.org', LICHESS_CLIENT_ID = 'chess-strategy-trainer';
+const AUTH_LS = 'cst.lichessAuth', OAUTH_LS = 'cst.oauthPending';
+let lichessAuth = null;   // { token, username }
+try{ const v = JSON.parse(localStorage.getItem(AUTH_LS) || 'null'); if(v && v.token && v.username) lichessAuth = v; }catch(e){}
+let fetchAfterLogin = false;
+const b64url = bytes=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const oauthRedirect = ()=>location.origin + location.pathname;
+async function lichessLogin(){
+  const verifier = b64url(crypto.getRandomValues(new Uint8Array(32))), state = b64url(crypto.getRandomValues(new Uint8Array(16)));
+  const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+  try{ localStorage.setItem(OAUTH_LS, JSON.stringify({ verifier, state })); }catch(e){}
+  location.href = LICHESS + '/oauth?' + new URLSearchParams({ response_type:'code', client_id:LICHESS_CLIENT_ID,
+    redirect_uri:oauthRedirect(), code_challenge_method:'S256', code_challenge:challenge, state });
+}
+function setLichessAuth(a){
+  lichessAuth = a;
+  try{ a ? localStorage.setItem(AUTH_LS, JSON.stringify(a)) : localStorage.removeItem(AUTH_LS); }catch(e){}
+  if(a){ myName = a.username; try{ localStorage.setItem('cst.lichess', myName); }catch(e){} }
+}
+// Back from lichess.org: ?code=…&state=… (or ?error=… when you cancelled).
+async function finishLichessLogin(){
+  const q = new URLSearchParams(location.search);
+  if(!q.has('code') && !q.has('error')) return;
+  let pending = null;
+  try{ pending = JSON.parse(localStorage.getItem(OAUTH_LS) || 'null'); localStorage.removeItem(OAUTH_LS); }catch(e){}
+  history.replaceState(null, '', location.pathname + location.hash);   // the code is single-use: off the address bar
+  screen = 'mygames';
+  if(q.has('error') || !pending || q.get('state')!==pending.state){
+    myImportNote = q.get('error')==='access_denied' ? 'Lichess login cancelled.' : "Lichess login didn't go through. Try again.";
+    render(); return;
+  }
+  myImportNote = 'Logging in with Lichess…'; render();
+  try{
+    const tr = await fetch(LICHESS + '/api/token', { method:'POST', headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type:'authorization_code', code:q.get('code'), code_verifier:pending.verifier, redirect_uri:oauthRedirect(), client_id:LICHESS_CLIENT_ID }) });
+    const tok = tr.ok ? await tr.json() : null;
+    if(!tok || !tok.access_token) throw new Error('token');
+    const ar = await fetch(LICHESS + '/api/account', { headers:{ Authorization:'Bearer ' + tok.access_token } });
+    const acc = ar.ok ? await ar.json() : null;
+    if(!acc || !acc.username) throw new Error('account');
+    setLichessAuth({ token:tok.access_token, username:acc.username });
+    myImportNote = '';
+    if(myGamesLoaded){ if(!myGames.length) fetchLichessGames(); } else fetchAfterLogin = true;   // first login: your games right away
+  }catch(e){ myImportNote = "Lichess login didn't go through. Try again."; }
+  render();
+}
+async function lichessLogout(){
+  const a = lichessAuth; setLichessAuth(null); render();
+  if(a) try{ await fetch(LICHESS + '/api/token', { method:'DELETE', headers:{ Authorization:'Bearer ' + a.token } }); }catch(e){}
+}
+
 async function fetchLichessGames(){
-  const name = (myName || '').trim();
+  const name = (lichessAuth ? lichessAuth.username : myName || '').trim();
   if(!name){ myImportNote = 'Enter your Lichess username first.'; render(); return; }
   myFetching = true; myImportNote = ''; render();
   try{
-    const res = await fetch(lichessExportUrl(name), { headers:{ Accept:'application/x-chess-pgn' } });
-    if(res.status===404) myImportNote = `No Lichess player named ${name.replace(/</g,'&lt;')}.`;
+    const res = await fetch(lichessExportUrl(name), { headers: Object.assign({ Accept:'application/x-chess-pgn' }, lichessAuth ? { Authorization:'Bearer ' + lichessAuth.token } : {}) });
+    if(res.status===401 && lichessAuth){ setLichessAuth(null); myImportNote = 'Your Lichess login has expired. Log in again.'; }
+    else if(res.status===404) myImportNote = `No Lichess player named ${name.replace(/</g,'&lt;')}.`;
     else if(res.status===429) myImportNote = 'Lichess asks to wait a minute before the next download. Try again shortly.';
     else if(!res.ok) myImportNote = `Lichess didn't answer (error ${res.status}). Try again later.`;
     else { const text = await res.text(); if(text.trim()) importPgnText(text); else myImportNote = `No games found for ${name.replace(/</g,'&lt;')} in these time controls.`; }
@@ -2097,6 +2165,7 @@ async function initMyGames(){
   }catch(e){ /* this browser's copy only */ }
   myGames.forEach(g=>{ if(g.status==='failed') g.status = 'queued'; });   // a failed scan is tried again on each launch
   myGamesLoaded = true;
+  if(fetchAfterLogin){ fetchAfterLogin = false; if(!myGames.length) fetchLichessGames(); }
   reextractAll();
   onOwnPositionsChanged();
   myBackground();
@@ -2140,11 +2209,14 @@ function renderMyGames(){
     <div class="mg-scroll">
       <section class="mg-card">
         <h2>Add your Lichess games</h2>
+        ${DIRECT_LICHESS && lichessAuth ? `<p class="mg-account"><span>♞ Logged in as <b>${lichessAuth.username.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="lichessLogout">Log out</button></p>`
+        : `${DIRECT_LICHESS ? `<button class="btn lichess-btn" id="lichessLogin"><span aria-hidden="true">♞</span> Log in with Lichess</button>
+        <p class="mg-sub">Lichess only shares your username and public games: never your password. Or just type a username:</p>` : ''}
         <label class="mg-field" for="lichessUser"><span>Lichess username</span>
-          <input id="lichessUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${(myName||'').replace(/"/g,'&quot;')}" placeholder="username"></label>
+          <input id="lichessUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${(myName||'').replace(/"/g,'&quot;')}" placeholder="username"></label>`}
         <label class="mg-check" for="bulletBox"><input id="bulletBox" type="checkbox" ${includeBullet ? 'checked' : ''}> Include bullet games</label>
         ${DIRECT_LICHESS ? `
-        <button class="btn" id="fetchGames" ${myFetching ? 'disabled' : ''}>${myFetching ? 'Getting your games from Lichess…' : 'Get my last 50 games'}</button>
+        <button class="btn${lichessAuth ? '' : ' secondary'}" id="fetchGames" ${myFetching ? 'disabled' : ''}>${myFetching ? 'Getting your games from Lichess…' : 'Get my last 50 games'}</button>
         <p class="mg-sub">Blitz, rapid and classical${includeBullet ? ', and bullet' : ''}, with Lichess's analysis where you have one. Or <label class="link-inline file-link" for="pgnFile">add a PGN file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>.</p>`
         : `<ol class="mg-steps">
           <li><a id="exportLink" href="${lichessExportUrl(myName)}" target="_blank" rel="noopener">Download your last 50 games from Lichess ↗</a><small>Blitz, rapid and classical${includeBullet ? ', and bullet' : ''}, with Lichess's analysis where you have one.</small></li>
@@ -2168,7 +2240,9 @@ function renderMyGames(){
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; myConfirmClear = false; render(); };
   const user = document.getElementById('lichessUser'), link = document.getElementById('exportLink');
-  user.oninput = ()=>{ myName = user.value.trim(); try{ localStorage.setItem('cst.lichess', myName); }catch(e){} if(link) link.href = lichessExportUrl(myName); };
+  const li = document.getElementById('lichessLogin'); if(li) li.onclick = lichessLogin;
+  const lo = document.getElementById('lichessLogout'); if(lo) lo.onclick = lichessLogout;
+  if(user) user.oninput = ()=>{ myName = user.value.trim(); try{ localStorage.setItem('cst.lichess', myName); }catch(e){} if(link) link.href = lichessExportUrl(myName); };
   const fg = document.getElementById('fetchGames'); if(fg) fg.onclick = fetchLichessGames;
   document.getElementById('bulletBox').onchange = e=>{ includeBullet = e.target.checked; try{ localStorage.setItem('cst.bullet', includeBullet ? '1' : '0'); }catch(e){} render(); };
   const readFile = f=>{
@@ -2693,4 +2767,5 @@ render();
 initEngine();
 initProgress();
 initMyGames();
+if(DIRECT_LICHESS) finishLichessLogin();
 </script>
