@@ -25,7 +25,7 @@ const ids = 'AbCdEfGh JkLmNpQr StUvWxYz aBcDeFgH jKlMnPqR sTuVwXyZ HgFeDcBa RqPn
   for(let i=0; i<N; i++){
     const g = lib[i*3 % lib.length], me = i%2 ? 'b' : 'w';
     const c = new Chess(); const body = g.replace(/^\[.*\]\s*$/mg,'').replace(/\{[^}]*\}/g,'').replace(/\d+\.(\.\.)?/g,' ').split(/\s+/).filter(t=>t && !/^(1-0|0-1|1\/2-1\/2|\*)$/.test(t));
-    const sans = []; for(const t of body){ const m = c.move(t, {sloppy:true}); if(!m) break; sans.push(m.san); }
+    const sans = []; for(const t of body){ const m = c.move(t) || c.move(t, {sloppy:true}); if(!m) break; sans.push(m.san); }
     const withEvals = i < N/2, speed = i===N-1 ? 'Bullet' : ['Blitz','Rapid','Classical'][i%3];
     const tc = { Bullet:'60+0', Blitz:'180+2', Rapid:'600+5', Classical:'1800+20' }[speed];
     const opp = ['knightowl','pawnstorm42','rookie_rook','fianchetto_fan','zugzwanger'][i%5];

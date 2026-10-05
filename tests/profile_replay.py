@@ -15,8 +15,8 @@ async def main():
         await pg.evaluate("""(()=>{ const now=Date.now(); results = Array.from({length:8},(_,i)=>({a:'analysis', acc:80, ts: now - (i<4 ? 2*864e5 : 0) - (8-i)*6e4, src:'masters'})); saveLocal(); progressReady(); render(); })()""")
         # Play a Board analysis position badly (guess far from the engine's value) -> joins the list.
         await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
-        k = await pg.evaluate("pos().key")
-        await pg.evaluate("(()=>{ const s=st('analysis'); s.guess = 2; render(); })()")
+        k = await pg.evaluate("pos().key"); await pg.wait_for_function("!!fenEval(pos().fen)")
+        await pg.evaluate("(()=>{ const s=st('analysis'); const d=fenEval(pos().fen); s.guess = d && positionInfo(pos(), d).pct > 50 ? 2 : 98; render(); })()")
         await pg.click('#check'); await pg.wait_for_timeout(2500)
         lst = await pg.evaluate("missedList().map(x=>x.a+':'+x.key)")
         print('after a bad play:', lst)

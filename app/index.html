@@ -1924,6 +1924,7 @@ function importPgnText(text){
   let me = myName.trim().toLowerCase();
   if(!me || !count[me]) me = Object.keys(count).sort((a,b)=>count[b]-count[a])[0] || '';
   const added = [], skipped = { other:0, variant:0, bullet:0, already:0, notMine:0 };
+  let repaired = 0;
   for(const p of parsed){
     if(added.length >= OWN.maxGamesPerUpload) break;
     const h = p.h;
@@ -1933,12 +1934,21 @@ function importPgnText(text){
     const side = (h.White||'').toLowerCase()===me ? 'w' : (h.Black||'').toLowerCase()===me ? 'b' : null;
     if(!side){ skipped.notMine++; continue; }
     if(p.sans.length < 2*OWN.minMove){ skipped.other++; continue; }
-    // Keep only the moves chess.js accepts (a broken move ends the game there).
+    // Keep only the moves chess.js accepts (a broken move ends the game there). Strict reading
+    // first: chess.js's lenient ("sloppy") reading takes a b-pawn capture like "bxc6" for a bishop
+    // move and fails, which used to cut games short at their first b-pawn capture.
     const c = new Chess(); const sans = [];
-    for(const s of p.sans){ const mv = c.move(s, {sloppy:true}); if(!mv) break; sans.push(mv.san); }
+    for(const s of p.sans){ const mv = c.move(s) || c.move(s, {sloppy:true}); if(!mv) break; sans.push(mv.san); }
     const id = gameIdOf(h, sans);
-    if(myGames.some(g=>g.id===id) || added.some(g=>g.id===id)){ skipped.already++; continue; }
     const evals = p.evals.slice(0, sans.length);
+    const old = myGames.find(g=>g.id===id);
+    if(old && old.sans.length < sans.length && sans.slice(0, old.sans.length).join(' ')===old.sans.join(' ')){
+      // A game saved cut short (see above): completed, keeping the engine checks already made.
+      const full0 = evals.filter(Boolean).length >= sans.length - 1;
+      old.sans = sans; old.evals = full0 ? evals : null; old.status = full0 ? 'evaluated' : 'queued'; delete old.verified;
+      extractOwnPositions(old); saveMyGame(old); repaired++; continue;
+    }
+    if(old || added.some(g=>g.id===id)){ skipped.already++; continue; }
     const full = evals.filter(Boolean).length >= sans.length - 1;   // the last move may have none
     const g = { id, white:h.White||'?', black:h.Black||'?', me:side, year:(h.UTCDate||h.Date||'').slice(0,4), speed, result:h.Result||'*',
                 sans, evals: full ? evals : null, status: full ? 'evaluated' : 'queued', positions:[], addedAt: Date.now() };
@@ -1956,8 +1966,10 @@ function importPgnText(text){
   if(skipped.notMine) parts.push(`${skipped.notMine} not played by ${spelled[me] || 'you'}`);
   if(skipped.other) parts.push(`${skipped.other} too short`);
   const fromLichess = added.filter(g=>g.status==='evaluated').length;
-  myImportNote = raw.length ? `Added ${added.length} game${added.length===1?'':'s'} of ${meName}` +
+  myImportNote = raw.length && repaired && !added.length ? `Completed ${repaired} game${repaired===1?'':'s'} saved cut short earlier.`
+    : raw.length ? `Added ${added.length} game${added.length===1?'':'s'} of ${meName}` +
     (added.length ? ` (${fromLichess} already analysed by Lichess)` : '') + (parts.length ? `. Skipped: ${parts.join(', ')}.` : '.')
+    + (repaired ? ` Completed ${repaired} game${repaired===1?'':'s'} saved cut short earlier.` : '')
     : 'No games found in this file. Choose the .pgn file downloaded from Lichess.';
   onOwnPositionsChanged();
   myBackground();
