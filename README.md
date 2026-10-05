@@ -44,3 +44,7 @@ Every engine search is kept in `finder/.cache/searches.jsonl` (not committed), s
 
 To run on other games: `node finder/finder.js <games.pgn> <out-dir> [regex on "White - Black"]`, or for one player's games `node finder/own.js <games.pgn> <player> <out-dir>`.
 For a quick trial at low depth, copy `rules.js`, lower `depth`, and run with `RULES=/absolute/path/to/copy.js` (a relative path is read from `finder/`) and an output folder other than `data/`.
+
+## Licence
+
+Free software under the GNU Affero General Public License v3.0 (`LICENSE`): anyone may use, study, change and share it, and any modified version offered to others, including as a website, must share its source under the same licence. Third-party parts and their licences (chess.js, Stockfish, scalachess's game phases) are listed in `THIRD_PARTY.md`.

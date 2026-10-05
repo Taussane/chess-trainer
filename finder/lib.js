@@ -74,7 +74,7 @@ async function lines(fen){ return analyse(fen); }
 const VAL = { p:1, n:3, b:3, r:5, q:9, k:0 };
 function pieces(ch){ const out = []; ch.board().forEach((row,ri)=>row.forEach((c,fi)=>{ if(c) out.push({ ...c, file:fi, rank:7-ri }); })); return out; }
 function materialDiff(ch){ return pieces(ch).reduce((t,p)=>t + (p.color==='w' ? 1 : -1)*VAL[p.type], 0); }
-// Lichess Divider (scalachess core/Divider.scala), ported as is.
+// Lichess Divider (scalachess core/Divider.scala, MIT licence: see THIRD_PARTY.md), ported as is.
 function majorsAndMinors(ps){ return ps.filter(p=>p.type!=='k' && p.type!=='p').length; }
 function backrankSparse(ps){ return ps.filter(p=>p.color==='w' && p.rank===0).length < 4 || ps.filter(p=>p.color==='b' && p.rank===7).length < 4; }
 function score(y, white, black){

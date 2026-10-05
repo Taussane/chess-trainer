@@ -96,7 +96,8 @@
   .goal-dots i.on{background:var(--accent); border-color:var(--accent);}
   .routine-btn{margin-top:12px;}
   .routine-btn{width:100%;}
-  .link-row{display:flex; justify-content:space-between; align-items:center; gap:12px;}
+  .link-row{display:flex; justify-content:space-between; align-items:center; gap:4px 12px; flex-wrap:wrap;}
+  a.link-btn{text-decoration:none;}
   .link-btn.quiet{color:var(--text-mute); font-weight:500;}
   .title-spacer{width:36px; flex:none;}
   .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
@@ -1752,7 +1753,7 @@ function renderHome(){
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b><small>Average</small>` : `<b>—</b><small>${L.n ? `${L.n}/${CALIBRATION}` : 'Average'}</small>`}</span>
         </button>`; }).join('')}
     </div>
-    <div class="link-row"><button class="link-btn" id="progressBtn">Your profile ›</button><button class="link-btn" id="myGamesBtn">My games ›</button><button class="link-btn quiet" id="testsBtn">Test positions ›</button></div>
+    <div class="link-row"><button class="link-btn" id="progressBtn">Your profile ›</button><button class="link-btn" id="myGamesBtn">My games ›</button><button class="link-btn quiet" id="testsBtn">Test positions ›</button><a class="link-btn quiet" href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code ↗</a></div>
     ${engineErrorBanner()}`;
   document.getElementById('testsBtn').onclick = ()=>{ screen = 'tests'; render(); };
   document.getElementById('myGamesBtn').onclick = ()=>{ screen = 'mygames'; render(); };
@@ -1949,7 +1950,7 @@ function extractOwnPositions(g){
   kept.sort((a,b)=>a-b).forEach(ply=>out.push(entry(ply, ['analysis'])));
   g.positions = out;
 }
-// Lichess's game phases (scalachess Divider), as in the position finder.
+// Lichess's game phases (scalachess Divider, MIT licence: see THIRD_PARTY.md in the source), as in the position finder.
 const PIECE_VAL = { p:1, n:3, b:3, r:5, q:9, k:0 };
 function piecesOf(ch){ const out = []; ch.board().forEach((row,ri)=>row.forEach((c,fi)=>{ if(c) out.push({ ...c, file:fi, rank:7-ri }); })); return out; }
 function materialDiff(ch){ return piecesOf(ch).reduce((t,p)=>t + (p.color==='w' ? 1 : -1)*PIECE_VAL[p.type], 0); }
