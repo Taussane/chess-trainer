@@ -11,5 +11,5 @@ ALLOWED_ORIGINS = "https://taussane.github.io"
 [[d1_databases]]
 binding = "DB"
 database_name = "chess-trainer"
-database_id = "REPLACE_WITH_DATABASE_ID"
+database_id = "3314107c-38dd-49eb-b927-efdb5a62b346"
 migrations_dir = "migrations"
