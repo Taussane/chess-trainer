@@ -19,7 +19,10 @@
 const SITES = {
   // How each site's sign-in is checked: its token -> { id, username } of the player.
   lichess: async token => {
-    const r = await fetch('https://lichess.org/api/account', { headers: { Authorization: 'Bearer ' + token } });
+    const r = await fetch('https://lichess.org/api/account', { headers: { Authorization: 'Bearer ' + token, Accept: 'application/json',
+      'User-Agent': 'chess-trainer-api (https://github.com/Taussane/chess-trainer)' } });
+    if (r.status === 429) throw fail(503, 'Lichess is busy (too many requests); try again in a minute');
+    if (r.status >= 500) throw fail(503, 'Lichess did not answer (' + r.status + ')');
     if (!r.ok) return null;
     const a = await r.json();
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
@@ -69,7 +72,7 @@ async function route(req, env) {
     return json({ ok: true });
   }
   const account = await signIn(env, site, token, tokenHash);
-  if (!account) throw fail(401, 'sign-in not accepted');
+  if (!account) throw fail(401, 'Lichess did not accept this login');
   const DB = env.DB;
 
   if (m === 'GET' && path === '/api/me') {

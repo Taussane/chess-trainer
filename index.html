@@ -1670,7 +1670,7 @@ function renderProgress(){
       <div class="pf-name">${myName ? myName.replace(/</g,'&lt;') : 'You'}</div>
       <div class="pf-facts"><span>Training since <b>${since}</b></span><span><b>${results.length}</b> position${results.length===1?'':'s'} completed</span></div>
       ${DIRECT_LICHESS ? `<div class="pf-lichess">${lichessAuth ? `<span>Lichess: <b>${lichessAuth.username.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="pfLogout">Log out</button>` : `<button class="link-inline" id="pfLogin">♞ Log in with Lichess</button>`}</div>
-      <p class="pf-note">${API_BASE ? (lichessAuth ? 'Your progress and games are saved to your account, on every device you log in.' : 'Log in to keep your progress on all your devices. Until then it stays in this browser only.') : 'Your progress is kept in this browser only.'} <a href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
+      <p class="pf-note">${API_BASE ? (lichessAuth ? (syncStatus && syncStatus!=='ok' ? `Couldn't reach your account: ${syncStatus.replace(/</g,'&lt;')}. Your progress stays on this device for now and is sent next time.` : 'Your progress and games are saved to your account, on every device you log in.') : 'Log in to keep your progress on all your devices. Until then it stays in this browser only.') : 'Your progress is kept in this browser only.'} <a href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
       ${API_BASE && lichessAuth ? (pfConfirmDelete
         ? `<div class="mg-confirm"><span>Delete your account, progress and games for good?</span><button class="btn small danger" id="pfDeleteYes">Delete</button><button class="btn small ghost" id="pfDeleteNo">Keep</button></div>`
         : `<button class="link-btn quiet pf-delete" id="pfDelete">Delete my account</button>`) : ''}` : ''}
@@ -1949,8 +1949,11 @@ async function openStore(){
     return db && id ? { db, id } : null;
   }
   if(!API_BASE || !lichessAuth) return null;
-  const db = serverDb(lichessAuth), me = await db.me();
-  if(!me || !me.account) return null;
+  const db = serverDb(lichessAuth);
+  let me = null;
+  try{ me = await db.me(); }catch(e){ syncStatus = e.message; return null; }
+  if(!me || !me.account){ syncStatus = 'no account'; return null; }
+  syncStatus = 'ok';
   const owner = localOwner();
   if(owner && owner!==me.account.id){
     // This browser's copy is someone else's account: start from yours only.
@@ -1959,11 +1962,14 @@ async function openStore(){
   try{ localStorage.setItem(OWNER_LS, me.account.id); }catch(e){}   // a copy with no owner yet joins your account
   return { db, id: me.account.id, server: true };
 }
+let syncStatus = '';   // 'ok', or why the account couldn't be reached (shown in the profile)
 async function serverCall(auth, method, path, body){
   const headers = { Authorization:'Bearer ' + auth.token, 'X-Auth-Site':'lichess' };
   if(body!==undefined) headers['Content-Type'] = 'application/json';
-  const r = await fetch(API_BASE + path, { method, headers, body: body===undefined ? undefined : JSON.stringify(body) });
-  if(!r.ok) throw new Error('server ' + r.status);
+  let r;
+  try{ r = await fetch(API_BASE + path, { method, headers, body: body===undefined ? undefined : JSON.stringify(body) }); }
+  catch(e){ throw new Error("couldn't reach the server"); }
+  if(!r.ok){ let why = ''; try{ why = (await r.json()).error || ''; }catch(e){} throw new Error((why || 'error') + ' (' + r.status + ')'); }
   return r.json();
 }
 // The account server behind the same interface as Claude's database (only what the app uses).
@@ -1975,8 +1981,9 @@ function serverDb(auth){
   const flush = ()=>{
     timer = null;
     const rs = queue.results.splice(0), gs = [...queue.games.values()]; queue.games.clear();
-    for(let i=0; i<rs.length; i+=500) call('POST', '/api/results', { rows: rs.slice(i, i+500) }).catch(()=>{});   // a failed send is sent again on the next launch
-    for(let i=0; i<gs.length; i+=50) call('POST', '/api/games', { games: gs.slice(i, i+50) }).catch(()=>{});
+    const failed = e=>{ syncStatus = 'saving failed: ' + e.message; if(screen==='progress') render(); };   // sent again on the next launch
+    for(let i=0; i<rs.length; i+=500) call('POST', '/api/results', { rows: rs.slice(i, i+500) }).catch(failed);
+    for(let i=0; i<gs.length; i+=50) call('POST', '/api/games', { games: gs.slice(i, i+50) }).catch(failed);
   };
   const later = ()=>{ if(!timer) timer = setTimeout(flush, 400); };
   const meta = name=>({
@@ -1989,7 +1996,7 @@ function serverDb(auth){
     get: async()=>snap((await call('GET', `/api/results?after=${after}&limit=${n}`)).rows),
   });
   return {
-    me: ()=>call('GET', '/api/me').catch(()=>null),
+    me: ()=>call('GET', '/api/me'),
     collection: path=>{
       const kind = last(path);
       if(kind==='results') return Object.assign(resultsQuery(), { add: async r=>{ queue.results.push(r); later(); } });
