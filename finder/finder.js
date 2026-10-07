@@ -74,6 +74,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
       if(ply>=baFrom && ply<=baTo && baFrom>=0){
         if(R.ANALYSIS.notInCheck && c.in_check()) tally(stats.analysis,'rejected: in check');
         else if(Math.abs(L.materialDiff(c)) > R.ANALYSIS.maxMaterialDiff) tally(stats.analysis,'rejected: material');
+        else if(div.mid>=0 && ply < div.mid + R.ANALYSIS.earlyBalanced.plies && ls[0].mate==null && Math.abs(ls[0].cp) < R.ANALYSIS.earlyBalanced.maxEval) tally(stats.analysis,'rejected: balanced, early in the middlegame');
         else { e.options.add('analysis'); e.metrics.evalWhite = (fen.split(' ')[1]==='w' ? 1 : -1) * moverScore(ls[0]); e.metrics.mate = ls[0].mate ?? null; }
       }
       // Candidate moves: a trap (Dubious or worse) among the top 5.

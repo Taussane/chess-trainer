@@ -1,7 +1,7 @@
 // Position finder rules — every threshold the finder uses, and nothing else.
 // Mirrors the "Position finder rules" doc. Change a rule here (and in the doc), bump VERSION.
 module.exports = {
-  VERSION: '2026-10-04.2',
+  VERSION: '2026-10-07.1',
 
   ENGINE: { depth: 18, multipv: 5, threads: 2, hash: 256 },
 
@@ -22,6 +22,8 @@ module.exports = {
     spacingPlies: 7,               // 7 half-moves between kept positions (alternates the side to move)
     retryPlies: 3,                 // if a sampled position fails, try up to 3 more half-moves
     maxMaterialDiff: 3,            // pawn 1, knight/bishop 3, rook 5, queen 9
+    earlyBalanced: { plies: 14, maxEval: 100 },   // in the first 14 half-moves after the middlegame starts,
+                                   // a position within ±1.00 of equal is skipped (masters and own games)
     // phases: Lichess Divider (middlegame start .. endgame start)
   },
 

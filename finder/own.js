@@ -73,6 +73,10 @@ const OWN = { candidatesMinLegal:2, finalMinLegal:4, mistakeDrop:10 };
       if(moveNo < R.GENERAL.minMove || moveNo > R.GENERAL.maxMove || moves.length < R.GENERAL.minLegalMoves) continue;
       const prev = hist[ply-1]; if(prev && prev.captured && moves.some(m=>m.to===prev.to && m.captured)) continue;
       if(c.in_check() || Math.abs(L.materialDiff(c)) > R.ANALYSIS.maxMaterialDiff) continue;
+      if(div.mid>=0 && ply < div.mid + R.ANALYSIS.earlyBalanced.plies){   // balanced, early in the middlegame: skipped
+        const l0 = (await analyse(fen))[0];
+        if(l0.mate==null && Math.abs(l0.cp) < R.ANALYSIS.earlyBalanced.maxEval) continue;
+      }
       ba.push(ply);
     }
     // Board analysis anchors (middlegame and endgame starts, or up to 3 half-moves later); past

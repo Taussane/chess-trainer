@@ -1,5 +1,5 @@
 {
- "version": "2026-10-04.2",
+ "version": "2026-10-07.1",
  "engine": {
   "depth": 18,
   "multipv": 5,
@@ -167,7 +167,7 @@
    "endgame": 44,
    "checked": 59,
    "passedGeneral": 49,
-   "analysis": 4,
+   "analysis": 3,
    "candidates": 3,
    "final": 3
   },
@@ -247,7 +247,7 @@
    "endgame": -1,
    "checked": 53,
    "passedGeneral": 49,
-   "analysis": 5,
+   "analysis": 3,
    "candidates": 4,
    "final": 2
   },
@@ -433,7 +433,7 @@
    "endgame": -1,
    "checked": 65,
    "passedGeneral": 56,
-   "analysis": 9,
+   "analysis": 8,
    "candidates": 8,
    "final": 4
   },
@@ -607,7 +607,7 @@
    "endgame": -1,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 9,
+   "analysis": 7,
    "candidates": 7,
    "final": 4
   },
@@ -1003,7 +1003,7 @@
    "endgame": -1,
    "checked": 51,
    "passedGeneral": 42,
-   "analysis": 6,
+   "analysis": 4,
    "candidates": 5,
    "final": 3
   },
@@ -1071,7 +1071,7 @@
    "endgame": -1,
    "checked": 41,
    "passedGeneral": 32,
-   "analysis": 3,
+   "analysis": 2,
    "candidates": 4,
    "final": 3
   },
@@ -1155,7 +1155,7 @@
    "endgame": 50,
    "checked": 57,
    "passedGeneral": 45,
-   "analysis": 4,
+   "analysis": 2,
    "candidates": 5,
    "final": 5
   },
@@ -1241,7 +1241,7 @@
    "endgame": 47,
    "checked": 59,
    "passedGeneral": 49,
-   "analysis": 5,
+   "analysis": 4,
    "candidates": 6,
    "final": 6
   },
@@ -1319,7 +1319,7 @@
    "endgame": -1,
    "checked": 51,
    "passedGeneral": 42,
-   "analysis": 5,
+   "analysis": 3,
    "candidates": 6,
    "final": 11
   },
@@ -1419,7 +1419,7 @@
    "endgame": 71,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 8,
+   "analysis": 7,
    "candidates": 7,
    "final": 7
   },
@@ -1806,7 +1806,7 @@
    "endgame": 54,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 5,
+   "analysis": 3,
    "candidates": 8,
    "final": 15
   },
@@ -2022,7 +2022,7 @@
    "endgame": 52,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 4,
+   "analysis": 3,
    "candidates": 6,
    "final": 8
   },
@@ -2115,7 +2115,7 @@
    "endgame": 57,
    "checked": 66,
    "passedGeneral": 57,
-   "analysis": 5,
+   "analysis": 3,
    "candidates": 4,
    "final": 3
   },
@@ -2214,7 +2214,7 @@
    "endgame": 41,
    "checked": 72,
    "passedGeneral": 57,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 7,
    "final": 6
   },
@@ -2309,7 +2309,7 @@
    "endgame": -1,
    "checked": 68,
    "passedGeneral": 61,
-   "analysis": 8,
+   "analysis": 6,
    "candidates": 6,
    "final": 9
   },
@@ -2408,7 +2408,7 @@
    "endgame": 64,
    "checked": 72,
    "passedGeneral": 58,
-   "analysis": 6,
+   "analysis": 5,
    "candidates": 6,
    "final": 5
   },
@@ -2475,7 +2475,7 @@
    "endgame": 44,
    "checked": 40,
    "passedGeneral": 34,
-   "analysis": 4,
+   "analysis": 2,
    "candidates": 3,
    "final": 1
   },
@@ -2564,7 +2564,7 @@
    "endgame": 35,
    "checked": 62,
    "passedGeneral": 50,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 4,
    "final": 1
   },
@@ -2967,7 +2967,7 @@
    "endgame": -1,
    "checked": 50,
    "passedGeneral": 43,
-   "analysis": 5,
+   "analysis": 3,
    "candidates": 4,
    "final": 6
   },
@@ -3090,7 +3090,7 @@
    "endgame": 48,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 5,
+   "analysis": 4,
    "candidates": 8,
    "final": 6
   },
@@ -3223,7 +3223,7 @@
    "endgame": 38,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 5,
    "final": 3
   },
@@ -3284,7 +3284,7 @@
    "endgame": 39,
    "checked": 34,
    "passedGeneral": 24,
-   "analysis": 4,
+   "analysis": 2,
    "candidates": 3,
    "final": 2
   },
@@ -3375,7 +3375,7 @@
    "endgame": 66,
    "checked": 64,
    "passedGeneral": 53,
-   "analysis": 7,
+   "analysis": 5,
    "candidates": 6,
    "final": 6
   },
@@ -3464,7 +3464,7 @@
    "endgame": 51,
    "checked": 62,
    "passedGeneral": 48,
-   "analysis": 5,
+   "analysis": 4,
    "candidates": 6,
    "final": 2
   },
@@ -3571,7 +3571,7 @@
    "endgame": 49,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 4,
+   "analysis": 2,
    "candidates": 5,
    "final": 3
   }
@@ -3583,12 +3583,13 @@
   "mate already under way": 9
  },
  "eligible": {
-  "analysis": 1046,
+  "analysis": 786,
   "candidates": 635,
   "final": 206,
-  "anchors": 64
+  "anchors": 40
  },
  "analysis": {
+  "rejected: balanced, early in the middlegame": 260,
   "rejected: in check": 22,
   "rejected: material": 19
  },
@@ -3602,5 +3603,5 @@
   "rejected: fewer than 3 grades among the 4 shown": 64,
   "rejected: two moves of the same bad grade": 48
  },
- "multi": 496
+ "multi": 454
 }
