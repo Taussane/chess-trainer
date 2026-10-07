@@ -1,4 +1,4 @@
-# Which of your positions come next ("My games"):
+# Which positions come next (your games, and masters by the same rule):
 #  - the core list: never-played positions, newest game first, then positions got right, the
 #    longest-ago success first; missed positions are not in it;
 #  - Replay: missed positions not tried in the past week (one tried 2 days ago waits);
@@ -62,6 +62,17 @@ async def main():
                    replayHasIt: mineCandidates('analysis').replay.some(p=>p.key===pos.key), coreHasOld: mineCandidates('analysis').core.some(p=>p.gameId===keepMissed.id) }; })()""")
         print('rotation:', rot)
         if rot != {'core': 100, 'kept': True, 'dropped': True, 'replayHasIt': True, 'coreHasOld': False}: fails.append(f'rotation: {rot}')
+        # Masters use the same line: positions added to the library later come first; one got right goes last.
+        ms = await pg.evaluate("""(()=>{ const a = 'final', P = POOLS[a], now = Date.now();
+          const newer = P.slice(0, 5); newer.forEach(p=>p.added = (p.added||0) + 30*864e5);   // as if added a month later
+          results.push({ a, acc:95, ts: now, key: P[10].key, miss:false }); results.sort((x,y)=>x.ts-y.ts); lineCache = {};
+          const c = candidatesFor(a, 'masters'), keys = c.core.map(p=>p.key);
+          const first = {}; for(let i=0; i<5000; i++){ const k = drawWeighted(a, 'masters')[0].key; first[k] = (first[k]||0)+1; }
+          return { newerFirst: newer.every(p=>keys.indexOf(p.key) < 5), gotRightLast: keys[keys.length-1]===P[10].key,
+                   newerShare: newer.reduce((t,p)=>t+(first[p.key]||0),0)/5000, size: keys.length }; })()""")
+        print('masters line:', ms)
+        if not ms['newerFirst'] or not ms['gotRightLast']: fails.append(f'masters line order: {ms}')
+        if ms['newerShare'] < 5/ms['size']*1.5: fails.append(f'newer master positions not favoured: {ms}')
         # Games kept for Replay: at most 100, the oldest go first.
         cap = await pg.evaluate("""(()=>{ const base = myGames[0], now = Date.now(), day = 864e5;
           myGames = []; results = [];

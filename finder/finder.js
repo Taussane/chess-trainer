@@ -29,7 +29,10 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
     for(const t of toks){ const m = ch.move(t) || ch.move(t,{sloppy:true}); if(!m) break; hist.push(m); }
     const fens = [new Chess().fen()]; { const r = new Chess(); hist.forEach(m=>{ r.move(m.san); fens.push(r.fen()); }); }
     const surname = s=>s.split(',')[0].trim();
-    const game = { id:'g'+gi, white:header(g,'White'), black:header(g,'Black'), event:header(g,'Event'), year:header(g,'Date').slice(0,4), result:header(g,'Result') };
+    // added: when the game joined the library ([Added "YYYY.MM.DD"]); the app offers newer additions first.
+    const ad = (header(g,'Added').match(/^(\d{4})\.(\d{2})\.(\d{2})$/) || []);
+    const game = { id:'g'+gi, white:header(g,'White'), black:header(g,'Black'), event:header(g,'Event'), year:header(g,'Date').slice(0,4), result:header(g,'Result'),
+                   added: ad[1] ? Date.UTC(+ad[1], ad[2]-1, +ad[3]) : 0 };
     game.title = surname(game.white)+' – '+surname(game.black);
     const decisive = !R.ANALYSIS.decisiveGamesOnly || game.result==='1-0' || game.result==='0-1';
     const div = L.divide(fens);
@@ -39,7 +42,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
 
     const base = ply=>{
       const fen = fens[ply], m = hist[ply], prev = hist[ply-1];
-      return { key:posKey(fen), fen, game:game.id, title:game.title, event:game.event, year:game.year, ply,
+      return { key:posKey(fen), fen, game:game.id, title:game.title, event:game.event, year:game.year, ply, added:game.added,
                moveNo:+fen.split(' ')[5], side:fen.split(' ')[1],
                last: prev ? [prev.from, prev.to] : null,
                hist:{ uci:m.from+m.to+(m.promotion||''), san:m.san, from:m.from, to:m.to } };

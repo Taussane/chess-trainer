@@ -6,7 +6,7 @@ app = pathlib.Path(__file__).resolve().parent.parent / 'app' / 'index.html'
 d = json.load(open(src, encoding='utf-8'))
 assert 'player' not in d, 'this is a player\'s own games (finder/own.js output); only master pools go into POOLS'
 def slim(e):
-    o = {k: e[k] for k in ('key','fen','side','moveNo','title','year','last','hist','game','ply')}
+    o = {k: e[k] for k in ('key','fen','side','moveNo','title','year','last','hist','game','ply','added')}
     return o
 pools = {k: [slim(e) for e in v] for k, v in d['pools'].items()}
 s = app.read_text(encoding='utf-8')

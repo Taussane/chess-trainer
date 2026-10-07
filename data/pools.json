@@ -1,7 +1,7 @@
 {
  "version": "2026-10-07.1",
  "engine": "Stockfish 16.1, depth 18",
- "generated": "2026-10-07T13:01:21.920Z",
+ "generated": "2026-10-07T13:26:59.701Z",
  "pools": {
   "analysis": [
    {
@@ -12,6 +12,7 @@
     "event": "?",
     "year": "1981",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -38,6 +39,7 @@
     "event": "?",
     "year": "1981",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -64,6 +66,7 @@
     "event": "?",
     "year": "1981",
     "ply": 34,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "w",
     "last": [
@@ -90,6 +93,7 @@
     "event": "?",
     "year": "1981",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -116,6 +120,7 @@
     "event": "?",
     "year": "1981",
     "ply": 50,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "w",
     "last": [
@@ -142,6 +147,7 @@
     "event": "?",
     "year": "1981",
     "ply": 58,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "w",
     "last": [
@@ -168,6 +174,7 @@
     "event": "Candidates Final",
     "year": "1971",
     "ply": 30,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "w",
     "last": [
@@ -194,6 +201,7 @@
     "event": "Candidates Final",
     "year": "1971",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -220,6 +228,7 @@
     "event": "Candidates Final",
     "year": "1971",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -246,6 +255,7 @@
     "event": "Candidates Quarter-Final",
     "year": "1991",
     "ply": 40,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "w",
     "last": [
@@ -272,6 +282,7 @@
     "event": "Candidates Quarter-Final",
     "year": "1991",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -298,6 +309,7 @@
     "event": "Candidates Quarter-Final",
     "year": "1991",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -324,6 +336,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 21,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "b",
     "last": [
@@ -350,6 +363,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 28,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "w",
     "last": [
@@ -376,6 +390,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -402,6 +417,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 42,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "w",
     "last": [
@@ -428,6 +444,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 49,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "b",
     "last": [
@@ -454,6 +471,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 56,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "w",
     "last": [
@@ -480,6 +498,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 66,
+    "added": 1790985600000,
     "moveNo": 34,
     "side": "w",
     "last": [
@@ -506,6 +525,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -532,6 +552,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 28,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "w",
     "last": [
@@ -558,6 +579,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -584,6 +606,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 42,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "w",
     "last": [
@@ -610,6 +633,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 49,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "b",
     "last": [
@@ -636,6 +660,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 56,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "w",
     "last": [
@@ -662,6 +687,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 63,
+    "added": 1790985600000,
     "moveNo": 32,
     "side": "b",
     "last": [
@@ -688,6 +714,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 70,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "w",
     "last": [
@@ -714,6 +741,7 @@
     "event": "?",
     "year": "1895",
     "ply": 24,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "w",
     "last": [
@@ -740,6 +768,7 @@
     "event": "?",
     "year": "1895",
     "ply": 32,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "w",
     "last": [
@@ -766,6 +795,7 @@
     "event": "?",
     "year": "1895",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -792,6 +822,7 @@
     "event": "?",
     "year": "1895",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -818,6 +849,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 33,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "b",
     "last": [
@@ -844,6 +876,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 40,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "w",
     "last": [
@@ -870,6 +903,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -896,6 +930,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -922,6 +957,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 64,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "w",
     "last": [
@@ -948,6 +984,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 71,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "b",
     "last": [
@@ -974,6 +1011,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 78,
+    "added": 1790985600000,
     "moveNo": 40,
     "side": "w",
     "last": [
@@ -1000,6 +1038,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -1026,6 +1065,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -1052,6 +1092,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 42,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "w",
     "last": [
@@ -1078,6 +1119,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 49,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "b",
     "last": [
@@ -1104,6 +1146,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 56,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "w",
     "last": [
@@ -1130,6 +1173,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 68,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "w",
     "last": [
@@ -1156,6 +1200,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -1182,6 +1227,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 34,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "w",
     "last": [
@@ -1208,6 +1254,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 26,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "w",
     "last": [
@@ -1234,6 +1281,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 33,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "b",
     "last": [
@@ -1260,6 +1308,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 40,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "w",
     "last": [
@@ -1286,6 +1335,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -1312,6 +1362,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -1338,6 +1389,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 61,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "b",
     "last": [
@@ -1364,6 +1416,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 69,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "b",
     "last": [
@@ -1390,6 +1443,7 @@
     "event": "US Championship 1963/64",
     "year": "1963",
     "ply": 17,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "b",
     "last": [
@@ -1416,6 +1470,7 @@
     "event": "US Championship 1963/64",
     "year": "1963",
     "ply": 24,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "w",
     "last": [
@@ -1442,6 +1497,7 @@
     "event": "US Championship 1963/64",
     "year": "1963",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -1468,6 +1524,7 @@
     "event": "US Championship 1963/64",
     "year": "1963",
     "ply": 38,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "w",
     "last": [
@@ -1494,6 +1551,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 30,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "w",
     "last": [
@@ -1520,6 +1578,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -1546,6 +1605,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -1572,6 +1632,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 53,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "b",
     "last": [
@@ -1598,6 +1659,7 @@
     "event": "Havana ol (Men) fin-A",
     "year": "1966",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -1624,6 +1686,7 @@
     "event": "Havana ol (Men) fin-A",
     "year": "1966",
     "ply": 42,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "w",
     "last": [
@@ -1650,6 +1713,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 38,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "w",
     "last": [
@@ -1676,6 +1740,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -1702,6 +1767,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -1728,6 +1794,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -1754,6 +1821,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -1780,6 +1848,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 48,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "w",
     "last": [
@@ -1806,6 +1875,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -1832,6 +1902,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -1858,6 +1929,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -1884,6 +1956,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -1910,6 +1983,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 28,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "w",
     "last": [
@@ -1936,6 +2010,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -1962,6 +2037,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -1988,6 +2064,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 50,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "w",
     "last": [
@@ -2014,6 +2091,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 58,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "w",
     "last": [
@@ -2040,6 +2118,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 71,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "b",
     "last": [
@@ -2066,6 +2145,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 19,
+    "added": 1790985600000,
     "moveNo": 10,
     "side": "b",
     "last": [
@@ -2092,6 +2172,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -2118,6 +2199,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 34,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "w",
     "last": [
@@ -2144,6 +2226,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 41,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "b",
     "last": [
@@ -2170,6 +2253,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 26,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "w",
     "last": [
@@ -2196,6 +2280,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -2222,6 +2307,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 14,
+    "added": 1790985600000,
     "moveNo": 8,
     "side": "w",
     "last": [
@@ -2248,6 +2334,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 24,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "w",
     "last": [
@@ -2274,6 +2361,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -2300,6 +2388,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 38,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "w",
     "last": [
@@ -2326,6 +2415,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 45,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "b",
     "last": [
@@ -2352,6 +2442,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 52,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "w",
     "last": [
@@ -2378,6 +2469,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 62,
+    "added": 1790985600000,
     "moveNo": 32,
     "side": "w",
     "last": [
@@ -2404,6 +2496,7 @@
     "event": "?",
     "year": "1993",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -2430,6 +2523,7 @@
     "event": "?",
     "year": "1993",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -2456,6 +2550,7 @@
     "event": "?",
     "year": "1993",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -2482,6 +2577,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -2508,6 +2604,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -2534,6 +2631,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -2560,6 +2658,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 50,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "w",
     "last": [
@@ -2586,6 +2685,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 59,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "b",
     "last": [
@@ -2612,6 +2712,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 70,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "w",
     "last": [
@@ -2638,6 +2739,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -2664,6 +2766,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 42,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "w",
     "last": [
@@ -2690,6 +2793,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 52,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "w",
     "last": [
@@ -2716,6 +2820,7 @@
     "event": "US Championship",
     "year": "1975",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -2742,6 +2847,7 @@
     "event": "US Championship",
     "year": "1975",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -2768,6 +2874,7 @@
     "event": "US Championship",
     "year": "1975",
     "ply": 57,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "b",
     "last": [
@@ -2794,6 +2901,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 41,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "b",
     "last": [
@@ -2820,6 +2928,7 @@
     "event": "?",
     "year": "1873",
     "ply": 40,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "w",
     "last": [
@@ -2846,6 +2955,7 @@
     "event": "?",
     "year": "1873",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -2872,6 +2982,7 @@
     "event": "?",
     "year": "1873",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -2898,6 +3009,7 @@
     "event": "?",
     "year": "1873",
     "ply": 61,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "b",
     "last": [
@@ -2924,6 +3036,7 @@
     "event": "?",
     "year": "1873",
     "ply": 68,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "w",
     "last": [
@@ -2950,6 +3063,7 @@
     "event": "?",
     "year": "1873",
     "ply": 75,
+    "added": 1790985600000,
     "moveNo": 38,
     "side": "b",
     "last": [
@@ -2976,6 +3090,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 25,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "b",
     "last": [
@@ -3002,6 +3117,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -3028,6 +3144,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -3054,6 +3171,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 56,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "w",
     "last": [
@@ -3080,6 +3198,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 64,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "w",
     "last": [
@@ -3106,6 +3225,7 @@
     "event": "Leipzig ol (Men) fin-A",
     "year": "1960",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -3132,6 +3252,7 @@
     "event": "Leipzig ol (Men) fin-A",
     "year": "1960",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -3158,6 +3279,7 @@
     "event": "Second Piatigorsky Cup",
     "year": "1966",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -3184,6 +3306,7 @@
     "event": "Reykjavik",
     "year": "1960",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -3210,6 +3333,7 @@
     "event": "Reykjavik",
     "year": "1960",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -3236,6 +3360,7 @@
     "event": "Reykjavik",
     "year": "1960",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -3262,6 +3387,7 @@
     "event": "Reykjavik",
     "year": "1960",
     "ply": 53,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "b",
     "last": [
@@ -3288,6 +3414,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 23,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "b",
     "last": [
@@ -3314,6 +3441,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 30,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "w",
     "last": [
@@ -3340,6 +3468,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -3366,6 +3495,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -3392,6 +3522,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -3418,6 +3549,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 58,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "w",
     "last": [
@@ -3444,6 +3576,7 @@
     "event": "Leipzig ol (Men) qual-D",
     "year": "1960",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -3470,6 +3603,7 @@
     "event": "Leipzig ol (Men) qual-D",
     "year": "1960",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -3496,6 +3630,7 @@
     "event": "Leipzig ol (Men) qual-D",
     "year": "1960",
     "ply": 34,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "w",
     "last": [
@@ -3522,6 +3657,7 @@
     "event": "Leipzig ol (Men) qual-D",
     "year": "1960",
     "ply": 41,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "b",
     "last": [
@@ -3548,6 +3684,7 @@
     "event": "USA-ch",
     "year": "1960",
     "ply": 26,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "w",
     "last": [
@@ -3574,6 +3711,7 @@
     "event": "USA-ch",
     "year": "1960",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -3600,6 +3738,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 40,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "w",
     "last": [
@@ -3626,6 +3765,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -3652,6 +3792,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -3678,6 +3819,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -3704,6 +3846,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 34,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "w",
     "last": [
@@ -3730,6 +3873,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 41,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "b",
     "last": [
@@ -3756,6 +3900,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -3782,6 +3927,7 @@
     "event": "URS-ch qf",
     "year": "1955",
     "ply": 38,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "w",
     "last": [
@@ -3808,6 +3954,7 @@
     "event": "?",
     "year": "1949",
     "ply": 26,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "w",
     "last": [
@@ -3834,6 +3981,7 @@
     "event": "?",
     "year": "1949",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -3860,6 +4008,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 34,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "w",
     "last": [
@@ -3886,6 +4035,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 41,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "b",
     "last": [
@@ -3912,6 +4062,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 48,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "w",
     "last": [
@@ -3938,6 +4089,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -3964,6 +4116,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 68,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "w",
     "last": [
@@ -3990,6 +4143,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 26,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "w",
     "last": [
@@ -4016,6 +4170,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -4042,6 +4197,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -4068,6 +4224,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 52,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "w",
     "last": [
@@ -4094,6 +4251,7 @@
     "event": "USSR Championship",
     "year": "1957",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -4120,6 +4278,7 @@
     "event": "USSR Championship",
     "year": "1957",
     "ply": 50,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "w",
     "last": [
@@ -4148,6 +4307,7 @@
     "event": "?",
     "year": "1981",
     "ply": 25,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "b",
     "last": [
@@ -4172,6 +4332,7 @@
     "event": "?",
     "year": "1981",
     "ply": 34,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "w",
     "last": [
@@ -4196,6 +4357,7 @@
     "event": "?",
     "year": "1981",
     "ply": 50,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "w",
     "last": [
@@ -4220,6 +4382,7 @@
     "event": "Candidates Final",
     "year": "1971",
     "ply": 23,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "b",
     "last": [
@@ -4244,6 +4407,7 @@
     "event": "Candidates Final",
     "year": "1971",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -4268,6 +4432,7 @@
     "event": "Candidates Final",
     "year": "1971",
     "ply": 60,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "w",
     "last": [
@@ -4292,6 +4457,7 @@
     "event": "Candidates Quarter-Final",
     "year": "1991",
     "ply": 26,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "w",
     "last": [
@@ -4316,6 +4482,7 @@
     "event": "Candidates Quarter-Final",
     "year": "1991",
     "ply": 42,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "w",
     "last": [
@@ -4340,6 +4507,7 @@
     "event": "Candidates Quarter-Final",
     "year": "1991",
     "ply": 49,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "b",
     "last": [
@@ -4364,6 +4532,7 @@
     "event": "Candidates Quarter-Final",
     "year": "1991",
     "ply": 56,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "w",
     "last": [
@@ -4388,6 +4557,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 9,
+    "added": 1790985600000,
     "moveNo": 5,
     "side": "b",
     "last": [
@@ -4412,6 +4582,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 24,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "w",
     "last": [
@@ -4436,6 +4607,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -4460,6 +4632,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -4484,6 +4657,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -4508,6 +4682,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 63,
+    "added": 1790985600000,
     "moveNo": 32,
     "side": "b",
     "last": [
@@ -4532,6 +4707,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 70,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "w",
     "last": [
@@ -4556,6 +4732,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 12,
+    "added": 1790985600000,
     "moveNo": 7,
     "side": "w",
     "last": [
@@ -4580,6 +4757,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -4604,6 +4782,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 28,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "w",
     "last": [
@@ -4628,6 +4807,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -4652,6 +4832,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 42,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "w",
     "last": [
@@ -4676,6 +4857,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -4700,6 +4882,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 59,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "b",
     "last": [
@@ -4724,6 +4907,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 68,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "w",
     "last": [
@@ -4748,6 +4932,7 @@
     "event": "?",
     "year": "1895",
     "ply": 9,
+    "added": 1790985600000,
     "moveNo": 5,
     "side": "b",
     "last": [
@@ -4772,6 +4957,7 @@
     "event": "?",
     "year": "1895",
     "ply": 17,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "b",
     "last": [
@@ -4796,6 +4982,7 @@
     "event": "?",
     "year": "1895",
     "ply": 24,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "w",
     "last": [
@@ -4820,6 +5007,7 @@
     "event": "?",
     "year": "1895",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -4844,6 +5032,7 @@
     "event": "?",
     "year": "1895",
     "ply": 38,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "w",
     "last": [
@@ -4868,6 +5057,7 @@
     "event": "?",
     "year": "1895",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -4892,6 +5082,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 12,
+    "added": 1790985600000,
     "moveNo": 7,
     "side": "w",
     "last": [
@@ -4916,6 +5107,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -4940,6 +5132,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -4964,6 +5157,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -4988,6 +5182,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 64,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "w",
     "last": [
@@ -5012,6 +5207,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 71,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "b",
     "last": [
@@ -5036,6 +5232,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 78,
+    "added": 1790985600000,
     "moveNo": 40,
     "side": "w",
     "last": [
@@ -5060,6 +5257,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -5084,6 +5282,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 29,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "b",
     "last": [
@@ -5108,6 +5307,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -5132,6 +5332,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -5156,6 +5357,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 58,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "w",
     "last": [
@@ -5180,6 +5382,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 65,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "b",
     "last": [
@@ -5204,6 +5407,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 74,
+    "added": 1790985600000,
     "moveNo": 38,
     "side": "w",
     "last": [
@@ -5228,6 +5432,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 8,
+    "added": 1790985600000,
     "moveNo": 5,
     "side": "w",
     "last": [
@@ -5252,6 +5457,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 16,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "w",
     "last": [
@@ -5276,6 +5482,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 24,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "w",
     "last": [
@@ -5300,6 +5507,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -5324,6 +5532,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 38,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "w",
     "last": [
@@ -5348,6 +5557,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 45,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "b",
     "last": [
@@ -5372,6 +5582,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 52,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "w",
     "last": [
@@ -5396,6 +5607,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 19,
+    "added": 1790985600000,
     "moveNo": 10,
     "side": "b",
     "last": [
@@ -5420,6 +5632,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -5444,6 +5657,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 49,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "b",
     "last": [
@@ -5468,6 +5682,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 56,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "w",
     "last": [
@@ -5492,6 +5707,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 64,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "w",
     "last": [
@@ -5516,6 +5732,7 @@
     "event": "US Championship 1963/64",
     "year": "1963",
     "ply": 13,
+    "added": 1790985600000,
     "moveNo": 7,
     "side": "b",
     "last": [
@@ -5540,6 +5757,7 @@
     "event": "US Championship 1963/64",
     "year": "1963",
     "ply": 33,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "b",
     "last": [
@@ -5564,6 +5782,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 9,
+    "added": 1790985600000,
     "moveNo": 5,
     "side": "b",
     "last": [
@@ -5588,6 +5807,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 22,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "w",
     "last": [
@@ -5612,6 +5832,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 29,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "b",
     "last": [
@@ -5636,6 +5857,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -5660,6 +5882,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -5684,6 +5907,7 @@
     "event": "Havana ol (Men) fin-A",
     "year": "1966",
     "ply": 17,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "b",
     "last": [
@@ -5708,6 +5932,7 @@
     "event": "Havana ol (Men) fin-A",
     "year": "1966",
     "ply": 24,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "w",
     "last": [
@@ -5732,6 +5957,7 @@
     "event": "Havana ol (Men) fin-A",
     "year": "1966",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -5756,6 +5982,7 @@
     "event": "Havana ol (Men) fin-A",
     "year": "1966",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -5780,6 +6007,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 23,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "b",
     "last": [
@@ -5804,6 +6032,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 32,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "w",
     "last": [
@@ -5828,6 +6057,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -5852,6 +6082,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -5876,6 +6107,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -5900,6 +6132,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 14,
+    "added": 1790985600000,
     "moveNo": 8,
     "side": "w",
     "last": [
@@ -5924,6 +6157,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 22,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "w",
     "last": [
@@ -5948,6 +6182,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -5972,6 +6207,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 41,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "b",
     "last": [
@@ -5996,6 +6232,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -6020,6 +6257,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 59,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "b",
     "last": [
@@ -6044,6 +6282,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 11,
+    "added": 1790985600000,
     "moveNo": 6,
     "side": "b",
     "last": [
@@ -6068,6 +6307,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 21,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "b",
     "last": [
@@ -6092,6 +6332,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -6116,6 +6357,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 38,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "w",
     "last": [
@@ -6140,6 +6382,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -6164,6 +6407,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -6188,6 +6432,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -6212,6 +6457,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 30,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "w",
     "last": [
@@ -6236,6 +6482,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -6260,6 +6507,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 49,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "b",
     "last": [
@@ -6284,6 +6532,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 61,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "b",
     "last": [
@@ -6308,6 +6557,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 68,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "w",
     "last": [
@@ -6332,6 +6582,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 78,
+    "added": 1790985600000,
     "moveNo": 40,
     "side": "w",
     "last": [
@@ -6356,6 +6607,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 15,
+    "added": 1790985600000,
     "moveNo": 8,
     "side": "b",
     "last": [
@@ -6380,6 +6632,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 22,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "w",
     "last": [
@@ -6404,6 +6657,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 30,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "w",
     "last": [
@@ -6428,6 +6682,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -6452,6 +6707,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 12,
+    "added": 1790985600000,
     "moveNo": 7,
     "side": "w",
     "last": [
@@ -6476,6 +6732,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 19,
+    "added": 1790985600000,
     "moveNo": 10,
     "side": "b",
     "last": [
@@ -6500,6 +6757,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 26,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "w",
     "last": [
@@ -6524,6 +6782,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 33,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "b",
     "last": [
@@ -6548,6 +6807,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 40,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "w",
     "last": [
@@ -6572,6 +6832,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 68,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "w",
     "last": [
@@ -6596,6 +6857,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 78,
+    "added": 1790985600000,
     "moveNo": 40,
     "side": "w",
     "last": [
@@ -6620,6 +6882,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 17,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "b",
     "last": [
@@ -6644,6 +6907,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 26,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "w",
     "last": [
@@ -6668,6 +6932,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 40,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "w",
     "last": [
@@ -6692,6 +6957,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -6716,6 +6982,7 @@
     "event": "?",
     "year": "1993",
     "ply": 16,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "w",
     "last": [
@@ -6740,6 +7007,7 @@
     "event": "?",
     "year": "1993",
     "ply": 25,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "b",
     "last": [
@@ -6764,6 +7032,7 @@
     "event": "?",
     "year": "1993",
     "ply": 33,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "b",
     "last": [
@@ -6788,6 +7057,7 @@
     "event": "?",
     "year": "1993",
     "ply": 45,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "b",
     "last": [
@@ -6812,6 +7082,7 @@
     "event": "?",
     "year": "1993",
     "ply": 52,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "w",
     "last": [
@@ -6836,6 +7107,7 @@
     "event": "?",
     "year": "1993",
     "ply": 59,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "b",
     "last": [
@@ -6860,6 +7132,7 @@
     "event": "?",
     "year": "1993",
     "ply": 66,
+    "added": 1790985600000,
     "moveNo": 34,
     "side": "w",
     "last": [
@@ -6884,6 +7157,7 @@
     "event": "?",
     "year": "1993",
     "ply": 73,
+    "added": 1790985600000,
     "moveNo": 37,
     "side": "b",
     "last": [
@@ -6908,6 +7182,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 16,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "w",
     "last": [
@@ -6932,6 +7207,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -6956,6 +7232,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -6980,6 +7257,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 50,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "w",
     "last": [
@@ -7004,6 +7282,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 59,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "b",
     "last": [
@@ -7028,6 +7307,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 67,
+    "added": 1790985600000,
     "moveNo": 34,
     "side": "b",
     "last": [
@@ -7052,6 +7332,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 75,
+    "added": 1790985600000,
     "moveNo": 38,
     "side": "b",
     "last": [
@@ -7076,6 +7357,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -7100,6 +7382,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -7124,6 +7407,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -7148,6 +7432,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 61,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "b",
     "last": [
@@ -7172,6 +7457,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 68,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "w",
     "last": [
@@ -7196,6 +7482,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 75,
+    "added": 1790985600000,
     "moveNo": 38,
     "side": "b",
     "last": [
@@ -7220,6 +7507,7 @@
     "event": "US Championship",
     "year": "1975",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -7244,6 +7532,7 @@
     "event": "US Championship",
     "year": "1975",
     "ply": 38,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "w",
     "last": [
@@ -7268,6 +7557,7 @@
     "event": "US Championship",
     "year": "1975",
     "ply": 62,
+    "added": 1790985600000,
     "moveNo": 32,
     "side": "w",
     "last": [
@@ -7292,6 +7582,7 @@
     "event": "US Championship",
     "year": "1975",
     "ply": 69,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "b",
     "last": [
@@ -7316,6 +7607,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 16,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "w",
     "last": [
@@ -7340,6 +7632,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 34,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "w",
     "last": [
@@ -7364,6 +7657,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -7388,6 +7682,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -7412,6 +7707,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 61,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "b",
     "last": [
@@ -7436,6 +7732,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 71,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "b",
     "last": [
@@ -7460,6 +7757,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 79,
+    "added": 1790985600000,
     "moveNo": 40,
     "side": "b",
     "last": [
@@ -7484,6 +7782,7 @@
     "event": "?",
     "year": "1873",
     "ply": 19,
+    "added": 1790985600000,
     "moveNo": 10,
     "side": "b",
     "last": [
@@ -7508,6 +7807,7 @@
     "event": "?",
     "year": "1873",
     "ply": 28,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "w",
     "last": [
@@ -7532,6 +7832,7 @@
     "event": "?",
     "year": "1873",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -7556,6 +7857,7 @@
     "event": "?",
     "year": "1873",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -7580,6 +7882,7 @@
     "event": "?",
     "year": "1873",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -7604,6 +7907,7 @@
     "event": "?",
     "year": "1873",
     "ply": 73,
+    "added": 1790985600000,
     "moveNo": 37,
     "side": "b",
     "last": [
@@ -7628,6 +7932,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 33,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "b",
     "last": [
@@ -7652,6 +7957,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 49,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "b",
     "last": [
@@ -7676,6 +7982,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 56,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "w",
     "last": [
@@ -7700,6 +8007,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 64,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "w",
     "last": [
@@ -7724,6 +8032,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 72,
+    "added": 1790985600000,
     "moveNo": 37,
     "side": "w",
     "last": [
@@ -7748,6 +8057,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 79,
+    "added": 1790985600000,
     "moveNo": 40,
     "side": "b",
     "last": [
@@ -7772,6 +8082,7 @@
     "event": "Leipzig ol (Men) fin-A",
     "year": "1960",
     "ply": 25,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "b",
     "last": [
@@ -7796,6 +8107,7 @@
     "event": "Leipzig ol (Men) fin-A",
     "year": "1960",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -7820,6 +8132,7 @@
     "event": "Leipzig ol (Men) fin-A",
     "year": "1960",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -7844,6 +8157,7 @@
     "event": "Second Piatigorsky Cup",
     "year": "1966",
     "ply": 21,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "b",
     "last": [
@@ -7868,6 +8182,7 @@
     "event": "Second Piatigorsky Cup",
     "year": "1966",
     "ply": 28,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "w",
     "last": [
@@ -7892,6 +8207,7 @@
     "event": "Second Piatigorsky Cup",
     "year": "1966",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -7916,6 +8232,7 @@
     "event": "Second Piatigorsky Cup",
     "year": "1966",
     "ply": 53,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "b",
     "last": [
@@ -7940,6 +8257,7 @@
     "event": "Reykjavik",
     "year": "1960",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -7964,6 +8282,7 @@
     "event": "Reykjavik",
     "year": "1960",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -7988,6 +8307,7 @@
     "event": "Reykjavik",
     "year": "1960",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -8012,6 +8332,7 @@
     "event": "Reykjavik",
     "year": "1960",
     "ply": 53,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "b",
     "last": [
@@ -8036,6 +8357,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 22,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "w",
     "last": [
@@ -8060,6 +8382,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 29,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "b",
     "last": [
@@ -8084,6 +8407,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 40,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "w",
     "last": [
@@ -8108,6 +8432,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 48,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "w",
     "last": [
@@ -8132,6 +8457,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -8156,6 +8482,7 @@
     "event": "Leipzig ol (Men) qual-D",
     "year": "1960",
     "ply": 9,
+    "added": 1790985600000,
     "moveNo": 5,
     "side": "b",
     "last": [
@@ -8180,6 +8507,7 @@
     "event": "Leipzig ol (Men) qual-D",
     "year": "1960",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -8204,6 +8532,7 @@
     "event": "Leipzig ol (Men) qual-D",
     "year": "1960",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -8228,6 +8557,7 @@
     "event": "Leipzig ol (Men) qual-D",
     "year": "1960",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -8252,6 +8582,7 @@
     "event": "Leipzig ol (Men) qual-D",
     "year": "1960",
     "ply": 45,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "b",
     "last": [
@@ -8276,6 +8607,7 @@
     "event": "USA-ch",
     "year": "1960",
     "ply": 28,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "w",
     "last": [
@@ -8300,6 +8632,7 @@
     "event": "USA-ch",
     "year": "1960",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -8324,6 +8657,7 @@
     "event": "USA-ch",
     "year": "1960",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -8348,6 +8682,7 @@
     "event": "USA-ch",
     "year": "1960",
     "ply": 61,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "b",
     "last": [
@@ -8372,6 +8707,7 @@
     "event": "USA-ch",
     "year": "1960",
     "ply": 73,
+    "added": 1790985600000,
     "moveNo": 37,
     "side": "b",
     "last": [
@@ -8396,6 +8732,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 12,
+    "added": 1790985600000,
     "moveNo": 7,
     "side": "w",
     "last": [
@@ -8420,6 +8757,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -8444,6 +8782,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -8468,6 +8807,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 53,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "b",
     "last": [
@@ -8492,6 +8832,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 16,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "w",
     "last": [
@@ -8516,6 +8857,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 24,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "w",
     "last": [
@@ -8540,6 +8882,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 33,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "b",
     "last": [
@@ -8564,6 +8907,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 40,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "w",
     "last": [
@@ -8588,6 +8932,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 48,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "w",
     "last": [
@@ -8612,6 +8957,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 57,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "b",
     "last": [
@@ -8636,6 +8982,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 64,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "w",
     "last": [
@@ -8660,6 +9007,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 74,
+    "added": 1790985600000,
     "moveNo": 38,
     "side": "w",
     "last": [
@@ -8684,6 +9032,7 @@
     "event": "URS-ch qf",
     "year": "1955",
     "ply": 15,
+    "added": 1790985600000,
     "moveNo": 8,
     "side": "b",
     "last": [
@@ -8708,6 +9057,7 @@
     "event": "URS-ch qf",
     "year": "1955",
     "ply": 41,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "b",
     "last": [
@@ -8732,6 +9082,7 @@
     "event": "URS-ch qf",
     "year": "1955",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -8756,6 +9107,7 @@
     "event": "URS-ch qf",
     "year": "1955",
     "ply": 65,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "b",
     "last": [
@@ -8780,6 +9132,7 @@
     "event": "URS-ch qf",
     "year": "1955",
     "ply": 75,
+    "added": 1790985600000,
     "moveNo": 38,
     "side": "b",
     "last": [
@@ -8804,6 +9157,7 @@
     "event": "?",
     "year": "1949",
     "ply": 10,
+    "added": 1790985600000,
     "moveNo": 6,
     "side": "w",
     "last": [
@@ -8828,6 +9182,7 @@
     "event": "?",
     "year": "1949",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -8852,6 +9207,7 @@
     "event": "?",
     "year": "1949",
     "ply": 34,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "w",
     "last": [
@@ -8876,6 +9232,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 21,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "b",
     "last": [
@@ -8900,6 +9257,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -8924,6 +9282,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -8948,6 +9307,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 50,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "w",
     "last": [
@@ -8972,6 +9332,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 63,
+    "added": 1790985600000,
     "moveNo": 32,
     "side": "b",
     "last": [
@@ -8996,6 +9357,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 71,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "b",
     "last": [
@@ -9020,6 +9382,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 22,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "w",
     "last": [
@@ -9044,6 +9407,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -9068,6 +9432,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 41,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "b",
     "last": [
@@ -9092,6 +9457,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -9116,6 +9482,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 61,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "b",
     "last": [
@@ -9140,6 +9507,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 68,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "w",
     "last": [
@@ -9164,6 +9532,7 @@
     "event": "USSR Championship",
     "year": "1957",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -9188,6 +9557,7 @@
     "event": "USSR Championship",
     "year": "1957",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -9212,6 +9582,7 @@
     "event": "USSR Championship",
     "year": "1957",
     "ply": 53,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "b",
     "last": [
@@ -9236,6 +9607,7 @@
     "event": "USSR Championship",
     "year": "1957",
     "ply": 67,
+    "added": 1790985600000,
     "moveNo": 34,
     "side": "b",
     "last": [
@@ -9260,6 +9632,7 @@
     "event": "USSR Championship",
     "year": "1957",
     "ply": 75,
+    "added": 1790985600000,
     "moveNo": 38,
     "side": "b",
     "last": [
@@ -9286,6 +9659,7 @@
     "event": "?",
     "year": "1981",
     "ply": 34,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "w",
     "last": [
@@ -9325,6 +9699,7 @@
     "event": "?",
     "year": "1981",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -9364,6 +9739,7 @@
     "event": "?",
     "year": "1981",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -9403,6 +9779,7 @@
     "event": "?",
     "year": "1981",
     "ply": 50,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "w",
     "last": [
@@ -9442,6 +9819,7 @@
     "event": "?",
     "year": "1981",
     "ply": 52,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "w",
     "last": [
@@ -9481,6 +9859,7 @@
     "event": "?",
     "year": "1981",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -9520,6 +9899,7 @@
     "event": "?",
     "year": "1981",
     "ply": 56,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "w",
     "last": [
@@ -9559,6 +9939,7 @@
     "event": "Candidates Final",
     "year": "1971",
     "ply": 23,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "b",
     "last": [
@@ -9598,6 +9979,7 @@
     "event": "Candidates Final",
     "year": "1971",
     "ply": 60,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "w",
     "last": [
@@ -9637,6 +10019,7 @@
     "event": "Candidates Final",
     "year": "1971",
     "ply": 65,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "b",
     "last": [
@@ -9676,6 +10059,7 @@
     "event": "Candidates Quarter-Final",
     "year": "1991",
     "ply": 48,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "w",
     "last": [
@@ -9715,6 +10099,7 @@
     "event": "Candidates Quarter-Final",
     "year": "1991",
     "ply": 56,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "w",
     "last": [
@@ -9754,6 +10139,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 9,
+    "added": 1790985600000,
     "moveNo": 5,
     "side": "b",
     "last": [
@@ -9793,6 +10179,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 24,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "w",
     "last": [
@@ -9832,6 +10219,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -9871,6 +10259,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -9910,6 +10299,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 45,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "b",
     "last": [
@@ -9949,6 +10339,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 57,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "b",
     "last": [
@@ -9988,6 +10379,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 60,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "w",
     "last": [
@@ -10027,6 +10419,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -10066,6 +10459,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -10105,6 +10499,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 53,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "b",
     "last": [
@@ -10144,6 +10539,7 @@
     "event": "Moscow TCh",
     "year": "1961",
     "ply": 62,
+    "added": 1790985600000,
     "moveNo": 32,
     "side": "w",
     "last": [
@@ -10183,6 +10579,7 @@
     "event": "?",
     "year": "1895",
     "ply": 13,
+    "added": 1790985600000,
     "moveNo": 7,
     "side": "b",
     "last": [
@@ -10222,6 +10619,7 @@
     "event": "?",
     "year": "1895",
     "ply": 14,
+    "added": 1790985600000,
     "moveNo": 8,
     "side": "w",
     "last": [
@@ -10261,6 +10659,7 @@
     "event": "?",
     "year": "1895",
     "ply": 19,
+    "added": 1790985600000,
     "moveNo": 10,
     "side": "b",
     "last": [
@@ -10300,6 +10699,7 @@
     "event": "?",
     "year": "1895",
     "ply": 26,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "w",
     "last": [
@@ -10339,6 +10739,7 @@
     "event": "?",
     "year": "1895",
     "ply": 29,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "b",
     "last": [
@@ -10378,6 +10779,7 @@
     "event": "?",
     "year": "1895",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -10417,6 +10819,7 @@
     "event": "?",
     "year": "1895",
     "ply": 33,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "b",
     "last": [
@@ -10456,6 +10859,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -10495,6 +10899,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 58,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "w",
     "last": [
@@ -10534,6 +10939,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 60,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "w",
     "last": [
@@ -10573,6 +10979,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 67,
+    "added": 1790985600000,
     "moveNo": 34,
     "side": "b",
     "last": [
@@ -10612,6 +11019,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 24,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "w",
     "last": [
@@ -10651,6 +11059,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 29,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "b",
     "last": [
@@ -10690,6 +11099,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -10729,6 +11139,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 58,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "w",
     "last": [
@@ -10768,6 +11179,7 @@
     "event": "Fischer - Reshevsky",
     "year": "1961",
     "ply": 74,
+    "added": 1790985600000,
     "moveNo": 38,
     "side": "w",
     "last": [
@@ -10807,6 +11219,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 12,
+    "added": 1790985600000,
     "moveNo": 7,
     "side": "w",
     "last": [
@@ -10846,6 +11259,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 16,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "w",
     "last": [
@@ -10885,6 +11299,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 18,
+    "added": 1790985600000,
     "moveNo": 10,
     "side": "w",
     "last": [
@@ -10924,6 +11339,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 19,
+    "added": 1790985600000,
     "moveNo": 10,
     "side": "b",
     "last": [
@@ -10963,6 +11379,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 24,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "w",
     "last": [
@@ -11002,6 +11419,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 30,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "w",
     "last": [
@@ -11041,6 +11459,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 34,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "w",
     "last": [
@@ -11080,6 +11499,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 45,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "b",
     "last": [
@@ -11119,6 +11539,7 @@
     "event": "Clock simul, 10b",
     "year": "1964",
     "ply": 52,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "w",
     "last": [
@@ -11158,6 +11579,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 19,
+    "added": 1790985600000,
     "moveNo": 10,
     "side": "b",
     "last": [
@@ -11197,6 +11619,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 22,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "w",
     "last": [
@@ -11236,6 +11659,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -11275,6 +11699,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 59,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "b",
     "last": [
@@ -11314,6 +11739,7 @@
     "event": "Stockholm Interzonal",
     "year": "1962",
     "ply": 70,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "w",
     "last": [
@@ -11353,6 +11779,7 @@
     "event": "US Championship 1963/64",
     "year": "1963",
     "ply": 18,
+    "added": 1790985600000,
     "moveNo": 10,
     "side": "w",
     "last": [
@@ -11392,6 +11819,7 @@
     "event": "US Championship 1963/64",
     "year": "1963",
     "ply": 33,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "b",
     "last": [
@@ -11431,6 +11859,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 32,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "w",
     "last": [
@@ -11470,6 +11899,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 56,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "w",
     "last": [
@@ -11509,6 +11939,7 @@
     "event": "FRG-USA",
     "year": "1960",
     "ply": 57,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "b",
     "last": [
@@ -11548,6 +11979,7 @@
     "event": "Havana ol (Men) fin-A",
     "year": "1966",
     "ply": 25,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "b",
     "last": [
@@ -11587,6 +12019,7 @@
     "event": "Havana ol (Men) fin-A",
     "year": "1966",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -11626,6 +12059,7 @@
     "event": "Havana ol (Men) fin-A",
     "year": "1966",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -11665,6 +12099,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 23,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "b",
     "last": [
@@ -11704,6 +12139,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -11743,6 +12179,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -11782,6 +12219,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 41,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "b",
     "last": [
@@ -11821,6 +12259,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -11860,6 +12299,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 14,
+    "added": 1790985600000,
     "moveNo": 8,
     "side": "w",
     "last": [
@@ -11899,6 +12339,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 22,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "w",
     "last": [
@@ -11938,6 +12379,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -11977,6 +12419,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 42,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "w",
     "last": [
@@ -12016,6 +12459,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 61,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "b",
     "last": [
@@ -12055,6 +12499,7 @@
     "event": "USSR Championship",
     "year": "1959",
     "ply": 62,
+    "added": 1790985600000,
     "moveNo": 32,
     "side": "w",
     "last": [
@@ -12094,6 +12539,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 11,
+    "added": 1790985600000,
     "moveNo": 6,
     "side": "b",
     "last": [
@@ -12133,6 +12579,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -12172,6 +12619,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -12211,6 +12659,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 38,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "w",
     "last": [
@@ -12250,6 +12699,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -12289,6 +12739,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 41,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "b",
     "last": [
@@ -12328,6 +12779,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -12367,6 +12819,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -12406,6 +12859,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 48,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "w",
     "last": [
@@ -12445,6 +12899,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 49,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "b",
     "last": [
@@ -12484,6 +12939,7 @@
     "event": "Asztalos Memorial 6th",
     "year": "1963",
     "ply": 57,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "b",
     "last": [
@@ -12523,6 +12979,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -12562,6 +13019,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 32,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "w",
     "last": [
@@ -12601,6 +13059,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 50,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "w",
     "last": [
@@ -12640,6 +13099,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 58,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "w",
     "last": [
@@ -12679,6 +13139,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 63,
+    "added": 1790985600000,
     "moveNo": 32,
     "side": "b",
     "last": [
@@ -12718,6 +13179,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 65,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "b",
     "last": [
@@ -12757,6 +13219,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 66,
+    "added": 1790985600000,
     "moveNo": 34,
     "side": "w",
     "last": [
@@ -12796,6 +13259,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 15,
+    "added": 1790985600000,
     "moveNo": 8,
     "side": "b",
     "last": [
@@ -12835,6 +13299,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 23,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "b",
     "last": [
@@ -12874,6 +13339,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 25,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "b",
     "last": [
@@ -12913,6 +13379,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -12952,6 +13419,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -12991,6 +13459,7 @@
     "event": "Riga Pioneer Palace Championship",
     "year": "1949",
     "ply": 40,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "w",
     "last": [
@@ -13030,6 +13499,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -13069,6 +13539,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -13108,6 +13579,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 68,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "w",
     "last": [
@@ -13147,6 +13619,7 @@
     "event": "Kislovodsk",
     "year": "1964",
     "ply": 78,
+    "added": 1790985600000,
     "moveNo": 40,
     "side": "w",
     "last": [
@@ -13186,6 +13659,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 18,
+    "added": 1790985600000,
     "moveNo": 10,
     "side": "w",
     "last": [
@@ -13225,6 +13699,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 23,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "b",
     "last": [
@@ -13264,6 +13739,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 42,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "w",
     "last": [
@@ -13303,6 +13779,7 @@
     "event": "Botvinnik - Tal World Championship Match",
     "year": "1960",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -13342,6 +13819,7 @@
     "event": "?",
     "year": "1993",
     "ply": 28,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "w",
     "last": [
@@ -13381,6 +13859,7 @@
     "event": "?",
     "year": "1993",
     "ply": 33,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "b",
     "last": [
@@ -13420,6 +13899,7 @@
     "event": "?",
     "year": "1993",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -13459,6 +13939,7 @@
     "event": "?",
     "year": "1993",
     "ply": 54,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "w",
     "last": [
@@ -13498,6 +13979,7 @@
     "event": "?",
     "year": "1993",
     "ply": 58,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "w",
     "last": [
@@ -13537,6 +14019,7 @@
     "event": "?",
     "year": "1993",
     "ply": 59,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "b",
     "last": [
@@ -13576,6 +14059,7 @@
     "event": "?",
     "year": "1993",
     "ply": 65,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "b",
     "last": [
@@ -13615,6 +14099,7 @@
     "event": "?",
     "year": "1993",
     "ply": 66,
+    "added": 1790985600000,
     "moveNo": 34,
     "side": "w",
     "last": [
@@ -13654,6 +14139,7 @@
     "event": "?",
     "year": "1993",
     "ply": 67,
+    "added": 1790985600000,
     "moveNo": 34,
     "side": "b",
     "last": [
@@ -13693,6 +14179,7 @@
     "event": "?",
     "year": "1993",
     "ply": 70,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "w",
     "last": [
@@ -13732,6 +14219,7 @@
     "event": "?",
     "year": "1993",
     "ply": 71,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "b",
     "last": [
@@ -13771,6 +14259,7 @@
     "event": "?",
     "year": "1993",
     "ply": 74,
+    "added": 1790985600000,
     "moveNo": 38,
     "side": "w",
     "last": [
@@ -13810,6 +14299,7 @@
     "event": "?",
     "year": "1993",
     "ply": 77,
+    "added": 1790985600000,
     "moveNo": 39,
     "side": "b",
     "last": [
@@ -13849,6 +14339,7 @@
     "event": "?",
     "year": "1993",
     "ply": 78,
+    "added": 1790985600000,
     "moveNo": 40,
     "side": "w",
     "last": [
@@ -13888,6 +14379,7 @@
     "event": "?",
     "year": "1993",
     "ply": 79,
+    "added": 1790985600000,
     "moveNo": 40,
     "side": "b",
     "last": [
@@ -13927,6 +14419,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -13966,6 +14459,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -14005,6 +14499,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 45,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "b",
     "last": [
@@ -14044,6 +14539,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -14083,6 +14579,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 48,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "w",
     "last": [
@@ -14122,6 +14619,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -14161,6 +14659,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 56,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "w",
     "last": [
@@ -14200,6 +14699,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 63,
+    "added": 1790985600000,
     "moveNo": 32,
     "side": "b",
     "last": [
@@ -14239,6 +14739,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 65,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "b",
     "last": [
@@ -14278,6 +14779,7 @@
     "event": "USSR Championship",
     "year": "1960",
     "ply": 76,
+    "added": 1790985600000,
     "moveNo": 39,
     "side": "w",
     "last": [
@@ -14317,6 +14819,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 48,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "w",
     "last": [
@@ -14356,6 +14859,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 57,
+    "added": 1790985600000,
     "moveNo": 29,
     "side": "b",
     "last": [
@@ -14395,6 +14899,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 61,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "b",
     "last": [
@@ -14434,6 +14939,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 63,
+    "added": 1790985600000,
     "moveNo": 32,
     "side": "b",
     "last": [
@@ -14473,6 +14979,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 68,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "w",
     "last": [
@@ -14512,6 +15019,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 72,
+    "added": 1790985600000,
     "moveNo": 37,
     "side": "w",
     "last": [
@@ -14551,6 +15059,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 73,
+    "added": 1790985600000,
     "moveNo": 37,
     "side": "b",
     "last": [
@@ -14590,6 +15099,7 @@
     "event": "XIII USSR Ch",
     "year": "1944",
     "ply": 74,
+    "added": 1790985600000,
     "moveNo": 38,
     "side": "w",
     "last": [
@@ -14629,6 +15139,7 @@
     "event": "US Championship",
     "year": "1975",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -14668,6 +15179,7 @@
     "event": "US Championship",
     "year": "1975",
     "ply": 67,
+    "added": 1790985600000,
     "moveNo": 34,
     "side": "b",
     "last": [
@@ -14707,6 +15219,7 @@
     "event": "US Championship",
     "year": "1975",
     "ply": 69,
+    "added": 1790985600000,
     "moveNo": 35,
     "side": "b",
     "last": [
@@ -14746,6 +15259,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 16,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "w",
     "last": [
@@ -14785,6 +15299,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -14824,6 +15339,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 52,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "w",
     "last": [
@@ -14863,6 +15379,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -14902,6 +15419,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 72,
+    "added": 1790985600000,
     "moveNo": 37,
     "side": "w",
     "last": [
@@ -14941,6 +15459,7 @@
     "event": "World Championship Match",
     "year": "1993",
     "ply": 78,
+    "added": 1790985600000,
     "moveNo": 40,
     "side": "w",
     "last": [
@@ -14980,6 +15499,7 @@
     "event": "?",
     "year": "1873",
     "ply": 19,
+    "added": 1790985600000,
     "moveNo": 10,
     "side": "b",
     "last": [
@@ -15019,6 +15539,7 @@
     "event": "?",
     "year": "1873",
     "ply": 28,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "w",
     "last": [
@@ -15058,6 +15579,7 @@
     "event": "?",
     "year": "1873",
     "ply": 33,
+    "added": 1790985600000,
     "moveNo": 17,
     "side": "b",
     "last": [
@@ -15097,6 +15619,7 @@
     "event": "?",
     "year": "1873",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -15136,6 +15659,7 @@
     "event": "?",
     "year": "1873",
     "ply": 38,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "w",
     "last": [
@@ -15175,6 +15699,7 @@
     "event": "?",
     "year": "1873",
     "ply": 47,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "b",
     "last": [
@@ -15214,6 +15739,7 @@
     "event": "?",
     "year": "1873",
     "ply": 53,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "b",
     "last": [
@@ -15253,6 +15779,7 @@
     "event": "?",
     "year": "1873",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -15292,6 +15819,7 @@
     "event": "?",
     "year": "1873",
     "ply": 75,
+    "added": 1790985600000,
     "moveNo": 38,
     "side": "b",
     "last": [
@@ -15331,6 +15859,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 52,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "w",
     "last": [
@@ -15370,6 +15899,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 64,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "w",
     "last": [
@@ -15409,6 +15939,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 67,
+    "added": 1790985600000,
     "moveNo": 34,
     "side": "b",
     "last": [
@@ -15448,6 +15979,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 70,
+    "added": 1790985600000,
     "moveNo": 36,
     "side": "w",
     "last": [
@@ -15487,6 +16019,7 @@
     "event": "Zurich",
     "year": "1959",
     "ply": 76,
+    "added": 1790985600000,
     "moveNo": 39,
     "side": "w",
     "last": [
@@ -15526,6 +16059,7 @@
     "event": "Leipzig ol (Men) fin-A",
     "year": "1960",
     "ply": 41,
+    "added": 1790985600000,
     "moveNo": 21,
     "side": "b",
     "last": [
@@ -15565,6 +16099,7 @@
     "event": "Second Piatigorsky Cup",
     "year": "1966",
     "ply": 21,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "b",
     "last": [
@@ -15604,6 +16139,7 @@
     "event": "Reykjavik",
     "year": "1960",
     "ply": 29,
+    "added": 1790985600000,
     "moveNo": 15,
     "side": "b",
     "last": [
@@ -15643,6 +16179,7 @@
     "event": "Reykjavik",
     "year": "1960",
     "ply": 36,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "w",
     "last": [
@@ -15682,6 +16219,7 @@
     "event": "Reykjavik",
     "year": "1960",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -15721,6 +16259,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 22,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "w",
     "last": [
@@ -15760,6 +16299,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 23,
+    "added": 1790985600000,
     "moveNo": 12,
     "side": "b",
     "last": [
@@ -15799,6 +16339,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 25,
+    "added": 1790985600000,
     "moveNo": 13,
     "side": "b",
     "last": [
@@ -15838,6 +16379,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -15877,6 +16419,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 42,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "w",
     "last": [
@@ -15916,6 +16459,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 48,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "w",
     "last": [
@@ -15955,6 +16499,7 @@
     "event": "Skopje",
     "year": "1967",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -15994,6 +16539,7 @@
     "event": "Leipzig ol (Men) qual-D",
     "year": "1960",
     "ply": 27,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "b",
     "last": [
@@ -16033,6 +16579,7 @@
     "event": "USA-ch",
     "year": "1960",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -16072,6 +16619,7 @@
     "event": "USA-ch",
     "year": "1960",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -16111,6 +16659,7 @@
     "event": "USA-ch",
     "year": "1960",
     "ply": 65,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "b",
     "last": [
@@ -16150,6 +16699,7 @@
     "event": "USA-ch",
     "year": "1960",
     "ply": 67,
+    "added": 1790985600000,
     "moveNo": 34,
     "side": "b",
     "last": [
@@ -16189,6 +16739,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 15,
+    "added": 1790985600000,
     "moveNo": 8,
     "side": "b",
     "last": [
@@ -16228,6 +16779,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -16267,6 +16819,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 42,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "w",
     "last": [
@@ -16306,6 +16859,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -16345,6 +16899,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 45,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "b",
     "last": [
@@ -16384,6 +16939,7 @@
     "event": "Match for USSR Master title",
     "year": "1954",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -16423,6 +16979,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 16,
+    "added": 1790985600000,
     "moveNo": 9,
     "side": "w",
     "last": [
@@ -16462,6 +17019,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 20,
+    "added": 1790985600000,
     "moveNo": 11,
     "side": "w",
     "last": [
@@ -16501,6 +17059,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 37,
+    "added": 1790985600000,
     "moveNo": 19,
     "side": "b",
     "last": [
@@ -16540,6 +17099,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 48,
+    "added": 1790985600000,
     "moveNo": 25,
     "side": "w",
     "last": [
@@ -16579,6 +17139,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -16618,6 +17179,7 @@
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
     "ply": 65,
+    "added": 1790985600000,
     "moveNo": 33,
     "side": "b",
     "last": [
@@ -16657,6 +17219,7 @@
     "event": "URS-ch qf",
     "year": "1955",
     "ply": 15,
+    "added": 1790985600000,
     "moveNo": 8,
     "side": "b",
     "last": [
@@ -16696,6 +17259,7 @@
     "event": "URS-ch qf",
     "year": "1955",
     "ply": 46,
+    "added": 1790985600000,
     "moveNo": 24,
     "side": "w",
     "last": [
@@ -16735,6 +17299,7 @@
     "event": "URS-ch qf",
     "year": "1955",
     "ply": 51,
+    "added": 1790985600000,
     "moveNo": 26,
     "side": "b",
     "last": [
@@ -16774,6 +17339,7 @@
     "event": "?",
     "year": "1949",
     "ply": 26,
+    "added": 1790985600000,
     "moveNo": 14,
     "side": "w",
     "last": [
@@ -16813,6 +17379,7 @@
     "event": "?",
     "year": "1949",
     "ply": 38,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "w",
     "last": [
@@ -16852,6 +17419,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -16891,6 +17459,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 35,
+    "added": 1790985600000,
     "moveNo": 18,
     "side": "b",
     "last": [
@@ -16930,6 +17499,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 43,
+    "added": 1790985600000,
     "moveNo": 22,
     "side": "b",
     "last": [
@@ -16969,6 +17539,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 52,
+    "added": 1790985600000,
     "moveNo": 27,
     "side": "w",
     "last": [
@@ -17008,6 +17579,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 55,
+    "added": 1790985600000,
     "moveNo": 28,
     "side": "b",
     "last": [
@@ -17047,6 +17619,7 @@
     "event": "USSR Championship",
     "year": "1956",
     "ply": 60,
+    "added": 1790985600000,
     "moveNo": 31,
     "side": "w",
     "last": [
@@ -17086,6 +17659,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 31,
+    "added": 1790985600000,
     "moveNo": 16,
     "side": "b",
     "last": [
@@ -17125,6 +17699,7 @@
     "event": "USSR Championship",
     "year": "1958",
     "ply": 58,
+    "added": 1790985600000,
     "moveNo": 30,
     "side": "w",
     "last": [
@@ -17164,6 +17739,7 @@
     "event": "USSR Championship",
     "year": "1957",
     "ply": 39,
+    "added": 1790985600000,
     "moveNo": 20,
     "side": "b",
     "last": [
@@ -17203,6 +17779,7 @@
     "event": "USSR Championship",
     "year": "1957",
     "ply": 44,
+    "added": 1790985600000,
     "moveNo": 23,
     "side": "w",
     "last": [
@@ -17242,6 +17819,7 @@
     "event": "USSR Championship",
     "year": "1957",
     "ply": 73,
+    "added": 1790985600000,
     "moveNo": 37,
     "side": "b",
     "last": [

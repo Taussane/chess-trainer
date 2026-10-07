@@ -14,6 +14,7 @@
    "event": "?",
    "year": "1981",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Kasparov – Andersson",
    "sans": [
     "d4",
@@ -92,6 +93,7 @@
    "event": "Candidates Final",
    "year": "1971",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Fischer – Petrosian",
    "sans": [
     "e4",
@@ -178,6 +180,7 @@
    "event": "Candidates Quarter-Final",
    "year": "1991",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Short – Gelfand",
    "sans": [
     "e4",
@@ -258,6 +261,7 @@
    "event": "Moscow TCh",
    "year": "1961",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Shamkovich – Prokhorovich",
    "sans": [
     "e4",
@@ -352,6 +356,7 @@
    "event": "Moscow TCh",
    "year": "1961",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Shamkovich – Chistiakov",
    "sans": [
     "e4",
@@ -444,6 +449,7 @@
    "event": "?",
    "year": "1895",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Steinitz – Von Bardeleben",
    "sans": [
     "e4",
@@ -512,6 +518,7 @@
    "event": "Stockholm Interzonal",
    "year": "1962",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Fischer – Korchnoi",
    "sans": [
     "e4",
@@ -618,6 +625,7 @@
    "event": "Fischer - Reshevsky",
    "year": "1961",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Fischer – Reshevsky",
    "sans": [
     "e4",
@@ -712,6 +720,7 @@
    "event": "Clock simul, 10b",
    "year": "1964",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Fischer – Celle",
    "sans": [
     "e4",
@@ -784,6 +793,7 @@
    "event": "Stockholm Interzonal",
    "year": "1962",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Fischer – Bolbochan",
    "sans": [
     "e4",
@@ -876,6 +886,7 @@
    "event": "US Championship 1963/64",
    "year": "1963",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Fischer – Benko",
    "sans": [
     "e4",
@@ -936,6 +947,7 @@
    "event": "FRG-USA",
    "year": "1960",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Fischer – Darga",
    "sans": [
     "e4",
@@ -1014,6 +1026,7 @@
    "event": "Havana ol (Men) fin-A",
    "year": "1966",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Fischer – Gligoric",
    "sans": [
     "e4",
@@ -1082,6 +1095,7 @@
    "event": "USSR Championship",
    "year": "1958",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Tal – Geller",
    "sans": [
     "e4",
@@ -1166,6 +1180,7 @@
    "event": "USSR Championship",
    "year": "1959",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Tal – Polugaevsky",
    "sans": [
     "e4",
@@ -1252,6 +1267,7 @@
    "event": "Asztalos Memorial 6th",
    "year": "1963",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Tal – Bilek",
    "sans": [
     "e4",
@@ -1330,6 +1346,7 @@
    "event": "Botvinnik - Tal World Championship Match",
    "year": "1960",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Botvinnik – Tal",
    "sans": [
     "d4",
@@ -1430,6 +1447,7 @@
    "event": "Riga Pioneer Palace Championship",
    "year": "1949",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Tal – Zilber",
    "sans": [
     "e4",
@@ -1514,6 +1532,7 @@
    "event": "Kislovodsk",
    "year": "1964",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Tal – Fuchs",
    "sans": [
     "d4",
@@ -1618,6 +1637,7 @@
    "event": "Botvinnik - Tal World Championship Match",
    "year": "1960",
    "result": "1-0",
+   "added": 1790985600000,
    "title": "Tal – Botvinnik",
    "sans": [
     "e4",
@@ -1700,6 +1720,7 @@
    "event": "?",
    "year": "1993",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Kamsky – Karpov",
    "sans": [
     "e4",
@@ -1817,6 +1838,7 @@
    "event": "USSR Championship",
    "year": "1960",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Bronstein – Shamkovich",
    "sans": [
     "c4",
@@ -1922,6 +1944,7 @@
    "event": "XIII USSR Ch",
    "year": "1944",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Lisitsyn – Bronstein",
    "sans": [
     "Nf3",
@@ -2033,6 +2056,7 @@
    "event": "US Championship",
    "year": "1975",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Mednis – Browne",
    "sans": [
     "e4",
@@ -2126,6 +2150,7 @@
    "event": "World Championship Match",
    "year": "1993",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Karpov – Timman",
    "sans": [
     "Nf3",
@@ -2225,6 +2250,7 @@
    "event": "?",
    "year": "1873",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Rosenthal – Steinitz",
    "sans": [
     "e4",
@@ -2320,6 +2346,7 @@
    "event": "Zurich",
    "year": "1959",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Olafsson – Fischer",
    "sans": [
     "c4",
@@ -2419,6 +2446,7 @@
    "event": "Leipzig ol (Men) fin-A",
    "year": "1960",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Szabo – Fischer",
    "sans": [
     "d4",
@@ -2486,6 +2514,7 @@
    "event": "Second Piatigorsky Cup",
    "year": "1966",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Portisch – Fischer",
    "sans": [
     "d4",
@@ -2575,6 +2604,7 @@
    "event": "Reykjavik",
    "year": "1960",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Gudmundsson – Fischer",
    "sans": [
     "d4",
@@ -2648,6 +2678,7 @@
    "event": "Skopje",
    "year": "1967",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Kholmov – Fischer",
    "sans": [
     "d4",
@@ -2731,6 +2762,7 @@
    "event": "Leipzig ol (Men) qual-D",
    "year": "1960",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Letelier Martner – Fischer",
    "sans": [
     "d4",
@@ -2796,6 +2828,7 @@
    "event": "USA-ch",
    "year": "1960",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Lombardy – Fischer",
    "sans": [
     "e4",
@@ -2901,6 +2934,7 @@
    "event": "Match for USSR Master title",
    "year": "1954",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Saigin – Tal",
    "sans": [
     "d4",
@@ -2978,6 +3012,7 @@
    "event": "Bled-Zagreb-Belgrade Candidates",
    "year": "1959",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Fischer – Tal",
    "sans": [
     "e4",
@@ -3101,6 +3136,7 @@
    "event": "URS-ch qf",
    "year": "1955",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Gipslis – Tal",
    "sans": [
     "e4",
@@ -3234,6 +3270,7 @@
    "event": "?",
    "year": "1949",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Kholmov – Tal",
    "sans": [
     "c4",
@@ -3295,6 +3332,7 @@
    "event": "USSR Championship",
    "year": "1956",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Khasin – Tal",
    "sans": [
     "e4",
@@ -3386,6 +3424,7 @@
    "event": "USSR Championship",
    "year": "1958",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Averbakh – Tal",
    "sans": [
     "d4",
@@ -3475,6 +3514,7 @@
    "event": "USSR Championship",
    "year": "1957",
    "result": "0-1",
+   "added": 1790985600000,
    "title": "Keres – Tal",
    "sans": [
     "d4",
