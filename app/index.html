@@ -138,6 +138,8 @@
   .lichess-btn span{font-size:1.2rem; line-height:1;}
   .mg-account{display:flex; justify-content:space-between; gap:12px; align-items:center; margin:0; font-size:0.9rem;}
   .mg-account b{color:var(--text);}
+  .mg-cc{display:flex; gap:8px;}
+  .mg-cc input{flex:1; min-width:0; background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:7px 10px; font:inherit; font-size:0.9rem;}
   .mg-account .link-inline{white-space:nowrap;}
   .pf-facts b{color:var(--text); font-weight:600; font-variant-numeric:tabular-nums;}
   .wk-table{border-collapse:collapse; width:100%; font-size:0.86rem; font-variant-numeric:tabular-nums;}
@@ -1897,6 +1899,8 @@ function speedOf(h){
 function gameIdOf(h, sans){
   const m = (h.Site || '').match(/lichess\.org\/(\w{8})/);
   if(m) return m[1];
+  const c = ((h.Link || '') + ' ' + (h.Site || '')).match(/chess\.com\/game\/(?:live|daily)\/(\d+)/);
+  if(c) return 'cc-' + c[1];   // Chess.com games: prefixed, so ids from the two sites never meet
   let x = 0; const str = (h.White||'')+(h.Black||'')+(h.Date||'')+sans.join(' ');
   for(let k=0; k<str.length; k++) x = (x*31 + str.charCodeAt(k)) | 0;
   return 'g' + (x>>>0).toString(36);
@@ -1977,7 +1981,7 @@ const API_BASE = (()=>{ try{ return localStorage.getItem('cst.api') || ''; }catc
 const OWNER_LS = 'cst.owner';   // which account this browser's copy belongs to ('' = none yet)
 const localOwner = ()=>{ try{ return localStorage.getItem(OWNER_LS) || ''; }catch(e){ return ''; } };
 function clearLocalData(){
-  [LS_KEY, MY_LS, PROFILE_LS, REPLAY_LS, PLAYED_LS, 'cst.routineNext', 'cst.lichess', OWNER_LS].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  [LS_KEY, MY_LS, PROFILE_LS, REPLAY_LS, PLAYED_LS, 'cst.routineNext', 'cst.lichess', 'cst.chesscom', OWNER_LS].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
 }
 let storePromise = null;
 function getStore(){ return storePromise || (storePromise = openStore().catch(()=>null)); }
@@ -1999,6 +2003,7 @@ async function openStore(){
     clearLocalData(); results = []; myGames = []; profile = { joinedAt:null }; legacyMissed = []; played = { day: todayKey(), keys: [] };
   }
   try{ localStorage.setItem(OWNER_LS, me.account.id); }catch(e){}   // a copy with no owner yet joins your account
+  try{ const cc = await db.doc('meta/chesscom').get(); setChesscomName(cc.exists && cc.data() ? cc.data().username : ''); }catch(e){}   // your Chess.com connection
   return { db, id: me.account.id, server: true };
 }
 let syncStatus = '';   // 'ok', or why the account couldn't be reached (shown in the profile)
@@ -2058,43 +2063,90 @@ async function deleteMyAccount(){
   clearLocalData(); location.reload();
 }
 
-// Your games come from Lichess by themselves: on each visit (and when you come back to the page
-// after a while), the games played since the newest one here are added; the first time, your last
-// CORE_GAMES. Then rotateMyGames keeps the newest CORE_GAMES in the core list.
-let mySync = { at:0, added:0, error:'' };
-async function syncLichessGames(){
-  if(!lichessAuth || myFetching) return;
-  myFetching = true; if(screen==='mygames') render();
-  const newest = myGames.reduce((m, g)=>Math.max(m, g.playedAt || 0), 0);
+// Your games come in by themselves, from Lichess (your login) and from Chess.com (the username
+// you connect, read through the account server: Chess.com offers no sign-in to other sites yet).
+// On each visit (and when you come back to the page after a while), each site's games played since
+// the newest one here are added; the first time, your last CORE_GAMES. Then rotateMyGames keeps
+// each site's newest CORE_GAMES in the core list.
+const siteOf = g=>g.site || (String(g.id).startsWith('cc-') ? 'chesscom' : 'lichess');
+const SITE_NAMES = { lichess:'Lichess', chesscom:'Chess.com', file:'PGN files' };
+let mySync = { at:0, lichess:null, chesscom:null };   // per site: { added, error }
+let chesscomName = '';
+try{ chesscomName = localStorage.getItem('cst.chesscom') || ''; }catch(e){}
+function setChesscomName(n){ chesscomName = n || ''; try{ n ? localStorage.setItem('cst.chesscom', n) : localStorage.removeItem('cst.chesscom'); }catch(e){} }
+const newestOf = site=>myGames.filter(g=>siteOf(g)===site).reduce((m, g)=>Math.max(m, g.playedAt || 0), 0);
+async function syncLichess(){
+  const newest = newestOf('lichess');
   const url = lichessExportUrl(lichessAuth.username) + (newest ? '&since=' + (newest + 1000) : '');
-  let error = '', added = 0;
   try{
     const res = await fetch(url, { headers:{ Accept:'application/x-chess-pgn', Authorization:'Bearer ' + lichessAuth.token } });
-    if(res.status===401){ setLichessAuth(null); error = 'your Lichess login has expired; log in again'; }
-    else if(res.status===429) error = 'Lichess asks to wait a minute';
-    else if(!res.ok) error = `Lichess didn't answer (error ${res.status})`;
-    else { const text = await res.text(); const before = myGames.length; if(text.trim()) importPgnText(text, true); added = myGames.length - before; }
-  }catch(e){ error = "couldn't reach Lichess"; }
-  mySync = { at: Date.now(), added, error };
+    if(res.status===401){ setLichessAuth(null); return { error:'your Lichess login has expired; log in again' }; }
+    if(res.status===429) return { error:'Lichess asks to wait a minute' };
+    if(!res.ok) return { error:`Lichess didn't answer (error ${res.status})` };
+    const text = await res.text(), before = myGames.length;
+    if(text.trim()) importPgnText(text, true, lichessAuth.username);
+    return { added: myGames.length - before };
+  }catch(e){ return { error:"couldn't reach Lichess" }; }
+}
+async function syncChesscom(){
+  const newest = newestOf('chesscom');
+  try{
+    const r = await fetch(API_BASE + `/api/chesscom/games?user=${encodeURIComponent(chesscomName)}&max=${CORE_GAMES}` + (newest ? '&since=' + (newest + 1000) : ''),
+      { headers:{ Authorization:'Bearer ' + lichessAuth.token, 'X-Auth-Site':'lichess' } });
+    if(!r.ok){ let why = ''; try{ why = (await r.json()).error; }catch(e){} return { error: why || `error ${r.status}` }; }
+    const text = await r.text(), before = myGames.length;
+    if(text.trim()) importPgnText(text, true, chesscomName);
+    return { added: myGames.length - before };
+  }catch(e){ return { error:"couldn't reach Chess.com" }; }
+}
+async function syncGames(){
+  if(!lichessAuth || myFetching) return;
+  myFetching = true; if(screen==='mygames') render();
+  const lichess = await syncLichess();
+  const chesscom = chesscomName && API_BASE && lichessAuth ? await syncChesscom() : null;
+  mySync = { at: Date.now(), lichess, chesscom };
   myFetching = false;
   rotateMyGames();
   render();
 }
+const syncLichessGames = syncGames;   // (older name, used by tests)
 document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState==='visible' && DIRECT_LICHESS && lichessAuth && myGamesLoaded && Date.now() - mySync.at > 10*6e4) syncLichessGames();
+  if(document.visibilityState==='visible' && DIRECT_LICHESS && lichessAuth && myGamesLoaded && Date.now() - mySync.at > 10*6e4) syncGames();
 });
-// The core list: your newest CORE_GAMES games. An older game leaves it; it is kept (out of the
-// list) only while it has positions in Replay, then removed from your account. Of those kept for
-// Replay, only the newest REPLAY_GAMES stay: past that the oldest go, with their positions.
+// Connecting a Chess.com username (checked with Chess.com), kept in your account.
+async function connectChesscom(name){
+  name = String(name || '').trim();
+  if(!name){ myImportNote = 'Enter your Chess.com username.'; render(); return; }
+  try{
+    const r = await serverCall(lichessAuth, 'GET', '/api/chesscom/player?user=' + encodeURIComponent(name));
+    setChesscomName(r.username);
+    const store = await getStore(); if(store && store.db) store.db.doc('meta/chesscom').set({ username: r.username }).catch(()=>{});
+    myImportNote = ''; render();
+    syncGames();
+  }catch(e){ myImportNote = /404/.test(e.message) ? `No Chess.com player named ${name.replace(/</g,'&lt;')}.` : `Couldn't check Chess.com: ${e.message}.`; render(); }
+}
+async function disconnectChesscom(){
+  setChesscomName('');
+  const store = await getStore(); if(store && store.db) store.db.doc('meta/chesscom').set({ username:'' }).catch(()=>{});
+  const gone = myGames.filter(g=>siteOf(g)==='chesscom');
+  myGames = myGames.filter(g=>siteOf(g)!=='chesscom'); saveMyLocal();
+  if(myGamesCol) gone.forEach(g=>myGamesCol.doc(g.id).delete().catch(()=>{}));
+  if(mySync) mySync.chesscom = null;
+  onOwnPositionsChanged();
+}
+// The core list: each site's newest CORE_GAMES games. An older game leaves it; it is kept (out of
+// the list) only while it has positions in Replay, then removed from your account. Of those kept
+// for Replay, only each site's newest REPLAY_GAMES stay: past that the oldest go, with their positions.
 function rotateMyGames(){
-  const byNew = myGames.slice().sort((x,y)=>gamePlayedAt(y) - gamePlayedAt(x));
   let changed = false;
-  byNew.forEach((g, i)=>{ const out = i >= CORE_GAMES; if(!!g.retired!==out){ g.retired = out; saveMyGame(g); changed = true; } });
+  const bySite = {}; myGames.forEach(g=>(bySite[siteOf(g)] = bySite[siteOf(g)] || []).push(g));
+  Object.values(bySite).forEach(list=>list.sort((x,y)=>gamePlayedAt(y) - gamePlayedAt(x))
+    .forEach((g, i)=>{ const out = i >= CORE_GAMES; if(!!g.retired!==out){ g.retired = out; saveMyGame(g); changed = true; } }));
   if(progressLoaded && myGamesLoaded){
-    const missed = new Set(missedList().map(e=>e.key));
-    const forReplay = myGames.filter(g=>g.retired && (g.positions||[]).some(p=>missed.has(p.key)))
-      .sort((x,y)=>gamePlayedAt(y) - gamePlayedAt(x)).slice(0, REPLAY_GAMES);
-    const drop = myGames.filter(g=>g.retired && !forReplay.includes(g));
+    const missed = new Set(missedList().map(e=>e.key)), keep = new Set();
+    Object.values(bySite).forEach(list=>list.filter(g=>g.retired && (g.positions||[]).some(p=>missed.has(p.key)))
+      .slice(0, REPLAY_GAMES).forEach(g=>keep.add(g)));
+    const drop = myGames.filter(g=>g.retired && !keep.has(g));
     if(drop.length){
       myGames = myGames.filter(g=>!drop.includes(g)); saveMyLocal();
       if(myGamesCol) drop.forEach(g=>myGamesCol.doc(g.id).delete().catch(()=>{}));
@@ -2109,13 +2161,13 @@ function playedAtOf(h){
   const t = (h.UTCTime || '').match(/^(\d{2}):(\d{2}):(\d{2})$/) || [0, 12, 0, 0];
   return Date.UTC(+d[1], +d[2]-1, +d[3], +t[1], +t[2], +t[3]);
 }
-function importPgnText(text, quiet){
+function importPgnText(text, quiet, playerName){
   const raw = text.split(/(?=\[Event )/).filter(g=>/\[White /.test(g));
   const parsed = raw.map(g=>({ h:pgnHeaders(g), ...pgnMovesAndEvals(g) }));
   // Whose games are these? The name you gave, else the name found in the most games.
   const count = {}, spelled = {};
   parsed.forEach(p=>[p.h.White, p.h.Black].forEach(n=>{ if(n){ count[n.toLowerCase()] = (count[n.toLowerCase()]||0) + 1; spelled[n.toLowerCase()] = n; } }));
-  let me = myName.trim().toLowerCase();
+  let me = (playerName || myName).trim().toLowerCase();
   if(!me || !count[me]) me = Object.keys(count).sort((a,b)=>count[b]-count[a])[0] || '';
   const added = [], skipped = { other:0, variant:0, bullet:0, already:0, notMine:0 };
   let repaired = 0;
@@ -2148,12 +2200,12 @@ function importPgnText(text, quiet){
     const full = evals.filter(Boolean).length >= sans.length - 1;   // the last move may have none
     const g = { id, white:h.White||'?', black:h.Black||'?', me:side, year:(h.UTCDate||h.Date||'').slice(0,4), speed, result:h.Result||'*',
                 sans, evals: full ? evals : null, status: full ? 'evaluated' : 'queued', positions:[], addedAt: Date.now(), playedAt,
-                site: /lichess\.org\//.test(h.Site || '') ? 'lichess' : 'file' };
+                site: /lichess\.org\//.test(h.Site || '') ? 'lichess' : /chess\.com/i.test((h.Site || '') + (h.Link || '')) ? 'chesscom' : 'file' };
     extractOwnPositions(g);   // Board analysis positions need no evaluation; likely mistakes are flagged if Lichess analysed the game
     added.push(g);
   }
   const meName = spelled[me] || me;
-  if(me && !myName){ myName = meName; try{ localStorage.setItem('cst.lichess', meName); }catch(e){} }
+  if(me && !myName && !playerName){ myName = meName; try{ localStorage.setItem('cst.lichess', meName); }catch(e){} }
   myGames = myGames.concat(added);
   added.forEach(saveMyGame);
   const parts = [];
@@ -2182,7 +2234,7 @@ function winForMover(e, turn){
 function extractOwnPositions(g){
   const c = new Chess(), fens = [c.fen()], hist = [];
   g.sans.forEach(s=>{ const mv = c.move(s); hist.push(mv); fens.push(c.fen()); });
-  const title = `${g.white} – ${g.black}`, year = [g.year, SPEED_NAMES[g.speed]].filter(Boolean).join(' · ');
+  const title = `${g.white} – ${g.black}`, year = [g.year, SPEED_NAMES[g.speed], siteOf(g)==='chesscom' ? 'Chess.com' : ''].filter(Boolean).join(' · ');
   const entry = (ply, acts, extra)=>{
     const m = hist[ply], prev = hist[ply-1], fen = fens[ply];
     return { key:'own:'+g.id+':'+ply, fen, side:fen.split(' ')[1], moveNo:+fen.split(' ')[5], title, year,
@@ -2382,7 +2434,7 @@ async function initMyGames(){
   myGamesLoaded = true;
   fetchAfterLogin = false;
   rotateMyGames();
-  if(DIRECT_LICHESS && lichessAuth) syncLichessGames();   // new games from Lichess, every visit
+  if(DIRECT_LICHESS && lichessAuth) syncGames();   // new games from Lichess and Chess.com, every visit
   reextractAll();
   onOwnPositionsChanged();
   myBackground();
@@ -2403,6 +2455,14 @@ function lichessExportUrl(name){
   return `https://lichess.org/api/games/user/${encodeURIComponent(name || 'USERNAME')}?max=${CORE_GAMES}&perfType=${perf}&evals=true&clocks=false&opening=false`;
 }
 function countsOf(list){ const c = { analysis:0, candidates:0, final:0 }; list.forEach(p=>(p.acts||[]).forEach(a=>{ if(c[a]!=null) c[a]++; })); return c; }
+// "Up to date with Lichess · 3 new games added." (or why it couldn't check)
+function siteLine(site){
+  const r = mySync[site], name = SITE_NAMES[site];
+  if(myFetching) return `Checking ${name} for new games…`;
+  if(!r) return '';
+  if(r.error) return `Couldn't check ${name}: ${r.error}.`;
+  return `Up to date with ${name}${r.added ? ` · ${r.added} new game${r.added===1?'':'s'} added` : ''}.`;
+}
 function renderMyGames(){
   const app = document.getElementById('app');
   const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = { analysis:POOLS.analysis.length, candidates:POOLS.candidates.length, final:POOLS.final.length };
@@ -2412,7 +2472,7 @@ function renderMyGames(){
   const toCheck = myGames.reduce((t,g)=>t + (g.positions||[]).filter(p=>p.pending && !myTried.has(p.key)).length, 0);
   const status = !myGames.length ? ''
     : sfState==='error' ? 'The engine is unavailable, so analysis is paused.'
-    : toCheck ? `Checking likely mistakes with the engine: ${toCheck} to go…` + (queued ? ` Then a quick scan of ${queued} game${queued===1?'':'s'} Lichess didn't analyse.` : '')
+    : toCheck ? `Checking likely mistakes with the engine: ${toCheck} to go…` + (queued ? ` Then a quick scan of ${queued} game${queued===1?'':'s'} with no analysis yet.` : '')
     : myScanning ? `Quick scan of game ${analysed+1} of ${myGames.length}: ${myGames[scanIdx].white} – ${myGames[scanIdx].black}…`
     : queued ? `${queued} game${queued===1?'':'s'} waiting for a quick scan…`
     : myBgRunning ? 'Finishing…' : 'All games analysed.';
@@ -2425,15 +2485,20 @@ function renderMyGames(){
     </div>
     <div class="mg-scroll">
       <section class="mg-card">
-        <h2>Add your Lichess games</h2>
+        <h2>Your games</h2>
         ${DIRECT_LICHESS && !lichessAuth ? `<button class="btn lichess-btn" id="lichessLogin"><span aria-hidden="true">♞</span> Log in with Lichess</button>
         <p class="mg-sub">Your games come from your Lichess account, and your progress is then saved to it, on all your devices. Lichess never shares your password.</p>`
         : `${DIRECT_LICHESS ? `<p class="mg-account"><span>♞ Logged in as <b>${lichessAuth.username.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="lichessLogout">Log out</button></p>`
         : `<label class="mg-field" for="lichessUser"><span>Lichess username</span>
           <input id="lichessUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${(myName||'').replace(/"/g,'&quot;')}" placeholder="username"></label>`}
         ${DIRECT_LICHESS ? `
-        <p class="mg-status" id="syncLine">${myFetching ? 'Checking Lichess for new games…' : mySync.error ? `Couldn't check Lichess: ${mySync.error}.` : mySync.at ? `Up to date with Lichess${mySync.added ? ` · ${mySync.added} new game${mySync.added===1?'':'s'} added` : ''}.` : ''}</p>
-        <p class="mg-sub">Your last ${CORE_GAMES} games (bullet to classical) come in by themselves, with Lichess's analysis where you have one. Or <label class="link-inline file-link" for="pgnFile">add a PGN file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>.</p>`
+        <p class="mg-status" id="syncLine">${siteLine('lichess')}</p>
+        ${API_BASE ? (chesscomName
+          ? `<p class="mg-account"><span>Chess.com: <b>${chesscomName.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="ccDisconnect">Disconnect</button></p>
+             <p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>`
+          : `<div class="mg-cc"><input id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Chess.com username" aria-label="Chess.com username"><button class="btn small secondary" id="ccConnect">Add Chess.com</button></div>
+             <p class="mg-sub">Play on Chess.com too? Add your username: your games there come in the same way. (Chess.com doesn't offer a login to other sites yet, so it reads your public games.)</p>`) : ''}
+        <p class="mg-sub">Your last ${CORE_GAMES} games of each site (bullet to classical) come in by themselves, with Lichess's analysis where you have one. Or <label class="link-inline file-link" for="pgnFile">add a PGN file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>.</p>`
         : `<ol class="mg-steps">
           <li><a id="exportLink" href="${lichessExportUrl(myName)}" target="_blank" rel="noopener">Download your last 50 games from Lichess ↗</a><small>Bullet, blitz, rapid and classical, with Lichess's analysis where you have one.</small></li>
           <li><label class="btn small file-btn" for="pgnFile">Choose the downloaded file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>
@@ -2457,6 +2522,9 @@ function renderMyGames(){
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; myConfirmClear = false; render(); };
   const user = document.getElementById('lichessUser'), link = document.getElementById('exportLink');
   const li = document.getElementById('lichessLogin'); if(li) li.onclick = lichessLogin;
+  const ccc = document.getElementById('ccConnect'); if(ccc) ccc.onclick = ()=>connectChesscom(document.getElementById('ccUser').value);
+  const ccu = document.getElementById('ccUser'); if(ccu) ccu.onkeydown = e=>{ if(e.key==='Enter') connectChesscom(ccu.value); };
+  const ccd = document.getElementById('ccDisconnect'); if(ccd) ccd.onclick = ()=>{ disconnectChesscom(); };
   const lo = document.getElementById('lichessLogout'); if(lo) lo.onclick = lichessLogout;
   if(user) user.oninput = ()=>{ myName = user.value.trim(); try{ localStorage.setItem('cst.lichess', myName); }catch(e){} if(link) link.href = lichessExportUrl(myName); };
   const readFile = f=>{

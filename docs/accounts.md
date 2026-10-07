@@ -6,7 +6,7 @@ Decided before building accounts, so adding Chess.com (or another site) later on
 
 - **An account is ours, not a site's.** Each player has an internal account id. Sites are *connections* attached to it, so one account can have several, and signing in with any verified connection opens the same account.
 - **Connections** (one row each): `site` (`lichess`, later `chesscom`), the player's id and username on that site, and whether it is verified (signed in through that site) or only typed (a username, enough to read public games).
-- **First version:** sign-in with Lichess only (verified). A Chess.com username can be added as an unverified connection, to download public games. If Chess.com approves our sign-in, it becomes a second verified way into the same account; a player with only Chess.com can then create an account with it.
+- **Now:** sign-in with Lichess only (verified). A Chess.com username can be added (unverified, checked to exist), kept in the account's `meta/chesscom` document; the server reads that player's public games from Chess.com (`/api/chesscom/games`), so they come in like Lichess games. Typed usernames are not unique between accounts: they only read public games. If Chess.com approves our sign-in, it becomes a second verified way into the same account; a player with only Chess.com can then create an account with it.
 - **Two accounts, one person:** if someone signs in with Chess.com and it is already connected to another account, they are offered to merge; never a silent second account.
 
 ## Stored per account

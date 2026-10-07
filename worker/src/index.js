@@ -13,6 +13,10 @@
 //   DELETE /api/games/:id               remove one game
 //   GET    /api/meta/:name              a small document (profile, games-cleared, …)
 //   PUT    /api/meta/:name              replace it
+//   GET    /api/chesscom/player?user=   a Chess.com player's name as Chess.com spells it (404: none)
+//   GET    /api/chesscom/games?user=&since=&max=
+//                                       their newest games played after `since` (ms), as PGN text:
+//                                       live games only (no daily, no variants), newest first
 //   DELETE /api/session                 forget this sign-in here (log out)
 //   DELETE /api/account                 delete the account and everything in it
 
@@ -29,6 +33,7 @@ const SITES = {
   },
 };
 const DAY = 864e5, MAX_ROWS = 500, MAX_GAME_BYTES = 200000;
+const UA = { 'User-Agent': 'chess-trainer-api (https://github.com/Taussane/chess-trainer)' };
 
 export default {
   async fetch(req, env) {
@@ -128,6 +133,15 @@ async function route(req, env) {
       return json({ ok: true });
     }
   }
+  if (m === 'GET' && path === '/api/chesscom/player') {
+    const user = ccUser(url);
+    const p = await (await ccFetch('https://api.chess.com/pub/player/' + user)).json();
+    return json({ username: p.username || user });
+  }
+  if (m === 'GET' && path === '/api/chesscom/games') {
+    return new Response(await ccGames(ccUser(url), Number(url.searchParams.get('since') || 0), Math.max(1, Math.min(200, Number(url.searchParams.get('max') || 100)))),
+      { headers: { 'Content-Type': 'application/x-chess-pgn' } });
+  }
   if (m === 'DELETE' && path === '/api/account') {
     await DB.batch(['results', 'games', 'meta', 'sessions', 'connections'].map(t => DB.prepare(`DELETE FROM ${t} WHERE account_id = ?`).bind(account))
       .concat([DB.prepare('DELETE FROM accounts WHERE id = ?').bind(account)]));
@@ -157,6 +171,40 @@ async function signIn(env, site, token, tokenHash) {
   stmts.push(DB.prepare('INSERT INTO sessions (token_hash, account_id, site, checked_at) VALUES (?, ?, ?, ?) ON CONFLICT (token_hash) DO UPDATE SET account_id = excluded.account_id, checked_at = excluded.checked_at').bind(tokenHash, account, site, now));
   await DB.batch(stmts);
   return account;
+}
+
+// ---- Chess.com (its public API: no sign-in, read only; one request at a time, as it asks) ----
+function ccUser(url) {
+  const u = String(url.searchParams.get('user') || '').trim().toLowerCase();
+  if (!/^[a-z0-9_-]{3,25}$/.test(u)) throw fail(400, 'not a Chess.com username');
+  return u;
+}
+async function ccFetch(u) {
+  const r = await fetch(u, { headers: UA });
+  if (r.status === 404 || r.status === 410) throw fail(404, 'no Chess.com player by that name');
+  if (r.status === 429) throw fail(503, 'Chess.com is busy; try again in a minute');
+  if (!r.ok) throw fail(502, 'Chess.com did not answer (' + r.status + ')');
+  return r;
+}
+function playedAt(pgn) {
+  const h = k => (pgn.match(new RegExp('\\[' + k + ' "([^"]*)"\\]')) || [])[1] || '';
+  const d = h('UTCDate').match(/^(\d{4})\.(\d{2})\.(\d{2})$/), t = h('UTCTime').match(/^(\d{2}):(\d{2}):(\d{2})$/) || [0, 12, 0, 0];
+  return d ? Date.UTC(+d[1], d[2] - 1, +d[3], +t[1], +t[2], +t[3]) : 0;
+}
+const liveStandard = pgn => !/\[TimeControl "[^"]*\/[^"]*"\]/.test(pgn) && !/\[Variant "(?!Standard)/.test(pgn) && !/\[FEN "/.test(pgn);
+async function ccGames(user, since, max) {
+  const { archives = [] } = await (await ccFetch(`https://api.chess.com/pub/player/${user}/games/archives`)).json();
+  const sinceMonth = since ? new Date(since).toISOString().slice(0, 7).replace('-', '/') : '';
+  let games = [];
+  for (const a of archives.slice().reverse().slice(0, 24)) {   // newest month first, two years at most
+    const month = (a.match(/(\d{4}\/\d{2})$/) || [])[1] || '';
+    if (sinceMonth && month < sinceMonth) break;
+    const text = await (await ccFetch(a + '/pgn')).text();
+    games.push(...text.split(/\n\s*\n(?=\[Event )/).map(g => g.trim()).filter(g => g.startsWith('[Event ') && liveStandard(g) && playedAt(g) > since));
+    if (games.length >= max) break;
+  }
+  games.sort((x, y) => playedAt(y) - playedAt(x));
+  return games.slice(0, max).join('\n\n') + (games.length ? '\n' : '');
 }
 
 async function body(req) {

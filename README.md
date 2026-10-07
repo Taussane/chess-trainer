@@ -7,7 +7,7 @@ The project has two parts:
 1. **The app** (`app/index.html`): a single page. Its training positions are embedded in it. It runs as a website (`index.html`, served by GitHub Pages) and inside Claude, where it was first built.
 2. **The position finder** (`finder/`): turns games from the library into training positions, using the rules in `finder/rules.js`.
 
-On the website, players can **log in with Lichess** (Lichess's own sign-in, OAuth with PKCE: no password reaches the site, no server, nothing asked beyond the public profile); the token stays in their browser and "Log out" revokes it. Players add their own Lichess games in the app ("My games"): on the website the app downloads them from Lichess by username; inside Claude, where the page can't reach Lichess, they download the file and add it. Either way the app finds positions in them itself, in the browser.
+On the website, players can **log in with Lichess** (Lichess's own sign-in, OAuth with PKCE: no password reaches the site, no server, nothing asked beyond the public profile); the token stays in their browser and "Log out" revokes it. Logged-in players can also add a Chess.com username: their public Chess.com games come in the same way (read by the account server, as Chess.com offers no sign-in to other sites yet). Players add their own Lichess games in the app ("My games"): on the website the app downloads them from Lichess by username; inside Claude, where the page can't reach Lichess, they download the file and add it. Either way the app finds positions in them itself, in the browser.
 
 ## The website
 

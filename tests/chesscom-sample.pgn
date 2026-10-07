@@ -1,0 +1,129 @@
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2026.09.11"]
+[White "CCPlayer"]
+[Black "Opp1"]
+[Result "1-0"]
+[UTCDate "2026.09.11"]
+[UTCTime "18:01:00"]
+[TimeControl "180+2"]
+[Link "https://www.chess.com/game/live/100001"]
+
+1. d4 Nf6 2. c4 e6 3. Nf3 b6 4. a3 Bb7 5. Nc3 Ne4 6. Nxe4 Bxe4 7. Nd2 Bg6 8. g3 Nc6 9. e3 a6 10. b4 b5 11. cxb5 axb5 12. Bb2 Na7 13. h4 h6 14. d5 exd5 15. Bg2 c6 16. O-O f6 17. Re1 Be7 18. Qg4 Kf7 19. h5 Bh7 20. e4 dxe4 21. Bxe4 Bxe4 22. Nxe4 Nc8 23. Rad1 Ra7 24. Nxf6 gxf6 25. Qg6+ Kf8 26. Bc1 d5 27. Rd4 Nd6 28. Rg4 Nf7 29. Bxh6+ Ke8 30. Bg7 1-0
+
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2026.09.12"]
+[White "Opp2"]
+[Black "CCPlayer"]
+[Result "1-0"]
+[UTCDate "2026.09.12"]
+[UTCTime "18:02:00"]
+[TimeControl "180+2"]
+[Link "https://www.chess.com/game/live/100002"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. Bg5 Bb4 5. e5 h6 6. Be3 Ne4 7. Qg4 Kf8 8. a3 Bxc3+ 1-0
+
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2026.09.13"]
+[White "CCPlayer"]
+[Black "Opp3"]
+[Result "1-0"]
+[UTCDate "2026.09.13"]
+[UTCTime "18:03:00"]
+[TimeControl "180+2"]
+[Link "https://www.chess.com/game/live/100003"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d6 9. d4 Bg4 10. Be3 exd4 11. cxd4 Na5 12. Bc2 Nc4 13. Bc1 c5 14. b3 Na5 15. d5 Nd7 16. Nbd2 Bf6 17. Rb1 c4 18. h3 Bxf3 19. Nxf3 cxb3 20. axb3 Qc7 21. Be3 Bc3 22. Re2 b4 23. Nd4 Rfe8 24. Nf5 Nb7 25. Bd4 g6 26. Nh6+ Kf8 27. Rc1 Rac8 28. Bd3 Qa5 29. Rec2 Ne5 30. Bf1 Nc5 31. Bxc3 1-0
+
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2026.09.14"]
+[White "Opp4"]
+[Black "CCPlayer"]
+[Result "1-0"]
+[UTCDate "2026.09.14"]
+[UTCTime "18:04:00"]
+[TimeControl "180+2"]
+[Link "https://www.chess.com/game/live/100004"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. h3 Nc6 7. g4 Nxd4 8. Qxd4 e5 9. Qd3 Be7 10. g5 Nd7 11. Be3 Nc5 12. Qd2 Be6 13. O-O-O O-O 14. f3 Rc8 15. Kb1 Nd7 16. h4 b5 17. Bh3 Bxh3 18. Rxh3 Nb6 19. Bxb6 Qxb6 20. Nd5 Qd8 21. f4 exf4 22. Qxf4 Qd7 23. Qf5 Rcd8 24. Ra3 Qa7 25. Rc3 g6 26. Qg4 Qd7 27. Qf3 Qe6 28. Rc7 Rde8 29. Nf4 Qe5 30. Rd5 Qh8 31. a3 h6 32. gxh6 Qxh6 33. h5 Bg5 34. hxg6 fxg6 35. Qb3 Rxf4 36. Re5+ Kf8 37. Rxe8+ 1-0
+
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2026.10.15"]
+[White "CCPlayer"]
+[Black "Opp5"]
+[Result "1-0"]
+[UTCDate "2026.10.15"]
+[UTCTime "18:05:00"]
+[TimeControl "180+2"]
+[Link "https://www.chess.com/game/live/100005"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6 dxc6 5. O-O f6 6. d4 Bg4 7. c3 exd4 8. cxd4 Qd7 9. h3 Be6 10. Nc3 O-O-O 11. Bf4 Ne7 12. Rc1 Ng6 13. Bg3 Bd6 14. Na4 Bxg3 15. fxg3 Kb8 16. Nc5 Qd6 17. Qa4 Ka7 18. Nxa6 Bxh3 19. e5 Nxe5 20. dxe5 fxe5 21. Nc5+ Kb8 22. gxh3 e4 23. Nxe4 Qe7 24. Rc3 b5 25. Qc2 1-0
+
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2026.10.16"]
+[White "Opp6"]
+[Black "CCPlayer"]
+[Result "1-0"]
+[UTCDate "2026.10.16"]
+[UTCTime "18:06:00"]
+[TimeControl "1/86400"]
+[Link "https://www.chess.com/game/daily/100006"]
+
+1. e4 d6 2. d4 g6 3. Nc3 Bg7 4. Nf3 c6 5. Bc4 Nf6 6. e5 dxe5 7. Nxe5 O-O 8. O-O Nbd7 9. f4 Qc7 10. Qf3 a6 11. Re1 e6 12. Bb3 c5 13. Be3 cxd4 14. Bxd4 Nxe5 15. fxe5 Nd7 16. Ne4 Bxe5 17. Bxe5 Qxe5 18. Rad1 Kg7 19. Nd6 Qc5+ 20. Kh1 Ne5 21. Qf4 f6 22. Rf1 a5 23. h4 Ra6 24. Ne4 Qe7 25. h5 h6 26. Qg3 a4 27. Rxf6 Rxf6 28. Qxe5 axb3 29. axb3 b6 30. b4 1-0
+
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2026.10.17"]
+[White "CCPlayer"]
+[Black "Opp7"]
+[Result "1-0"]
+[UTCDate "2026.10.17"]
+[UTCTime "18:07:00"]
+[TimeControl "180+2"]
+[Link "https://www.chess.com/game/live/100007"]
+
+1. d4 d5 2. c4 c6 3. Nc3 Nf6 4. e3 Bf5 5. cxd5 cxd5 6. Qb3 Qb6 7. Nxd5 Nxd5 8. Qxd5 Qb4+ 9. Bd2 Qxb2 10. Rc1 Bd7 11. Nf3 e6 12. Qc4 Nc6 13. Be2 Bb4 14. Bxb4 Qxb4+ 15. Qxb4 Nxb4 16. Rc7 Bc6 17. Ne5 O-O 18. Nxc6 1-0
+
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2026.10.18"]
+[White "Opp8"]
+[Black "CCPlayer"]
+[Result "0-1"]
+[UTCDate "2026.10.18"]
+[UTCTime "18:08:00"]
+[TimeControl "180+2"]
+[Link "https://www.chess.com/game/live/100008"]
+
+1. c4 e6 2. Nf3 d5 3. e3 Nf6 4. b3 c5 5. cxd5 exd5 6. d4 Nc6 7. Be2 cxd4 8. Nxd4 Bb4+ 9. Bd2 Bd6 10. Nxc6 0-1
+
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2026.10.19"]
+[White "CCPlayer"]
+[Black "Opp9"]
+[Result "0-1"]
+[UTCDate "2026.10.19"]
+[UTCTime "18:09:00"]
+[TimeControl "180+2"]
+[Link "https://www.chess.com/game/live/100009"]
+
+1. Nf3 c5 2. c4 Nc6 3. Nc3 Nf6 4. d4 cxd4 5. Nxd4 e6 6. a3 Nxd4 7. Qxd4 b6 8. Bf4 Bc5 9. Qd2 O-O 10. Rd1 Bb7 11. Bd6 Bxd6 12. Qxd6 Rc8 13. e3 Re8 14. f3 Rc6 15. Qd4 Ba6 16. Ne4 Nxe4 17. Qxe4 Qc7 18. Bd3 g6 19. b3 d5 20. cxd5 Bxd3 21. Qxd3 exd5 22. Kf2 Rc3 23. Qxd5 Rcxe3 24. Rd2 Qe7 25. Kg3 Rxb3 26. a4 Rb4 27. Rd4 Rxd4 28. Qxd4 Qg5+ 29. Kh3 Re2 30. Rg1 Qh5+ 31. Kg3 Qg5+ 32. Kh3 Rd2 33. Qc3 Ra2 34. Qd4 h6 35. Qc4 Qh5+ 36. Kg3 Qe5+ 37. Kh3 Rd2 38. Qh4 Qf5+ 39. Kg3 g5 40. Qxh6 Qf4+ 0-1
+
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2026.10.20"]
+[White "Opp10"]
+[Black "CCPlayer"]
+[Result "0-1"]
+[UTCDate "2026.10.20"]
+[UTCTime "18:10:00"]
+[TimeControl "180+2"]
+[Link "https://www.chess.com/game/live/100010"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 O-O 5. Bg5 d6 6. Qd2 c5 7. d5 e6 8. Bd3 exd5 9. Nxd5 Be6 10. Ne2 Bxd5 11. exd5 Nbd7 12. O-O Ne5 13. f4 Nxd3 14. Qxd3 h6 15. Bh4 Re8 16. Rae1 Qb6 17. Bxf6 Bxf6 18. f5 g5 19. b3 Qa5 20. Rc1 Qxa2 21. Rc2 Re3 22. Qxe3 Qxc2 23. Kh1 a5 24. h4 a4 0-1

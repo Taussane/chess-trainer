@@ -2,7 +2,7 @@
 // node --test worker/test/
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeEnv, lichessCalls } from './local.mjs';
+import { makeEnv, lichessCalls, chesscomCalls } from './local.mjs';
 import worker from '../src/index.js';
 
 const ORIGIN = 'https://taussane.github.io';
@@ -85,4 +85,23 @@ test('only the website may call it from a browser', async () => {
   assert.equal(bad.status, 403);
   const r = await call(env, 'GET', '/api/me', { origin: 'https://evil.example' });
   assert.equal(r.headers.get('Access-Control-Allow-Origin'), null);
+});
+
+test('Chess.com: a player is found or not; their newest live games, after a time, newest first', async () => {
+  const env = makeEnv();
+  assert.deepEqual((await j(await call(env, 'GET', '/api/chesscom/player?user=CCPlayer'))).body, { username: 'CCPlayer' });
+  assert.equal((await call(env, 'GET', '/api/chesscom/player?user=nobody')).status, 404);
+  assert.equal((await call(env, 'GET', '/api/chesscom/player?user=../x')).status, 400);
+  assert.equal((await call(env, 'GET', '/api/chesscom/games?user=ccplayer', { token: null })).status, 401, 'only for signed-in players');
+  const all = await (await call(env, 'GET', '/api/chesscom/games?user=ccplayer&max=100')).text();
+  const dates = [...all.matchAll(/\[UTCDate "([^"]+)"\]/g)].map(m => m[1]);
+  assert.equal(dates.length, 9, 'the daily game is left out');
+  assert.deepEqual(dates, dates.slice().sort().reverse(), 'newest first');
+  chesscomCalls.length = 0;
+  const since = Date.UTC(2026, 9, 14, 0, 0, 0);   // 14 October: only the October month is read
+  const newer = await (await call(env, 'GET', '/api/chesscom/games?user=ccplayer&since=' + since)).text();
+  assert.ok([...newer.matchAll(/\[UTCDate "([^"]+)"\]/g)].every(m => m[1] >= '2026.10.14'));
+  assert.ok(!chesscomCalls.some(u => u.includes('/2026/09/')), 'older months are not read');
+  const two = await (await call(env, 'GET', '/api/chesscom/games?user=ccplayer&max=2')).text();
+  assert.equal([...two.matchAll(/\[Event /g)].length, 2);
 });
