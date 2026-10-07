@@ -52,7 +52,7 @@ async def main():
         await pg.evaluate("(()=>{"+T.FAKE+" })()")
         await pg.wait_for_timeout(500)
         n = await pg.evaluate("myGames.length"); print('games after first login:', n, '| sent with', L['games_auth'])
-        if n != 9 or L['games_auth'][-1:] != ['Bearer tok123']: fails.append(f'games after login: {n} {L["games_auth"]}')
+        if n != 10 or L['games_auth'][-1:] != ['Bearer tok123']: fails.append(f'games after login: {n} {L["games_auth"]}')
         txt = await pg.inner_text('.mg-card'); print('card:', txt.split('\n')[1])
         if 'Logged in as TestPlayer' not in txt or await pg.query_selector('#lichessUser'): fails.append('card after login')
         await pg.screenshot(path=str(T.SHOTS/'login_2_after.png'))

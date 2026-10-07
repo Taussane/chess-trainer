@@ -36,11 +36,19 @@ async def main():
         if found or not await pg.query_selector('#lichessLogin'): fails.append(f'logged out, the card still offers: {found}')
         # Logged in (as after Lichess's sign-in): your own games, downloaded with your login.
         await pg.evaluate("setLichessAuth({ token:'tok', username:'TestPlayer' }); render()")
-        await pg.click('#fetchGames'); await pg.wait_for_timeout(600)
-        note = await pg.inner_text('.mg-note'); print('TestPlayer:', note)
-        if 'Added 9 games' not in note: fails.append('download note: ' + note)
+        # No button: games come in by themselves (here: called as on a visit).
+        if await pg.query_selector('#fetchGames'): fails.append('a manual download button is still shown')
+        await pg.evaluate("syncLichessGames()"); await pg.wait_for_timeout(700)
+        line = await pg.inner_text('#syncLine'); print('first visit:', line)
+        if '10 new games added' not in line: fails.append('first sync: ' + line)
         u, acc = asked[-1]; print('asked:', u, '|', acc)
-        if 'max=50' not in u or 'evals=true' not in u or 'pgn' not in (acc or ''): fails.append('request to Lichess: ' + u)
+        if 'max=100' not in u or 'evals=true' not in u or 'bullet' not in u or 'since=' in u or 'pgn' not in (acc or ''): fails.append('first request to Lichess: ' + u)
+        # Next visit: only games played since the newest one here.
+        await pg.evaluate("syncLichessGames()"); await pg.wait_for_timeout(700)
+        u = asked[-1][0]; newest = await pg.evaluate("myGames.reduce((m,g)=>Math.max(m,g.playedAt||0),0)")
+        line = await pg.inner_text('#syncLine'); print('next visit:', line, '| since', u.split('since=')[-1])
+        if f'since={newest+1000}' not in u: fails.append('next request does not ask only for newer games: ' + u)
+        if line != 'Up to date with Lichess.': fails.append('second sync line: ' + line)
         await pg.screenshot(path=str(T.SHOTS/'site_mygames.png'))
         await b.close()
     errs = [e for e in errs if 'importScripts' not in e]

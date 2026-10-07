@@ -1019,18 +1019,69 @@ let source = 'masters';
 try{ const v = localStorage.getItem('cst.source'); if(SOURCES[v]) source = v; }catch(e){}
 let myPositions = [];   // positions found in your games (see "My games")
 function sourcePool(a, src){
-  const mine = myPositions.filter(p=>p.acts.includes(a));
-  return src==='mine' ? mine : src==='both' ? POOLS[a].concat(mine) : POOLS[a];
+  if(src==='masters') return POOLS[a];
+  const { core, replay } = mineCandidates(a), mine = core.concat(replay);
+  return src==='mine' ? mine : POOLS[a].concat(mine);
+}
+// ---- Which of your positions come next ("My games") ----
+// Two buckets. The core list: positions from your last CORE_GAMES games, in one line: those you
+// have never played, newest game first, then those you got right, the longest-ago success first
+// (a position just got right goes last). The chance of being picked slides down the line (weight
+// proportional to the places left: the first is the most likely, the last almost never comes).
+// Replay: your missed positions (latest try below your average) not tried in the past week, from
+// any game, even one that has left the core list; together they get REPLAY_SHARE of the picks.
+// A missed position is only offered through Replay; got right, it goes back to the core list's
+// end, or, if its game has left the core list, is never offered again.
+const CORE_GAMES = 100, REPLAY_SHARE = 0.1, REPLAY_GAP = 7*864e5;
+let myPosVersion = 0, mineCache = {};
+const gamePlayedAt = g=>g ? (g.playedAt || g.addedAt || 0) : 0;
+function mineCandidates(a){
+  const ck = a + '|' + results.length + '|' + myPosVersion + '|' + Math.floor(Date.now()/36e5);
+  if(mineCache[a] && mineCache[a].ck===ck) return mineCache[a].v;
+  const last = new Map(); results.forEach(r=>{ if(r.key && r.a===a) last.set(r.key, r); });
+  const games = new Map(myGames.map(g=>[g.id, g])), now = Date.now(), core = [], replay = [];
+  myPositions.forEach(p=>{
+    if(!p.acts.includes(a)) return;
+    const r = last.get(p.key), g = games.get(p.gameId);
+    if(r && r.miss){ if(now - r.ts >= REPLAY_GAP) replay.push(p); return; }
+    if(!g || g.retired) return;
+    core.push({ p, r, g });
+  });
+  core.sort((x,y)=>(!!x.r - !!y.r) || (x.r ? x.r.ts - y.r.ts : gamePlayedAt(y.g) - gamePlayedAt(x.g)));
+  const v = { core: core.map(x=>x.p), replay };
+  mineCache[a] = { ck, v };
+  return v;
+}
+// A random order where heavier items tend to come first (each next pick in proportion to the
+// weights of what is left).
+function weightedOrder(items){ return items.map(([p, w])=>({ p, k: Math.pow(Math.random(), 1/w) })).sort((x,y)=>y.k - x.k).map(x=>x.p); }
+function drawMine(a){
+  const { core, replay } = mineCandidates(a), n = core.length;
+  const coreShare = replay.length ? 1 - REPLAY_SHARE : 1, replayShare = n ? REPLAY_SHARE : 1;
+  return weightedOrder(core.map((p, i)=>[p, coreShare * (n - i) / (n*(n+1)/2)]).concat(replay.map(p=>[p, replayShare / replay.length])));
+}
+// The next stretch of positions for a track: masters in shuffled rounds; your games by weight;
+// both: about one in two from each.
+function drawFor(t, prev, pool){
+  if(isTest(t)) return inOrder(poolOf(t));
+  const [a, src] = t.replace(/^r-/, '').split('@');
+  if(src==='mine') return drawMine(a);
+  if(src==='both'){
+    const m = drawRound(POOLS[a], prev), y = drawMine(a), out = [];
+    while(m.length || y.length) out.push((y.length && (!m.length || Math.random() < 0.5)) ? y.shift() : m.shift());
+    return out;
+  }
+  return drawRound(pool || poolOf(t), prev);
 }
 const poolOf = t=>{ if(t.startsWith('x-')) return (orders[t] || []).slice(0, 1); if(isTest(t)) return TEST_POSITIONS; const [a, src] = t.replace(/^r-/, '').split('@'); return sourcePool(a, src || 'masters'); };
-function ensureTrack(t){ if(!orders[t]){ orders[t] = isTest(t) ? inOrder(poolOf(t)) : drawRound(poolOf(t)); seqBy[t] = 0; store[t] = {}; } }
+function ensureTrack(t){ if(!orders[t]){ orders[t] = drawFor(t); seqBy[t] = 0; store[t] = {}; } }
 const inOrder = pool=>pool.slice();
 TRACKS.forEach(ensureTrack);
 function posAt(track, i){
   ensureTrack(track);
   const o = orders[track], pool = poolOf(track);
   if(!pool.length && i >= o.length) return null;   // nothing to show yet (your games still being analysed)
-  while(i >= o.length) o.push(...(isTest(track) ? inOrder(pool) : drawRound(pool, o[o.length-1])));
+  while(i >= o.length) o.push(...drawFor(track, o[o.length-1]));
   return o[i];
 }
 function hasProgress(s){ return !!(s && (s.checked || (s.picks && s.picks.length) || s.moved || (s.guess!=null && s.guess!==50))); }
@@ -1041,7 +1092,7 @@ function refreshPools(){
     if(isTest(t) || !t.includes('@')) return;
     const keep = orders[t].slice(0, seqBy[t] + 1), shown = new Set(keep.map(p=>p.key));
     const fresh = poolOf(t).filter(p=>!shown.has(p.key));   // the round goes on with what hasn't been shown
-    orders[t] = keep.concat(drawRound(fresh.length ? fresh : poolOf(t), keep[keep.length-1]));
+    orders[t] = keep.concat(t.includes('@') ? drawFor(t, keep[keep.length-1]) : drawRound(fresh.length ? fresh : poolOf(t), keep[keep.length-1]));
   });
 }
 function setSource(v){
@@ -1603,6 +1654,7 @@ function recordResult(s, a, acc){
   saveLocal();
   const after = levelNow(a);
   s.rec = { n: after.n, level: after.level, delta: before.rated ? Math.round(after.level) - Math.round(before.level) : null, rated: after.rated };
+  if(pos().gameId){ refreshPools(); rotateMyGames(); }   // its place in the line (or Replay) changed
 }
 // "Average 71% ▲ 3%" (or "3/5 to your average") in the review's score line, shown with the buttons.
 function levelChip(s, show, fade){
@@ -1802,8 +1854,8 @@ const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacingPlies:7,
               checkMs:1200 };    // the check: the app's usual search (top 5, then your move with them)
 const SPEED_NAMES = { ultraBullet:'UltraBullet', bullet:'Bullet', blitz:'Blitz', rapid:'Rapid', classical:'Classical', correspondence:'Correspondence' };
 let myGames = [];              // {id, white, black, me, year, speed, result, sans, evals|null, status, positions}
-let myName = '', includeBullet = false;
-try{ myName = localStorage.getItem('cst.lichess') || ''; includeBullet = localStorage.getItem('cst.bullet')==='1'; }catch(e){}
+let myName = '';
+try{ myName = localStorage.getItem('cst.lichess') || ''; }catch(e){}
 let myGamesCol = null, myClearedDoc = null, myGamesLoaded = false, myImportNote = '', myScanning = null, myConfirmClear = false, myPasteOpen = false;
 const MY_LS = 'cst.mygames.v1';
 function saveMyLocal(){ try{ localStorage.setItem(MY_LS, JSON.stringify(myGames)); }catch(e){} }
@@ -2008,21 +2060,55 @@ async function deleteMyAccount(){
   clearLocalData(); location.reload();
 }
 
-async function fetchLichessGames(){
-  if(!lichessAuth){ myImportNote = 'Log in with Lichess first.'; render(); return; }   // only your own games
-  const name = lichessAuth.username;
-  myFetching = true; myImportNote = ''; render();
+// Your games come from Lichess by themselves: on each visit (and when you come back to the page
+// after a while), the games played since the newest one here are added; the first time, your last
+// CORE_GAMES. Then rotateMyGames keeps the newest CORE_GAMES in the core list.
+let mySync = { at:0, added:0, error:'' };
+async function syncLichessGames(){
+  if(!lichessAuth || myFetching) return;
+  myFetching = true; if(screen==='mygames') render();
+  const newest = myGames.reduce((m, g)=>Math.max(m, g.playedAt || 0), 0);
+  const url = lichessExportUrl(lichessAuth.username) + (newest ? '&since=' + (newest + 1000) : '');
+  let error = '', added = 0;
   try{
-    const res = await fetch(lichessExportUrl(name), { headers: Object.assign({ Accept:'application/x-chess-pgn' }, lichessAuth ? { Authorization:'Bearer ' + lichessAuth.token } : {}) });
-    if(res.status===401 && lichessAuth){ setLichessAuth(null); myImportNote = 'Your Lichess login has expired. Log in again.'; }
-    else if(res.status===404) myImportNote = `No Lichess player named ${name.replace(/</g,'&lt;')}.`;
-    else if(res.status===429) myImportNote = 'Lichess asks to wait a minute before the next download. Try again shortly.';
-    else if(!res.ok) myImportNote = `Lichess didn't answer (error ${res.status}). Try again later.`;
-    else { const text = await res.text(); if(text.trim()) importPgnText(text); else myImportNote = `No games found for ${name.replace(/</g,'&lt;')} in these time controls.`; }
-  }catch(e){ myImportNote = "Couldn't reach Lichess. Check your connection and try again."; }
-  myFetching = false; render();
+    const res = await fetch(url, { headers:{ Accept:'application/x-chess-pgn', Authorization:'Bearer ' + lichessAuth.token } });
+    if(res.status===401){ setLichessAuth(null); error = 'your Lichess login has expired; log in again'; }
+    else if(res.status===429) error = 'Lichess asks to wait a minute';
+    else if(!res.ok) error = `Lichess didn't answer (error ${res.status})`;
+    else { const text = await res.text(); const before = myGames.length; if(text.trim()) importPgnText(text, true); added = myGames.length - before; }
+  }catch(e){ error = "couldn't reach Lichess"; }
+  mySync = { at: Date.now(), added, error };
+  myFetching = false;
+  rotateMyGames();
+  render();
 }
-function importPgnText(text){
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && DIRECT_LICHESS && lichessAuth && myGamesLoaded && Date.now() - mySync.at > 10*6e4) syncLichessGames();
+});
+// The core list: your newest CORE_GAMES games. An older game leaves it; it is kept (out of the
+// list) only while it has positions in Replay, then removed from your account.
+function rotateMyGames(){
+  const byNew = myGames.slice().sort((x,y)=>gamePlayedAt(y) - gamePlayedAt(x));
+  let changed = false;
+  byNew.forEach((g, i)=>{ const out = i >= CORE_GAMES; if(!!g.retired!==out){ g.retired = out; saveMyGame(g); changed = true; } });
+  if(progressLoaded && myGamesLoaded){
+    const missed = new Set(missedList().map(e=>e.key));
+    const drop = myGames.filter(g=>g.retired && !(g.positions||[]).some(p=>missed.has(p.key)));
+    if(drop.length){
+      myGames = myGames.filter(g=>!drop.includes(g)); saveMyLocal();
+      if(myGamesCol) drop.forEach(g=>myGamesCol.doc(g.id).delete().catch(()=>{}));
+      changed = true;
+    }
+  }
+  if(changed) onOwnPositionsChanged();
+}
+// When the game was played (ms), from its PGN headers; null if unknown.
+function playedAtOf(h){
+  const d = (h.UTCDate || h.Date || '').match(/^(\d{4})\.(\d{2})\.(\d{2})$/); if(!d) return null;
+  const t = (h.UTCTime || '').match(/^(\d{2}):(\d{2}):(\d{2})$/) || [0, 12, 0, 0];
+  return Date.UTC(+d[1], +d[2]-1, +d[3], +t[1], +t[2], +t[3]);
+}
+function importPgnText(text, quiet){
   const raw = text.split(/(?=\[Event )/).filter(g=>/\[White /.test(g));
   const parsed = raw.map(g=>({ h:pgnHeaders(g), ...pgnMovesAndEvals(g) }));
   // Whose games are these? The name you gave, else the name found in the most games.
@@ -2037,7 +2123,7 @@ function importPgnText(text){
     const h = p.h;
     if((h.Variant && h.Variant!=='Standard') || h.FEN || h.SetUp==='1'){ skipped.variant++; continue; }
     const speed = speedOf(h);
-    if((speed==='bullet' || speed==='ultraBullet') && !includeBullet){ skipped.bullet++; continue; }
+    if(speed==='ultraBullet'){ skipped.bullet++; continue; }   // too fast to learn from
     const side = (h.White||'').toLowerCase()===me ? 'w' : (h.Black||'').toLowerCase()===me ? 'b' : null;
     if(!side){ skipped.notMine++; continue; }
     if(p.sans.length < 2*OWN.minMove){ skipped.other++; continue; }
@@ -2048,7 +2134,9 @@ function importPgnText(text){
     for(const s of p.sans){ const mv = c.move(s) || c.move(s, {sloppy:true}); if(!mv) break; sans.push(mv.san); }
     const id = gameIdOf(h, sans);
     const evals = p.evals.slice(0, sans.length);
+    const playedAt = playedAtOf(h);
     const old = myGames.find(g=>g.id===id);
+    if(old && !old.playedAt && playedAt){ old.playedAt = playedAt; saveMyGame(old); }
     if(old && old.sans.length < sans.length && sans.slice(0, old.sans.length).join(' ')===old.sans.join(' ')){
       // A game saved cut short (see above): completed, keeping the engine checks already made.
       const full0 = evals.filter(Boolean).length >= sans.length - 1;
@@ -2058,7 +2146,7 @@ function importPgnText(text){
     if(old || added.some(g=>g.id===id)){ skipped.already++; continue; }
     const full = evals.filter(Boolean).length >= sans.length - 1;   // the last move may have none
     const g = { id, white:h.White||'?', black:h.Black||'?', me:side, year:(h.UTCDate||h.Date||'').slice(0,4), speed, result:h.Result||'*',
-                sans, evals: full ? evals : null, status: full ? 'evaluated' : 'queued', positions:[], addedAt: Date.now(),
+                sans, evals: full ? evals : null, status: full ? 'evaluated' : 'queued', positions:[], addedAt: Date.now(), playedAt,
                 site: /lichess\.org\//.test(h.Site || '') ? 'lichess' : 'file' };
     extractOwnPositions(g);   // Board analysis positions need no evaluation; likely mistakes are flagged if Lichess analysed the game
     added.push(g);
@@ -2069,11 +2157,12 @@ function importPgnText(text){
   added.forEach(saveMyGame);
   const parts = [];
   if(skipped.already) parts.push(`${skipped.already} already added`);
-  if(skipped.bullet) parts.push(`${skipped.bullet} bullet`);
+  if(skipped.bullet) parts.push(`${skipped.bullet} UltraBullet`);
   if(skipped.variant) parts.push(`${skipped.variant} variant or from a set-up position`);
   if(skipped.notMine) parts.push(`${skipped.notMine} not played by ${spelled[me] || 'you'}`);
   if(skipped.other) parts.push(`${skipped.other} too short`);
   const fromLichess = added.filter(g=>g.status==='evaluated').length;
+  if(quiet){ onOwnPositionsChanged(); myBackground(); return; }
   myImportNote = raw.length && repaired && !added.length ? `Completed ${repaired} game${repaired===1?'':'s'} saved cut short earlier.`
     : raw.length ? `Added ${added.length} game${added.length===1?'':'s'} of ${meName}` +
     (added.length ? ` (${fromLichess} already analysed by Lichess)` : '') + (parts.length ? `. Skipped: ${parts.join(', ')}.` : '.')
@@ -2173,6 +2262,7 @@ function divideGame(fens){
 function onOwnPositionsChanged(){
   myPositions = myGames.flatMap(g=>(g.positions||[]).filter(p=>Array.isArray(p.acts)))
     .map(p=>({ ...p, last: p.last ? { squares:p.last } : null }));
+  myPosVersion++;
   refreshPools();
   if(screen==='mygames' || screen==='home') render();
   else if(ACTIVITIES.includes(screen) && curPos && st(screen).checked){ const n = document.getElementById('nextPos'); if(n && n.disabled) render(); }
@@ -2285,7 +2375,9 @@ async function initMyGames(){
   }catch(e){ /* this browser's copy only */ }
   myGames.forEach(g=>{ if(g.status==='failed') g.status = 'queued'; });   // a failed scan is tried again on each launch
   myGamesLoaded = true;
-  if(fetchAfterLogin){ fetchAfterLogin = false; if(!myGames.length) fetchLichessGames(); }
+  fetchAfterLogin = false;
+  rotateMyGames();
+  if(DIRECT_LICHESS && lichessAuth) syncLichessGames();   // new games from Lichess, every visit
   reextractAll();
   onOwnPositionsChanged();
   myBackground();
@@ -2302,13 +2394,13 @@ function clearMyGames(){
 
 // The "My games" page: add games, see what was found, next to the master games' figures.
 function lichessExportUrl(name){
-  const perf = ['blitz','rapid','classical'].concat(includeBullet ? ['bullet'] : []).join(',');
-  return `https://lichess.org/api/games/user/${encodeURIComponent(name || 'USERNAME')}?max=50&perfType=${perf}&evals=true&clocks=false&opening=false`;
+  const perf = 'bullet,blitz,rapid,classical';
+  return `https://lichess.org/api/games/user/${encodeURIComponent(name || 'USERNAME')}?max=${CORE_GAMES}&perfType=${perf}&evals=true&clocks=false&opening=false`;
 }
 function countsOf(list){ const c = { analysis:0, candidates:0, final:0 }; list.forEach(p=>(p.acts||[]).forEach(a=>{ if(c[a]!=null) c[a]++; })); return c; }
 function renderMyGames(){
   const app = document.getElementById('app');
-  const mine = countsOf(myPositions), masters = { analysis:POOLS.analysis.length, candidates:POOLS.candidates.length, final:POOLS.final.length };
+  const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = { analysis:POOLS.analysis.length, candidates:POOLS.candidates.length, final:POOLS.final.length };
   const analysed = myGames.filter(g=>g.status!=='queued').length;
   const queued = myGames.length - analysed;
   const scanIdx = myScanning ? myGames.findIndex(g=>g.id===myScanning) : -1;
@@ -2334,12 +2426,11 @@ function renderMyGames(){
         : `${DIRECT_LICHESS ? `<p class="mg-account"><span>♞ Logged in as <b>${lichessAuth.username.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="lichessLogout">Log out</button></p>`
         : `<label class="mg-field" for="lichessUser"><span>Lichess username</span>
           <input id="lichessUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${(myName||'').replace(/"/g,'&quot;')}" placeholder="username"></label>`}
-        <label class="mg-check" for="bulletBox"><input id="bulletBox" type="checkbox" ${includeBullet ? 'checked' : ''}> Include bullet games</label>
         ${DIRECT_LICHESS ? `
-        <button class="btn" id="fetchGames" ${myFetching ? 'disabled' : ''}>${myFetching ? 'Getting your games from Lichess…' : 'Get my last 50 games'}</button>
-        <p class="mg-sub">Blitz, rapid and classical${includeBullet ? ', and bullet' : ''}, with Lichess's analysis where you have one. Or <label class="link-inline file-link" for="pgnFile">add a PGN file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>.</p>`
+        <p class="mg-status" id="syncLine">${myFetching ? 'Checking Lichess for new games…' : mySync.error ? `Couldn't check Lichess: ${mySync.error}.` : mySync.at ? `Up to date with Lichess${mySync.added ? ` · ${mySync.added} new game${mySync.added===1?'':'s'} added` : ''}.` : ''}</p>
+        <p class="mg-sub">Your last ${CORE_GAMES} games (bullet to classical) come in by themselves, with Lichess's analysis where you have one. Or <label class="link-inline file-link" for="pgnFile">add a PGN file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>.</p>`
         : `<ol class="mg-steps">
-          <li><a id="exportLink" href="${lichessExportUrl(myName)}" target="_blank" rel="noopener">Download your last 50 games from Lichess ↗</a><small>Blitz, rapid and classical${includeBullet ? ', and bullet' : ''}, with Lichess's analysis where you have one.</small></li>
+          <li><a id="exportLink" href="${lichessExportUrl(myName)}" target="_blank" rel="noopener">Download your last 50 games from Lichess ↗</a><small>Bullet, blitz, rapid and classical, with Lichess's analysis where you have one.</small></li>
           <li><label class="btn small file-btn" for="pgnFile">Choose the downloaded file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>
             <small>Or drop the file on this page, or <button class="link-inline" id="pasteToggle">paste the games instead</button>.</small>
             ${myPasteOpen ? `<div class="mg-paste"><textarea id="pgnPaste" rows="5" placeholder="[Event &quot;Rated Blitz game&quot;] …" spellcheck="false"></textarea><button class="btn small" id="pasteAdd">Add these games</button></div>` : ''}</li>
@@ -2350,7 +2441,7 @@ function renderMyGames(){
         <h2>Positions</h2>
         <div class="mg-table-wrap"><table class="mg-table">
           <thead><tr><th></th><th>Games</th><th>Board analysis</th><th>Candidate moves</th><th>Final choice</th></tr></thead>
-          <tbody>${row('Masters', MASTER_GAMES, masters)}${row('My games', myGames.length, mine)}</tbody>
+          <tbody>${row('Masters', MASTER_GAMES, masters)}${row('My games', myGames.filter(g=>!g.retired).length, mine)}</tbody>
         </table></div>
         ${status ? `<p class="mg-status">${status}</p>` : ''}
         ${myGames.length ? (myConfirmClear
@@ -2363,8 +2454,6 @@ function renderMyGames(){
   const li = document.getElementById('lichessLogin'); if(li) li.onclick = lichessLogin;
   const lo = document.getElementById('lichessLogout'); if(lo) lo.onclick = lichessLogout;
   if(user) user.oninput = ()=>{ myName = user.value.trim(); try{ localStorage.setItem('cst.lichess', myName); }catch(e){} if(link) link.href = lichessExportUrl(myName); };
-  const fg = document.getElementById('fetchGames'); if(fg) fg.onclick = fetchLichessGames;
-  const bb = document.getElementById('bulletBox'); if(bb) bb.onchange = e=>{ includeBullet = e.target.checked; try{ localStorage.setItem('cst.bullet', includeBullet ? '1' : '0'); }catch(e){} render(); };
   const readFile = f=>{
     if(!f) return;
     const rd = new FileReader();
