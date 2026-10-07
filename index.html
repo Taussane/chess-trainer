@@ -2020,8 +2020,8 @@ async function deleteMyAccount(){
 }
 
 async function fetchLichessGames(){
-  const name = (lichessAuth ? lichessAuth.username : myName || '').trim();
-  if(!name){ myImportNote = 'Enter your Lichess username first.'; render(); return; }
+  if(!lichessAuth){ myImportNote = 'Log in with Lichess first.'; render(); return; }   // only your own games
+  const name = lichessAuth.username;
   myFetching = true; myImportNote = ''; render();
   try{
     const res = await fetch(lichessExportUrl(name), { headers: Object.assign({ Accept:'application/x-chess-pgn' }, lichessAuth ? { Authorization:'Bearer ' + lichessAuth.token } : {}) });
@@ -2340,21 +2340,21 @@ function renderMyGames(){
     <div class="mg-scroll">
       <section class="mg-card">
         <h2>Add your Lichess games</h2>
-        ${DIRECT_LICHESS && lichessAuth ? `<p class="mg-account"><span>♞ Logged in as <b>${lichessAuth.username.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="lichessLogout">Log out</button></p>`
-        : `${DIRECT_LICHESS ? `<button class="btn lichess-btn" id="lichessLogin"><span aria-hidden="true">♞</span> Log in with Lichess</button>
-        <p class="mg-sub">Lichess only shares your username and public games: never your password. Or just type a username:</p>` : ''}
-        <label class="mg-field" for="lichessUser"><span>Lichess username</span>
+        ${DIRECT_LICHESS && !lichessAuth ? `<button class="btn lichess-btn" id="lichessLogin"><span aria-hidden="true">♞</span> Log in with Lichess</button>
+        <p class="mg-sub">Your games come from your Lichess account, and your progress is then saved to it, on all your devices. Lichess never shares your password.</p>`
+        : `${DIRECT_LICHESS ? `<p class="mg-account"><span>♞ Logged in as <b>${lichessAuth.username.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="lichessLogout">Log out</button></p>`
+        : `<label class="mg-field" for="lichessUser"><span>Lichess username</span>
           <input id="lichessUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${(myName||'').replace(/"/g,'&quot;')}" placeholder="username"></label>`}
         <label class="mg-check" for="bulletBox"><input id="bulletBox" type="checkbox" ${includeBullet ? 'checked' : ''}> Include bullet games</label>
         ${DIRECT_LICHESS ? `
-        <button class="btn${lichessAuth ? '' : ' secondary'}" id="fetchGames" ${myFetching ? 'disabled' : ''}>${myFetching ? 'Getting your games from Lichess…' : 'Get my last 50 games'}</button>
+        <button class="btn" id="fetchGames" ${myFetching ? 'disabled' : ''}>${myFetching ? 'Getting your games from Lichess…' : 'Get my last 50 games'}</button>
         <p class="mg-sub">Blitz, rapid and classical${includeBullet ? ', and bullet' : ''}, with Lichess's analysis where you have one. Or <label class="link-inline file-link" for="pgnFile">add a PGN file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>.</p>`
         : `<ol class="mg-steps">
           <li><a id="exportLink" href="${lichessExportUrl(myName)}" target="_blank" rel="noopener">Download your last 50 games from Lichess ↗</a><small>Blitz, rapid and classical${includeBullet ? ', and bullet' : ''}, with Lichess's analysis where you have one.</small></li>
           <li><label class="btn small file-btn" for="pgnFile">Choose the downloaded file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>
             <small>Or drop the file on this page, or <button class="link-inline" id="pasteToggle">paste the games instead</button>.</small>
             ${myPasteOpen ? `<div class="mg-paste"><textarea id="pgnPaste" rows="5" placeholder="[Event &quot;Rated Blitz game&quot;] …" spellcheck="false"></textarea><button class="btn small" id="pasteAdd">Add these games</button></div>` : ''}</li>
-        </ol>`}
+        </ol>`}`}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
       </section>
       <section class="mg-card">
@@ -2375,7 +2375,7 @@ function renderMyGames(){
   const lo = document.getElementById('lichessLogout'); if(lo) lo.onclick = lichessLogout;
   if(user) user.oninput = ()=>{ myName = user.value.trim(); try{ localStorage.setItem('cst.lichess', myName); }catch(e){} if(link) link.href = lichessExportUrl(myName); };
   const fg = document.getElementById('fetchGames'); if(fg) fg.onclick = fetchLichessGames;
-  document.getElementById('bulletBox').onchange = e=>{ includeBullet = e.target.checked; try{ localStorage.setItem('cst.bullet', includeBullet ? '1' : '0'); }catch(e){} render(); };
+  const bb = document.getElementById('bulletBox'); if(bb) bb.onchange = e=>{ includeBullet = e.target.checked; try{ localStorage.setItem('cst.bullet', includeBullet ? '1' : '0'); }catch(e){} render(); };
   const readFile = f=>{
     if(!f) return;
     const rd = new FileReader();
@@ -2384,7 +2384,7 @@ function renderMyGames(){
     rd.readAsText(f);
   };
   const file = document.getElementById('pgnFile');
-  file.onchange = ()=>readFile(file.files && file.files[0]);
+  if(file) file.onchange = ()=>readFile(file.files && file.files[0]);
   app.ondragover = e=>{ e.preventDefault(); };
   app.ondrop = e=>{ e.preventDefault(); readFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]); };
   const pt = document.getElementById('pasteToggle'); if(pt) pt.onclick = ()=>{ myPasteOpen = !myPasteOpen; render(); };

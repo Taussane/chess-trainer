@@ -1,6 +1,6 @@
 # The website (index.html at the top of the repository, built by scripts/build-site.py):
 # up to date with the app, a proper phone page, and "My games" downloading games straight from
-# Lichess (a stand-in Lichess answers here: the sample games for TestPlayer, "not found" otherwise).
+# Lichess (a stand-in Lichess answers here: the sample games for TestPlayer, "not found" otherwise). Only a logged-in player can download games: their own.
 import asyncio, sys, pathlib, subprocess
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
@@ -31,10 +31,12 @@ async def main():
         await pg.evaluate("(()=>{"+T.FAKE+" render(); })()")
         await pg.click('#myGamesBtn')
         if await pg.query_selector('#exportLink'): fails.append('the website still shows the download steps')
-        await pg.fill('#lichessUser', 'nobody'); await pg.click('#fetchGames'); await pg.wait_for_timeout(400)
-        note = await pg.inner_text('.mg-note'); print('unknown player:', note)
-        if 'No Lichess player named nobody' not in note: fails.append('unknown player note: ' + note)
-        await pg.fill('#lichessUser', 'TestPlayer'); await pg.click('#fetchGames'); await pg.wait_for_timeout(600)
+        # Logged out: only the Lichess login, no way to download someone's games by name.
+        found = await pg.evaluate("['#lichessUser','#fetchGames','#bulletBox'].filter(s=>document.querySelector(s))")
+        if found or not await pg.query_selector('#lichessLogin'): fails.append(f'logged out, the card still offers: {found}')
+        # Logged in (as after Lichess's sign-in): your own games, downloaded with your login.
+        await pg.evaluate("setLichessAuth({ token:'tok', username:'TestPlayer' }); render()")
+        await pg.click('#fetchGames'); await pg.wait_for_timeout(600)
         note = await pg.inner_text('.mg-note'); print('TestPlayer:', note)
         if 'Added 9 games' not in note: fails.append('download note: ' + note)
         u, acc = asked[-1]; print('asked:', u, '|', acc)
