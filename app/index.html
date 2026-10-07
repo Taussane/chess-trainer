@@ -1032,7 +1032,7 @@ function sourcePool(a, src){
 // any game, even one that has left the core list; together they get REPLAY_SHARE of the picks.
 // A missed position is only offered through Replay; got right, it goes back to the core list's
 // end, or, if its game has left the core list, is never offered again.
-const CORE_GAMES = 100, REPLAY_SHARE = 0.1, REPLAY_GAP = 7*864e5;
+const CORE_GAMES = 100, REPLAY_GAMES = 100, REPLAY_SHARE = 0.1, REPLAY_GAP = 7*864e5;
 let myPosVersion = 0, mineCache = {};
 const gamePlayedAt = g=>g ? (g.playedAt || g.addedAt || 0) : 0;
 function mineCandidates(a){
@@ -2086,14 +2086,17 @@ document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState==='visible' && DIRECT_LICHESS && lichessAuth && myGamesLoaded && Date.now() - mySync.at > 10*6e4) syncLichessGames();
 });
 // The core list: your newest CORE_GAMES games. An older game leaves it; it is kept (out of the
-// list) only while it has positions in Replay, then removed from your account.
+// list) only while it has positions in Replay, then removed from your account. Of those kept for
+// Replay, only the newest REPLAY_GAMES stay: past that the oldest go, with their positions.
 function rotateMyGames(){
   const byNew = myGames.slice().sort((x,y)=>gamePlayedAt(y) - gamePlayedAt(x));
   let changed = false;
   byNew.forEach((g, i)=>{ const out = i >= CORE_GAMES; if(!!g.retired!==out){ g.retired = out; saveMyGame(g); changed = true; } });
   if(progressLoaded && myGamesLoaded){
     const missed = new Set(missedList().map(e=>e.key));
-    const drop = myGames.filter(g=>g.retired && !(g.positions||[]).some(p=>missed.has(p.key)));
+    const forReplay = myGames.filter(g=>g.retired && (g.positions||[]).some(p=>missed.has(p.key)))
+      .sort((x,y)=>gamePlayedAt(y) - gamePlayedAt(x)).slice(0, REPLAY_GAMES);
+    const drop = myGames.filter(g=>g.retired && !forReplay.includes(g));
     if(drop.length){
       myGames = myGames.filter(g=>!drop.includes(g)); saveMyLocal();
       if(myGamesCol) drop.forEach(g=>myGamesCol.doc(g.id).delete().catch(()=>{}));

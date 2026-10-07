@@ -5,7 +5,7 @@
 #  - picks: Replay gets about 10%; in the core list, the front comes far more often than the end,
 #    and the position just got right almost never;
 #  - rotation: past 100 games, the oldest leave the core list; one with a missed position stays
-#    (for Replay only), the others are removed.
+#    (for Replay only), the others are removed; at most 100 games are kept for Replay, the oldest go.
 import asyncio, sys, pathlib
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
@@ -62,6 +62,18 @@ async def main():
                    replayHasIt: mineCandidates('analysis').replay.some(p=>p.key===pos.key), coreHasOld: mineCandidates('analysis').core.some(p=>p.gameId===keepMissed.id) }; })()""")
         print('rotation:', rot)
         if rot != {'core': 100, 'kept': True, 'dropped': True, 'replayHasIt': True, 'coreHasOld': False}: fails.append(f'rotation: {rot}')
+        # Games kept for Replay: at most 100, the oldest go first.
+        cap = await pg.evaluate("""(()=>{ const base = myGames[0], now = Date.now(), day = 864e5;
+          myGames = []; results = [];
+          for(let i=0; i<230; i++){ const g = JSON.parse(JSON.stringify(base)); g.id = 'g' + i; g.playedAt = now - i*day; g.retired = false; extractOwnPositions(g); myGames.push(g); }
+          // a missed position in each of the 130 oldest games
+          for(let i=100; i<230; i++){ const p = myGames[i].positions.find(p=>p.acts.includes('analysis')); results.push({ a:'analysis', acc:10, ts: now - 30*day + i, key: p.key, miss:true }); }
+          results.sort((x,y)=>x.ts-y.ts); onOwnPositionsChanged(); rotateMyGames();
+          const kept = myGames.filter(g=>g.retired);
+          return { core: myGames.filter(g=>!g.retired).length, replayGames: kept.length,
+                   oldestKept: Math.max(...kept.map(g=>+g.id.slice(1))), replayPositions: mineCandidates('analysis').replay.length }; })()""")
+        print('replay cap:', cap)
+        if cap != {'core': 100, 'replayGames': 100, 'oldestKept': 199, 'replayPositions': 100}: fails.append(f'replay cap: {cap}')
         await b.close()
     errs = [e for e in errs if 'importScripts' not in e]
     if errs: fails.append(f'page errors: {errs}')
