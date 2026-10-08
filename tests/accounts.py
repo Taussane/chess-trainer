@@ -104,6 +104,7 @@ async def main():
             note = await A.inner_text('.mg-note'); print('2b. unknown Chess.com player:', note)
             if 'No Chess.com player named nobody' not in note: fails.append('unknown Chess.com player: ' + note)
             await A.fill('#ccUser', 'ccplayer'); await A.click('#ccConnect'); await A.wait_for_timeout(2500)
+            await A.wait_for_function("myPositions.some(p=>p.gameId && p.gameId.startsWith('cc-'))", timeout=20000)   # once a Chess.com game is scanned
             cc = await A.evaluate("[chesscomName, myGames.filter(g=>siteOf(g)==='chesscom').map(g=>g.id), (myPositions.find(p=>p.gameId && p.gameId.startsWith('cc-'))||{}).year]")
             line = await A.inner_text('#ccLine'); print('    A:', cc[0], len(cc[1]), 'games,', cc[2], '|', line)
             if cc[0] != 'CCPlayer' or len(cc[1]) != 9 or not all(i.startswith('cc-') for i in cc[1]) or 'Chess.com' not in (cc[2] or ''): fails.append(f'Chess.com games: {cc}')

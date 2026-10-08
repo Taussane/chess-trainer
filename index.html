@@ -2215,7 +2215,7 @@ function importPgnText(text, quiet, playerName){
     const g = { id, white:h.White||'?', black:h.Black||'?', me:side, year:(h.UTCDate||h.Date||'').slice(0,4), speed, result:h.Result||'*',
                 sans, evals: full ? evals : null, status: full ? 'evaluated' : 'queued', positions:[], addedAt: Date.now(), playedAt,
                 site: /lichess\.org\//.test(h.Site || '') ? 'lichess' : /chess\.com/i.test((h.Site || '') + (h.Link || '')) ? 'chesscom' : 'file' };
-    extractOwnPositions(g);   // Board analysis positions need no evaluation; likely mistakes are flagged if Lichess analysed the game
+    extractOwnPositions(g);   // a game Lichess analysed gives its positions at once (likely mistakes flagged); the others after their scan
     added.push(g);
   }
   const meName = spelled[me] || me;
@@ -2246,6 +2246,9 @@ function winForMover(e, turn){
   return e.mate!=null ? winPercent(null, s*e.mate) : winPercent(s*e.cp, null);
 }
 function extractOwnPositions(g){
+  // A game gives positions only once it is analysed (Lichess's analysis, or the app's scan): every
+  // rule is then known, so a position never appears and later goes. Counts only go up.
+  if(!g.evals){ g.positions = []; return; }
   const c = new Chess(), fens = [c.fen()], hist = [];
   g.sans.forEach(s=>{ const mv = c.move(s); hist.push(mv); fens.push(c.fen()); });
   const title = `${g.white} – ${g.black}`, year = [g.year, SPEED_NAMES[g.speed], siteOf(g)==='chesscom' ? 'Chess.com' : ''].filter(Boolean).join(' · ');
@@ -2283,8 +2286,7 @@ function extractOwnPositions(g){
     if(moveNo < OWN.minMove || moveNo > OWN.maxMove || moves.length < OWN.minLegal) continue;
     const prev = hist[ply-1]; if(prev && prev.captured && moves.some(m=>m.to===prev.to && m.captured)) continue;
     const pc = new Chess(fen); if(pc.in_check() || Math.abs(materialDiff(pc)) > OWN.maxMaterialDiff) continue;
-    // Balanced (within ±1.00) early in the middlegame (its first 14 half-moves): skipped, once the
-    // game's evaluations are known (Lichess's or the quick scan); kept until then.
+    // Balanced (within ±1.00) early in the middlegame (its first 14 half-moves): skipped.
     const ev = g.evals && ply>0 ? g.evals[ply-1] : null;
     if(div.mid>=0 && ply < div.mid + OWN.earlyBalancedPlies && ev && ev.mate==null && ev.cp!=null && Math.abs(ev.cp) < OWN.earlyBalancedCp) continue;
     ba.push(ply);

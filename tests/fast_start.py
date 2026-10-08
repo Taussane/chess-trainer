@@ -1,7 +1,8 @@
 # How "My games" fills up after an upload, and what happens while it does:
-#  1. right after the upload (engine busy elsewhere): every game already has its Board analysis
-#     positions; Lichess-analysed games have their likely mistakes flagged; Candidate moves and
-#     Final choice can't be opened yet and say why;
+#  1. right after the upload (engine busy elsewhere): games Lichess analysed already have their
+#     Board analysis positions and their likely mistakes flagged; games not analysed have no
+#     position yet (none appears and later goes); Candidate moves and Final choice can't be opened
+#     yet and say why;
 #  2. the background checks the flagged mistakes before it quick-scans any other game;
 #  3. when every position was played today, the review's Next waits, and comes back by itself
 #     when a new position arrives.
@@ -19,9 +20,9 @@ async def main():
             const wait=()=>{ if(__hold) setTimeout(wait,20); else go(); }; wait(); }); })()""")
         await pg.click('#myGamesBtn'); await pg.fill('#lichessUser', 'TestPlayer')
         await pg.set_input_files('#pgnFile', T.SAMPLE); await pg.wait_for_timeout(300)
-        st = await pg.evaluate("({games:myGames.length, gamesWithBA:myGames.filter(g=>g.positions.some(p=>p.acts.includes('analysis'))).length, flagged:myGames.flatMap(g=>g.positions).filter(p=>p.pending).length, c:countsOf(myPositions)})")
+        st = await pg.evaluate("({games:myGames.length, analysed:myGames.filter(g=>g.evals).length, gamesWithBA:myGames.filter(g=>g.positions.some(p=>p.acts.includes('analysis'))).length, unanalysedWithPositions:myGames.filter(g=>!g.evals && g.positions.length).length, flagged:myGames.flatMap(g=>g.positions).filter(p=>p.pending).length, c:countsOf(myPositions)})")
         print('right after upload:', st)
-        if st['gamesWithBA'] < 7: fails.append(f"Board analysis not ready at once: {st}")
+        if not st['gamesWithBA'] or st['gamesWithBA'] > st['analysed'] or st['unanalysedWithPositions']: fails.append(f"positions should come only from analysed games: {st}")
         if not st['flagged']: fails.append('no likely mistakes flagged from Lichess evaluations')
         if st['c']['candidates']: fails.append('mistakes used before being checked')
         await pg.click('#homeBtn'); await pg.click('[data-src="mine"]'); await pg.wait_for_timeout(100)
