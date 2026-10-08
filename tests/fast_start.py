@@ -1,8 +1,8 @@
 # How "My games" fills up after an upload, and what happens while it does:
 #  1. right after the upload (engine busy elsewhere): games Lichess analysed already have their
-#     Board analysis positions and their likely mistakes flagged; games not analysed have no
-#     position yet (none appears and later goes); Candidate moves and Final choice can't be opened
-#     yet and say why;
+#     Board analysis and Candidate moves positions (Lichess's analysis is trusted), Final choice
+#     waits for each mistake's top-5 search; games not analysed have no position yet (none appears
+#     and later goes); Final choice can't be opened yet and says why;
 #  2. the background checks the flagged mistakes before it quick-scans any other game;
 #  3. when every position was played today, the review's Next waits, and comes back by itself
 #     when a new position arrives.
@@ -24,12 +24,13 @@ async def main():
         print('right after upload:', st)
         if not st['gamesWithBA'] or st['gamesWithBA'] > st['analysed'] or st['unanalysedWithPositions']: fails.append(f"positions should come only from analysed games: {st}")
         if not st['flagged']: fails.append('no likely mistakes flagged from Lichess evaluations')
-        if st['c']['candidates']: fails.append('mistakes used before being checked')
+        if not st['c']['candidates']: fails.append("Lichess's mistakes should be in Candidate moves at once")
+        if st['c']['final']: fails.append('Final choice used before its search')
         await pg.click('#homeBtn'); await pg.click('[data-src="mine"]'); await pg.wait_for_timeout(100)
         cards = await pg.evaluate("[...document.querySelectorAll('.card')].map(c=>c.dataset.go+':'+(c.disabled?'off':'on')+':'+c.querySelector('.card-desc').innerText)")
         print('home:', cards)
-        if not cards[0].startswith('analysis:on'): fails.append('Board analysis should open at once')
-        if not all(':off:Waiting for new positions' in c for c in cards[1:]): fails.append(f'Candidate moves / Final choice should wait: {cards}')
+        if not cards[0].startswith('analysis:on') or not cards[1].startswith('candidates:on'): fails.append(f'Board analysis and Candidate moves should open at once: {cards}')
+        if ':off:Waiting for new positions' not in cards[2]: fails.append(f'Final choice should wait: {cards}')
         await pg.screenshot(path=str(T.SHOTS/'fast_1_home_waiting.png'))
         # Release the engine: all checks must come before the first quick scan.
         await pg.evaluate("__hold=false")
@@ -46,7 +47,7 @@ async def main():
         checks = log.count('check')
         print('distinct mistakes checked:', tried, '| check searches:', checks)
         if checks > 2*tried: fails.append(f'a likely mistake was checked more than once ({checks} searches for {tried})')
-        if not c['candidates']: fails.append('no mistakes after the checks')
+        if not c['final']: fails.append('no Final choice positions after the searches')
         # Waiting at the review: everything but one Board analysis position already played today.
         await pg.evaluate("(()=>{ const t=ctx('analysis',false); ensureTrack(t); const pool=poolOf(t); const cur=posAt(t, firstAvailable(t, seqBy[t])); pool.forEach(p=>{ if(p.key!==cur.key) markPlayed(p.key); }); })()")
         await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
