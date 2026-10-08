@@ -142,7 +142,7 @@
   .pf-facts{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:0.86rem; color:var(--text-mute);}
   .pf-lichess{display:flex; gap:12px; align-items:center; margin-top:6px; font-size:0.86rem; color:var(--text-mute);}
   .pf-lichess b{color:var(--text);}
-  .pf-lichess{flex-wrap:wrap;} .pf-link{flex-basis:100%; text-align:left;}
+  .pf-lichess{flex-wrap:wrap;} .pf-link{flex-basis:100%; text-align:left;} .pf-link-note{flex-basis:100%; font-size:0.8rem; margin-top:-6px;}
   .pf-note{margin:6px 0 0; font-size:0.8rem; color:var(--text-mute);}
   .pf-note a{color:var(--accent);}
   .pf-delete{font-size:0.8rem; padding:4px 0; color:var(--text-mute);}
@@ -1733,7 +1733,7 @@ function renderProgress(){
           const lich = lichessAuth ? lichessAuth.username : conn('lichess') && conn('lichess').username, goo = googleAuth ? googleAuth.email : conn('google') && conn('google').username;
           return [lich ? `<span>Lichess: <b>${lich.replace(/</g,'&lt;')}</b></span>` : '', goo ? `<span>Google: <b>${goo.replace(/</g,'&lt;')}</b></span>` : '',
             `<button class="link-inline" id="pfLogout">Log out</button>`].join('')
-            + (!lich ? `<button class="link-inline pf-link" id="pfLinkLichess">♞ Also log in with Lichess</button>` : !goo && GOOGLE_CLIENT_ID ? `<button class="link-inline pf-link" id="pfLinkGoogle">Also log in with Google</button>` : '');
+            + (!lich ? `<button class="link-inline pf-link" id="pfLinkLichess">♞ Connect your Lichess account</button><span class="pf-link-note">Your Lichess games then come in by themselves, and you can log in with either. Progress from a Lichess login you used before is added to this account.</span>` : '');
         })()
         : `<button class="link-inline" id="pfLogin">♞ Log in with Lichess</button>${GOOGLE_CLIENT_ID && API_BASE ? `<button class="link-inline" id="pfGoogle">Log in with Google</button>` : ''}`}</div>
       <p class="pf-note">${API_BASE ? (signedIn() ? (syncStatus && syncStatus!=='ok' ? `Couldn't reach your account: ${syncStatus.replace(/</g,'&lt;')}. Your progress stays on this device for now and is sent next time.` : 'Your progress and games are saved to your account, on every device you log in.') : 'Log in to keep your progress on all your devices. Until then it stays in this browser only.') : 'Your progress is kept in this browser only.'} <a href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
@@ -1776,7 +1776,6 @@ function renderProgress(){
   document.getElementById('replayBtn').onclick = ()=>startReplay(a);
   const pli = document.getElementById('pfLogin'); if(pli) pli.onclick = ()=>lichessLogin();
   const pll = document.getElementById('pfLinkLichess'); if(pll) pll.onclick = ()=>lichessLogin(true);
-  const plg = document.getElementById('pfLinkGoogle'); if(plg) plg.onclick = ()=>googleLogin(true);
   const pd = document.getElementById('pfDelete'); if(pd) pd.onclick = ()=>{ pfConfirmDelete = true; render(); };
   const pdn = document.getElementById('pfDeleteNo'); if(pdn) pdn.onclick = ()=>{ pfConfirmDelete = false; render(); };
   const pdy = document.getElementById('pfDeleteYes'); if(pdy) pdy.onclick = deleteMyAccount;
@@ -1990,7 +1989,7 @@ async function finishLichessLogin(){
       catch(e){ myImportNote = `Lichess couldn't be added to your account: ${e.message}.`; render(); return; }
     }
     setLichessAuth({ token:tok.access_token, username:acc.username });
-    myImportNote = pending.link ? 'Lichess added: your Lichess and Google logins now open the same account.' : '';
+    myImportNote = pending.link ? 'Lichess connected: your Lichess games come in by themselves, and both logins open this account.' : '';
     fetchAfterLogin = true;   // no games yet (here or in your account): your games right away
   }catch(e){ myImportNote = "Lichess login didn't go through. Try again."; }
   render();
@@ -2628,12 +2627,12 @@ function renderMyGames(){
         ${DIRECT_LICHESS && !signedIn() ? `<button class="btn lichess-btn" id="lichessLogin"><span aria-hidden="true">♞</span> Log in with Lichess</button>
         <p class="mg-sub">Your games come from your Lichess account, and your progress is then saved to it, on all your devices. Lichess never shares your password.</p>
         ${GOOGLE_CLIENT_ID && API_BASE ? `<button class="btn google-btn" id="googleLogin">${GOOGLE_G} Log in with Google</button>
-        <p class="mg-sub">No Lichess account? Log in with Google, then add your Chess.com username. Google only tells us your email address.</p>` : ''}`
+        <p class="mg-sub">No Lichess account? Log in with Google, then add your Chess.com username. You can connect a Lichess account later. Google only tells us your email address.</p>` : ''}`
         : `${DIRECT_LICHESS ? `<p class="mg-account"><span>${lichessAuth ? `♞ Logged in as <b>${lichessAuth.username.replace(/</g,'&lt;')}</b>` : `Logged in as <b>${googleAuth.email.replace(/</g,'&lt;')}</b> (Google)`}</span><button class="link-inline" id="lichessLogout">Log out</button></p>`
         : `<label class="mg-field" for="lichessUser"><span>Lichess username</span>
           <input id="lichessUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${(myName||'').replace(/"/g,'&quot;')}" placeholder="username"></label>`}
         ${DIRECT_LICHESS ? `
-        ${lichessAuth ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : ''}
+        ${lichessAuth ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : `<button class="btn small secondary" id="mgLinkLichess">♞ Connect your Lichess account</button>`}
         ${API_BASE ? (chesscomName
           ? `<p class="mg-account"><span>Chess.com: <b>${chesscomName.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="ccDisconnect">Disconnect</button></p>
              <p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>`
@@ -2667,6 +2666,7 @@ function renderMyGames(){
   const ccu = document.getElementById('ccUser'); if(ccu) ccu.onkeydown = e=>{ if(e.key==='Enter') connectChesscom(ccu.value); };
   const ccd = document.getElementById('ccDisconnect'); if(ccd) ccd.onclick = ()=>{ disconnectChesscom(); };
   const lo = document.getElementById('lichessLogout'); if(lo) lo.onclick = logout;
+  const mll = document.getElementById('mgLinkLichess'); if(mll) mll.onclick = ()=>lichessLogin(true);
   const gl = document.getElementById('googleLogin'); if(gl) gl.onclick = ()=>googleLogin();
   if(user) user.oninput = ()=>{ myName = user.value.trim(); try{ localStorage.setItem('cst.lichess', myName); }catch(e){} if(link) link.href = lichessExportUrl(myName); };
   const readFile = f=>{

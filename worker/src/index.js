@@ -11,7 +11,8 @@
 // the account. Each request then reads or writes that account's rows only.
 //
 //   POST   /api/login/google {idToken}  sign in with Google -> {token, email}
-//   POST   /api/link/google  {idToken}  add a Google login to this account
+//   POST   /api/link/google  {idToken}  add a Google login to this account (not offered in the app:
+//                                       Lichess is the main login, Google links Lichess instead)
 //   POST   /api/link/lichess {token}    add a Lichess login to this account
 //                                       (if that login already has an account, the two are merged
 //                                       into this one: progress, games and settings together)
@@ -160,7 +161,7 @@ async function route(req, env) {
     const linkSite = google ? 'google' : 'lichess', now = Date.now();
     const c = await DB.prepare('SELECT account_id FROM connections WHERE site = ? AND site_user_id = ?').bind(linkSite, player.id).first();
     const stmts = [];
-    if (c && c.account_id !== account) stmts.push(...mergeInto(DB, c.account_id, account));
+    if (c && c.account_id !== account) stmts.push(...await mergeInto(DB, c.account_id, account));
     if (c) stmts.push(DB.prepare('UPDATE connections SET account_id = ?, username = ?, verified = 1 WHERE site = ? AND site_user_id = ?').bind(account, player.username, linkSite, player.id));
     else stmts.push(DB.prepare('INSERT INTO connections (site, site_user_id, account_id, username, verified, added_at) VALUES (?, ?, ?, ?, 1, ?)').bind(linkSite, player.id, account, player.username, now));
     if (!google) stmts.push(DB.prepare('INSERT INTO sessions (token_hash, account_id, site, checked_at) VALUES (?, ?, ?, ?) ON CONFLICT (token_hash) DO UPDATE SET account_id = excluded.account_id, checked_at = excluded.checked_at')
@@ -206,10 +207,15 @@ async function signIn(env, site, token, tokenHash) {
 }
 
 // Another account joins this one: its results and games are added (where this account has the same
-// one, this account's is kept), its settings fill in what this account doesn't have, its logins
-// now open this account; then it is deleted.
-function mergeInto(DB, from, to) {
+// one, this account's is kept), its settings fill in what this account doesn't have ("training
+// since": the earlier of the two), its logins now open this account; then it is deleted.
+async function mergeInto(DB, from, to) {
+  const prof = async id => { const r = await DB.prepare("SELECT data FROM meta WHERE account_id = ? AND name = 'profile'").bind(id).first(); try { return r ? JSON.parse(r.data) || {} : null; } catch (e) { return null; } };
+  const [pf, pt] = await Promise.all([prof(from), prof(to)]);
+  const early = [pf && pf.joinedAt, pt && pt.joinedAt].filter(x => Number.isFinite(x));
+  const joined = pt && pf && early.length ? [DB.prepare("UPDATE meta SET data = ? WHERE account_id = ? AND name = 'profile'").bind(JSON.stringify({ ...pt, joinedAt: Math.min(...early) }), to)] : [];
   return [
+    ...joined,
     DB.prepare('INSERT OR IGNORE INTO results (account_id, ts, a, data) SELECT ?, ts, a, data FROM results WHERE account_id = ?').bind(to, from),
     DB.prepare('INSERT OR IGNORE INTO games (account_id, id, site, data, updated_at) SELECT ?, id, site, data, updated_at FROM games WHERE account_id = ?').bind(to, from),
     DB.prepare('INSERT OR IGNORE INTO meta (account_id, name, data) SELECT ?, name, data FROM meta WHERE account_id = ?').bind(to, from),

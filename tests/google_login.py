@@ -4,7 +4,7 @@
 #  2. The same Google account on another device: same progress and Chess.com games.
 #  3. Log out clears the browser; the account keeps everything. A Lichess login stays separate.
 #  4. Linking: the Google account adds that Lichess login; the Lichess account (with its own progress)
-#     is merged into it, and both logins open the same account. Then the other way round.
+#     is merged into it, and both logins open the same account. A Lichess account isn't offered Google.
 import asyncio, sys, pathlib, subprocess, time, urllib.request
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
@@ -77,19 +77,16 @@ async def main():
             if n[:4] != [True, True, 2, 'google,lichess']: fails.append(f'linking Lichess to the Google account: {n}')
             await P1.evaluate("screen='progress'; render()")
             pf = await P1.inner_text('.pf-lichess'); print('   profile:', pf.replace('\n', ' '))
-            if 'Lichess: Other' not in pf or 'Google: g-2001@example.com' not in pf or 'Also log in' in pf: fails.append('profile after linking: ' + pf)
+            if 'Lichess: Other' not in pf or 'Google: g-2001@example.com' not in pf or 'Connect' in pf: fails.append('profile after linking: ' + pf)
             await P1.screenshot(path=str(T.SHOTS/'google_3_linked.png'))
             await P2.reload(); await P2.wait_for_timeout(600); await A.stand_in(P2); await P2.wait_for_timeout(1500)
             n = await P2.evaluate("[results.length, chesscomName]"); print('   P2 (Lichess) after reload:', n)
             if n != [2, 'CCPlayer']: fails.append(f'the Lichess login should now open the merged account: {n}')
-            # The other way: a new Lichess account adds a Google login.
+            # A Lichess account isn't offered a Google login (Lichess is the main login).
             ctx3, P3, errs3 = await A.new_browser(p, SITE, who)
             who[0] = 'tok-taussane'; await A.login(P3)
             await P3.evaluate("screen='progress'; render()"); await P3.wait_for_timeout(300)
-            who[0] = 'g-3001'
-            await P3.click('#pfLinkGoogle'); await P3.wait_for_timeout(2500); await A.stand_in(P3); await P3.wait_for_timeout(1500)
-            n = await P3.evaluate("[!!lichessAuth, !!googleAuth, (accountConnections||[]).map(c=>c.site).sort().join(',')]"); print('   Lichess account adding Google:', n)
-            if n != [True, False, 'google,lichess']: fails.append(f'linking Google to a Lichess account: {n}')
+            if await P3.query_selector('.pf-link'): fails.append('a Lichess account should not be offered another login')
             for e in errs1 + errs2 + errs3:
                 if 'importScripts' not in e: fails.append('page error: ' + e)
             await p['b'].close()

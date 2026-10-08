@@ -152,7 +152,7 @@ test('linking: a Google login added to a Lichess account; an existing Google acc
   assert.deepEqual(rows.map(x => [x.ts, x.a, x.acc]), [[10, 'analysis', 70], [20, 'final', 60], [30, 'candidates', 80]], 'both; on a clash the Lichess account wins');
   assert.deepEqual((await j(await call(env, 'GET', '/api/games'))).body.games.map(x => x.id), ['cc-1']);
   assert.deepEqual((await j(await call(env, 'GET', '/api/meta/chesscom'))).body.data, { username: 'CCPlayer' });
-  assert.deepEqual((await j(await call(env, 'GET', '/api/meta/profile'))).body.data, { joinedAt: 5 });
+  assert.deepEqual((await j(await call(env, 'GET', '/api/meta/profile'))).body.data, { joinedAt: 1 }, 'training since: the earlier date');
   // The Google login (old token and a new one) now opens the same account; one account is left.
   assert.equal((await j(await call(env, 'GET', '/api/me', app(g.token)))).body.account.id, lich);
   const g2 = (await j(await call(env, 'POST', '/api/login/google', { token: null, body: { idToken: await googleIdToken({ sub: '77' }) } }))).body;
