@@ -55,10 +55,19 @@ async def main():
         note = await pg.inner_text('.mg-note'); print('note:', note)
         if 'Added 10 games' not in note or '5 already analysed' not in note or '1 variant' not in note: fails.append('import note: '+note)
         await pg.screenshot(path=str(SHOTS/'mg_1_after_upload.png'))
+        seen = []
         for _ in range(60):
+            seen.append(await pg.evaluate("(document.querySelector('.mg-status')||{}).innerText || ''"))
             st = await pg.evaluate("({queued:myGames.filter(g=>g.status==='queued').length, pending:0, running:myBgRunning})")
             if not st['queued'] and not st['pending'] and not st['running']: break
             await pg.wait_for_timeout(500)
+        import re as _re
+        await pg.wait_for_timeout(300); seen.append(await pg.inner_text('.mg-status'))
+        nums = [int(m.group(1)) for t in seen for m in [_re.match(r'Analysing your games: (\d+) of 10 done', t)] if m]
+        print('status lines:', sorted(set(seen))[:4], '…', seen[-1])
+        if any(t and not (_re.match(r'Analysing your games: \d+ of 10 done', t) or t == 'All games analysed.') for t in seen): fails.append(f'unexpected status line: {set(seen)}')
+        if nums != sorted(nums): fails.append(f'the counter went backwards: {nums}')
+        if seen[-1] != 'All games analysed.': fails.append('final status: ' + seen[-1])
         counts = await pg.evaluate("countsOf(myPositions)"); print('my positions:', counts)
         if st['queued'] or st['pending']: fails.append(f'background not finished: {st}')
         if counts['analysis'] < 5: fails.append(f'too few Board analysis positions: {counts}')

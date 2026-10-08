@@ -2477,16 +2477,14 @@ function siteLine(site){
 function renderMyGames(){
   const app = document.getElementById('app');
   const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = { analysis:POOLS.analysis.length, candidates:POOLS.candidates.length, final:POOLS.final.length };
-  const analysed = myGames.filter(g=>g.status!=='queued').length;
-  const queued = myGames.length - analysed;
-  const scanIdx = myScanning ? myGames.findIndex(g=>g.id===myScanning) : -1;
-  const toCheck = myGames.reduce((t,g)=>t + (g.positions||[]).filter(p=>p.pending && !myTried.has(p.key)).length, 0);
+  // One counter: a game is done once it is read (Lichess's analysis or the app's quick scan) and
+  // each of its likely mistakes has been checked by the engine.
+  const isDone = g=>g.status!=='queued' && !(g.positions||[]).some(p=>p.pending && !myTried.has(p.key));
+  const done = myGames.filter(isDone).length;
   const status = !myGames.length ? ''
     : sfState==='error' ? 'The engine is unavailable, so analysis is paused.'
-    : toCheck ? `Checking likely mistakes with the engine: ${toCheck} to go…` + (queued ? ` Then a quick scan of ${queued} game${queued===1?'':'s'} with no analysis yet.` : '')
-    : myScanning ? `Quick scan of game ${analysed+1} of ${myGames.length}: ${myGames[scanIdx].white} – ${myGames[scanIdx].black}…`
-    : queued ? `${queued} game${queued===1?'':'s'} waiting for a quick scan…`
-    : myBgRunning ? 'Finishing…' : 'All games analysed.';
+    : done < myGames.length ? `Analysing your games: ${done} of ${myGames.length} done…`
+    : 'All games analysed.';
   const row = (label, games, c)=>`<tr><th scope="row">${label}</th><td>${games}</td><td>${c.analysis}</td><td>${c.candidates}</td><td>${c.final}</td></tr>`;
   app.innerHTML = `
     <div class="title-row">
