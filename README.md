@@ -26,7 +26,7 @@ Tests run it here without Cloudflare (`worker/test/local.mjs`: the same code on 
 One-time setup on Cloudflare:
 1. Storage & databases › D1 › Create database `chess-trainer`; put its Database ID in `worker/wrangler.toml`.
 2. Workers & Pages › Create › Import a repository › this repository. Root directory `worker`; deploy command `npx wrangler d1 migrations apply chess-trainer --remote && npx wrangler deploy`.
-3. For "Log in with Google": a Google Cloud OAuth client (Web application; authorised JavaScript origin `https://taussane.github.io`, redirect URI `https://taussane.github.io/chess-trainer/`); its client id goes in `worker/wrangler.toml` (`GOOGLE_CLIENT_ID`) and in `app/index.html` (`/*GOOGLE_CLIENT_ID*/`). Empty: the Google button doesn't show.
+3. For "Log in with Google": a Google Cloud OAuth client (Web application; authorised JavaScript origin `https://taussane.github.io`, redirect URI `https://taussane.github.io/chess-trainer/`); its client id (now `156223514087-…apps.googleusercontent.com`) goes in `worker/wrangler.toml` (`GOOGLE_CLIENT_ID`) and in `app/index.html` (`/*GOOGLE_CLIENT_ID*/`). Empty: the Google button doesn't show.
 4. Put the Worker's address in `app/index.html` (`/*API_BASE*/`, now `https://chess-trainer-api.sauveur-guillaume.workers.dev`) and rebuild the site.
 
 ## Layout

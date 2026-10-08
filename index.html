@@ -1997,7 +1997,7 @@ async function lichessLogout(){
 // Google sends you back with an ID token (OpenID Connect, in the address's #fragment), which the
 // account server checks and swaps for a login of its own; the page keeps only that one. Google
 // tells the site your email address, nothing else (no password, no access to your Google account).
-const GOOGLE_CLIENT_ID = /*GOOGLE_CLIENT_ID*/''/*END GOOGLE_CLIENT_ID*/;
+const GOOGLE_CLIENT_ID = /*GOOGLE_CLIENT_ID*/'156223514087-0v17r4o6c77ru9hq3kafmpan91l2lunh.apps.googleusercontent.com'/*END GOOGLE_CLIENT_ID*/;
 const GOOGLE_LS = 'cst.googleAuth', GOOGLE_PENDING_LS = 'cst.googlePending';
 let googleAuth = null;   // { token (ours), email, site:'app' }
 try{ const v = JSON.parse(localStorage.getItem(GOOGLE_LS) || 'null'); if(v && v.token && v.email) googleAuth = { ...v, site:'app' }; }catch(e){}

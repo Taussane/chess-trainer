@@ -17,7 +17,7 @@ async def google_login(pg):
 
 async def main():
     fails = []
-    SITE = (ROOT/'index.html').read_text().replace("/*GOOGLE_CLIENT_ID*/''", "/*GOOGLE_CLIENT_ID*/'test-client.apps.googleusercontent.com'")
+    SITE = (ROOT/'index.html').read_text().replace('156223514087-0v17r4o6c77ru9hq3kafmpan91l2lunh.apps.googleusercontent.com', 'test-client.apps.googleusercontent.com')
     server = subprocess.Popen(['node', str(ROOT/'worker'/'test'/'local.mjs'), str(A.PORT)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     try:
         for _ in range(50):
