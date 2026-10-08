@@ -1873,7 +1873,8 @@ try{ myName = localStorage.getItem('cst.lichess') || ''; }catch(e){}
 let myGamesCol = null, myClearedDoc = null, myGamesLoaded = false, myImportNote = '', myScanning = null, myConfirmClear = false, myPasteOpen = false;
 const MY_LS = 'cst.mygames.v1';
 function saveMyLocal(){ if(leaving) return; try{ localStorage.setItem(MY_LS, JSON.stringify(myGames)); }catch(e){} }
-function saveMyGame(g){ saveMyLocal(); if(myGamesCol) myGamesCol.doc(g.id).set(g).catch(()=>{}); }
+function saveMyGame(g){ if(!myGames.includes(g)) return;   // removed meanwhile (e.g. Chess.com disconnected)
+  saveMyLocal(); if(myGamesCol) myGamesCol.doc(g.id).set(g).catch(()=>{}); }
 
 // --- Reading a Lichess PGN file ---
 function pgnHeaders(g){ const h = {}; g.replace(/^\[(\w+)\s+"([^"]*)"\]\s*$/mg, (_, k, v)=>{ h[k] = v; return ''; }); return h; }
@@ -2060,7 +2061,7 @@ function serverDb(auth){
       if(kind==='results') return Object.assign(resultsQuery(), { add: async r=>{ queue.results.push(r); later(); } });
       if(kind==='games') return {
         limit: ()=>({ get: async()=>snap((await call('GET', '/api/games')).games) }),
-        doc: id=>({ set: async g=>{ queue.games.set(g.id, g); later(); }, delete: ()=>call('DELETE', '/api/games/' + encodeURIComponent(id)) }),
+        doc: id=>({ set: async g=>{ queue.games.set(g.id, g); later(); }, delete: ()=>{ queue.games.delete(id); return call('DELETE', '/api/games/' + encodeURIComponent(id)); } }),
       };
       return { doc: meta };   // meta documents
     },
@@ -2279,6 +2280,10 @@ function extractOwnPositions(g){
         continue;   // a mistake position is never a Board analysis position
       }
       if(drop==null && quick!=null && quick >= OWN.flagDrop){ out.push(entry(ply, [], { pending:true })); continue; }
+      // The analysis decides each move's place at once: flagged as a likely mistake, it is for
+      // Candidate moves and Final choice (if the engine confirms it), never Board analysis, even
+      // when the check finds it isn't one, so Board analysis positions never change afterwards.
+      if(quick!=null && quick >= OWN.flagDrop) continue;
     }
     // Board analysis: middlegame start to endgame start, general rules, not in check, material within 3.
     if(baFrom<0 || ply<baFrom || ply>baTo) continue;
