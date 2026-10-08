@@ -1123,7 +1123,7 @@ function isPlayed(key){ if(played.day!==todayKey()) played = { day: todayKey(), 
 function markPlayed(key){
   if(testMode || isPlayed(key)) return;
   played.keys.push(key);
-  try{ localStorage.setItem(PLAYED_LS, JSON.stringify(played)); }catch(e){}
+  if(!leaving) try{ localStorage.setItem(PLAYED_LS, JSON.stringify(played)); }catch(e){}
 }
 // The first position from index i on that wasn't played today (or that you already started);
 // -1 when there is none: every position was played today, or none exists yet.
@@ -1554,7 +1554,10 @@ let progressTab = 'analysis';
 // averages instantly on launch instead of starting empty while the database answers.
 const LS_KEY = 'cst.results.v1';
 function loadLocal(){ try{ const r = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); return Array.isArray(r) ? r : null; }catch(e){ return null; } }
-function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(results)); }catch(e){} }
+// Leaving (log out, account deleted): nothing may be written back to this browser any more, even
+// by work still finishing (a save in flight, a sync), before the page reloads empty.
+let leaving = false;
+function saveLocal(){ if(leaving) return; try{ localStorage.setItem(LS_KEY, JSON.stringify(results)); }catch(e){} }
 const cached = loadLocal();
 let results = cached || [];   // every recorded position, oldest first
 // Without a copy in this browser (first launch here), the routine card's progress and the
@@ -1578,7 +1581,7 @@ function missedList(){
   return out;
 }
 function joinedAt(){ return Math.min(...[profile.joinedAt, results.length ? results[0].ts : null, Date.now()].filter(x=>x!=null)); }
-function saveProfile(){ try{ localStorage.setItem(PROFILE_LS, JSON.stringify(profile)); }catch(e){} if(metaCol) metaCol.doc('profile').set(profile).catch(()=>{}); }
+function saveProfile(){ if(leaving) return; try{ localStorage.setItem(PROFILE_LS, JSON.stringify(profile)); }catch(e){} if(metaCol) metaCol.doc('profile').set(profile).catch(()=>{}); }
 function findPosition(key, a){ return POOLS[a].find(p=>p.key===key) || myPositions.find(p=>p.key===key && p.acts.includes(a)) || null; }
 // Missed positions still in the app; positions played today wait for tomorrow.
 const missedOf = a=>missedList().filter(e=>e.a===a).map(e=>({ ...e, pos: findPosition(e.key, e.a) })).filter(e=>e.pos);
@@ -1869,7 +1872,7 @@ let myName = '';
 try{ myName = localStorage.getItem('cst.lichess') || ''; }catch(e){}
 let myGamesCol = null, myClearedDoc = null, myGamesLoaded = false, myImportNote = '', myScanning = null, myConfirmClear = false, myPasteOpen = false;
 const MY_LS = 'cst.mygames.v1';
-function saveMyLocal(){ try{ localStorage.setItem(MY_LS, JSON.stringify(myGames)); }catch(e){} }
+function saveMyLocal(){ if(leaving) return; try{ localStorage.setItem(MY_LS, JSON.stringify(myGames)); }catch(e){} }
 function saveMyGame(g){ saveMyLocal(); if(myGamesCol) myGamesCol.doc(g.id).set(g).catch(()=>{}); }
 
 // --- Reading a Lichess PGN file ---
@@ -1979,7 +1982,7 @@ async function lichessLogout(){
   if(a && synced) try{ await serverCall(a, 'DELETE', '/api/session'); }catch(e){}
   setLichessAuth(null);
   if(a) try{ await fetch(LICHESS + '/api/token', { method:'DELETE', headers:{ Authorization:'Bearer ' + a.token } }); }catch(e){}
-  if(synced){ clearLocalData(); location.reload(); return; }
+  if(synced){ leaving = true; clearLocalData(); location.reload(); return; }
   render();
 }
 
@@ -2071,7 +2074,7 @@ async function deleteMyAccount(){
   try{ await store.db.deleteAccount(); }catch(e){ alert("The account couldn't be deleted. Try again."); return; }
   const a = lichessAuth; setLichessAuth(null);
   if(a) try{ await fetch(LICHESS + '/api/token', { method:'DELETE', headers:{ Authorization:'Bearer ' + a.token } }); }catch(e){}
-  clearLocalData(); location.reload();
+  leaving = true; clearLocalData(); location.reload();
 }
 
 // Your games come in by themselves, from Lichess (your login) and from Chess.com (the username
@@ -2084,7 +2087,7 @@ const SITE_NAMES = { lichess:'Lichess', chesscom:'Chess.com', file:'PGN files' }
 let mySync = { at:0, lichess:null, chesscom:null };   // per site: { added, error }
 let chesscomName = '';
 try{ chesscomName = localStorage.getItem('cst.chesscom') || ''; }catch(e){}
-function setChesscomName(n){ chesscomName = n || ''; try{ n ? localStorage.setItem('cst.chesscom', n) : localStorage.removeItem('cst.chesscom'); }catch(e){} }
+function setChesscomName(n){ chesscomName = n || ''; if(leaving) return; try{ n ? localStorage.setItem('cst.chesscom', n) : localStorage.removeItem('cst.chesscom'); }catch(e){} }
 const newestOf = site=>myGames.filter(g=>siteOf(g)===site).reduce((m, g)=>Math.max(m, g.playedAt || 0), 0);
 async function syncLichess(){
   const newest = newestOf('lichess');
@@ -2485,6 +2488,13 @@ function renderMyGames(){
     : sfState==='error' ? 'The engine is unavailable, so analysis is paused.'
     : done < myGames.length ? `Analysing your games: ${done} of ${myGames.length} done…`
     : 'All games analysed.';
+  // Your games: one row per site on the website (Lichess when logged in, Chess.com when connected,
+  // files only if some were added before); inside Claude, one "My games" row.
+  const core = myGames.filter(g=>!g.retired), ofSite = site=>core.filter(g=>siteOf(g)===site);
+  const countsFor = games=>{ const ids = new Set(games.map(g=>g.id)); return countsOf(myPositions.filter(p=>ids.has(p.gameId))); };
+  const siteRows = !DIRECT_LICHESS ? [['My games', core.length, mine]]
+    : [['Lichess', lichessAuth || ofSite('lichess').length], ['Chess.com', chesscomName || ofSite('chesscom').length], ['PGN files', ofSite('file').length]]
+        .filter(([, shown])=>shown).map(([label])=>{ const site = { Lichess:'lichess', 'Chess.com':'chesscom', 'PGN files':'file' }[label], gs = ofSite(site); return [label, gs.length, countsFor(gs)]; });
   const row = (label, games, c)=>`<tr><th scope="row">${label}</th><td>${games}</td><td>${c.analysis}</td><td>${c.candidates}</td><td>${c.final}</td></tr>`;
   app.innerHTML = `
     <div class="title-row">
@@ -2507,7 +2517,7 @@ function renderMyGames(){
              <p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>`
           : `<div class="mg-cc"><input id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Chess.com username" aria-label="Chess.com username"><button class="btn small secondary" id="ccConnect">Add Chess.com</button></div>
              <p class="mg-sub">Play on Chess.com too? Add your username: your games there come in the same way. (Chess.com doesn't offer a login to other sites yet, so it reads your public games.)</p>`) : ''}
-        <p class="mg-sub">Your last ${CORE_GAMES} games of each site (bullet to classical) come in by themselves, with Lichess's analysis where you have one. Or <label class="link-inline file-link" for="pgnFile">add a PGN file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>.</p>`
+        <p class="mg-sub">Your last ${CORE_GAMES} games of each site (bullet to classical) come in by themselves, with Lichess's analysis where you have one.</p>`
         : `<ol class="mg-steps">
           <li><a id="exportLink" href="${lichessExportUrl(myName)}" target="_blank" rel="noopener">Download your last 50 games from Lichess ↗</a><small>Bullet, blitz, rapid and classical, with Lichess's analysis where you have one.</small></li>
           <li><label class="btn small file-btn" for="pgnFile">Choose the downloaded file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>
@@ -2520,7 +2530,7 @@ function renderMyGames(){
         <h2>Positions</h2>
         <div class="mg-table-wrap"><table class="mg-table">
           <thead><tr><th></th><th>Games</th><th>Board analysis</th><th>Candidate moves</th><th>Final choice</th></tr></thead>
-          <tbody>${row('Masters', MASTER_GAMES, masters)}${row('My games', myGames.filter(g=>!g.retired).length, mine)}</tbody>
+          <tbody>${row('Masters', MASTER_GAMES, masters)}${siteRows.map(([label, games, c])=>row(label, games, c)).join('')}</tbody>
         </table></div>
         ${status ? `<p class="mg-status">${status}</p>` : ''}
         ${myGames.length ? (myConfirmClear
@@ -2545,8 +2555,11 @@ function renderMyGames(){
   };
   const file = document.getElementById('pgnFile');
   if(file) file.onchange = ()=>readFile(file.files && file.files[0]);
-  app.ondragover = e=>{ e.preventDefault(); };
-  app.ondrop = e=>{ e.preventDefault(); readFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]); };
+  app.ondragover = app.ondrop = null;
+  if(!DIRECT_LICHESS){   // inside Claude only: games are added as a file
+    app.ondragover = e=>{ e.preventDefault(); };
+    app.ondrop = e=>{ e.preventDefault(); readFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]); };
+  }
   const pt = document.getElementById('pasteToggle'); if(pt) pt.onclick = ()=>{ myPasteOpen = !myPasteOpen; render(); };
   const pa = document.getElementById('pasteAdd');
   if(pa) pa.onclick = ()=>{ const t = document.getElementById('pgnPaste').value; if(t.trim()){ myPasteOpen = false; importPgnText(t); render(); } };
