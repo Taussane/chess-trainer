@@ -92,7 +92,22 @@ async def main():
             ref = await P1.evaluate("({ results: results.map(r=>r.ts+r.a).sort().join(), missed: missedList().map(e=>e.a+e.key).sort().join(), week: [...document.querySelectorAll('.wk-table tbody tr')].map(r=>r.innerText).join('|') })")
             who[0] = 'g-2001'
             ctx4, P4, errs4 = await A.new_browser(p, SITE, who)
-            await google_login(P4); await P4.wait_for_timeout(2500)
+            # While the account loads (slow server here), My games says so: never the Chess.com box
+            # this account doesn't need, nor the "Connect your Lichess account" button.
+            A.API_DELAY[0] = 0.4
+            await P4.evaluate("screen='mygames'; render()"); await P4.click('#googleLogin')
+            seen = set()
+            for _ in range(80):
+                await P4.wait_for_timeout(100)
+                try: f = await P4.evaluate("[!!document.getElementById('ccUser'), !!document.getElementById('mgLinkLichess'), !!document.querySelector('.mg-loading'), typeof myGamesLoaded!=='undefined' && myGamesLoaded]")
+                except Exception: continue
+                seen.add(tuple(f))
+                if f[3]: break
+            A.API_DELAY[0] = 0
+            print('   while loading:', sorted(seen))
+            if any(f[0] or f[1] for f in seen): fails.append(f'My games showed the Chess.com box or the Lichess button before the account was read: {sorted(seen)}')
+            if not any(f[2] for f in seen): fails.append('no "Retrieving your account" while loading')
+            await A.stand_in(P4); await P4.wait_for_timeout(2500)
             await P4.evaluate("screen='progress'; render()")
             got = await P4.evaluate("({ results: results.map(r=>r.ts+r.a).sort().join(), missed: missedList().map(e=>e.a+e.key).sort().join(), week: [...document.querySelectorAll('.wk-table tbody tr')].map(r=>r.innerText).join('|') })")
             for k in ref:

@@ -12,6 +12,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PORT = 8791
+API_DELAY = [0]   # seconds added to each account-server answer (to see the pages while they wait)
 API = f'http://127.0.0.1:{PORT}'
 PLAYERS = {'tok-taussane': {'id':'taussane','username':'Taussane'}, 'tok-other': {'id':'other','username':'Other'}}
 CORS = {'access-control-allow-origin':'*', 'access-control-allow-headers':'authorization, content-type, accept', 'access-control-allow-methods':'GET, POST, DELETE, OPTIONS'}
@@ -30,6 +31,7 @@ async def new_browser(p, SITE, login_as):
         if 'chess.js' in u: return await r.fulfill(body=T.CHESS, content_type='application/javascript')
         if u.startswith('https://site.test/'): return await r.fulfill(body=SITE, content_type='text/html')
         if u.startswith('https://api.test/'):   # to the account server, as the browser sent it
+            if API_DELAY[0]: await asyncio.sleep(API_DELAY[0])
             req = urllib.request.Request(API + u[len('https://api.test'):], method=m, data=r.request.post_data_buffer,
                                          headers={k: v for k, v in r.request.headers.items() if k.lower() in ('authorization','content-type','origin','x-auth-site','access-control-request-method','access-control-request-headers')})
             try:

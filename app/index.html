@@ -1725,6 +1725,7 @@ function renderProgress(){
       ${DIRECT_LICHESS ? `<div class="pf-lichess">${signedIn() ? (()=>{
           // Your account's logins, and a way to add the other one (both then open this account).
           const conn = site=>(accountConnections || []).find(c=>c.site===site);
+          if(accountLoading()) return `<span>Retrieving your account…</span>`;
           const lich = lichessName(), goo = googleAuth ? googleAuth.email : conn('google') && conn('google').username;
           return [lich ? `<span>Lichess: <b>${lich.replace(/</g,'&lt;')}</b></span>` : '', goo ? `<span>Google: <b>${goo.replace(/</g,'&lt;')}</b></span>` : '',
             `<button class="link-inline" id="pfLogout">Log out</button>`].join('')
@@ -2092,6 +2093,9 @@ async function openStore(){
   try{ const cc = await db.doc('meta/chesscom').get(); setChesscomName(cc.exists && cc.data() ? cc.data().username : ''); }catch(e){}   // your Chess.com connection
   return { db, id: me.account.id, server: true };
 }
+// Logged in, with the account not read yet: the pages wait for it ("Retrieving your account…")
+// rather than showing what this browser had, which can be out of date or empty.
+const accountLoading = ()=>!!(API_BASE && signedIn() && !myGamesLoaded);
 let accountConnections = null;   // the account's logins, from the server
 let syncStatus = '';   // 'ok', or why the account couldn't be reached (shown in the profile)
 async function serverCall(auth, method, path, body){
@@ -2568,6 +2572,7 @@ async function initMyGames(){
   if(DIRECT_LICHESS && signedIn()) syncGames();   // new games from Lichess and Chess.com, every visit
   reextractAll();
   onOwnPositionsChanged();
+  if(screen==='progress') render();   // the profile waited for the account
   myBackground();
 }
 function clearMyGames(){
@@ -2602,7 +2607,8 @@ function renderMyGames(){
   // each of its likely mistakes has been checked by the engine.
   const isDone = g=>g.status!=='queued' && !(g.positions||[]).some(p=>p.pending && !myTried.has(p.key));
   const done = myGames.filter(isDone).length;
-  const status = !myGames.length ? ''
+  const status = DIRECT_LICHESS && accountLoading() ? 'Retrieving your games…'
+    : !myGames.length ? ''
     : sfState==='error' ? 'The engine is unavailable, so analysis is paused.'
     : done < myGames.length ? `Analysing your games: ${done} of ${myGames.length} done…`
     : 'All games analysed.';
@@ -2610,7 +2616,7 @@ function renderMyGames(){
   // files only if some were added before); inside Claude, one "My games" row.
   const core = myGames.filter(g=>!g.retired), ofSite = site=>core.filter(g=>siteOf(g)===site);
   const countsFor = games=>{ const ids = new Set(games.map(g=>g.id)); return countsOf(myPositions.filter(p=>ids.has(p.gameId))); };
-  const siteRows = !DIRECT_LICHESS ? [['My games', core.length, mine]]
+  const siteRows = !DIRECT_LICHESS ? [['My games', core.length, mine]] : accountLoading() ? []
     : [['Lichess', lichessAuth || ofSite('lichess').length], ['Chess.com', chesscomName || ofSite('chesscom').length], ['PGN files', ofSite('file').length]]
         .filter(([, shown])=>shown).map(([label])=>{ const site = { Lichess:'lichess', 'Chess.com':'chesscom', 'PGN files':'file' }[label], gs = ofSite(site); return [label, gs.length, countsFor(gs)]; });
   const row = (label, games, c)=>`<tr><th scope="row">${label}</th><td>${games}</td><td>${c.analysis}</td><td>${c.candidates}</td><td>${c.final}</td></tr>`;
@@ -2630,7 +2636,8 @@ function renderMyGames(){
         : `${DIRECT_LICHESS ? `<p class="mg-account"><span>${lichessAuth ? `♞ Logged in as <b>${lichessAuth.username.replace(/</g,'&lt;')}</b>` : `Logged in as <b>${googleAuth.email.replace(/</g,'&lt;')}</b> (Google)`}</span><button class="link-inline" id="lichessLogout">Log out</button></p>`
         : `<label class="mg-field" for="lichessUser"><span>Lichess username</span>
           <input id="lichessUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${(myName||'').replace(/"/g,'&quot;')}" placeholder="username"></label>`}
-        ${DIRECT_LICHESS ? `
+        ${DIRECT_LICHESS && accountLoading() ? `<p class="mg-status mg-loading">Retrieving your account…</p>`
+        : DIRECT_LICHESS ? `
         ${lichessName() ? `${lichessAuth ? '' : `<p class="mg-account"><span>♞ Lichess: <b>${lichessName().replace(/</g,'&lt;')}</b></span></p>`}<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : myGamesLoaded ? `<button class="btn small secondary" id="mgLinkLichess">♞ Connect your Lichess account</button>` : ''}
         ${API_BASE ? (chesscomName
           ? `<p class="mg-account"><span>Chess.com: <b>${chesscomName.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="ccDisconnect">Disconnect</button></p>
