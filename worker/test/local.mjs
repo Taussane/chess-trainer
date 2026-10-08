@@ -50,18 +50,36 @@ globalThis.fetch = async (url, opts = {}) => {
     const games = CHESSCOM_SAMPLE.split(/\n\s*\n(?=\[Event )/).filter(g => g.includes(`[UTCDate "${cc[3]}.${cc[4]}.`));
     return new Response(games.join('\n\n'), { headers: { 'Content-Type': 'application/x-chess-pgn' } });
   }
+  if (String(url) === 'https://www.googleapis.com/oauth2/v3/certs') { googleCalls.n++; return new Response(JSON.stringify({ keys: [GOOGLE_JWK] })); }
   return realFetch(url, opts);
 };
+// Stand-in Google: a key pair of our own; googleIdToken() signs ID tokens as Google would.
+export const GOOGLE_CLIENT = 'test-client.apps.googleusercontent.com';
+export const googleCalls = { n: 0 };
+const googlePair = await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign', 'verify']);
+const GOOGLE_JWK = { ...(await crypto.subtle.exportKey('jwk', googlePair.publicKey)), kid: 'test-key', alg: 'RS256', use: 'sig' };
+const b64u = b => Buffer.from(b).toString('base64url');
+export async function googleIdToken(claims = {}) {
+  const now = Math.floor(Date.now() / 1000);
+  const head = b64u(JSON.stringify({ alg: 'RS256', kid: 'test-key', typ: 'JWT' }));
+  const body = b64u(JSON.stringify({ iss: 'https://accounts.google.com', aud: GOOGLE_CLIENT, sub: '1001', email: 'player@example.com', email_verified: true, iat: now, exp: now + 3600, ...claims }));
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', googlePair.privateKey, new TextEncoder().encode(head + '.' + body));
+  return head + '.' + body + '.' + b64u(sig);
+}
 export const chesscomCalls = [];
 const CHESSCOM_SAMPLE = readFileSync(path.join(here, '..', '..', 'tests', 'chesscom-sample.pgn'), 'utf8');
 
 export function makeEnv(origins = 'https://taussane.github.io,https://site.test') {
-  return { DB: makeD1(), ALLOWED_ORIGINS: origins };
+  return { DB: makeD1(), ALLOWED_ORIGINS: origins, GOOGLE_CLIENT_ID: GOOGLE_CLIENT };
 }
 
 export function serve(env, port) {
   return createServer(async (req, res) => {
     const chunks = []; for await (const c of req) chunks.push(c);
+    if (req.url.startsWith('/test/google-id-token?')) {   // tests only: an ID token as Google would give the page
+      const q = Object.fromEntries(new URL('http://x' + req.url).searchParams);
+      res.writeHead(200, { 'Content-Type': 'text/plain' }); return res.end(await googleIdToken(q));
+    }
     const r = new Request('http://localhost:' + port + req.url, { method: req.method, headers: req.headers, body: ['GET', 'HEAD', 'OPTIONS'].includes(req.method) ? undefined : Buffer.concat(chunks) });
     const out = await worker.fetch(r, env);
     res.writeHead(out.status, Object.fromEntries(out.headers));

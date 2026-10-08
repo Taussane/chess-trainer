@@ -37,6 +37,11 @@ async def new_browser(p, SITE, login_as):
             except urllib.error.HTTPError as e: status, body, hdrs = e.code, e.read(), dict(e.headers)
             return await r.fulfill(status=status, body=body, headers=hdrs)
         if m == 'OPTIONS': return await r.fulfill(status=204, headers=CORS)
+        if u.startswith('https://accounts.google.com/o/oauth2/v2/auth?'):   # stand-in Google: approves as login_as[0] (a Google id)
+            from urllib.parse import urlparse, parse_qsl, urlencode
+            q = dict(parse_qsl(urlparse(u).query))
+            with urllib.request.urlopen(API + '/test/google-id-token?' + urlencode({'nonce': q['nonce'], 'aud': q['client_id'], 'sub': login_as[0], 'email': login_as[0] + '@example.com'})) as t: tok = t.read().decode()
+            return await r.fulfill(body=f'<script>location.replace({json.dumps(q["redirect_uri"] + "#id_token=" + tok + "&state=" + q["state"])})</script>', content_type='text/html')
         if u.startswith('https://lichess.org/oauth?'):
             from urllib.parse import urlparse, parse_qsl
             q = dict(parse_qsl(urlparse(u).query))

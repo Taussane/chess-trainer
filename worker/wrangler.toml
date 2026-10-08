@@ -7,6 +7,8 @@ compatibility_date = "2026-09-01"
 [vars]
 # Websites allowed to call this server (comma-separated).
 ALLOWED_ORIGINS = "https://taussane.github.io"
+# "Sign in with Google": the OAuth client id from Google Cloud (public; empty = Google sign-in off).
+GOOGLE_CLIENT_ID = ""
 
 [[d1_databases]]
 binding = "DB"

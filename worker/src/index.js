@@ -1,10 +1,16 @@
 // The account server (Cloudflare Worker + D1). See docs/accounts.md.
 //
-// Every request signs in with the player's own Lichess token (Authorization: Bearer …), checked
-// with Lichess itself (/api/account) and then remembered for a day by its SHA-256 (the token is
-// never stored). The Lichess player is a *connection* of one of our accounts; the first sign-in
-// creates the account. Each request then reads or writes that account's rows only.
+// Two ways to sign in, both ending in a Bearer token on every request (the token is never stored,
+// only its SHA-256):
+//  - Lichess (X-Auth-Site: lichess): the player's own Lichess token, checked with Lichess itself
+//    (/api/account), then remembered for a day.
+//  - Google (X-Auth-Site: app): POST /api/login/google with the ID token Google gave the page; it is
+//    checked here (Google's signature, this site's client id, not expired, email verified), and the
+//    page gets a token of ours, valid until logging out (or 180 days unused).
+// The player is a *connection* (lichess, google) of one of our accounts; the first sign-in creates
+// the account. Each request then reads or writes that account's rows only.
 //
+//   POST   /api/login/google {idToken}  sign in with Google -> {token, email}
 //   GET    /api/me                      account, its connections
 //   GET    /api/results?after=&limit=   results after a time, oldest first (at most 1000)
 //   POST   /api/results   {rows:[…]}    add results (a row already there is ignored)
@@ -32,7 +38,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const DAY = 864e5, MAX_ROWS = 500, MAX_GAME_BYTES = 200000;
+const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000;
 const UA = { 'User-Agent': 'chess-trainer-api (https://github.com/Taussane/chess-trainer)' };
 
 export default {
@@ -68,16 +74,17 @@ const fail = (status, message) => Object.assign(new Error(message), { status });
 async function route(req, env) {
   const url = new URL(req.url), path = url.pathname.replace(/\/+$/, ''), m = req.method;
   if (path === '/api/health') return json({ ok: true });
+  if (m === 'POST' && path === '/api/login/google') return googleLogin(env, (await body(req)).idToken);
   const site = req.headers.get('X-Auth-Site') || 'lichess';
   const token = ((req.headers.get('Authorization') || '').match(/^Bearer (\S+)$/) || [])[1];
-  if (!token || !SITES[site]) throw fail(401, 'sign in first');
+  if (!token || !(SITES[site] || site === 'app')) throw fail(401, 'sign in first');
   const tokenHash = await sha256(site + ':' + token);
   if (m === 'DELETE' && path === '/api/session') {
     await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run();
     return json({ ok: true });
   }
   const account = await signIn(env, site, token, tokenHash);
-  if (!account) throw fail(401, 'Lichess did not accept this login');
+  if (!account) throw fail(401, site === 'app' ? 'your login has expired; log in again' : 'Lichess did not accept this login');
   const DB = env.DB;
 
   if (m === 'GET' && path === '/api/me') {
@@ -155,6 +162,12 @@ async function route(req, env) {
 async function signIn(env, site, token, tokenHash) {
   const DB = env.DB, now = Date.now();
   const s = await DB.prepare('SELECT account_id, checked_at FROM sessions WHERE token_hash = ?').bind(tokenHash).first();
+  if (site === 'app') {   // our own token (Google sign-in): valid while used at least every 180 days
+    if (!s) return null;
+    if (now - s.checked_at > APP_SESSION_DAYS * DAY) { await DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run(); return null; }
+    if (now - s.checked_at > DAY) await DB.prepare('UPDATE sessions SET checked_at = ? WHERE token_hash = ?').bind(now, tokenHash).run();
+    return s.account_id;
+  }
   if (s && now - s.checked_at < DAY) return s.account_id;
   const player = await SITES[site](token);
   if (!player) { if (s) await DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run(); return null; }
@@ -171,6 +184,57 @@ async function signIn(env, site, token, tokenHash) {
   stmts.push(DB.prepare('INSERT INTO sessions (token_hash, account_id, site, checked_at) VALUES (?, ?, ?, ?) ON CONFLICT (token_hash) DO UPDATE SET account_id = excluded.account_id, checked_at = excluded.checked_at').bind(tokenHash, account, site, now));
   await DB.batch(stmts);
   return account;
+}
+
+// ---- Google sign-in ----
+// The ID token is a JWT signed by Google (RS256); its keys are published at GOOGLE_CERTS.
+const GOOGLE_CERTS = 'https://www.googleapis.com/oauth2/v3/certs';
+let googleKeys = { at: 0, keys: [] };
+const unb64 = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+async function googleKey(kid) {
+  for (let fresh = 0; fresh < 2; fresh++) {
+    if (fresh || Date.now() - googleKeys.at > 36e5) {
+      const r = await fetch(GOOGLE_CERTS);
+      if (!r.ok) throw fail(503, 'Google did not answer (' + r.status + ')');
+      googleKeys = { at: Date.now(), keys: (await r.json()).keys || [] };
+    }
+    const k = googleKeys.keys.find(x => x.kid === kid);
+    if (k) return crypto.subtle.importKey('jwk', k, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
+  }
+  return null;
+}
+async function verifyGoogle(env, idToken) {
+  const parts = String(idToken || '').split('.');
+  if (parts.length !== 3 || !env.GOOGLE_CLIENT_ID) return null;
+  let head, claims;
+  try { head = JSON.parse(new TextDecoder().decode(unb64(parts[0]))); claims = JSON.parse(new TextDecoder().decode(unb64(parts[1]))); } catch (e) { return null; }
+  if (head.alg !== 'RS256') return null;
+  const key = await googleKey(head.kid);
+  if (!key || !(await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, unb64(parts[2]), new TextEncoder().encode(parts[0] + '.' + parts[1])))) return null;
+  const now = Date.now() / 1000;
+  if (!['accounts.google.com', 'https://accounts.google.com'].includes(claims.iss) || claims.aud !== env.GOOGLE_CLIENT_ID) return null;
+  if (!(claims.exp > now) || !claims.sub || !claims.email || claims.email_verified === false) return null;
+  return { id: String(claims.sub), username: String(claims.email) };
+}
+async function googleLogin(env, idToken) {
+  const player = await verifyGoogle(env, idToken);
+  if (!player) throw fail(401, 'Google did not accept this login');
+  const DB = env.DB, now = Date.now();
+  const c = await DB.prepare('SELECT account_id FROM connections WHERE site = ? AND site_user_id = ?').bind('google', player.id).first();
+  let account = c && c.account_id;
+  const stmts = [];
+  if (!account) {
+    account = crypto.randomUUID();
+    stmts.push(DB.prepare('INSERT INTO accounts (id, created_at) VALUES (?, ?)').bind(account, now));
+    stmts.push(DB.prepare('INSERT INTO connections (site, site_user_id, account_id, username, verified, added_at) VALUES (?, ?, ?, ?, 1, ?)').bind('google', player.id, account, player.username, now));
+  } else {
+    stmts.push(DB.prepare('UPDATE connections SET username = ? WHERE site = ? AND site_user_id = ?').bind(player.username, 'google', player.id));
+  }
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const token = btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  stmts.push(DB.prepare('INSERT INTO sessions (token_hash, account_id, site, checked_at) VALUES (?, ?, ?, ?)').bind(await sha256('app:' + token), account, 'app', now));
+  await DB.batch(stmts);
+  return json({ token, email: player.username });
 }
 
 // ---- Chess.com (its public API: no sign-in, read only; one request at a time, as it asks) ----

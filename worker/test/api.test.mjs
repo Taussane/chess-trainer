@@ -2,12 +2,12 @@
 // node --test worker/test/
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeEnv, lichessCalls, chesscomCalls } from './local.mjs';
+import { makeEnv, lichessCalls, chesscomCalls, googleIdToken, googleCalls } from './local.mjs';
 import worker from '../src/index.js';
 
 const ORIGIN = 'https://taussane.github.io';
-function call(env, method, path, { token = 'tok-taussane', body, origin = ORIGIN } = {}) {
-  const headers = { Origin: origin };
+function call(env, method, path, { token = 'tok-taussane', body, origin = ORIGIN, headers: extra = {} } = {}) {
+  const headers = { Origin: origin, ...extra };
   if (token) headers.Authorization = 'Bearer ' + token;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   return worker.fetch(new Request('https://api.test' + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) }), env);
@@ -104,4 +104,29 @@ test('Chess.com: a player is found or not; their newest live games, after a time
   assert.ok(!chesscomCalls.some(u => u.includes('/2026/09/')), 'older months are not read');
   const two = await (await call(env, 'GET', '/api/chesscom/games?user=ccplayer&max=2')).text();
   assert.equal([...two.matchAll(/\[Event /g)].length, 2);
+});
+
+test('Google: a checked ID token gives our own login; the same Google account finds the same account', async () => {
+  const env = makeEnv();
+  const login = async idToken => j(await call(env, 'POST', '/api/login/google', { token: null, body: { idToken } }));
+  const a = await login(await googleIdToken());
+  assert.equal(a.status, 200); assert.equal(a.body.email, 'player@example.com');
+  const me = await j(await call(env, 'GET', '/api/me', { token: null, headers: { Authorization: 'Bearer ' + a.body.token, 'X-Auth-Site': 'app' } }));
+  assert.equal(me.status, 200);
+  assert.deepEqual(me.body.connections, [{ site: 'google', username: 'player@example.com', verified: true }]);
+  const b = await login(await googleIdToken());   // another device
+  assert.notEqual(b.body.token, a.body.token);
+  const me2 = await j(await call(env, 'GET', '/api/me', { token: null, headers: { Authorization: 'Bearer ' + b.body.token, 'X-Auth-Site': 'app' } }));
+  assert.equal(me2.body.account.id, me.body.account.id);
+  assert.ok(!JSON.stringify(env.DB.raw.prepare('SELECT * FROM sessions').all()).includes(a.body.token), 'our tokens are never stored');
+  // refused: another site's client, expired, unverified email, tampered, forged signature, made-up token
+  const forged = (await googleIdToken()).split('.'); forged[1] = Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', aud: 'test-client.apps.googleusercontent.com', sub: '666', email: 'x@y.z', exp: 2e9 })).toString('base64url');
+  for (const bad of [await googleIdToken({ aud: 'someone-else' }), await googleIdToken({ exp: 1000 }), await googleIdToken({ email_verified: false }), forged.join('.'), 'abc'])
+    assert.equal((await login(bad)).status, 401);
+  assert.equal((await call(env, 'GET', '/api/me', { token: null, headers: { Authorization: 'Bearer made-up', 'X-Auth-Site': 'app' } })).status, 401);
+  // log out: that token stops working, the other device's still works
+  await call(env, 'DELETE', '/api/session', { token: null, headers: { Authorization: 'Bearer ' + a.body.token, 'X-Auth-Site': 'app' } });
+  assert.equal((await call(env, 'GET', '/api/me', { token: null, headers: { Authorization: 'Bearer ' + a.body.token, 'X-Auth-Site': 'app' } })).status, 401);
+  assert.equal((await call(env, 'GET', '/api/me', { token: null, headers: { Authorization: 'Bearer ' + b.body.token, 'X-Auth-Site': 'app' } })).status, 200);
+  assert.ok(googleCalls.n >= 1);
 });
