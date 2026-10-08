@@ -74,7 +74,7 @@ async def play_one(pg):
     await pg.click('#check'); await pg.wait_for_timeout(2500)
 
 async def login(pg):
-    await pg.evaluate("screen='mygames'; render()")
+    await pg.evaluate("screen='account'; render()")
     await pg.click('#lichessLogin'); await pg.wait_for_timeout(2500)
     await stand_in(pg); await pg.wait_for_timeout(1500)
 
@@ -132,7 +132,7 @@ async def main():
             # 3. B plays one: in the account. B logs out: B's copy cleared, the account keeps it.
             await play_one(B); await B.wait_for_timeout(1200)
             if len(api('GET', '/api/results?after=-1')['rows']) != 3: fails.append('a result played on B did not reach the account')
-            await B.evaluate("screen='progress'; render()"); await B.click('#pfLogout'); await B.wait_for_timeout(1500)
+            await B.evaluate("screen='account'; render()"); await B.click('#pfLogout'); await B.wait_for_timeout(1500)
             n = await B.evaluate("[results.length, myGames.length, lichessAuth, localStorage.getItem('cst.owner')]"); print('3. B after logout:', n)
             if n != [0, 0, None, None]: fails.append(f'B not cleared after logout: {n}')
             if len(api('GET', '/api/results?after=-1')['rows']) != 3: fails.append('logout lost results')
@@ -144,7 +144,7 @@ async def main():
             n = await A.evaluate("[results.length, myGames.length]"); print('4. other person on A: their account', len(other), '| A now', n)
             if other or n[0]: fails.append('a previous player\'s results reached another account')
             # 5. Delete Other's account from A, then check Taussane's is intact; delete it too.
-            await A.evaluate("screen='progress'; render()"); await A.click('#pfDelete'); await A.click('#pfDeleteYes'); await A.wait_for_timeout(1200)
+            await A.evaluate("screen='account'; render()"); await A.click('#pfDelete'); await A.click('#pfDeleteYes'); await A.wait_for_timeout(1200)
             me = api('GET', '/api/me', 'tok-other')   # signing in again makes a fresh, empty account
             print('5. other deleted; taussane still has', len(api('GET', '/api/results?after=-1')['rows']), 'results')
             if len(api('GET', '/api/results?after=-1')['rows']) != 3: fails.append('deleting one account touched another')

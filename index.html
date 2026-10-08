@@ -76,7 +76,29 @@
 
   /* Home */
   .home-head{margin:4px 0 18px;}
-  .link-btn#progressBtn{margin-top:8px;}
+  .home-top{display:flex; justify-content:flex-end; margin:-4px 0 6px;}
+  .acct-chip{display:inline-flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:5px 12px 5px 6px; font:inherit; font-size:0.86rem; font-weight:600; cursor:pointer; max-width:60%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .acct-chip:not(:has(.acct-dot)){padding:6px 14px; color:var(--accent);}
+  .acct-dot{width:22px; height:22px; border-radius:50%; background:var(--accent); color:#161512; display:inline-grid; place-items:center; font-size:0.78rem; font-weight:700; flex:none;}
+  .nav-tiles{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
+  .nav-tile{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 14px; text-align:left; color:var(--text); font:inherit; cursor:pointer; display:flex; flex-direction:column; gap:4px; min-width:0;}
+  .nav-tile b{font-size:0.95rem; color:var(--accent);}
+  .nav-tile small{font-size:0.78rem; color:var(--text-mute); line-height:1.35;}
+  .nav-tile:focus-visible, .acct-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .home-foot{display:flex; flex-wrap:wrap; justify-content:center; gap:4px 8px; margin:22px 0 8px; font-size:0.8rem; color:var(--text-mute);}
+  .home-foot a, .home-foot button{color:var(--text-mute); text-decoration:none; background:none; border:none; font:inherit; padding:0; cursor:pointer;}
+  .home-foot a:hover, .home-foot button:hover{color:var(--text);}
+  .ac-sub{margin:0; font-size:0.84rem; color:var(--text-mute); line-height:1.45;}
+  .ac-foot{margin:4px 0 0; font-size:0.8rem; color:var(--text-mute); text-align:center;}
+  .ac-foot a{color:var(--text-mute);}
+  .ac-logins{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
+  .ac-logins li{display:flex; justify-content:space-between; gap:12px; font-size:0.9rem; align-items:center;}
+  .ac-site{display:inline-flex; align-items:center; gap:6px; color:var(--text-mute);}
+  .ac-site svg{width:14px; height:14px;}
+  .ac-danger{align-items:flex-start;}
+  .mg-src{display:flex; align-items:center; gap:10px; font-size:0.9rem; margin-top:4px;}
+  .mg-src-name{color:var(--text-mute); min-width:88px;}
+  .mg-src .link-inline{margin-left:auto;}
   .home-head h1{font-size:1.9rem;}
   .home-head p{color:var(--text-mute); margin:8px 0 0; line-height:1.5; max-width:40ch;}
   .cards{display:flex; flex-direction:column; gap:10px;}
@@ -140,9 +162,6 @@
   .pf-h{margin-top:4px;}
   .pf-name{font-size:1.25rem; font-weight:700;}
   .pf-facts{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:0.86rem; color:var(--text-mute);}
-  .pf-lichess{display:flex; gap:12px; align-items:center; margin-top:6px; font-size:0.86rem; color:var(--text-mute);}
-  .pf-lichess b{color:var(--text);}
-  .pf-lichess{flex-wrap:wrap;} .pf-link{flex-basis:100%; text-align:left;} .pf-link-note{flex-basis:100%; font-size:0.8rem; margin-top:-6px;}
   .pf-note{margin:6px 0 0; font-size:0.8rem; color:var(--text-mute);}
   .pf-note a{color:var(--accent);}
   .pf-delete{font-size:0.8rem; padding:4px 0; color:var(--text-mute);}
@@ -1726,27 +1745,13 @@ function renderProgress(){
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
-      <h1>Profile</h1>
+      <h1>Progress</h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
     <div class="pf-scroll">
     <section class="pf-card pf-id">
-      <div class="pf-name">${(myName || chesscomName || (googleAuth ? googleAuth.email.split('@')[0] : '')).replace(/</g,'&lt;') || 'You'}</div>
+      <div class="pf-name">${displayName().replace(/</g,'&lt;') || 'You'}</div>
       <div class="pf-facts"><span>Training since <b>${since}</b></span><span><b>${results.length}</b> position${results.length===1?'':'s'} completed</span></div>
-      ${DIRECT_LICHESS ? `<div class="pf-lichess">${signedIn() ? (()=>{
-          // Your account's logins, and a way to add the other one (both then open this account).
-          const conn = site=>(accountConnections || []).find(c=>c.site===site);
-          if(accountLoading()) return `<span>Retrieving your account…</span>`;
-          const lich = lichessName(), goo = googleAuth ? googleAuth.email : conn('google') && conn('google').username;
-          return [lich ? `<span>Lichess: <b>${lich.replace(/</g,'&lt;')}</b></span>` : '', goo ? `<span>Google: <b>${goo.replace(/</g,'&lt;')}</b></span>` : '',
-            `<button class="link-inline" id="pfLogout">Log out</button>`].join('')
-            + (!lich ? `<button class="link-inline pf-link" id="pfLinkLichess">♞ Connect your Lichess account</button><span class="pf-link-note">Your Lichess games then come in by themselves, and you can log in with either. Progress from a Lichess login you used before is added to this account.</span>` : '');
-        })()
-        : `<button class="link-inline" id="pfLogin">♞ Log in with Lichess</button>${GOOGLE_CLIENT_ID && API_BASE ? `<button class="link-inline" id="pfGoogle">Log in with Google</button>` : ''}`}</div>
-      <p class="pf-note">${API_BASE ? (signedIn() ? (syncStatus && syncStatus!=='ok' ? `Couldn't reach your account: ${syncStatus.replace(/</g,'&lt;')}. Your progress stays on this device for now and is sent next time.` : 'Your progress and games are saved to your account, on every device you log in.') : 'Log in to keep your progress on all your devices. Until then it stays in this browser only.') : 'Your progress is kept in this browser only.'} <a href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
-      ${API_BASE && signedIn() ? (pfConfirmDelete
-        ? `<div class="mg-confirm"><span>Delete your account, progress and games for good?</span><button class="btn small danger" id="pfDeleteYes">Delete</button><button class="btn small ghost" id="pfDeleteNo">Keep</button></div>`
-        : `<button class="link-btn quiet pf-delete" id="pfDelete">Delete my account</button>`) : ''}` : ''}
     </section>
     <section class="pf-card">
       <h2>This week</h2>
@@ -1781,15 +1786,61 @@ function renderProgress(){
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; render(); };
   document.getElementById('replayBtn').onclick = ()=>startReplay(a);
-  const pli = document.getElementById('pfLogin'); if(pli) pli.onclick = ()=>lichessLogin();
-  const pll = document.getElementById('pfLinkLichess'); if(pll) pll.onclick = ()=>lichessLogin(true);
-  const pd = document.getElementById('pfDelete'); if(pd) pd.onclick = ()=>{ pfConfirmDelete = true; render(); };
-  const pdn = document.getElementById('pfDeleteNo'); if(pdn) pdn.onclick = ()=>{ pfConfirmDelete = false; render(); };
-  const pdy = document.getElementById('pfDeleteYes'); if(pdy) pdy.onclick = deleteMyAccount;
-  const plo = document.getElementById('pfLogout'); if(plo) plo.onclick = logout;
-  const pgo = document.getElementById('pfGoogle'); if(pgo) pgo.onclick = ()=>googleLogin();
   app.querySelectorAll('.seg-btn').forEach(b=>b.onclick = ()=>{ progressTab = b.dataset.tab; render(); });
   wireChartHover(sr);
+}
+// ================= Account (website) =================
+// The one place to log in, see your logins, log out or delete the account. Lichess first (its games
+// come in by themselves); Google for players without Lichess, who can connect Lichess in My games.
+const displayName = ()=>myName || lichessName() || chesscomName || (googleAuth ? googleAuth.email.split('@')[0] : '');
+function renderAccount(){
+  const app = document.getElementById('app'), esc = x=>String(x).replace(/</g,'&lt;');
+  const conn = site=>(accountConnections || []).find(c=>c.site===site);
+  const lich = lichessName(), goo = googleAuth ? googleAuth.email : conn('google') && conn('google').username;
+  const body = !signedIn() ? `
+      <section class="pf-card">
+        <h2>Log in</h2>
+        <p class="ac-sub">Keep your progress on all your devices, and get positions from your own games.</p>
+        <button class="btn lichess-btn" id="lichessLogin"><span aria-hidden="true">♞</span> Log in with Lichess</button>
+        <p class="ac-sub">Recommended: your Lichess games then come in by themselves. Lichess never shares your password with us.</p>
+        ${GOOGLE_CLIENT_ID && API_BASE ? `<button class="btn google-btn" id="googleLogin">${GOOGLE_G} Log in with Google</button>
+        <p class="ac-sub">No Lichess account? Log in with Google, then add your Chess.com username in My games. You can connect Lichess later. Google only tells us your email address.</p>` : ''}
+        ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
+      </section>
+      <p class="ac-foot">Until you log in, your progress stays in this browser only.</p>`
+    : accountLoading() ? `<section class="pf-card"><p class="mg-status mg-loading">Retrieving your account…</p></section>`
+    : `
+      <section class="pf-card">
+        <h2>Logged in</h2>
+        <ul class="ac-logins">
+          ${lich ? `<li><span class="ac-site">♞ Lichess</span><b>${esc(lich)}</b></li>` : ''}
+          ${goo ? `<li><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></li>` : ''}
+        </ul>
+        ${!lich ? `<p class="ac-sub">Play on Lichess? <button class="link-inline" id="acToGames">Connect it in My games ›</button></p>` : ''}
+        ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
+        <p class="ac-sub">${syncStatus && syncStatus!=='ok' ? `Couldn't reach your account: ${esc(syncStatus)}. Your progress stays on this device for now and is sent next time.` : 'Your progress and games are saved to your account, on every device you log in.'}</p>
+        <button class="btn secondary" id="pfLogout">Log out</button>
+      </section>
+      <section class="pf-card ac-danger">
+        ${pfConfirmDelete
+          ? `<div class="mg-confirm"><span>Delete your account, progress and games for good?</span><button class="btn small danger" id="pfDeleteYes">Delete</button><button class="btn small ghost" id="pfDeleteNo">Keep</button></div>`
+          : `<button class="link-btn quiet pf-delete" id="pfDelete">Delete my account</button>`}
+      </section>`;
+  app.innerHTML = `
+    <div class="title-row">
+      <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
+      <h1>Account</h1>
+      <span class="title-spacer" aria-hidden="true"></span>
+    </div>
+    <div class="pf-scroll">${body}
+      <p class="ac-foot"><a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a></p>
+    </div>`;
+  document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; render(); };
+  const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
+  on('lichessLogin', ()=>lichessLogin()); on('googleLogin', ()=>googleLogin());
+  on('acToGames', ()=>{ screen = 'mygames'; render(); });
+  on('pfLogout', logout);
+  on('pfDelete', ()=>{ pfConfirmDelete = true; render(); }); on('pfDeleteNo', ()=>{ pfConfirmDelete = false; render(); }); on('pfDeleteYes', deleteMyAccount);
 }
 // Level over the positions played (line) with each position's accuracy (faint dots), last 60.
 const CH = { w:340, h:170, l:26, r:8, t:8, b:18 };
@@ -1839,6 +1890,7 @@ function renderHome(){
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="home-head">
+      ${DIRECT_LICHESS ? `<div class="home-top"><button class="acct-chip" id="accountBtn">${signedIn() ? `<span class="acct-dot" aria-hidden="true">${(displayName()[0] || '?').toUpperCase().replace(/</g,'')}</span>${displayName().replace(/</g,'&lt;')}` : 'Log in'}</button></div>` : ''}
       <h1>Chess Strategy Trainer</h1>
       <p>Three short exercises on positions from master games or your own, each checked by Stockfish.</p>
     </div>
@@ -1860,13 +1912,18 @@ function renderHome(){
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b><small>Average</small>` : `<b>—</b><small>${L.n ? `${L.n}/${CALIBRATION}` : 'Average'}</small>`}</span>
         </button>`; }).join('')}
     </div>
-    <div class="link-row"><button class="link-btn" id="progressBtn">Your profile ›</button><button class="link-btn" id="myGamesBtn">My games ›</button><button class="link-btn quiet" id="testsBtn">Test positions ›</button><a class="link-btn quiet" href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code ↗</a></div>
+    <div class="nav-tiles">
+      <button class="nav-tile" id="progressBtn"><b>Progress ›</b><small>Your averages, this week, missed positions</small></button>
+      <button class="nav-tile" id="myGamesBtn"><b>My games ›</b><small>${myGames.length ? `${myGames.filter(g=>!g.retired).length} games` : 'Positions from your own games'}</small></button>
+    </div>
+    <footer class="home-foot">${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a><span>·</span><a href="terms.html" target="_blank" rel="noopener">Terms</a><span>·</span>` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a><span>·</span><button id="testsBtn">Test positions</button></footer>
     ${engineErrorBanner()}`;
   document.getElementById('testsBtn').onclick = ()=>{ screen = 'tests'; render(); };
   document.getElementById('myGamesBtn').onclick = ()=>{ screen = 'mygames'; render(); };
   app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>setSource(b.dataset.src));
   app.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
   document.getElementById('progressBtn').onclick = ()=>{ screen = 'progress'; render(); };
+  const ab = document.getElementById('accountBtn'); if(ab) ab.onclick = ()=>{ screen = 'account'; render(); };
   document.getElementById('routineBtn').onclick = startRoutine;
   prefetchHome();
   progressJustLoaded = false;
@@ -1977,7 +2034,7 @@ async function finishLichessLogin(){
   let pending = null;
   try{ pending = JSON.parse(localStorage.getItem(OAUTH_LS) || 'null'); localStorage.removeItem(OAUTH_LS); }catch(e){}
   history.replaceState(null, '', location.pathname + location.hash);   // the code is single-use: off the address bar
-  screen = 'mygames';
+  screen = pending && pending.link ? 'mygames' : 'account';
   if(q.has('error') || !pending || q.get('state')!==pending.state){
     myImportNote = q.get('error')==='access_denied' ? 'Lichess login cancelled.' : "Lichess login didn't go through. Try again.";
     render(); return;
@@ -2041,7 +2098,7 @@ async function finishGoogleLogin(){
   try{ pending = JSON.parse(localStorage.getItem(GOOGLE_PENDING_LS) || 'null'); localStorage.removeItem(GOOGLE_PENDING_LS); }catch(e){}
   history.replaceState(null, '', location.pathname + location.search);   // the token: off the address bar
   if(!pending || q.get('state')!==pending.state) return;
-  screen = 'mygames';
+  screen = 'account';
   if(q.has('error')){ myImportNote = q.get('error')==='access_denied' ? 'Google login cancelled.' : "Google login didn't go through. Try again."; return; }
   myImportNote = 'Logging in with Google…'; render();
   try{
@@ -2584,7 +2641,7 @@ async function initMyGames(){
   if(DIRECT_LICHESS && signedIn()) syncGames();   // new games from Lichess and Chess.com, every visit
   reextractAll();
   onOwnPositionsChanged();
-  if(screen==='progress') render();   // the profile waited for the account
+  if(screen==='progress' || screen==='account') render();   // these pages waited for the account
   myBackground();
 }
 function clearMyGames(){
@@ -2641,21 +2698,21 @@ function renderMyGames(){
     <div class="mg-scroll">
       <section class="mg-card">
         <h2>Your games</h2>
-        ${DIRECT_LICHESS && !signedIn() ? `<button class="btn lichess-btn" id="lichessLogin"><span aria-hidden="true">♞</span> Log in with Lichess</button>
-        <p class="mg-sub">Your games come from your Lichess account, and your progress is then saved to it, on all your devices. Lichess never shares your password.</p>
-        ${GOOGLE_CLIENT_ID && API_BASE ? `<button class="btn google-btn" id="googleLogin">${GOOGLE_G} Log in with Google</button>
-        <p class="mg-sub">No Lichess account? Log in with Google, then add your Chess.com username. You can connect a Lichess account later. Google only tells us your email address.</p>` : ''}`
-        : `${DIRECT_LICHESS ? `<p class="mg-account"><span>${lichessAuth ? `♞ Logged in as <b>${lichessAuth.username.replace(/</g,'&lt;')}</b>` : `Logged in as <b>${googleAuth.email.replace(/</g,'&lt;')}</b> (Google)`}</span><button class="link-inline" id="lichessLogout">Log out</button></p>`
+        ${DIRECT_LICHESS && !signedIn() ? `<p class="mg-sub">Log in to bring in your Lichess or Chess.com games: they come in by themselves, and positions are found in them for the three exercises.</p>
+        <button class="btn" id="mgToAccount">Log in ›</button>`
+        : `${DIRECT_LICHESS ? ''
         : `<label class="mg-field" for="lichessUser"><span>Lichess username</span>
           <input id="lichessUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${(myName||'').replace(/"/g,'&quot;')}" placeholder="username"></label>`}
         ${DIRECT_LICHESS && accountLoading() ? `<p class="mg-status mg-loading">Retrieving your account…</p>`
         : DIRECT_LICHESS ? `
-        ${lichessName() ? `${lichessAuth ? '' : `<p class="mg-account"><span>♞ Lichess: <b>${lichessName().replace(/</g,'&lt;')}</b></span></p>`}<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : myGamesLoaded ? `<button class="btn small secondary" id="mgLinkLichess">♞ Connect your Lichess account</button>` : ''}
-        ${API_BASE ? (chesscomName
-          ? `<p class="mg-account"><span>Chess.com: <b>${chesscomName.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="ccDisconnect">Disconnect</button></p>
-             <p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>`
+        <div class="mg-src"><span class="mg-src-name">♞ Lichess</span>${lichessName() ? `<b>${lichessName().replace(/</g,'&lt;')}</b>` : ''}</div>
+        ${lichessName() ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>`
+          : `<button class="btn small secondary" id="mgLinkLichess">Connect your Lichess account</button>
+             <p class="mg-sub">Your Lichess games then come in by themselves, and you can log in with either. Progress from a Lichess login you used before is added to this account.</p>`}
+        ${API_BASE ? `<div class="mg-src"><span class="mg-src-name">Chess.com</span>${chesscomName ? `<b>${chesscomName.replace(/</g,'&lt;')}</b><button class="link-inline" id="ccDisconnect">Disconnect</button>` : ''}</div>` + (chesscomName
+          ? `<p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>`
           : `<div class="mg-cc"><input id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Chess.com username" aria-label="Chess.com username"><button class="btn small secondary" id="ccConnect">Add Chess.com</button></div>
-             <p class="mg-sub">Play on Chess.com too? Add your username: your games there come in the same way. (Chess.com doesn't offer a login to other sites yet, so it reads your public games.)</p>`) : ''}
+             <p class="mg-sub">Add your username: your public Chess.com games come in the same way.</p>`) : ''}
         <p class="mg-sub">Your last ${CORE_GAMES} games of each site (bullet to classical) come in by themselves, with Lichess's analysis where you have one.</p>`
         : `<ol class="mg-steps">
           <li><a id="exportLink" href="${lichessExportUrl(myName)}" target="_blank" rel="noopener">Download your last 50 games from Lichess ↗</a><small>Bullet, blitz, rapid and classical, with Lichess's analysis where you have one.</small></li>
@@ -2679,13 +2736,11 @@ function renderMyGames(){
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; myConfirmClear = false; render(); };
   const user = document.getElementById('lichessUser'), link = document.getElementById('exportLink');
-  const li = document.getElementById('lichessLogin'); if(li) li.onclick = ()=>lichessLogin();
   const ccc = document.getElementById('ccConnect'); if(ccc) ccc.onclick = ()=>connectChesscom(document.getElementById('ccUser').value);
   const ccu = document.getElementById('ccUser'); if(ccu) ccu.onkeydown = e=>{ if(e.key==='Enter') connectChesscom(ccu.value); };
   const ccd = document.getElementById('ccDisconnect'); if(ccd) ccd.onclick = ()=>{ disconnectChesscom(); };
-  const lo = document.getElementById('lichessLogout'); if(lo) lo.onclick = logout;
+  const mta = document.getElementById('mgToAccount'); if(mta) mta.onclick = ()=>{ screen = 'account'; render(); };
   const mll = document.getElementById('mgLinkLichess'); if(mll) mll.onclick = ()=>lichessLogin(true);
-  const gl = document.getElementById('googleLogin'); if(gl) gl.onclick = ()=>googleLogin();
   if(user) user.oninput = ()=>{ myName = user.value.trim(); try{ localStorage.setItem('cst.lichess', myName); }catch(e){} if(link) link.href = lichessExportUrl(myName); };
   const readFile = f=>{
     if(!f) return;
@@ -3212,6 +3267,7 @@ function renderScreen(){
   else if(screen==='progress') renderProgress();
   else if(screen==='tests') renderTests();
   else if(screen==='mygames') renderMyGames();
+  else if(screen==='account') renderAccount();
   else if(screen==='analysis') renderAnalysis();
   else if(screen==='candidates') renderCandidates();
   else renderFinal();
