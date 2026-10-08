@@ -1117,6 +1117,11 @@ function markPlayed(key){
   played.keys.push(key);
   if(!leaving) try{ localStorage.setItem(PLAYED_LS, JSON.stringify(played)); }catch(e){}
 }
+// Positions played today on another device (or in an account merged into yours) count too.
+function markPlayedToday(){
+  const d = new Date(); d.setHours(0,0,0,0);
+  results.forEach(r=>{ if(r.key && r.ts >= d.getTime()) markPlayed(r.key); });
+}
 // The first position from index i on that wasn't played today (or that you already started);
 // -1 when there is none: every position was played today, or none exists yet.
 function firstAvailable(t, i){
@@ -1623,6 +1628,7 @@ async function initProgress(){
         results = fromDb.concat(pending).sort((x,y)=>x.ts-y.ts);
         resultsDb = col;
         pending.forEach(r=>col.add(r).catch(()=>{}));
+        markPlayedToday();
         await loadProfileMeta(db, id);
         saveLocal(); progressReady(); render();
         return;
@@ -1719,7 +1725,7 @@ function renderProgress(){
       ${DIRECT_LICHESS ? `<div class="pf-lichess">${signedIn() ? (()=>{
           // Your account's logins, and a way to add the other one (both then open this account).
           const conn = site=>(accountConnections || []).find(c=>c.site===site);
-          const lich = lichessAuth ? lichessAuth.username : conn('lichess') && conn('lichess').username, goo = googleAuth ? googleAuth.email : conn('google') && conn('google').username;
+          const lich = lichessName(), goo = googleAuth ? googleAuth.email : conn('google') && conn('google').username;
           return [lich ? `<span>Lichess: <b>${lich.replace(/</g,'&lt;')}</b></span>` : '', goo ? `<span>Google: <b>${goo.replace(/</g,'&lt;')}</b></span>` : '',
             `<button class="link-inline" id="pfLogout">Log out</button>`].join('')
             + (!lich ? `<button class="link-inline pf-link" id="pfLinkLichess">♞ Connect your Lichess account</button><span class="pf-link-note">Your Lichess games then come in by themselves, and you can log in with either. Progress from a Lichess login you used before is added to this account.</span>` : '');
@@ -2155,17 +2161,21 @@ let mySync = { at:0, lichess:null, chesscom:null };   // per site: { added, erro
 let chesscomName = '';
 try{ chesscomName = localStorage.getItem('cst.chesscom') || ''; }catch(e){}
 function setChesscomName(n){ chesscomName = n || ''; if(leaving) return; try{ n ? localStorage.setItem('cst.chesscom', n) : localStorage.removeItem('cst.chesscom'); }catch(e){} }
+// Your Lichess name: this browser's Lichess login, else the Lichess account connected to your account
+// (logged in here with Google): its games are then read without a login (public games).
+const lichessName = ()=>lichessAuth ? lichessAuth.username : (((accountConnections || []).find(c=>c.site==='lichess')) || {}).username || '';
 const newestOf = site=>myGames.filter(g=>siteOf(g)===site).reduce((m, g)=>Math.max(m, g.playedAt || 0), 0);
 async function syncLichess(){
   const newest = newestOf('lichess');
-  const url = lichessExportUrl(lichessAuth.username) + (newest ? '&since=' + (newest + 1000) : '');
+  const name = lichessName(), url = lichessExportUrl(name) + (newest ? '&since=' + (newest + 1000) : '');
   try{
-    const res = await fetch(url, { headers:{ Accept:'application/x-chess-pgn', Authorization:'Bearer ' + lichessAuth.token } });
-    if(res.status===401){ setLichessAuth(null); return { error:'your Lichess login has expired; log in again' }; }
+    const headers = { Accept:'application/x-chess-pgn' }; if(lichessAuth) headers.Authorization = 'Bearer ' + lichessAuth.token;
+    const res = await fetch(url, { headers });
+    if(res.status===401 && lichessAuth){ setLichessAuth(null); return { error:'your Lichess login has expired; log in again' }; }
     if(res.status===429) return { error:'Lichess asks to wait a minute' };
     if(!res.ok) return { error:`Lichess didn't answer (error ${res.status})` };
     const text = await res.text(), before = myGames.length;
-    if(text.trim()) importPgnText(text, true, lichessAuth.username);
+    if(text.trim()) importPgnText(text, true, name);
     return { added: myGames.length - before };
   }catch(e){ return { error:"couldn't reach Lichess" }; }
 }
@@ -2183,7 +2193,7 @@ async function syncChesscom(){
 async function syncGames(){
   if(!signedIn() || myFetching) return;
   myFetching = true; if(screen==='mygames') render();
-  const lichess = lichessAuth ? await syncLichess() : null;
+  const lichess = lichessName() ? await syncLichess() : null;
   const chesscom = chesscomName && API_BASE && signedIn() ? await syncChesscom() : null;
   mySync = { at: Date.now(), lichess, chesscom };
   myFetching = false;
@@ -2621,7 +2631,7 @@ function renderMyGames(){
         : `<label class="mg-field" for="lichessUser"><span>Lichess username</span>
           <input id="lichessUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${(myName||'').replace(/"/g,'&quot;')}" placeholder="username"></label>`}
         ${DIRECT_LICHESS ? `
-        ${lichessAuth ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : `<button class="btn small secondary" id="mgLinkLichess">♞ Connect your Lichess account</button>`}
+        ${lichessName() ? `${lichessAuth ? '' : `<p class="mg-account"><span>♞ Lichess: <b>${lichessName().replace(/</g,'&lt;')}</b></span></p>`}<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : myGamesLoaded ? `<button class="btn small secondary" id="mgLinkLichess">♞ Connect your Lichess account</button>` : ''}
         ${API_BASE ? (chesscomName
           ? `<p class="mg-account"><span>Chess.com: <b>${chesscomName.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="ccDisconnect">Disconnect</button></p>
              <p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>`

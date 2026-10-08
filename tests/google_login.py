@@ -69,21 +69,45 @@ async def main():
             n = await P2.evaluate("[!!lichessAuth, results.length, chesscomName]"); print('   Lichess login on device 2:', n)
             if n != [True, 0, '']: fails.append(f'Lichess account mixed with the Google one: {n}')
             # 4. P2 (Lichess "Other") plays one; P1 (Google) adds that Lichess login: one account with both.
-            await A.play_one(P2); await P2.wait_for_timeout(1200)
+            # Two results on the Lichess account: one fine, one missed (for Replay), as the app saves them.
+            await P2.evaluate("""(()=>{ const k = POOLS.analysis.map(p=>p.key), now = Date.now();
+              [{ a:'analysis', acc:80, ts:now-2000, src:'masters', key:k[0], miss:false }, { a:'analysis', acc:5, ts:now-1000, src:'masters', key:k[1], miss:true }]
+                .forEach(r=>{ results.push(r); resultsDb.add(r); }); })()"""); await P2.wait_for_timeout(1200)
+            m = await P2.evaluate("missedList().length"); print("4. P2 missed before linking:", m, await P2.evaluate("results.map(r=>[r.a, r.acc, r.miss, (r.key||'').slice(0,20)])"))
+            if m != 1: fails.append(f'test setup: P2 should have one missed position, has {m}')
             await P1.evaluate("screen='progress'; render()")
             who[0] = 'tok-other'
             await P1.click('#pfLinkLichess'); await P1.wait_for_timeout(2500); await A.stand_in(P1); await P1.wait_for_timeout(2000)
             n = await P1.evaluate("[!!lichessAuth, !!googleAuth, results.length, (accountConnections||[]).map(c=>c.site).sort().join(','), myImportNote]"); print('4. P1 after adding Lichess:', n)
-            if n[:4] != [True, True, 2, 'google,lichess']: fails.append(f'linking Lichess to the Google account: {n}')
+            if n[:4] != [True, True, 3, 'google,lichess']: fails.append(f'linking Lichess to the Google account: {n}')
             await P1.evaluate("screen='progress'; render()")
             pf = await P1.inner_text('.pf-lichess'); print('   profile:', pf.replace('\n', ' '))
             if 'Lichess: Other' not in pf or 'Google: g-2001@example.com' not in pf or 'Connect' in pf: fails.append('profile after linking: ' + pf)
             await P1.screenshot(path=str(T.SHOTS/'google_3_linked.png'))
             await P2.reload(); await P2.wait_for_timeout(600); await A.stand_in(P2); await P2.wait_for_timeout(1500)
             n = await P2.evaluate("[results.length, chesscomName]"); print('   P2 (Lichess) after reload:', n)
-            if n != [2, 'CCPlayer']: fails.append(f'the Lichess login should now open the merged account: {n}')
+            if n != [3, 'CCPlayer']: fails.append(f'the Lichess login should now open the merged account: {n}')
+            # 5. A new device logs in with Google only: the merged account in full, and its Lichess games
+            #    (read without a Lichess login here); no "Connect your Lichess account".
+            ref = await P1.evaluate("({ results: results.map(r=>r.ts+r.a).sort().join(), missed: missedList().map(e=>e.a+e.key).sort().join(), week: [...document.querySelectorAll('.wk-table tbody tr')].map(r=>r.innerText).join('|') })")
+            who[0] = 'g-2001'
+            ctx4, P4, errs4 = await A.new_browser(p, SITE, who)
+            await google_login(P4); await P4.wait_for_timeout(2500)
+            await P4.evaluate("screen='progress'; render()")
+            got = await P4.evaluate("({ results: results.map(r=>r.ts+r.a).sort().join(), missed: missedList().map(e=>e.a+e.key).sort().join(), week: [...document.querySelectorAll('.wk-table tbody tr')].map(r=>r.innerText).join('|') })")
+            for k in ref:
+                if got[k] != ref[k]: fails.append(f'merged account on a new device, {k}: {got[k]} vs {ref[k]}')
+            n = await P4.evaluate("[!!lichessAuth, lichessName(), myGames.filter(g=>siteOf(g)==='lichess').length, myGames.filter(g=>siteOf(g)==='chesscom').length, results.filter(r=>r.key).every(r=>isPlayed(r.key))]")
+            print('5. new device, Google only:', n, '| results', len(got['results'].split(',')), '| missed', len([x for x in got['missed'].split(',') if x]))
+            if not got['missed']: fails.append('the missed position (Replay) did not come with the merge')
+            if n[0] or n[1] != 'Other' or n[2] < 5 or n[3] != 9 or not n[4]: fails.append(f'new device: {n}')
+            await P4.evaluate("screen='mygames'; render()")
+            if await P4.query_selector('#mgLinkLichess'): fails.append('My games still offers to connect Lichess')
+            line = await P4.inner_text('.mg-card'); print('   ', line.replace('\n', ' ')[:160])
+            await P4.screenshot(path=str(T.SHOTS/'google_4_linked_mygames.png'))
+            errs3 = errs4
             # A Lichess account isn't offered a Google login (Lichess is the main login).
-            ctx3, P3, errs3 = await A.new_browser(p, SITE, who)
+            ctx3, P3, errs5 = await A.new_browser(p, SITE, who); errs3 += errs5
             who[0] = 'tok-taussane'; await A.login(P3)
             await P3.evaluate("screen='progress'; render()"); await P3.wait_for_timeout(300)
             if await P3.query_selector('.pf-link'): fails.append('a Lichess account should not be offered another login')

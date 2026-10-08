@@ -208,12 +208,19 @@ async function signIn(env, site, token, tokenHash) {
 
 // Another account joins this one: its results and games are added (where this account has the same
 // one, this account's is kept), its settings fill in what this account doesn't have ("training
-// since": the earlier of the two), its logins now open this account; then it is deleted.
+// since": the earlier of the two; older saves' missed-position lists: both), its logins now open this account; then it is deleted.
 async function mergeInto(DB, from, to) {
   const prof = async id => { const r = await DB.prepare("SELECT data FROM meta WHERE account_id = ? AND name = 'profile'").bind(id).first(); try { return r ? JSON.parse(r.data) || {} : null; } catch (e) { return null; } };
   const [pf, pt] = await Promise.all([prof(from), prof(to)]);
   const early = [pf && pf.joinedAt, pt && pt.joinedAt].filter(x => Number.isFinite(x));
   const joined = pt && pf && early.length ? [DB.prepare("UPDATE meta SET data = ? WHERE account_id = ? AND name = 'profile'").bind(JSON.stringify({ ...pt, joinedAt: Math.min(...early) }), to)] : [];
+  // Older saves kept missed positions in a "replay" document: both lists, together.
+  const rep = async id => { const r = await DB.prepare("SELECT data FROM meta WHERE account_id = ? AND name = 'replay'").bind(id).first(); try { return r ? JSON.parse(r.data) : null; } catch (e) { return null; } };
+  const [rf, rt] = await Promise.all([rep(from), rep(to)]);
+  if (rf && rt && Array.isArray(rf.items) && Array.isArray(rt.items)) {
+    const items = rt.items.concat(rf.items.filter(x => !rt.items.some(y => y.key === x.key && y.a === x.a)));
+    joined.push(DB.prepare("UPDATE meta SET data = ? WHERE account_id = ? AND name = 'replay'").bind(JSON.stringify({ ...rt, items }), to));
+  }
   return [
     ...joined,
     DB.prepare('INSERT OR IGNORE INTO results (account_id, ts, a, data) SELECT ?, ts, a, data FROM results WHERE account_id = ?').bind(to, from),
