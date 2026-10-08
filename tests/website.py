@@ -49,6 +49,12 @@ async def main():
         line = await pg.inner_text('#syncLine'); print('next visit:', line, '| since', u.split('since=')[-1])
         if f'since={newest+1000}' not in u: fails.append('next request does not ask only for newer games: ' + u)
         if line != 'Up to date with Lichess.': fails.append('second sync line: ' + line)
+        # Typing in a field while the page keeps redrawing (as during analysis): nothing is lost.
+        await pg.evaluate("window.__redraw = setInterval(()=>render(), 50)")
+        await pg.click('#ccUser'); await pg.keyboard.type('SomePlayer', delay=60)
+        typed = await pg.evaluate("[document.getElementById('ccUser').value, document.activeElement.id]"); await pg.evaluate("clearInterval(__redraw)")
+        print('typed while redrawing:', typed)
+        if typed != ['SomePlayer', 'ccUser']: fails.append(f'typing lost on redraw: {typed}')
         await pg.screenshot(path=str(T.SHOTS/'site_mygames.png'))
         await b.close()
     errs = [e for e in errs if 'importScripts' not in e]

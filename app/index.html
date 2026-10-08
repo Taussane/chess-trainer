@@ -3032,6 +3032,15 @@ function renderFinal(){
 }
 
 function render(){
+  // The page is redrawn often (e.g. while your games are analysed): text being typed, and the
+  // focus and cursor in it, carry over to the redrawn page.
+  const typed = [...document.querySelectorAll('input[type=text][id], textarea[id]')].map(el=>({ id: el.id, value: el.value }));
+  const act = document.activeElement, focus = act && act.id && /^(INPUT|TEXTAREA)$/.test(act.tagName) ? { id: act.id, a: act.selectionStart, b: act.selectionEnd } : null;
+  renderScreen();
+  typed.forEach(t=>{ const el = document.getElementById(t.id); if(el && /^(INPUT|TEXTAREA)$/.test(el.tagName)) el.value = t.value; });
+  if(focus){ const el = document.getElementById(focus.id); if(el){ el.focus(); try{ el.setSelectionRange(focus.a, focus.b); }catch(e){} } }
+}
+function renderScreen(){
   syncPos();
   const wrap = document.querySelector('.wrap');
   wrap.classList.toggle('ex', ACTIVITIES.includes(screen));
