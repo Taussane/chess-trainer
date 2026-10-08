@@ -50,6 +50,9 @@ test('results: added once, read back in order and in pages, each account only it
 test('games: saved without their positions, replaced, removed', async () => {
   const env = makeEnv();
   const g = { id: 'abcdEFGH', site: 'lichess', sans: ['e4', 'e5'], evals: null, status: 'queued', positions: [{ key: 'x' }] };
+  await call(env, 'POST', '/api/games', { body: { games: [{ id: 'cc-9', site: 'chesscom', sans: ['d4'] }] } });
+  assert.equal((await j(await call(env, 'GET', '/api/games'))).body.games.length, 0, 'no Chess.com games without a Chess.com username');
+  await call(env, 'PUT', '/api/meta/chesscom', { body: { data: { username: 'CCPlayer' } } });
   await call(env, 'POST', '/api/games', { body: { games: [g, { id: 'cc-123', site: 'chesscom', sans: ['d4'] }] } });
   await call(env, 'POST', '/api/games', { body: { games: [{ ...g, status: 'evaluated' }] } });
   let games = (await j(await call(env, 'GET', '/api/games'))).body.games;
@@ -137,8 +140,8 @@ test('linking: a Google login added to a Lichess account; an existing Google acc
   // The Google account already has progress, a game and a Chess.com name; the Lichess one too.
   const g = (await j(await call(env, 'POST', '/api/login/google', { token: null, body: { idToken: await googleIdToken({ sub: '77' }) } }))).body;
   await call(env, 'POST', '/api/results', { ...app(g.token), body: { rows: [{ a: 'analysis', acc: 50, ts: 10 }, { a: 'final', acc: 60, ts: 20 }] } });
-  await call(env, 'POST', '/api/games', { ...app(g.token), body: { games: [{ id: 'cc-1', site: 'chesscom', sans: ['e4'] }] } });
   await call(env, 'PUT', '/api/meta/chesscom', { ...app(g.token), body: { data: { username: 'CCPlayer' } } });
+  await call(env, 'POST', '/api/games', { ...app(g.token), body: { games: [{ id: 'cc-1', site: 'chesscom', sans: ['e4'] }] } });
   await call(env, 'PUT', '/api/meta/profile', { ...app(g.token), body: { data: { joinedAt: 1 } } });
   await call(env, 'POST', '/api/results', { body: { rows: [{ a: 'analysis', acc: 70, ts: 10 }, { a: 'candidates', acc: 80, ts: 30 }] } });
   await call(env, 'PUT', '/api/meta/profile', { body: { data: { joinedAt: 5 } } });

@@ -117,8 +117,13 @@ async function route(req, env) {
     const games = (await body(req)).games;
     if (!Array.isArray(games) || games.length > MAX_ROWS) throw fail(400, 'games: a list of at most ' + MAX_ROWS);
     const now = Date.now(), stmts = [];
+    // Chess.com games only while a Chess.com username is connected (so a device that hasn't heard of
+    // a disconnect yet can't bring them back).
+    const cc = await DB.prepare("SELECT data FROM meta WHERE account_id = ? AND name = 'chesscom'").bind(account).first();
+    let ccOn = false; try { ccOn = !!(cc && JSON.parse(cc.data).username); } catch (e) {}
     for (const g of games) {
       if (!g || typeof g.id !== 'string' || !g.id || !Array.isArray(g.sans)) continue;
+      if (!ccOn && (g.site === 'chesscom' || g.id.startsWith('cc-'))) continue;
       const { positions, ...keep } = g;   // positions are worked out again by the app
       const data = JSON.stringify(keep);
       if (data.length > MAX_GAME_BYTES) continue;

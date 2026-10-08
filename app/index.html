@@ -2215,7 +2215,7 @@ async function connectChesscom(name){
   try{
     const r = await serverCall(signedIn(), 'GET', '/api/chesscom/player?user=' + encodeURIComponent(name));
     setChesscomName(r.username);
-    const store = await getStore(); if(store && store.db) store.db.doc('meta/chesscom').set({ username: r.username }).catch(()=>{});
+    const store = await getStore(); if(store && store.db) await store.db.doc('meta/chesscom').set({ username: r.username }).catch(()=>{});   // before its games: the account takes Chess.com games only while connected
     myImportNote = ''; render();
     syncGames();
   }catch(e){ myImportNote = /404/.test(e.message) ? `No Chess.com player named ${name.replace(/</g,'&lt;')}.` : `Couldn't check Chess.com: ${e.message}.`; render(); }
@@ -2557,7 +2557,8 @@ async function initMyGames(){
         const fromDb = snap.docs.map(d=>d.data()).filter(g=>g && g.id && Array.isArray(g.sans));
         // Games only on this device go up to your account, unless "Remove my games" was used
         // (on any device) after they were added.
-        const local = myGames.filter(g=>!fromDb.some(x=>x.id===g.id) && (!clearedAt || (g.addedAt || 0) > clearedAt));
+        // (Chess.com games only while Chess.com is connected: disconnected on another device, they go here too.)
+        const local = myGames.filter(g=>!fromDb.some(x=>x.id===g.id) && (!clearedAt || (g.addedAt || 0) > clearedAt) && (chesscomName || siteOf(g)!=='chesscom'));
         myGamesCol = col;
         myGames = fromDb.concat(local);
         local.forEach(g=>myGamesCol.doc(g.id).set(g).catch(()=>{}));
