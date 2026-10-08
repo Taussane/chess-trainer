@@ -130,3 +130,38 @@ test('Google: a checked ID token gives our own login; the same Google account fi
   assert.equal((await call(env, 'GET', '/api/me', { token: null, headers: { Authorization: 'Bearer ' + b.body.token, 'X-Auth-Site': 'app' } })).status, 200);
   assert.ok(googleCalls.n >= 1);
 });
+
+test('linking: a Google login added to a Lichess account; an existing Google account is merged into it', async () => {
+  const env = makeEnv();
+  const app = tok => ({ token: null, headers: { Authorization: 'Bearer ' + tok, 'X-Auth-Site': 'app' } });
+  // The Google account already has progress, a game and a Chess.com name; the Lichess one too.
+  const g = (await j(await call(env, 'POST', '/api/login/google', { token: null, body: { idToken: await googleIdToken({ sub: '77' }) } }))).body;
+  await call(env, 'POST', '/api/results', { ...app(g.token), body: { rows: [{ a: 'analysis', acc: 50, ts: 10 }, { a: 'final', acc: 60, ts: 20 }] } });
+  await call(env, 'POST', '/api/games', { ...app(g.token), body: { games: [{ id: 'cc-1', site: 'chesscom', sans: ['e4'] }] } });
+  await call(env, 'PUT', '/api/meta/chesscom', { ...app(g.token), body: { data: { username: 'CCPlayer' } } });
+  await call(env, 'PUT', '/api/meta/profile', { ...app(g.token), body: { data: { joinedAt: 1 } } });
+  await call(env, 'POST', '/api/results', { body: { rows: [{ a: 'analysis', acc: 70, ts: 10 }, { a: 'candidates', acc: 80, ts: 30 }] } });
+  await call(env, 'PUT', '/api/meta/profile', { body: { data: { joinedAt: 5 } } });
+  const lich = (await j(await call(env, 'GET', '/api/me'))).body.account.id;
+  const r = await j(await call(env, 'POST', '/api/link/google', { body: { idToken: await googleIdToken({ sub: '77' }) } }));
+  assert.deepEqual(r.body, { ok: true, merged: true });
+  const me = (await j(await call(env, 'GET', '/api/me'))).body;
+  assert.equal(me.account.id, lich);
+  assert.deepEqual(me.connections.map(c => c.site).sort(), ['google', 'lichess']);
+  const rows = (await j(await call(env, 'GET', '/api/results?after=-1'))).body.rows;
+  assert.deepEqual(rows.map(x => [x.ts, x.a, x.acc]), [[10, 'analysis', 70], [20, 'final', 60], [30, 'candidates', 80]], 'both; on a clash the Lichess account wins');
+  assert.deepEqual((await j(await call(env, 'GET', '/api/games'))).body.games.map(x => x.id), ['cc-1']);
+  assert.deepEqual((await j(await call(env, 'GET', '/api/meta/chesscom'))).body.data, { username: 'CCPlayer' });
+  assert.deepEqual((await j(await call(env, 'GET', '/api/meta/profile'))).body.data, { joinedAt: 5 });
+  // The Google login (old token and a new one) now opens the same account; one account is left.
+  assert.equal((await j(await call(env, 'GET', '/api/me', app(g.token)))).body.account.id, lich);
+  const g2 = (await j(await call(env, 'POST', '/api/login/google', { token: null, body: { idToken: await googleIdToken({ sub: '77' }) } }))).body;
+  assert.equal((await j(await call(env, 'GET', '/api/me', app(g2.token)))).body.account.id, lich);
+  assert.equal(env.DB.raw.prepare('SELECT COUNT(*) n FROM accounts').get().n, 1);
+  // The other way: a Google-only account adds a Lichess login that has no account yet.
+  const h = (await j(await call(env, 'POST', '/api/login/google', { token: null, body: { idToken: await googleIdToken({ sub: '88' }) } }))).body;
+  assert.equal((await j(await call(env, 'POST', '/api/link/lichess', { ...app(h.token), body: { token: 'tok-other' } }))).body.merged, false);
+  const hid = (await j(await call(env, 'GET', '/api/me', app(h.token)))).body.account.id;
+  assert.equal((await j(await call(env, 'GET', '/api/me', { token: 'tok-other' }))).body.account.id, hid);
+  assert.equal((await call(env, 'POST', '/api/link/lichess', { ...app(h.token), body: { token: 'tok-nobody' } })).status, 401);
+});

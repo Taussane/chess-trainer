@@ -131,6 +131,7 @@
   .pf-facts{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:0.86rem; color:var(--text-mute);}
   .pf-lichess{display:flex; gap:12px; align-items:center; margin-top:6px; font-size:0.86rem; color:var(--text-mute);}
   .pf-lichess b{color:var(--text);}
+  .pf-lichess{flex-wrap:wrap;} .pf-link{flex-basis:100%; text-align:left;}
   .pf-note{margin:6px 0 0; font-size:0.8rem; color:var(--text-mute);}
   .pf-note a{color:var(--accent);}
   .pf-delete{font-size:0.8rem; padding:4px 0; color:var(--text-mute);}
@@ -1715,8 +1716,14 @@ function renderProgress(){
     <section class="pf-card pf-id">
       <div class="pf-name">${(myName || chesscomName || (googleAuth ? googleAuth.email.split('@')[0] : '')).replace(/</g,'&lt;') || 'You'}</div>
       <div class="pf-facts"><span>Training since <b>${since}</b></span><span><b>${results.length}</b> position${results.length===1?'':'s'} completed</span></div>
-      ${DIRECT_LICHESS ? `<div class="pf-lichess">${lichessAuth ? `<span>Lichess: <b>${lichessAuth.username.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="pfLogout">Log out</button>`
-        : googleAuth ? `<span>Google: <b>${googleAuth.email.replace(/</g,'&lt;')}</b></span><button class="link-inline" id="pfLogout">Log out</button>`
+      ${DIRECT_LICHESS ? `<div class="pf-lichess">${signedIn() ? (()=>{
+          // Your account's logins, and a way to add the other one (both then open this account).
+          const conn = site=>(accountConnections || []).find(c=>c.site===site);
+          const lich = lichessAuth ? lichessAuth.username : conn('lichess') && conn('lichess').username, goo = googleAuth ? googleAuth.email : conn('google') && conn('google').username;
+          return [lich ? `<span>Lichess: <b>${lich.replace(/</g,'&lt;')}</b></span>` : '', goo ? `<span>Google: <b>${goo.replace(/</g,'&lt;')}</b></span>` : '',
+            `<button class="link-inline" id="pfLogout">Log out</button>`].join('')
+            + (!lich ? `<button class="link-inline pf-link" id="pfLinkLichess">♞ Also log in with Lichess</button>` : !goo && GOOGLE_CLIENT_ID ? `<button class="link-inline pf-link" id="pfLinkGoogle">Also log in with Google</button>` : '');
+        })()
         : `<button class="link-inline" id="pfLogin">♞ Log in with Lichess</button>${GOOGLE_CLIENT_ID && API_BASE ? `<button class="link-inline" id="pfGoogle">Log in with Google</button>` : ''}`}</div>
       <p class="pf-note">${API_BASE ? (signedIn() ? (syncStatus && syncStatus!=='ok' ? `Couldn't reach your account: ${syncStatus.replace(/</g,'&lt;')}. Your progress stays on this device for now and is sent next time.` : 'Your progress and games are saved to your account, on every device you log in.') : 'Log in to keep your progress on all your devices. Until then it stays in this browser only.') : 'Your progress is kept in this browser only.'} <a href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
       ${API_BASE && signedIn() ? (pfConfirmDelete
@@ -1756,12 +1763,14 @@ function renderProgress(){
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; render(); };
   document.getElementById('replayBtn').onclick = ()=>startReplay(a);
-  const pli = document.getElementById('pfLogin'); if(pli) pli.onclick = lichessLogin;
+  const pli = document.getElementById('pfLogin'); if(pli) pli.onclick = ()=>lichessLogin();
+  const pll = document.getElementById('pfLinkLichess'); if(pll) pll.onclick = ()=>lichessLogin(true);
+  const plg = document.getElementById('pfLinkGoogle'); if(plg) plg.onclick = ()=>googleLogin(true);
   const pd = document.getElementById('pfDelete'); if(pd) pd.onclick = ()=>{ pfConfirmDelete = true; render(); };
   const pdn = document.getElementById('pfDeleteNo'); if(pdn) pdn.onclick = ()=>{ pfConfirmDelete = false; render(); };
   const pdy = document.getElementById('pfDeleteYes'); if(pdy) pdy.onclick = deleteMyAccount;
   const plo = document.getElementById('pfLogout'); if(plo) plo.onclick = logout;
-  const pgo = document.getElementById('pfGoogle'); if(pgo) pgo.onclick = googleLogin;
+  const pgo = document.getElementById('pfGoogle'); if(pgo) pgo.onclick = ()=>googleLogin();
   app.querySelectorAll('.seg-btn').forEach(b=>b.onclick = ()=>{ progressTab = b.dataset.tab; render(); });
   wireChartHover(sr);
 }
@@ -1932,10 +1941,10 @@ try{ const v = JSON.parse(localStorage.getItem(AUTH_LS) || 'null'); if(v && v.to
 let fetchAfterLogin = false;
 const b64url = bytes=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const oauthRedirect = ()=>location.origin + location.pathname;
-async function lichessLogin(){
+async function lichessLogin(link){   // link: add Lichess to the account you're logged in to
   const verifier = b64url(crypto.getRandomValues(new Uint8Array(32))), state = b64url(crypto.getRandomValues(new Uint8Array(16)));
   const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
-  try{ localStorage.setItem(OAUTH_LS, JSON.stringify({ verifier, state })); }catch(e){}
+  try{ localStorage.setItem(OAUTH_LS, JSON.stringify({ verifier, state, link: !!link })); }catch(e){}
   location.href = LICHESS + '/oauth?' + new URLSearchParams({ response_type:'code', client_id:LICHESS_CLIENT_ID,
     redirect_uri:oauthRedirect(), code_challenge_method:'S256', code_challenge:challenge, state });
 }
@@ -1965,8 +1974,12 @@ async function finishLichessLogin(){
     const ar = await fetch(LICHESS + '/api/account', { headers:{ Authorization:'Bearer ' + tok.access_token } });
     const acc = ar.ok ? await ar.json() : null;
     if(!acc || !acc.username) throw new Error('account');
+    if(pending.link && googleAuth){   // the Lichess login joins this account (its own account, if any, is merged into it)
+      try{ await serverCall(googleAuth, 'POST', '/api/link/lichess', { token:tok.access_token }); }
+      catch(e){ myImportNote = `Lichess couldn't be added to your account: ${e.message}.`; render(); return; }
+    }
     setLichessAuth({ token:tok.access_token, username:acc.username });
-    myImportNote = '';
+    myImportNote = pending.link ? 'Lichess added: your Lichess and Google logins now open the same account.' : '';
     fetchAfterLogin = true;   // no games yet (here or in your account): your games right away
   }catch(e){ myImportNote = "Lichess login didn't go through. Try again."; }
   render();
@@ -1977,6 +1990,7 @@ async function lichessLogout(){
   const a = lichessAuth, synced = !!localOwner();
   if(a && synced) try{ await serverCall(a, 'DELETE', '/api/session'); }catch(e){}
   setLichessAuth(null);
+  if(googleAuth){ if(synced) try{ await serverCall(googleAuth, 'DELETE', '/api/session'); }catch(e){} setGoogleAuth(null); }
   if(a) try{ await fetch(LICHESS + '/api/token', { method:'DELETE', headers:{ Authorization:'Bearer ' + a.token } }); }catch(e){}
   if(synced){ leaving = true; clearLocalData(); location.reload(); return; }
   render();
@@ -1996,9 +2010,9 @@ function setGoogleAuth(a){
 }
 // The login used with the account server: Lichess's, else Google's (ours).
 const signedIn = ()=>lichessAuth ? { ...lichessAuth, site:'lichess' } : googleAuth;
-function googleLogin(){
+function googleLogin(link){   // link: add Google to the account you're logged in to
   const state = b64url(crypto.getRandomValues(new Uint8Array(16))), nonce = b64url(crypto.getRandomValues(new Uint8Array(16)));
-  try{ localStorage.setItem(GOOGLE_PENDING_LS, JSON.stringify({ state, nonce })); }catch(e){}
+  try{ localStorage.setItem(GOOGLE_PENDING_LS, JSON.stringify({ state, nonce, link: !!link })); }catch(e){}
   location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({ client_id:GOOGLE_CLIENT_ID, redirect_uri:oauthRedirect(),
     response_type:'id_token', scope:'openid email', nonce, state, prompt:'select_account' });
 }
@@ -2017,6 +2031,11 @@ async function finishGoogleLogin(){
     const idToken = q.get('id_token');
     const claims = JSON.parse(atob(idToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
     if(claims.nonce!==pending.nonce) throw new Error('nonce');   // this answer is for this login
+    if(pending.link && signedIn()){   // Google joins this account (its own account, if any, is merged into it)
+      try{ await serverCall(signedIn(), 'POST', '/api/link/google', { idToken }); myImportNote = 'Google added: your Lichess and Google logins now open the same account.'; }
+      catch(e){ myImportNote = `Google couldn't be added to your account: ${e.message}.`; }
+      return;
+    }
     const r = await fetch(API_BASE + '/api/login/google', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ idToken }) });
     const a = r.ok ? await r.json() : null;
     if(!a || !a.token) throw new Error('server');
@@ -2058,7 +2077,7 @@ async function openStore(){
   let me = null;
   try{ me = await db.me(); }catch(e){ syncStatus = e.message; return null; }
   if(!me || !me.account){ syncStatus = 'no account'; return null; }
-  syncStatus = 'ok';
+  syncStatus = 'ok'; accountConnections = me.connections || [];
   const owner = localOwner();
   if(owner && owner!==me.account.id){
     // This browser's copy is someone else's account: start from yours only.
@@ -2068,6 +2087,7 @@ async function openStore(){
   try{ const cc = await db.doc('meta/chesscom').get(); setChesscomName(cc.exists && cc.data() ? cc.data().username : ''); }catch(e){}   // your Chess.com connection
   return { db, id: me.account.id, server: true };
 }
+let accountConnections = null;   // the account's logins, from the server
 let syncStatus = '';   // 'ok', or why the account couldn't be reached (shown in the profile)
 async function serverCall(auth, method, path, body){
   const headers = { Authorization:'Bearer ' + auth.token, 'X-Auth-Site':auth.site || 'lichess' };
@@ -2631,12 +2651,12 @@ function renderMyGames(){
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; myConfirmClear = false; render(); };
   const user = document.getElementById('lichessUser'), link = document.getElementById('exportLink');
-  const li = document.getElementById('lichessLogin'); if(li) li.onclick = lichessLogin;
+  const li = document.getElementById('lichessLogin'); if(li) li.onclick = ()=>lichessLogin();
   const ccc = document.getElementById('ccConnect'); if(ccc) ccc.onclick = ()=>connectChesscom(document.getElementById('ccUser').value);
   const ccu = document.getElementById('ccUser'); if(ccu) ccu.onkeydown = e=>{ if(e.key==='Enter') connectChesscom(ccu.value); };
   const ccd = document.getElementById('ccDisconnect'); if(ccd) ccd.onclick = ()=>{ disconnectChesscom(); };
   const lo = document.getElementById('lichessLogout'); if(lo) lo.onclick = logout;
-  const gl = document.getElementById('googleLogin'); if(gl) gl.onclick = googleLogin;
+  const gl = document.getElementById('googleLogin'); if(gl) gl.onclick = ()=>googleLogin();
   if(user) user.oninput = ()=>{ myName = user.value.trim(); try{ localStorage.setItem('cst.lichess', myName); }catch(e){} if(link) link.href = lichessExportUrl(myName); };
   const readFile = f=>{
     if(!f) return;

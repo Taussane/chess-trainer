@@ -11,6 +11,10 @@
 // the account. Each request then reads or writes that account's rows only.
 //
 //   POST   /api/login/google {idToken}  sign in with Google -> {token, email}
+//   POST   /api/link/google  {idToken}  add a Google login to this account
+//   POST   /api/link/lichess {token}    add a Lichess login to this account
+//                                       (if that login already has an account, the two are merged
+//                                       into this one: progress, games and settings together)
 //   GET    /api/me                      account, its connections
 //   GET    /api/results?after=&limit=   results after a time, oldest first (at most 1000)
 //   POST   /api/results   {rows:[…]}    add results (a row already there is ignored)
@@ -149,6 +153,21 @@ async function route(req, env) {
     return new Response(await ccGames(ccUser(url), Number(url.searchParams.get('since') || 0), Math.max(1, Math.min(200, Number(url.searchParams.get('max') || 100)))),
       { headers: { 'Content-Type': 'application/x-chess-pgn' } });
   }
+  if (m === 'POST' && (path === '/api/link/google' || path === '/api/link/lichess')) {
+    const b = await body(req), google = path.endsWith('google');
+    const player = google ? await verifyGoogle(env, b.idToken) : await SITES.lichess(String(b.token || ''));
+    if (!player) throw fail(401, (google ? 'Google' : 'Lichess') + ' did not accept this login');
+    const linkSite = google ? 'google' : 'lichess', now = Date.now();
+    const c = await DB.prepare('SELECT account_id FROM connections WHERE site = ? AND site_user_id = ?').bind(linkSite, player.id).first();
+    const stmts = [];
+    if (c && c.account_id !== account) stmts.push(...mergeInto(DB, c.account_id, account));
+    if (c) stmts.push(DB.prepare('UPDATE connections SET account_id = ?, username = ?, verified = 1 WHERE site = ? AND site_user_id = ?').bind(account, player.username, linkSite, player.id));
+    else stmts.push(DB.prepare('INSERT INTO connections (site, site_user_id, account_id, username, verified, added_at) VALUES (?, ?, ?, ?, 1, ?)').bind(linkSite, player.id, account, player.username, now));
+    if (!google) stmts.push(DB.prepare('INSERT INTO sessions (token_hash, account_id, site, checked_at) VALUES (?, ?, ?, ?) ON CONFLICT (token_hash) DO UPDATE SET account_id = excluded.account_id, checked_at = excluded.checked_at')
+      .bind(await sha256('lichess:' + b.token), account, 'lichess', now));
+    await DB.batch(stmts);
+    return json({ ok: true, merged: !!(c && c.account_id !== account) });
+  }
   if (m === 'DELETE' && path === '/api/account') {
     await DB.batch(['results', 'games', 'meta', 'sessions', 'connections'].map(t => DB.prepare(`DELETE FROM ${t} WHERE account_id = ?`).bind(account))
       .concat([DB.prepare('DELETE FROM accounts WHERE id = ?').bind(account)]));
@@ -184,6 +203,21 @@ async function signIn(env, site, token, tokenHash) {
   stmts.push(DB.prepare('INSERT INTO sessions (token_hash, account_id, site, checked_at) VALUES (?, ?, ?, ?) ON CONFLICT (token_hash) DO UPDATE SET account_id = excluded.account_id, checked_at = excluded.checked_at').bind(tokenHash, account, site, now));
   await DB.batch(stmts);
   return account;
+}
+
+// Another account joins this one: its results and games are added (where this account has the same
+// one, this account's is kept), its settings fill in what this account doesn't have, its logins
+// now open this account; then it is deleted.
+function mergeInto(DB, from, to) {
+  return [
+    DB.prepare('INSERT OR IGNORE INTO results (account_id, ts, a, data) SELECT ?, ts, a, data FROM results WHERE account_id = ?').bind(to, from),
+    DB.prepare('INSERT OR IGNORE INTO games (account_id, id, site, data, updated_at) SELECT ?, id, site, data, updated_at FROM games WHERE account_id = ?').bind(to, from),
+    DB.prepare('INSERT OR IGNORE INTO meta (account_id, name, data) SELECT ?, name, data FROM meta WHERE account_id = ?').bind(to, from),
+    DB.prepare('UPDATE connections SET account_id = ? WHERE account_id = ?').bind(to, from),
+    DB.prepare('UPDATE sessions SET account_id = ? WHERE account_id = ?').bind(to, from),
+    ...['results', 'games', 'meta'].map(t => DB.prepare(`DELETE FROM ${t} WHERE account_id = ?`).bind(from)),
+    DB.prepare('DELETE FROM accounts WHERE id = ?').bind(from),
+  ];
 }
 
 // ---- Google sign-in ----
