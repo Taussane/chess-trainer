@@ -21,4 +21,5 @@ if stats.exists():
     assert all(g.get('sans') for g in games), 'stats.json has no moves: run the finder again'
     s = re.sub(r'/\*GAME_MOVES\*/.*?/\*END GAME_MOVES\*/', lambda m: '/*GAME_MOVES*/' + json.dumps(moves, ensure_ascii=False, separators=(',',':')) + '/*END GAME_MOVES*/', s, flags=re.S)
 app.write_text(s, encoding='utf-8')
+import subprocess; subprocess.run(['python3', str(app.parent.parent/'scripts'/'master-dates.py')], check=True)
 print({k: len(v) for k, v in pools.items()}, 'rules', d.get('version'))
