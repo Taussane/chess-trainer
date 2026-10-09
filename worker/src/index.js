@@ -153,7 +153,9 @@ async function route(req, env) {
   if (m === 'GET' && path === '/api/chesscom/player') {
     const user = ccUser(url);
     const p = await (await ccFetch('https://api.chess.com/pub/player/' + user)).json();
-    return json({ username: p.username || user });
+    // Chess.com gives "username" in lowercase; the name as the player spells it is in their page's address.
+    const spelled = (String(p.url || '').match(/\/member\/([^/?#]+)/) || [])[1];
+    return json({ username: spelled && spelled.toLowerCase() === String(p.username || user).toLowerCase() ? decodeURIComponent(spelled) : (p.username || user) });
   }
   if (m === 'GET' && path === '/api/chesscom/games') {
     return new Response(await ccGames(ccUser(url), Number(url.searchParams.get('since') || 0), Math.max(1, Math.min(200, Number(url.searchParams.get('max') || 100)))),

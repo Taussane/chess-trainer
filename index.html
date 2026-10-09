@@ -184,8 +184,9 @@
   .btn.lichess-btn{background:#fff; color:#161512; display:flex; align-items:center; gap:8px; justify-content:center;}
   .lichess-btn .li-logo{width:20px; height:20px;}
   .ac-site .li-logo{width:15px; height:15px;}
+  .ac-site .cc-logo{width:15px; height:17px;}
   .chart-avg{margin-left:auto; color:var(--text-mute);}
-  .chart-avg b{color:var(--text); font-weight:600;}
+  .chart-avg{color:var(--text); font-weight:600; font-variant-numeric:tabular-nums;}
   .pf-replay-btn{align-self:flex-start;}
   .btn.google-btn{background:#fff; color:#1f1f1f; display:flex; align-items:center; gap:10px; justify-content:center; margin-top:10px;}
   .google-btn svg{width:18px; height:18px; flex:none;}
@@ -1762,8 +1763,8 @@ function progressSection(){
   const nMissed = missedOf(a).length, nReplay = replayable(a).length;   // for the exercise selected below
   const since = new Date(joinedAt()).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
   const html = `
+    <h2 class="pf-h">This week</h2>
     <section class="pf-card">
-      <h2>This week</h2>
       <table class="wk-table">
         <thead><tr><th></th>${ACTS.map(x=>`<th scope="col" title="${ACT_NAMES[x]}"><span aria-hidden="true">${ACT_GLYPHS[x]}</span><span class="sr">${ACT_NAMES[x]}</span></th>`).join('')}<th scope="col" title="Daily routine done"><span class="sr">Routine</span></th></tr></thead>
         <tbody>${weekRows}</tbody>
@@ -1774,7 +1775,7 @@ function progressSection(){
     ${info.n===0 ? `<p class="empty">No ${ACT_NAMES[a]} positions played yet.<br>Your average appears after ${CALIBRATION} positions.</p>` : `
     <div class="chart-box" id="chartBox">
       <div class="chart-legend"><span><i class="lg-line"></i>Average</span><span><i class="lg-dot"></i>Masters</span><span><i class="lg-dot mine"></i>My games</span>
-        <span class="chart-avg">${info.rated ? `Average <b>${pct(info.level)}</b>${weekDelta==null ? '' : ` · ${deltaHtml(weekDelta)} this week`}` : `${info.n}/${CALIBRATION} to your average`}</span></div>
+        <span class="chart-avg" title="${info.rated ? 'Your average' : 'Positions played, out of those needed for your average'}">${info.rated ? pct(info.level) : `${info.n}/${CALIBRATION}`}</span></div>
       ${levelChartSvg(sr)}
     </div>`}
     ${nReplay ? `<button class="btn small secondary pf-replay-btn" id="replayBtn" title="${ACT_NAMES[a]} positions you scored below your average on">Replay ${nReplay} ›</button>` : ''}`;
@@ -1797,8 +1798,8 @@ function accountSection(){
   const conn = site=>(accountConnections || []).find(c=>c.site===site);
   const lich = lichessName(), goo = googleAuth ? googleAuth.email : conn('google') && conn('google').username;
   if(!signedIn()) return `
+      <h2 class="pf-h">Account and games</h2>
       <section class="pf-card ac-card">
-        <h2>Account and games</h2>
         <p class="ac-sub">Log in to keep your progress on all your devices and to bring in your own games: they come in by themselves, and positions are found in them for the three exercises. Until then, your progress stays in this browser only.</p>
         <button class="btn lichess-btn" id="lichessLogin">${LICHESS_LOGO} Log in with Lichess</button>
         <p class="ac-sub">Recommended: your Lichess games then come in by themselves. Lichess never shares your password with us.</p>
@@ -1806,16 +1807,16 @@ function accountSection(){
         <p class="ac-sub">No Lichess account? Log in with Google, then add your Chess.com username. You can connect Lichess later. Google only tells us your email address.</p>` : ''}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
       </section>`;
-  if(accountLoading()) return `<section class="pf-card ac-card"><h2>Account and games</h2><p class="mg-status mg-loading">Retrieving your account…</p></section>`;
+  if(accountLoading()) return `<h2 class="pf-h">Account and games</h2><section class="pf-card ac-card"><p class="mg-status mg-loading">Retrieving your account…</p></section>`;
   return `
+      <h2 class="pf-h">Account and games</h2>
       <section class="pf-card ac-card">
-        <h2>Account and games</h2>
         <div class="ac-row"><span class="ac-site">${LICHESS_LOGO} Lichess</span>${lich ? `<b>${esc(lich)}</b>` : ''}</div>
         ${lich ? (siteLine('lichess') ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : '')
           : `<button class="btn small secondary" id="mgLinkLichess">Connect your Lichess account</button>
              <p class="ac-sub">Your Lichess games then come in by themselves, and you can log in with either. Progress from a Lichess login you used before is added to this account.</p>`}
         ${goo ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}
-        <div class="ac-row"><span class="ac-site">Chess.com</span>${chesscomName ? `<b>${esc(chesscomName)}</b><button class="link-inline" id="ccDisconnect">Disconnect</button>` : ''}</div>
+        <div class="ac-row"><span class="ac-site">${CHESSCOM_LOGO} Chess.com</span>${chesscomName ? `<b>${esc(chesscomName)}</b><button class="link-inline" id="ccDisconnect">Disconnect</button>` : ''}</div>
         ${chesscomName ? (siteLine('chesscom') ? `<p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>` : '')
           : `<div class="mg-cc"><input id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Chess.com username" aria-label="Chess.com username"><button class="btn small secondary" id="ccConnect">Add Chess.com</button></div>
              <p class="ac-sub">Your public Chess.com games then come in the same way.</p>`}
@@ -2260,6 +2261,10 @@ async function syncLichess(){
 }
 async function syncChesscom(){
   const newest = newestOf('chesscom');
+  if(chesscomName && chesscomName===chesscomName.toLowerCase()) try{   // saved before names kept their capitals
+    const r = await serverCall(signedIn(), 'GET', '/api/chesscom/player?user=' + encodeURIComponent(chesscomName));
+    if(r.username && r.username!==chesscomName && r.username.toLowerCase()===chesscomName){ setChesscomName(r.username); const st = await getStore(); if(st && st.db) st.db.doc('meta/chesscom').set({ username:r.username }).catch(()=>{}); }
+  }catch(e){}
   try{
     const r = await fetch(API_BASE + `/api/chesscom/games?user=${encodeURIComponent(chesscomName)}&max=${CORE_GAMES}` + (newest ? '&since=' + (newest + 1000) : ''),
       { headers:{ Authorization:'Bearer ' + signedIn().token, 'X-Auth-Site':signedIn().site } });
@@ -2663,6 +2668,7 @@ function clearMyGames(){
 
 // The "My games" page: add games, see what was found, next to the master games' figures.
 const LICHESS_LOGO = '<svg class="li-logo" viewBox="0 0 50 50" aria-hidden="true"><path fill="currentColor" stroke="currentColor" stroke-linejoin="round" d="M38.956.5c-3.53.418-6.452.902-9.286 2.984C5.534 1.786-.692 18.533.68 29.364 3.493 50.214 31.918 55.785 41.329 41.7c-7.444 7.696-19.276 8.752-28.323 3.084S-.506 27.392 4.683 17.567C9.873 7.742 18.996 4.535 29.03 6.405c2.43-1.418 5.225-3.22 7.655-3.187l-1.694 4.86 12.752 21.37c-.439 5.654-5.459 6.112-5.459 6.112-.574-1.47-1.634-2.942-4.842-6.036-3.207-3.094-17.465-10.177-15.788-16.207-2.001 6.967 10.311 14.152 14.04 17.663 3.73 3.51 5.426 6.04 5.795 6.756 0 0 9.392-2.504 7.838-8.927L37.4 7.171z"/></svg>';   // lichess.org's logo (lila, AGPL-3.0+)
+const CHESSCOM_LOGO = '<svg class="cc-logo" aria-hidden="true" viewBox="2.75 -4.25 39.23 53.65"> <g transform="translate(7.136 -.188)"> <clipPath id="cc-a"> <path transform="matrix(1 0 0 -1 0 45)" d="M25.773 12.567c-7.338 5.595-6.523 10.45-6.616 12.447h4.474c.523.971.788 1.871.788 2.993l-5.072 3.341a7.011 7.011 0 0 1 2.912 5.691 7.029 7.029 0 0 1-4.393 6.517c-.814.33-6.56-18.542-6.56-18.542a41.217 41.217 0 0 1-.023-1.679c0-1.874 4.607-1.59 4.362-3.247-.368-2.476-.445-4.356-2.577-10.306-1.44-4.015-11.035 0-11.72-1.97C.87 6.44.616 4.901.616 3.245c0-.177.386-2.833 14.617-2.833 14.23 0 14.614 2.656 14.614 2.833 0 4.036-1.507 7.363-4.075 9.321" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-a)"> <path d="M -4.383 -3.56 L 34.847 -3.56 L 34.847 49.587 L -4.383 49.587 L -4.383 -3.56 Z" fill="#5D9948"/> </g> <clipPath id="cc-c"> <path transform="matrix(1 0 0 -1 0 45)" d="M14.974 10.057c.79 3.6 1.493 7.437 1.92 9.734.532 2.868-3.821 3.38-5.608 3.644-.082-2.448-.765-6.424-6.593-10.867-1.572-1.2-2.743-2.91-3.418-4.982C2.848 6.819 4.949 6.36 8.184 6.36c2.077 0 5.923-.25 6.79 3.696" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-c)"> <path d="M -3.725 16.565 L 21.938 16.565 L 21.938 43.643 L -3.725 43.643 L -3.725 16.565 Z" fill="#81B64C"/> </g> <clipPath id="cc-e"> <path transform="matrix(1 0 0 -1 0 45)" d="M18.03 25.014c.688 1.79.6 2.993.6 2.993l-2.873 3.341c3.054 1.304 4.893 3.755 4.893 6.61a7.013 7.013 0 0 1-2.766 5.59 7.027 7.027 0 0 1-9.679-6.508 7.014 7.014 0 0 1 2.912-5.692l-5.072-3.34c0-1.122.265-2.022.79-2.994H18.03Z" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-e)"> <path d="M 1.045 -4.066 L 25.65 -4.066 L 25.65 24.986 L 1.045 24.986 L 1.045 -4.066 Z" fill="#81B64C"/> </g> <clipPath id="cc-g"> <path transform="matrix(1 0 0 -1 0 45)" d="M14.828 42.633c4.053-.629-1.863-5.33-3.73-5.108-1.777.21-.069 5.7 3.73 5.108" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-g)"> <path d="M 5.393 -2.678 L 21.218 -2.678 L 21.218 12.482 L 5.393 12.482 L 5.393 -2.678 Z" fill="#B2E068"/> </g> </g> </svg>';   // Chess.com's pawn (trademark of Chess.com; from github.com/homarr-labs/dashboard-icons), to name the site
 const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
 function lichessExportUrl(name){
   const perf = 'bullet,blitz,rapid,classical';
@@ -2679,8 +2685,8 @@ function siteLine(site){
 // and the positions found in them.
 function gamesFileSection(){   // inside Claude: games are added as a file
   return `
+      <h2 class="pf-h">Your games</h2>
       <section class="mg-card">
-        <h2>Your games</h2>
         <label class="mg-field" for="lichessUser"><span>Lichess username</span>
           <input id="lichessUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${(myName||'').replace(/"/g,'&quot;')}" placeholder="username"></label>
         <ol class="mg-steps">
@@ -2712,8 +2718,8 @@ function positionsSection(){
         .filter(([, shown])=>shown).map(([label])=>{ const site = { Lichess:'lichess', 'Chess.com':'chesscom', 'PGN files':'file' }[label], gs = ofSite(site); return [label, gs.length, countsFor(gs)]; });
   const row = (label, games, c)=>`<tr><th scope="row">${label}</th><td>${games}</td><td>${c.analysis}</td><td>${c.candidates}</td><td>${c.final}</td></tr>`;
   return `
+      <h2 class="pf-h">Positions</h2>
       <section class="mg-card">
-        <h2>Positions</h2>
         <div class="mg-table-wrap"><table class="mg-table">
           <thead><tr><th></th><th>Games</th><th>Board analysis</th><th>Candidate moves</th><th>Final choice</th></tr></thead>
           <tbody>${row('Masters', MASTER_GAMES, masters)}${siteRows.map(([label, games, c])=>row(label, games, c)).join('')}</tbody>

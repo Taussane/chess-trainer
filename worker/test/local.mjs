@@ -45,7 +45,7 @@ globalThis.fetch = async (url, opts = {}) => {
   if (cc) {   // stand-in Chess.com: one player, "ccplayer", games from tests/chesscom-sample.pgn
     chesscomCalls.push(String(url));
     if (cc[1] !== 'ccplayer') return new Response('{"code":0}', { status: 404 });
-    if (!cc[2]) return new Response(JSON.stringify({ username: 'CCPlayer' }));
+    if (!cc[2]) return new Response(JSON.stringify({ username: 'ccplayer', url: 'https://www.chess.com/member/CCPlayer' }));   // as Chess.com: lowercase, capitals in the address
     if (cc[2] === '/games/archives') return new Response(JSON.stringify({ archives: ['09', '10'].map(m => 'https://api.chess.com/pub/player/ccplayer/games/2026/' + m) }));
     const games = CHESSCOM_SAMPLE.split(/\n\s*\n(?=\[Event )/).filter(g => g.includes(`[UTCDate "${cc[3]}.${cc[4]}.`));
     return new Response(games.join('\n\n'), { headers: { 'Content-Type': 'application/x-chess-pgn' } });

@@ -40,6 +40,10 @@ THE SOFTWARE.
 
 The winning-chances curve used to grade moves follows the one Lichess publishes for its accuracy figures. Lichess (https://lichess.org) is free software under the GNU Affero General Public License v3.0. Games are downloaded from Lichess through its public API. The Lichess logo (`vendor/lichess-logo.svg`, inlined in the app's login buttons) comes from lila (`public/logo/lichess.svg`), under the same licence.
 
+## Chess.com
+
+The Chess.com pawn (`vendor/chesscom-logo.svg`, inlined in the app's account section) is a trademark of Chess.com, used only to name the site. The SVG file comes from https://github.com/homarr-labs/dashboard-icons (Apache License 2.0). This project is not affiliated with Chess.com.
+
 ## Master games
 
 `library/gm-classics.pgn` holds moves only (no annotations). Part of it comes from the CC0 collection at https://github.com/brianerdelyi/ChessPGN.
