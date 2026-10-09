@@ -54,7 +54,7 @@
   .title-badge{font-family:var(--font-body); font-size:0.78rem; font-weight:600; color:var(--accent); border:1px solid var(--accent); border-radius:10px; padding:2px 9px; white-space:nowrap;}
   .icon-btn{
     width:28px; height:28px; min-width:28px; border-radius:50%; border:1px solid var(--border);
-    background:var(--panel-2); color:var(--text-mute); font-size:0.9rem; font-weight:700;
+    background:var(--panel-2); color:var(--text); font-size:1.15rem; font-weight:800; line-height:1;
     display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
   }
   /* Small round buttons keep their look but get a finger-sized (44px) tap area. */
@@ -175,7 +175,7 @@
   .ac-site .li-logo{width:15px; height:15px;}
   .ac-site .cc-logo{width:15px; height:17px;}
   .chart-avg{margin-left:auto; color:var(--text-mute);}
-  .chart-avg{color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; line-height:1;}
+  .chart-avg{color:var(--text); font-weight:700; font-size:0.95rem; font-variant-numeric:tabular-nums; line-height:1;}
   .chart-legend span{line-height:1;}
   .chart-foot{display:flex; justify-content:flex-end; padding:4px 4px 0;}
   .pf-scroll .seg{margin:0;}
@@ -1510,7 +1510,7 @@ function analysisRecap(guess, truth){
 // same spot so the panel takes the tallest one's height.
 function stackedPanel(inner, ghosts, extra){
   return `<div class="panel"><div class="panel-stack"><div class="layer">${inner}</div>${
-    ghosts.map(g=>`<div class="layer ghost" aria-hidden="true" inert>${g}</div>`).join('')}</div>${extra||''}</div>`;
+    ghosts.map(g=>`<div class="layer ghost" aria-hidden="true" inert>${g}</div>`).join('')}</div></div>${extra||''}`;
 }
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
@@ -1755,7 +1755,7 @@ function progressSection(){
   const nMissed = missedOf(a).length, nReplay = replayable(a).length;   // for the exercise selected below
   const since = new Date(joinedAt()).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
   const html = `
-    <h2 class="pf-h">This week</h2>
+    <h2 class="pf-h">Daily routine</h2>
     <section class="pf-card">
       <table class="wk-table">
         <thead><tr><th></th>${ACTS.map(x=>`<th scope="col" title="${ACT_NAMES[x]}"><span aria-hidden="true">${ACT_GLYPHS[x]}</span><span class="sr">${ACT_NAMES[x]}</span></th>`).join('')}<th scope="col" title="Daily routine done"><span class="sr">Routine</span></th></tr></thead>
@@ -1769,7 +1769,7 @@ function progressSection(){
       <div class="chart-legend"><span><i class="lg-line"></i>Average</span><span><i class="lg-dot"></i>Masters</span><span><i class="lg-dot mine"></i>My games</span>
         <span class="chart-avg" title="${info.rated ? 'Your average' : 'Positions played, out of those needed for your average'}">${info.rated ? pct(info.level) : `${info.n}/${CALIBRATION}`}</span></div>
       ${levelChartSvg(sr)}
-      ${nReplay ? `<div class="chart-foot"><button class="link-inline" id="replayBtn" title="${ACT_NAMES[a]} positions you scored below your average on">Replay ${nReplay} ›</button></div>` : ''}
+      ${nReplay ? `<div class="chart-foot"><button class="link-inline" id="replayBtn" title="${ACT_NAMES[a]} positions you scored below your average on">Replay ${nReplay}</button></div>` : ''}
     </div>`}`;
   return { html, wire: ()=>{
     const rb = document.getElementById('replayBtn'); if(rb) rb.onclick = ()=>startReplay(a);
@@ -1839,8 +1839,8 @@ function renderAccount(){
           <div class="pf-facts"><span><b>${results.length}</b> position${results.length===1?'':'s'} completed since ${since}</span></div></div></div>
       </section>
       ${prog.html}
-      ${DIRECT_LICHESS ? accountSection() : gamesFileSection()}
       ${positionsSection()}
+      ${DIRECT_LICHESS ? accountSection() : gamesFileSection()}
       <p class="ac-foot">${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <button class="link-plain" id="testsBtn">Test positions</button></p>
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; render(); };
@@ -2827,7 +2827,7 @@ function renderAnalysis(){
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Set the bar where you think the evaluation stands.</p>
-        <div class="actions-row" id="anaCheckRow"><button class="btn" id="check">Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
+        <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(!s.checked){
     setupGauge(s);
@@ -2996,7 +2996,7 @@ function renderCandidates(){
     ${stackedPanel(`
       <div id="moveList"></div>
       ${pickHint(s.picks.length) ? `<p class="hint" id="candHint">${pickHint(s.picks.length)}</p>` : ''}
-      <div class="actions-row" id="candCheckRow"><button class="btn" id="check" ${s.picks.length ? '' : 'disabled'}>Check</button></div>`,
+      <div class="actions-row" id="candCheckRow"><button class="btn" id="check" ${s.picks.length && sfState!=='error' ? '' : 'disabled'}>Check</button></div>`,
       ghostCandidates(), engineErrorBanner())}`;
   const canSelect = sq=>{
     const piece = bs[sq];
@@ -3219,7 +3219,7 @@ function renderFinal(){
     ${stackedPanel(`
       <div id="ranked"></div>
       <p class="hint rank-hint" id="finalHint">Drag the moves into order, best at the top.</p>
-      <div class="actions-row" id="finalCheckRow"><button class="btn" id="check">Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
+      <div class="actions-row" id="finalCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), bs, p.last);
   drawArrows(document.getElementById('arrows'), ordered, 'ar_');
   const rankedEl = document.getElementById('ranked');

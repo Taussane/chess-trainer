@@ -9,7 +9,7 @@ CHESS = (ROOT/'vendor'/'chess.js'/'chess.js').read_text()
 FAKE = """engineEval = (fen, sm)=>new Promise(res=>{ setTimeout(()=>{ const g=new Chess(fen);
   const ms=sm?sm.split(' '):g.moves({verbose:true}).slice(0,5).map(m=>m.from+m.to+(m.promotion||''));
   res({lines:ms.map((u,i)=>({uci:u,cp:50-i*40,mate:null})), bestUci:ms[0]}); }, 50); });
-  fenEvalStore={}; poolEvalStore={}; engineErrorBanner=()=>''; render();"""
+  fenEvalStore={}; poolEvalStore={}; engineErrorBanner=()=>''; failEngine=()=>{}; sfState='ready'; render();"""
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); pg = await b.new_page(viewport={'width':390,'height':760})

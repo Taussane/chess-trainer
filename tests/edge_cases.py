@@ -14,7 +14,7 @@ FAKE = """engineEval = (fen, sm)=>new Promise(res=>{ setTimeout(()=>{ const g=ne
   const all=g.moves({verbose:true}).map(m=>m.from+m.to+(m.promotion||''));
   const ms=sm?sm.split(' '):all.slice(0,5);
   res({lines:ms.map((u,i)=>({uci:u,cp:120-i*60,mate:null})), bestUci:ms[0]}); }, 30); });
-  fenEvalStore={}; poolEvalStore={}; engineErrorBanner=()=>''; render();"""
+  fenEvalStore={}; poolEvalStore={}; engineErrorBanner=()=>''; failEngine=()=>{}; sfState='ready'; render();"""
 # Moves to enter in Candidate moves, by test title: list of (from, to, promotion piece or None).
 CAND = {
   'White in check': [('c1','d2',None), ('b1','c3',None)],
