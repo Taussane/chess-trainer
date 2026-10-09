@@ -102,7 +102,7 @@
   .ac-site svg{width:14px; height:14px;}
   .mg-src .link-inline{margin-left:auto;}
   .home-head h1{font-size:1.9rem;}
-  .home-head p{color:var(--text-mute); margin:8px 0 0; line-height:1.5; text-align:justify; hyphens:auto;}
+  .home-head p{color:var(--text-mute); margin:8px 0 0; line-height:1.5;}
   .cards{display:flex; flex-direction:column; gap:10px;}
   .card{
     display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:14px;
@@ -1912,7 +1912,7 @@ function renderHome(){
     <div class="home-head">
       <div class="home-top"><button class="acct-chip" id="accountBtn">${DIRECT_LICHESS && !signedIn() ? 'Log in' : `<span class="acct-dot" aria-hidden="true">${(displayName()[0] || '♚').toUpperCase().replace(/</g,'')}</span>${displayName().replace(/</g,'&lt;') || 'Profile'}`}</button></div>
       <h1>Chess Strategy Trainer</h1>
-      ${(DIRECT_LICHESS ? !signedIn() : !results.length) ? `<p>Train your strategy beyond tactics puzzles: gauge the position, find good candidates, choose the best. Learn from master games and your own mistakes.</p>` : ''}
+      ${(DIRECT_LICHESS ? !signedIn() : !results.length) ? `<p>Train your strategy beyond tactics puzzles: gauge the position, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
     ${routineCard()}
     <div class="source-row"><span class="source-label">Positions from</span>
