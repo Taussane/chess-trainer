@@ -1,4 +1,5 @@
-# Copies the pools from a finder run (positions only; the app picks and evaluates moves itself) into the app (the /*POOLS*/ ... /*END POOLS*/ block of app/index.html).
+# Copies the pools from a finder run (positions only; the app picks and evaluates moves itself) into the app (the /*POOLS*/ ... /*END POOLS*/ block of app/index.html),
+# with the number of games (/*POOLS_GAMES*/) and their moves (/*GAME_MOVES*/), then runs scripts/master-info.py (dates and events).
 # Usage: python3 finder/inject.py data/pools.json
 import json, re, sys, pathlib
 src = sys.argv[1]

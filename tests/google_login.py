@@ -112,7 +112,7 @@ async def main():
             A.API_DELAY[0] = 0
             print('   while loading:', sorted(seen))
             if any(f[0] or f[1] for f in seen): fails.append(f'My games showed the Chess.com box or the Lichess button before the account was read: {sorted(seen)}')
-            if not any(f[2] for f in seen): fails.append('no "Retrieving your account" while loading')
+            if not any(f[2] for f in seen): fails.append('no "Loading your account" while loading')
             await A.stand_in(P4); await P4.wait_for_timeout(2500)
             await P4.evaluate("screen='progress'; render()")
             got = await P4.evaluate("({ results: results.map(r=>r.ts+r.a).sort().join(), missed: missedList().map(e=>e.a+e.key).sort().join(), week: [...document.querySelectorAll('.wk-table tbody tr')].map(r=>r.innerText).join('|') })")

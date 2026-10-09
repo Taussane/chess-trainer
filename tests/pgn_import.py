@@ -26,7 +26,7 @@ async def main():
         await pg.evaluate("(()=>{ const g = myGames[0]; g.sans = g.sans.slice(0, 19); g.checks = { 4: 12 }; extractOwnPositions(g); })()")
         await pg.evaluate("pgn => importPgnText(pgn)", PGN)
         st = await pg.evaluate("[myGames.length, myGames[0].sans.length, JSON.stringify(myGames[0].checks), myImportNote]"); print('re-added:', st)
-        if st[:3] != [1, 40, '{"4":12}'] or 'Completed 1 of your games' not in st[3] and 'Completed 1 game' not in st[3]: fails.append(f'repair: {st}')
+        if st[:3] != [1, 40, '{"4":12}'] or 'Finished 1 game' not in st[3]: fails.append(f'repair: {st}')
         await b.close()
     errs = [e for e in errs if 'importScripts' not in e]
     if errs: fails.append(f'page errors: {errs}')

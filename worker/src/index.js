@@ -10,23 +10,24 @@
 // The player is a *connection* (lichess, google) of one of our accounts; the first sign-in creates
 // the account. Each request then reads or writes that account's rows only.
 //
+//   GET    /api/health                  is the server up (no sign-in)
 //   POST   /api/login/google {idToken}  sign in with Google -> {token, email}
-//   POST   /api/link/google  {idToken}  add a Google login to this account (not offered in the app:
-//                                       Lichess is the main login, Google links Lichess instead)
-//   POST   /api/link/lichess {token}    add a Lichess login to this account
-//   DELETE /api/link/lichess            remove it (only while another login stays), with its games
-//                                       (if that login already has an account, the two are merged
-//                                       into this one: progress, games and settings together)
+//   POST   /api/link/lichess {token}    add a Lichess login to this account ("Connect Lichess" from a
+//                                       Google account); if that login already has an account, the
+//                                       two are merged into this one: progress, games and settings
+//   POST   /api/link/google  {idToken}  the same for a Google login (not offered in the app)
+//   DELETE /api/link/lichess            remove Lichess while another login stays, with its games
+//                                       (not offered in the app: an account with Lichess keeps it)
 //   GET    /api/me                      account, its connections
 //   GET    /api/results?after=&limit=   results after a time, oldest first (at most 1000)
 //   POST   /api/results   {rows:[…]}    add results (a row already there is ignored)
 //   GET    /api/games                   all games
 //   POST   /api/games     {games:[…]}   add or replace games
 //   DELETE /api/games/:id               remove one game
-//   GET    /api/meta/:name              a small document (profile, games-cleared, …)
+//   GET    /api/meta/:name              a small document (profile, chesscom, replay, games-cleared…)
 //   PUT    /api/meta/:name              replace it
 //   GET    /api/chesscom/player?user=   a Chess.com player's name as Chess.com spells it (404: none)
-//   GET    /api/chesscom/games?user=&since=&max=
+//   GET    /api/chesscom/games?user=&since=&max=  (max: default 100, at most 200)
 //                                       their newest games played after `since` (ms), as PGN text:
 //                                       live games only (no daily, no variants), newest first
 //   DELETE /api/session                 forget this sign-in here (log out)
@@ -128,7 +129,7 @@ async function route(req, env) {
     for (const g of games) {
       if (!g || typeof g.id !== 'string' || !g.id || !Array.isArray(g.sans)) continue;
       if (!ccOn && (g.site === 'chesscom' || g.id.startsWith('cc-'))) continue;
-      if (!liOn && g.site === 'lichess') continue;
+      if (!liOn && (g.site || (g.id.startsWith('cc-') ? 'chesscom' : 'lichess')) === 'lichess') continue;   // as the app's siteOf
       const { positions, ...keep } = g;   // positions are worked out again by the app
       const data = JSON.stringify(keep);
       if (data.length > MAX_GAME_BYTES) continue;
@@ -163,7 +164,7 @@ async function route(req, env) {
     return json({ username: spelled && spelled.toLowerCase() === String(p.username || user).toLowerCase() ? decodeURIComponent(spelled) : (p.username || user) });
   }
   if (m === 'GET' && path === '/api/chesscom/games') {
-    return new Response(await ccGames(ccUser(url), Number(url.searchParams.get('since') || 0), Math.max(1, Math.min(200, Number(url.searchParams.get('max') || 100)))),
+    return new Response(await ccGames(ccUser(url), Number(url.searchParams.get('since')) || 0, Math.max(1, Math.min(200, Number(url.searchParams.get('max')) || 100))),
       { headers: { 'Content-Type': 'application/x-chess-pgn' } });
   }
   if (m === 'POST' && (path === '/api/link/google' || path === '/api/link/lichess')) {

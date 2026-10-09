@@ -42,7 +42,7 @@ The winning-chances curve used to grade moves follows the one Lichess publishes 
 
 ## Chess.com
 
-The Chess.com pawn (`vendor/chesscom-logo.svg`, inlined in the app's account section) is a trademark of Chess.com, used only to name the site. The SVG file comes from https://github.com/homarr-labs/dashboard-icons (Apache License 2.0). This project is not affiliated with Chess.com.
+Chess.com games are read through Chess.com's public API (by the account server). The Chess.com pawn (`vendor/chesscom-logo.svg`, inlined in the app's account section) is a trademark of Chess.com, used only to name the site. The SVG file comes from https://github.com/homarr-labs/dashboard-icons (Apache License 2.0). This project is not affiliated with Chess.com.
 
 ## Master games
 

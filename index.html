@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#12161B">
-<meta name="description" content="Chess strategy training on positions from master games and your own Lichess games.">
+<meta name="description" content="Chess strategy training on positions from master games and your own Lichess and Chess.com games.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%99%9E%3C/text%3E%3C/svg%3E">
 <!-- Built from app/index.html by scripts/build-site.py: edit the app, not this file. -->
 </head>
@@ -86,39 +86,20 @@
   .acct-chip:not(:has(.acct-dot)){padding:6px 14px; color:var(--accent);}
   .acct-dot.big{width:44px; height:44px; font-size:1.2rem;}
   .pf-who{display:flex; gap:12px; align-items:center;}
-  .pf-nav{padding:4px 0; gap:0;}
-  .pf-nav-row{display:flex; align-items:center; justify-content:space-between; gap:12px; background:none; border:none; color:var(--text); font:inherit; text-align:left; padding:10px 14px; cursor:pointer; text-decoration:none;}
-  .pf-nav-row + .pf-nav-row{border-top:1px solid var(--border);}
-  .pf-nav-row span{display:flex; flex-direction:column; gap:2px; min-width:0;}
-  .pf-nav-row b{font-size:0.95rem;} .pf-nav-row small{font-size:0.78rem; color:var(--text-mute);}
-  .pf-nav-row i{font-style:normal; color:var(--text-mute); font-size:1.1rem;}
-  .pf-nav-row:focus-visible{outline:2px solid var(--accent); outline-offset:-2px;}
   .ac-row{display:flex; align-items:center; gap:10px; font-size:0.9rem; margin-top:4px;}
   .ac-row .ac-site{min-width:96px;}
   .ac-row .link-inline{margin-left:auto;}
   .ac-sep{border-top:1px solid var(--border); padding-top:8px; margin-top:4px;}
   .link-plain{background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; text-decoration:underline;}
-  .pf-scroll, .mg-scroll{padding-top:12px;}
+  .pf-scroll{padding-top:12px;}
   .ac-actions{display:flex; align-items:center; justify-content:space-between; gap:12px;}
   .acct-dot{width:22px; height:22px; border-radius:50%; background:var(--accent); color:#161512; display:inline-grid; place-items:center; font-size:0.78rem; font-weight:700; flex:none;}
-  .nav-tiles{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
-  .nav-tile{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 14px; text-align:left; color:var(--text); font:inherit; cursor:pointer; display:flex; flex-direction:column; gap:4px; min-width:0;}
-  .nav-tile b{font-size:0.95rem; color:var(--accent);}
-  .nav-tile small{font-size:0.78rem; color:var(--text-mute); line-height:1.35;}
-  .nav-tile:focus-visible, .acct-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
-  .home-foot{display:flex; flex-wrap:wrap; justify-content:center; gap:4px 8px; margin:22px 0 8px; font-size:0.8rem; color:var(--text-mute);}
-  .home-foot a, .home-foot button{color:var(--text-mute); text-decoration:none; background:none; border:none; font:inherit; padding:0; cursor:pointer;}
-  .home-foot a:hover, .home-foot button:hover{color:var(--text);}
+  .acct-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .ac-sub{margin:0; font-size:0.84rem; color:var(--text-mute); line-height:1.45;}
   .ac-foot{margin:4px 0 0; font-size:0.8rem; color:var(--text-mute); text-align:center;}
   .ac-foot a, .ac-foot .link-plain{color:var(--text-mute);}
-  .ac-logins{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
-  .ac-logins li{display:flex; justify-content:space-between; gap:12px; font-size:0.9rem; align-items:center;}
   .ac-site{display:inline-flex; align-items:center; gap:6px; color:var(--text-mute);}
   .ac-site svg{width:14px; height:14px;}
-  .ac-danger{align-items:flex-start;}
-  .mg-src{display:flex; align-items:center; gap:10px; font-size:0.9rem; margin-top:4px;}
-  .mg-src-name{color:var(--text-mute); min-width:88px;}
   .mg-src .link-inline{margin-left:auto;}
   .home-head h1{font-size:1.9rem;}
   .home-head p{color:var(--text-mute); margin:8px 0 0; line-height:1.5; max-width:40ch;}
@@ -132,7 +113,6 @@
   .card-glyph{font-size:1.9rem; line-height:1; width:36px; text-align:center; color:var(--accent);}
   .card-title{display:block; font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
   .card-desc{display:block; margin-top:4px; color:var(--text-mute); font-size:0.88rem; line-height:1.4;}
-  .card-arrow{color:var(--text-mute); font-size:1.3rem;}
   .card-level{display:flex; flex-direction:column; align-items:flex-end; min-width:44px; line-height:1.1;}
   .card-level b{font-family:var(--font-display); font-size:1.45rem; font-weight:600; font-variant-numeric:tabular-nums;}
   .card-level small{color:var(--text-mute); font-size:0.7rem; letter-spacing:0.02em;}
@@ -150,7 +130,6 @@
   .goal-dots i.on{background:var(--accent); border-color:var(--accent);}
   .routine-btn{margin-top:12px;}
   .routine-btn{width:100%;}
-  .link-row{display:flex; justify-content:space-between; align-items:center; gap:4px 12px; flex-wrap:wrap;}
   a.link-btn{text-decoration:none;}
   .link-btn.quiet{color:var(--text-mute); font-weight:500;}
   .title-spacer{width:36px; flex:none;}
@@ -183,8 +162,6 @@
   .pf-h{margin-top:4px;}
   .pf-name{font-size:1.25rem; font-weight:700;}
   .pf-facts{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:0.86rem; color:var(--text-mute);}
-  .pf-note{margin:6px 0 0; font-size:0.8rem; color:var(--text-mute);}
-  .pf-note a{color:var(--accent);}
   .pf-delete{font-size:0.8rem; padding:4px 0; color:var(--text-mute);}
   .btn.lichess-btn{background:#fff; color:#161512; display:flex; align-items:center; gap:8px; justify-content:center;}
   .lichess-btn .li-logo{width:20px; height:20px;}
@@ -195,11 +172,8 @@
   .chart-legend span{line-height:1;}
   .chart-foot{display:flex; justify-content:flex-end; padding:4px 4px 0;}
   .pf-scroll .seg{margin:0;}
-  .pf-replay-btn{align-self:flex-start;}
   .btn.google-btn{background:#fff; color:#1f1f1f; display:flex; align-items:center; gap:10px; justify-content:center; margin-top:10px;}
   .google-btn svg{width:18px; height:18px; flex:none;}
-  .mg-account{display:flex; justify-content:space-between; gap:12px; align-items:center; margin:0; font-size:0.9rem;}
-  .mg-account b{color:var(--text);}
   .mg-cc{display:flex; gap:8px;}
   .mg-cc input{flex:1; min-width:0; background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:7px 10px; font:inherit; font-size:0.9rem;}
   .mg-account .link-inline{white-space:nowrap;}
@@ -211,8 +185,6 @@
   .wk-table tr:last-child th, .wk-table tr:last-child td{border-bottom:none;}
   .wk-table tr.idle td, .wk-table tr.idle th{color:var(--text-mute);}
   .wk-done{color:var(--good); font-weight:700;}
-  .pf-replay{flex-direction:row; align-items:center; justify-content:space-between; gap:12px;}
-  .pf-replay p{margin:4px 0 0; font-size:0.8rem; color:var(--text-mute);}
   .pf-replay .btn{flex:none; white-space:nowrap;}
   .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
   .source-row{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
@@ -220,13 +192,11 @@
   .seg.seg-sm{flex:1; margin:0;}
   .seg.seg-sm .seg-btn{padding:6px 4px; font-size:0.8rem;}
   /* My games */
-  .mg-scroll{display:flex; flex-direction:column; gap:12px; overflow-y:auto; padding-bottom:16px; min-height:0;}
   .mg-card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:10px; min-width:0;}
   .mg-card h2{margin:0; font-size:1rem;}
   .mg-field{display:flex; flex-direction:column; gap:4px; font-size:0.8rem; color:var(--text-mute);}
   .mg-field input{font:inherit; font-size:0.95rem; color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:8px 10px;}
   .mg-field input:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
-  .mg-check{display:flex; align-items:center; gap:8px; font-size:0.88rem;}
   .mg-steps{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px;}
   .mg-steps li{padding-left:2px;}
   .mg-steps a{color:var(--accent); font-weight:600; text-decoration:none;}
@@ -236,7 +206,6 @@
   .file-input{position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:0;}
   .file-btn:focus-within{outline:2px solid var(--text); outline-offset:2px;}
   .link-inline{background:none; border:none; padding:0; font:inherit; color:var(--accent); text-decoration:underline; cursor:pointer;}
-  .file-link{position:relative; display:inline;}
   .mg-sub{margin:0; font-size:0.8rem; color:var(--text-mute);}
   .mg-paste{display:flex; flex-direction:column; gap:8px; margin-top:8px;}
   .mg-paste textarea{font:0.8rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:8px; resize:vertical; min-width:0;}
@@ -252,10 +221,6 @@
   .mg-table tr:last-child th, .mg-table tr:last-child td{border-bottom:none;}
   .mg-confirm{display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:0.86rem;}
   .seg-btn:focus-visible{outline:2px solid var(--accent); outline-offset:-2px;}
-  .hero{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:12px;}
-  .hero-num{font-family:var(--font-display); font-size:2.6rem; line-height:1; font-variant-numeric:tabular-nums;}
-  .hero-tier{color:var(--text-mute); font-size:0.9rem; margin-top:4px;}
-  .hero-week{text-align:right; font-size:0.84rem; color:var(--text-mute);}
   .chart-box{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 10px 8px; position:relative;}
   .chart-box svg{display:block; width:100%; height:auto; overflow:visible;}
   .chart-legend{display:flex; gap:14px; font-size:0.76rem; color:var(--text-mute); margin:2px 4px 6px; flex-wrap:wrap; align-items:center;}
@@ -264,10 +229,6 @@
   .lg-dot{width:7px; height:7px; border-radius:50%; background:var(--text-mute); opacity:.6;}
   .lg-dot.mine{background:var(--cyan-arrow); opacity:.85;}
   .chart-tip{position:absolute; pointer-events:none; background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:0.76rem; line-height:1.35; white-space:nowrap; color:var(--text); z-index:2;}
-  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
-  .stat{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px 12px;}
-  .stat b{display:block; font-family:var(--font-display); font-size:1.3rem; font-weight:600; font-variant-numeric:tabular-nums;}
-  .stat small{color:var(--text-mute); font-size:0.74rem;}
   .empty{color:var(--text-mute); font-size:0.9rem; line-height:1.5; padding:22px 6px; text-align:center;}
 
   /* Position bar */
@@ -446,7 +407,7 @@ const HELP = {
   analysis: {
     title:'Position evaluation',
     what:"Judge who's better and by how much, from the position's features (king safety, material, space, activity) rather than by calculating. Drag the bar to your estimate.",
-    eval:"Your cursor is compared with the engine's evaluation: each board square off costs 25%.",
+    eval:"Your bar is compared with the engine's: every square of height you're off costs 25%.",
   },
   candidates: {
     title:'Candidate moves',
@@ -456,9 +417,9 @@ const HELP = {
   },
   final: {
     title:'Move selection',
-    what:"Rank the four moves from best to worst. One of them is the move played in the game.",
-    eval:"Each of your first three places is compared with the best move you haven't placed yet: 1st counts 50%, 2nd 30%, 3rd 20%. A move as good as that one earns the place in full; the further below it, the less, and a move 10 or more points of winning chances below it earns nothing.",
-    grades: GRADES + " <strong>Game move</strong> marks the move actually played.",
+    what:"Rank the four moves from best to worst. One of them was played in the game (in your own games, the move you played).",
+    eval:"Your 1st place counts 50%, 2nd 30%, 3rd 20%. Each place is scored against the best move you haven't ranked yet: full marks if your move is as good, nothing if it's Dubious or worse by comparison.",
+    grades: GRADES + " <strong>Game move</strong> marks the move played in the game (<strong>Your move</strong> in your own games).",
   },
 };
 
@@ -1043,7 +1004,7 @@ function wireDragReorder(listEl, orderArr, onDrop){
 const cols = ['var(--pick1)','var(--pick2)','var(--pick3)'];
 const allCols = ['var(--pick1)','var(--pick2)','var(--pick3)','var(--system)']; // Move selection's four moves
 const TOP_COLS = ['var(--system)','var(--cyan-arrow)','var(--top3)']; // engine's top 3, distinct from the pick colors
-let screen = 'home';           // 'home' | 'analysis' | 'candidates' | 'final'
+let screen = 'home';           // 'home' | 'analysis' | 'candidates' | 'final' | 'account' (the profile; 'progress', 'mygames' open it too) | 'tests'
 // Each exercise has its own order of positions, drawn by weight (see drawFor) and appended to as
 // it runs out, so the next position is always known in advance (for prefetching).
 // Two separate tracks per exercise: practising it on its own ('analysis', …) and the routine
@@ -1051,7 +1012,6 @@ let screen = 'home';           // 'home' | 'analysis' | 'candidates' | 'final'
 // you can leave one, use the other, and come back to exactly where you were.
 const ACTIVITIES = ['analysis', 'candidates', 'final'];
 // A third track per exercise, 't-…', runs the test positions in their listed order.
-const TRACKS = ACTIVITIES.flatMap(a=>[a, 'r-'+a, 't-'+a]);
 let testMode = false;
 // REPLAY: positions where you scored below your average, played again one after the other, each
 // in its own exercise (see missedList).
@@ -1202,8 +1162,8 @@ function myWorkPending(){ return toPrepare.size>0 || myGames.some(g=>g.status===
 function waitText(a, r, short){
   if(!progressLoaded) return 'Loading…';
   const t = ctx(a, r), none = !poolOf(t).length;
-  if(source!=='masters' && myWorkPending()) return short ? 'Waiting for positions…' : 'Waiting for new positions…';
-  return none ? 'No positions yet' : short ? 'All played today' : 'All positions played today';
+  if(source!=='masters' && myWorkPending()) return short ? 'Finding positions…' : 'Finding positions in your games…';
+  return none ? 'No positions yet' : short ? 'All played today' : 'All played today. More tomorrow.';
 }
 const canOpen = (a, r)=>progressLoaded && upcomingFor(ctx(a, r))[1] >= 0;   // never before your results are known
 // Points curPos/side at the open exercise's own position.
@@ -1283,7 +1243,7 @@ function nextPosition(){
   if(replayMode){
     while(replayIdx + 1 < replayQueue.length && isPlayed(replayQueue[replayIdx+1].key)) replayIdx++;
     if(replayIdx + 1 < replayQueue.length){ replayIdx++; openReplayAt(replayIdx); }
-    else { replayMode = false; screen = 'progress'; render(); }
+    else { replayMode = false; screen = 'account'; render(); }
     return;
   }
   if(!ACTIVITIES.includes(screen) || nextTarget()[1] < 0) return;
@@ -1324,7 +1284,7 @@ function nextTarget(){
                  : [ctx(screen), firstAvailable(ctx(screen), seqBy[ctx(screen)]+1)];
 }
 function nextLabel(){
-  if(replayMode){ const n = replayLeft(); return n ? `Next missed (${n} left) ›` : 'Finish'; }
+  if(replayMode){ const n = replayLeft(); return n ? `Next (${n} left) ›` : 'Finish'; }
   return routine ? ACT_NAMES[routineAfter(screen)] + ' ›' : 'Next position';
 }
 
@@ -1418,11 +1378,11 @@ function fmtGameDate(d){   // "1981-05-12" | "1981-05" | "1981"
 function posSource(p){
   if(p.gameId){
     const g = currentGame(p.gameId), site = g ? siteOf(g) : 'lichess';
-    const name = site==='chesscom' ? 'Chess.com' : site==='file' ? 'Your games' : 'Lichess';
-    const when = g && g.playedAt ? new Date(g.playedAt).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' }) : (g && g.year) || '';
+    const name = site==='chesscom' ? 'Chess.com' : site==='file' ? 'PGN file' : 'Lichess';
+    const when = g && g.playedAt ? new Date(g.playedAt).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' }) : g && /^\d{4}$/.test(g.year || '') ? g.year : '';
     return [name, g && SPEED_NAMES[g.speed], when].filter(Boolean).join(' · ');
   }
-  if(p.game){ const gi = GAME_INFO[p.game] || {}; return ['Masters', gi.event, fmtGameDate(gi.date) || p.year].filter(Boolean).join(' · '); }
+  if(p.game){ const gi = GAME_INFO[p.game] || {}; return ['Masters', gi.event, fmtGameDate(gi.date) || p.year].filter(Boolean).map(escHtml).join(' · '); }
   return testMode ? 'Test position' : ['Masters', p.year].filter(Boolean).join(' · ');
 }
 // The players' names beside the board: the side to play at the bottom (the board is seen from it).
@@ -1437,7 +1397,7 @@ function playerLine(where){
 function wireCommon(helpKey, checked){
   document.getElementById('homeBtn').onclick = ()=>{
     if(testMode){ testMode = false; screen = 'tests'; selSquare = null; promoPending = null; render(); return; }
-    if(replayMode){ replayMode = false; screen = 'progress'; selSquare = null; promoPending = null; render(); return; }
+    if(replayMode){ replayMode = false; screen = 'account'; selSquare = null; promoPending = null; render(); return; }
     if(routine){ const s = st(screen); routine = false; setRoutineNext(s.checked ? routineAfter(screen) : screen); }
     screen='home'; selSquare=null; render();
   };
@@ -1527,9 +1487,9 @@ function fmtBarScore(info){
 const RECAP_VERDICTS = [
   { min:88, text:'Spot on' },               // within ½ square — no explanation added
   { min:63, text:'Close' },                 // ½ to 1½ squares off
-  { min:38, text:'Estimation slightly off' },// 1½ to 2½ squares off
-  { min:13, text:'Estimation off' },        // 2½ to 3½ squares off
-  { min:0,  text:'Estimation way off' },    // 3½ squares or more
+  { min:38, text:'Slightly off' },          // 1½ to 2½ squares off
+  { min:13, text:'Off' },                   // 2½ to 3½ squares off
+  { min:0,  text:'Way off' },               // 3½ squares or more
 ];
 // Table 2 — explanation, from how the guess compares with the engine. "Balanced" = within
 // 5 win% points of the middle (about ±0.5).
@@ -1556,7 +1516,7 @@ function stackedPanel(inner, ghosts, extra){
 }
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
-  `<p class="prompt">Set the bar where you think the evaluation stands.</p><div class="actions-row"><span class="btn">Check</span></div>`,
+  `<p class="prompt">Drag the bar to show who's better, and by how much.</p><div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><p class="recap">x</p>${GHOST_ACTIONS}`,
 ];
 function ghostCandidates(){
@@ -1590,7 +1550,7 @@ function positionInfo(p, evalData){
 // Move selection review row: grade as plain coloured text, like the Candidate moves lists.
 function reviewRowHtml(m){
   const label = m.outcome ? m.outcome.label : m.na ? '—' : '…';
-  const tags = m.historical ? ['Game move'] : [];
+  const tags = m.historical ? [pos().gameId ? 'Your move' : 'Game move'] : [];
   const labelStyle = m.outcome ? `color:${labelColor(label)};` : '';
   return `<div class="review-row${label==='Best' ? ' best-row' : ''}">
       <div class="move-tag"><span class="num">${m.num}</span><span class="move-chip" style="background:${m.color}">${m.san}</span>${tags.length ? `<span class="badges">${tags.map(t=>`<span class="badge">${t}</span>`).join('')}</span>` : ''}</div>
@@ -1611,9 +1571,9 @@ function miniRowHtml(m, highlight, fadeIn){
 }
 
 // ================= Progress: level and daily routine =================
-// Each finished position records {a: activity, acc: accuracy %, ts}. Kept privately per person
-// in the artifact's database (data/users/<id>/trainer/results), or in this browser when that isn't
-// available (e.g. outside claude.ai).
+// Each finished position records {a: activity, acc: accuracy %, ts, key, miss}. Kept in this browser,
+// and in your account: inside Claude, Claude's database; on the website, logged in, the account
+// server (see "Where your progress is kept").
 //
 // LEVEL (0–100, one per activity) = your accuracy, smoothed over recent positions: the first
 // CALIBRATION positions are a plain average, after that each new position moves the level
@@ -1628,6 +1588,7 @@ const ACT_SHORT = { analysis:'Evaluation', candidates:'Candidates', final:'Selec
 const CALIBRATION = 5, LEVEL_K = 0.15, DAILY_GOAL = 5;
 // Shown as "Average 71%"; changes are whole points of the shown value ("▲ 3%").
 const pct = v => Math.round(v) + '%';
+const escHtml = x=>String(x==null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 function deltaHtml(d){
   if(d==null) return '';
   return d===0 ? '<span>±0%</span>' : `<span class="${d>0 ? 'delta-up' : 'delta-down'}">${d>0 ? '▲' : '▼'}${Math.abs(d)}%</span>`;
@@ -1784,20 +1745,13 @@ function routineCard(){
 let pfConfirmDelete = false;
 function progressSection(){
   const a = progressTab, info = levelNow(a), sr = info.series;
-  const weekAgo = Date.now() - 7*864e5;
-  const beforeWeek = sr.filter(r=>r.ts < weekAgo).pop();
-  const weekDelta = info.rated && beforeWeek && beforeWeek.n >= CALIBRATION ? Math.round(info.level) - Math.round(beforeWeek.level) : null;
-  const last10 = sr.slice(-10);
-  const avg10 = last10.length ? Math.round(last10.reduce((t,r)=>t+r.acc,0)/last10.length) : null;
-  const best = sr.filter(r=>r.n>=CALIBRATION).reduce((m,r)=>Math.max(m, r.level), -1);
   // This week: the last 7 days, today first.
   const days = Array.from({length:7}, (_,i)=>{ const d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-i); return d; });
   const byDay = {}; results.forEach(r=>{ const k = dayKey(r.ts); (byDay[k] = byDay[k] || {analysis:0, candidates:0, final:0})[r.a]++; });
   const dayName = (d,i)=>i===0 ? 'Today' : i===1 ? 'Yesterday' : d.toLocaleDateString(undefined, { weekday:'short', day:'numeric', month:'short' });
   const weekRows = days.map((d,i)=>{ const c = byDay[dayKey(d.getTime())] || {analysis:0, candidates:0, final:0}, done = ACTS.every(x=>c[x]>=DAILY_GOAL), any = ACTS.some(x=>c[x]);
     return `<tr class="${any ? '' : 'idle'}"><th scope="row">${dayName(d,i)}</th>${ACTS.map(x=>`<td>${c[x] || '·'}</td>`).join('')}<td class="wk-done">${done ? '✓' : ''}</td></tr>`; }).join('');
-  const nMissed = missedOf(a).length, nReplay = replayable(a).length;   // for the exercise selected below
-  const since = new Date(joinedAt()).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
+  const nReplay = replayable(a).length;   // for the exercise selected below
   const html = `
     <h2 class="pf-h">Daily routine</h2>
     <section class="pf-card">
@@ -1808,7 +1762,7 @@ function progressSection(){
     </section>
     <h2 class="pf-h">Progress</h2>
     <div class="seg" role="tablist">${ACTS.map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_SHORT[x]}</button>`).join('')}</div>
-    ${info.n===0 ? `<p class="empty">No ${ACT_NAMES[a]} positions played yet.<br>Your average appears after ${CALIBRATION} positions.</p>` : `
+    ${info.n===0 ? `<p class="empty">No positions played yet in ${ACT_NAMES[a]}.<br>Your average appears after ${CALIBRATION} positions.</p>` : `
     <div class="chart-box" id="chartBox">
       <div class="chart-legend"><span><i class="lg-line"></i>Average</span><span><i class="lg-dot"></i>Masters</span><span><i class="lg-dot mine"></i>My games</span>
         <span class="chart-avg" title="${info.rated ? 'Your average' : 'Positions played, out of those needed for your average'}">${info.rated ? pct(info.level) : `${info.n}/${CALIBRATION}`}</span></div>
@@ -1844,7 +1798,7 @@ function accountSection(){
         <p class="ac-sub">No Lichess account? Log in with Google, then add your Chess.com username.</p>` : ''}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
       </section>`;
-  if(accountLoading()) return `<h2 class="pf-h">Account</h2><section class="pf-card ac-card"><p class="mg-status mg-loading">Retrieving your account…</p></section>`;
+  if(accountLoading()) return `<h2 class="pf-h">Account</h2><section class="pf-card ac-card"><p class="mg-status mg-loading">Loading your account…</p></section>`;
   return `
       <h2 class="pf-h">Account</h2>
       <section class="pf-card ac-card">
@@ -1855,10 +1809,10 @@ function accountSection(){
         ${goo && !lich ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}
         <div class="ac-row"><span class="ac-site">${CHESSCOM_LOGO} Chess.com</span>${chesscomName ? `<b>${esc(chesscomName)}</b><button class="link-inline" id="ccDisconnect">Disconnect</button>` : ''}</div>
         ${chesscomName ? (siteLine('chesscom') ? `<p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>` : '')
-          : `<div class="mg-cc"><input id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Chess.com username" aria-label="Chess.com username"><button class="btn small secondary" id="ccConnect">Add Chess.com</button></div>
+          : `<div class="mg-cc"><input id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Username" aria-label="Chess.com username"><button class="btn small secondary" id="ccConnect">Connect Chess.com</button></div>
              <p class="ac-sub">Bring in your Chess.com games and learn from your mistakes.</p>`}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
-        <p class="ac-sub ac-sep">${syncStatus && syncStatus!=='ok' ? `Couldn't reach your account: ${esc(syncStatus)}. Your progress stays on this device for now and is sent next time.` : `Your last ${CORE_GAMES} games from each site sync automatically.`}</p>
+        <p class="ac-sub ac-sep">${syncStatus && syncStatus!=='ok' ? `<span title="${esc(syncStatus)}">Couldn't reach your account. Your progress is saved on this device and will sync next time.</span>` : `Your last ${CORE_GAMES} games from each site sync automatically.`}</p>
         <div class="ac-actions"><button class="btn small secondary" id="pfLogout">Log out</button>
         ${pfConfirmDelete
           ? `</div><div class="mg-confirm"><span>Delete your account, progress and games for good?</span><button class="btn small danger" id="pfDeleteYes">Delete</button><button class="btn small ghost" id="pfDeleteNo">Keep</button></div>`
@@ -1880,7 +1834,7 @@ function renderAccount(){
       <section class="pf-card pf-id">
         <div class="pf-who"><span class="acct-dot big" aria-hidden="true">${name ? esc(name[0].toUpperCase()) : '♚'}</span>
           <div><div class="pf-name">${esc(name) || 'You'}</div>
-          <div class="pf-facts"><span><b>${results.length}</b> position${results.length===1?'':'s'} completed since ${since}</span></div></div></div>
+          <div class="pf-facts"><span><b>${results.length}</b> position${results.length===1?'':'s'} played since ${since}</span></div></div></div>
       </section>
       ${prog.html}
       ${positionsSection()}
@@ -1956,7 +1910,7 @@ function renderHome(){
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="home-head">
-      <div class="home-top"><button class="acct-chip" id="accountBtn" aria-label="Your profile">${DIRECT_LICHESS && !signedIn() ? 'Log in' : `<span class="acct-dot" aria-hidden="true">${(displayName()[0] || '♚').toUpperCase().replace(/</g,'')}</span>${displayName().replace(/</g,'&lt;') || 'Profile'}`}</button></div>
+      <div class="home-top"><button class="acct-chip" id="accountBtn">${DIRECT_LICHESS && !signedIn() ? 'Log in' : `<span class="acct-dot" aria-hidden="true">${(displayName()[0] || '♚').toUpperCase().replace(/</g,'')}</span>${displayName().replace(/</g,'&lt;') || 'Profile'}`}</button></div>
       <h1>Chess Strategy Trainer</h1>
       <p>Three short exercises on positions from master games or your own, each checked by Stockfish.</p>
     </div>
@@ -1988,7 +1942,8 @@ function renderHome(){
 }
 
 // ================= My games =================
-// Your own games, uploaded as a Lichess PGN file, become positions for the three exercises:
+// Your own games (synced from Lichess and Chess.com; inside Claude, added as a Lichess file) become
+// positions for the three exercises:
 //  - Candidate moves and Move selection: the position just before a move of yours that lost 10+
 //    points of winning chances (Dubious or worse); your move is the game move. Each mistake goes
 //    into both (Move selection only with at least 4 legal moves).
@@ -2006,7 +1961,7 @@ const SPEED_NAMES = { ultraBullet:'UltraBullet', bullet:'Bullet', blitz:'Blitz',
 let myGames = [];              // {id, white, black, me, year, speed, result, sans, evals|null, status, positions}
 let myName = '';
 try{ myName = localStorage.getItem('cst.lichess') || ''; }catch(e){}
-let myGamesCol = null, myClearedDoc = null, myGamesLoaded = false, myImportNote = '', myScanning = null, myConfirmClear = false, myPasteOpen = false;
+let myGamesCol = null, myClearedDoc = null, myGamesLoaded = false, myImportNote = '', myConfirmClear = false, myPasteOpen = false;
 const MY_LS = 'cst.mygames.v1';
 function saveMyLocal(){ if(leaving) return; try{ localStorage.setItem(MY_LS, JSON.stringify(myGames)); }catch(e){} }
 function saveMyGame(g){ if(!myGames.includes(g)) return;   // removed meanwhile (e.g. Chess.com disconnected)
@@ -2056,7 +2011,7 @@ function gameIdOf(h, sans){
   for(let k=0; k<str.length; k++) x = (x*31 + str.charCodeAt(k)) | 0;
   return 'g' + (x>>>0).toString(36);
 }
-// On the website, games come straight from Lichess (its public game export, no login needed).
+// On the website, games come from Lichess (its game export) and Chess.com (through the account server).
 // Inside Claude the page can't reach Lichess, so the file download/upload steps are shown instead.
 const DIRECT_LICHESS = !window.claude;
 let myFetching = false;
@@ -2064,13 +2019,13 @@ let myFetching = false;
 // ---- Log in with Lichess (website only) ----
 // Lichess's own sign-in (OAuth 2 with PKCE): the page sends you to lichess.org, you approve, and
 // Lichess sends you back with a one-time code that this page swaps for a token. No password ever
-// reaches this site, no scope is asked (only your public profile and games), no server is involved.
-// The token stays in this browser; "Log out" revokes it on Lichess.
+// reaches this site, no scope is asked (only your public profile and games). The token stays in this
+// browser; the account server sees it on each request and keeps only a fingerprint. "Log out"
+// revokes it on Lichess.
 const LICHESS = 'https://lichess.org', LICHESS_CLIENT_ID = 'chess-strategy-trainer';
 const AUTH_LS = 'cst.lichessAuth', OAUTH_LS = 'cst.oauthPending';
 let lichessAuth = null;   // { token, username }
 try{ const v = JSON.parse(localStorage.getItem(AUTH_LS) || 'null'); if(v && v.token && v.username) lichessAuth = v; }catch(e){}
-let fetchAfterLogin = false;
 const b64url = bytes=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const oauthRedirect = ()=>location.origin + location.pathname;
 async function lichessLogin(link){   // link: add Lichess to the account you're logged in to
@@ -2111,8 +2066,7 @@ async function finishLichessLogin(){
       catch(e){ myImportNote = `Lichess couldn't be added to your account: ${e.message}.`; render(); return; }
     }
     setLichessAuth({ token:tok.access_token, username:acc.username });
-    myImportNote = pending.link ? 'Lichess connected: your Lichess games now come in by themselves.' : '';
-    fetchAfterLogin = true;   // no games yet (here or in your account): your games right away
+    myImportNote = pending.link ? `Lichess connected: your last ${CORE_GAMES} Lichess games will sync automatically.` : '';
   }catch(e){ myImportNote = "Lichess login didn't go through. Try again."; }
   render();
 }
@@ -2142,9 +2096,9 @@ function setGoogleAuth(a){
 }
 // The login used with the account server: Lichess's, else Google's (ours).
 const signedIn = ()=>lichessAuth ? { ...lichessAuth, site:'lichess' } : googleAuth;
-function googleLogin(link){   // link: add Google to the account you're logged in to
+function googleLogin(){
   const state = b64url(crypto.getRandomValues(new Uint8Array(16))), nonce = b64url(crypto.getRandomValues(new Uint8Array(16)));
-  try{ localStorage.setItem(GOOGLE_PENDING_LS, JSON.stringify({ state, nonce, link: !!link })); }catch(e){}
+  try{ localStorage.setItem(GOOGLE_PENDING_LS, JSON.stringify({ state, nonce })); }catch(e){}
   location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({ client_id:GOOGLE_CLIENT_ID, redirect_uri:oauthRedirect(),
     response_type:'id_token', scope:'openid email', nonce, state, prompt:'select_account' });
 }
@@ -2163,17 +2117,11 @@ async function finishGoogleLogin(){
     const idToken = q.get('id_token');
     const claims = JSON.parse(atob(idToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
     if(claims.nonce!==pending.nonce) throw new Error('nonce');   // this answer is for this login
-    if(pending.link && signedIn()){   // Google joins this account (its own account, if any, is merged into it)
-      try{ await serverCall(signedIn(), 'POST', '/api/link/google', { idToken }); myImportNote = 'Google added: your Lichess and Google logins now open the same account.'; }
-      catch(e){ myImportNote = `Google couldn't be added to your account: ${e.message}.`; }
-      return;
-    }
     const r = await fetch(API_BASE + '/api/login/google', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ idToken }) });
     const a = r.ok ? await r.json() : null;
     if(!a || !a.token) throw new Error('server');
     setGoogleAuth({ token:a.token, email:a.email });
     myImportNote = '';
-    fetchAfterLogin = true;
   }catch(e){ myImportNote = "Google login didn't go through. Try again."; }
 }
 async function logout(){
@@ -2187,14 +2135,14 @@ async function logout(){
 
 // ---- Where your progress is kept ----
 // This browser always keeps a copy (the app opens at once and works offline). Besides it: inside
-// Claude, your Claude account; on the website, logged in with Lichess, the account server
-// (worker/, see docs/accounts.md) once its address is set below. Both are used through the same
+// Claude, your Claude account; on the website, logged in (Lichess or Google), the account server
+// (worker/, see docs/accounts.md) at the address below. Both are used through the same
 // small interface (collections and documents), so loading, merging and saving are shared.
 const API_BASE = (()=>{ try{ return localStorage.getItem('cst.api') || ''; }catch(e){ return ''; } })() || /*API_BASE*/'https://chess-trainer-api.sauveur-guillaume.workers.dev'/*END API_BASE*/;
 const OWNER_LS = 'cst.owner';   // which account this browser's copy belongs to ('' = none yet)
 const localOwner = ()=>{ try{ return localStorage.getItem(OWNER_LS) || ''; }catch(e){ return ''; } };
 function clearLocalData(){
-  [LS_KEY, MY_LS, PROFILE_LS, REPLAY_LS, PLAYED_LS, 'cst.routineNext', 'cst.lichess', 'cst.chesscom', OWNER_LS].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  [LS_KEY, MY_LS, PROFILE_LS, REPLAY_LS, PLAYED_LS, 'cst.routineNext', 'cst.lichess', 'cst.chesscom', 'cst.source', OWNER_LS].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
 }
 let storePromise = null;
 function getStore(){ return storePromise || (storePromise = openStore().catch(()=>null)); }
@@ -2219,7 +2167,7 @@ async function openStore(){
   try{ const cc = await db.doc('meta/chesscom').get(); setChesscomName(cc.exists && cc.data() ? cc.data().username : ''); }catch(e){}   // your Chess.com connection
   return { db, id: me.account.id, server: true };
 }
-// Logged in, with the account not read yet: the pages wait for it ("Retrieving your account…")
+// Logged in, with the account not read yet: the pages wait for it ("Loading your account…")
 // rather than showing what this browser had, which can be out of date or empty.
 const accountLoading = ()=>!!(API_BASE && signedIn() && !myGamesLoaded);
 let accountConnections = null;   // the account's logins, from the server
@@ -2301,8 +2249,8 @@ async function syncLichess(){
   try{
     const headers = { Accept:'application/x-chess-pgn' }; if(lichessAuth) headers.Authorization = 'Bearer ' + lichessAuth.token;
     const res = await fetch(url, { headers });
-    if(res.status===401 && lichessAuth){ setLichessAuth(null); return { error:'your Lichess login has expired; log in again' }; }
-    if(res.status===429) return { error:'Lichess asks to wait a minute' };
+    if(res.status===401 && lichessAuth){ setLichessAuth(null); return { error:'your Lichess login expired. Log in again' }; }
+    if(res.status===429) return { error:'Lichess is busy, try again in a minute' };
     if(!res.ok) return { error:`Lichess didn't answer (error ${res.status})` };
     const text = await res.text(), before = myGames.length;
     if(text.trim()) importPgnText(text, true, name);
@@ -2324,8 +2272,10 @@ async function syncChesscom(){
     return { added: myGames.length - before };
   }catch(e){ return { error:"couldn't reach Chess.com" }; }
 }
+let resyncWanted = false;   // asked for during a sync (e.g. Chess.com just connected): runs right after it
 async function syncGames(){
-  if(!signedIn() || myFetching) return;
+  if(!signedIn()) return;
+  if(myFetching){ resyncWanted = true; return; }
   myFetching = true; if(onProfile()) render();
   const lichess = lichessName() ? await syncLichess() : null;
   const chesscom = chesscomName && API_BASE && signedIn() ? await syncChesscom() : null;
@@ -2333,6 +2283,7 @@ async function syncGames(){
   myFetching = false;
   rotateMyGames();
   render();
+  if(resyncWanted){ resyncWanted = false; syncGames(); }
 }
 const syncLichessGames = syncGames;   // (older name, used by tests)
 document.addEventListener('visibilitychange', ()=>{
@@ -2396,7 +2347,7 @@ function importPgnText(text, quiet, playerName){
   let me = (playerName || myName).trim().toLowerCase();
   if(!me || !count[me]) me = Object.keys(count).sort((a,b)=>count[b]-count[a])[0] || '';
   const added = [], skipped = { other:0, variant:0, bullet:0, already:0, notMine:0 };
-  let repaired = 0;
+  let repaired = 0; const repairedGames = [];
   for(const p of parsed){
     if(added.length >= OWN.maxGamesPerUpload) break;
     const h = p.h;
@@ -2421,7 +2372,7 @@ function importPgnText(text, quiet, playerName){
       const full0 = evals.filter(Boolean).length >= sans.length - 1;
       old.sans = sans; old.evals = full0 ? evals : null; old.status = full0 ? 'evaluated' : 'queued'; delete old.verified;
       if(full0) old.evalBy = 'lichess'; else delete old.evalBy;
-      extractOwnPositions(old); saveMyGame(old); repaired++; continue;
+      saveMyGame(old); repairedGames.push(old); repaired++; continue;   // positions: found in slices below
     }
     if(old && old.whiteElo===undefined){ old.whiteElo = eloOf(h.WhiteElo); old.blackElo = eloOf(h.BlackElo); saveMyGame(old); }   // saved before ratings were kept
     if(old || added.some(g=>g.id===id)){ skipped.already++; continue; }
@@ -2433,24 +2384,24 @@ function importPgnText(text, quiet, playerName){
     // once (likely mistakes flagged); the others after their scan
     added.push(g);
   }
-  const meName = spelled[me] || me;
+  const meName = spelled[me] || me, meHtml = escHtml(meName);
   if(me && !myName && !playerName){ myName = meName; try{ localStorage.setItem('cst.lichess', meName); }catch(e){} }
   myGames = myGames.concat(added);
   added.forEach(saveMyGame);
-  reextractAll(added);
+  reextractAll(added.concat(repairedGames));
   const parts = [];
   if(skipped.already) parts.push(`${skipped.already} already added`);
-  if(skipped.bullet) parts.push(`${skipped.bullet} UltraBullet`);
+  if(skipped.bullet) parts.push(`${skipped.bullet} UltraBullet game${skipped.bullet===1?'':'s'}`);
   if(skipped.variant) parts.push(`${skipped.variant} variant or from a set-up position`);
-  if(skipped.notMine) parts.push(`${skipped.notMine} not played by ${spelled[me] || 'you'}`);
+  if(skipped.notMine) parts.push(`${skipped.notMine} not played by ${spelled[me] ? escHtml(spelled[me]) : 'you'}`);
   if(skipped.other) parts.push(`${skipped.other} too short`);
   const fromLichess = added.filter(g=>g.status==='evaluated').length;
   if(quiet){ onOwnPositionsChanged(); myBackground(); return; }
-  myImportNote = raw.length && repaired && !added.length ? `Completed ${repaired} game${repaired===1?'':'s'} saved cut short earlier.`
-    : raw.length ? `Added ${added.length} game${added.length===1?'':'s'} of ${meName}` +
+  myImportNote = raw.length && repaired && !added.length ? `Finished ${repaired} game${repaired===1?'':'s'} that ${repaired===1?'was':'were'} cut short last time.`
+    : raw.length ? `Added ${added.length} game${added.length===1?'':'s'} by ${meHtml}` +
     (added.length ? ` (${fromLichess} already analysed by Lichess)` : '') + (parts.length ? `. Skipped: ${parts.join(', ')}.` : '.')
-    + (repaired ? ` Completed ${repaired} game${repaired===1?'':'s'} saved cut short earlier.` : '')
-    : 'No games found in this file. Choose the .pgn file downloaded from Lichess.';
+    + (repaired ? ` Finished ${repaired} game${repaired===1?'':'s'} that ${repaired===1?'was':'were'} cut short last time.` : '')
+    : 'No games found. Use the .pgn file from step 1, or paste games in PGN format.';
   onOwnPositionsChanged();
   myBackground();
 }
@@ -2614,18 +2565,16 @@ async function myBackground(){
       const g2 = myGames.find(x=>x.status==='queued' && !myTried.has('scan:'+x.id));
       if(!g2) break;
       myTried.add('scan:'+g2.id);
-      myScanning = g2.id; if(onProfile()) render();
       let evals = null, failed = false;
       try{ evals = await scanOwnGame(g2); }
       catch(e){ failed = true; }
-      myScanning = null;
       if(!evals && !failed){ myTried.delete('scan:'+g2.id); retry = true; break; }
       const g = currentGame(g2.id); if(!g) continue;
       if(evals){ g.evals = evals; g.status = 'evaluated'; g.evalBy = 'scan'; } else g.status = 'failed';
       extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged();
     }
   } finally {
-    myBgRunning = false; myScanning = null;
+    myBgRunning = false;
     if(onProfile()) render();
     if(retry) setTimeout(myBackground, 5000);   // the engine was briefly unavailable: try again
   }
@@ -2683,8 +2632,7 @@ async function scanOwnGame(g){
 }
 
 // --- Loading and clearing ---
-// Positions are always worked out again from each game's evaluations when loading, so games
-// saved under earlier rules follow the current ones.
+// Positions are kept with each game (posSig): a game whose rules or data changed has them found again,
 // Games whose positions must be found again are done a few at a time, letting the page draw and
 // answer in between (a game takes a few milliseconds; a few hundred at once would freeze it).
 const toPrepare = new Set();
@@ -2722,7 +2670,7 @@ async function initMyGames(){
         const clearedAt = cd.exists ? (cd.data().at || 0) : 0;
         const fromDb = snap.docs.map(d=>d.data()).filter(g=>g && g.id && Array.isArray(g.sans));
         fromDb.forEach(x=>{ const l = myGames.find(g=>g.id===x.id); if(l && Array.isArray(l.positions) && l.posSig && l.posSig===posSig(x)){ x.positions = l.positions; x.posSig = l.posSig; } });
-        // Games only on this device go up to your account, unless "Remove my games" was used
+        // Games only on this device go up to your account, unless "Remove my games" (inside Claude only) was used
         // (on any device) after they were added.
         // (Chess.com games only while Chess.com is connected: disconnected on another device, they go here too.)
         const local = myGames.filter(g=>!fromDb.some(x=>x.id===g.id) && (!clearedAt || (g.addedAt || 0) > clearedAt) && (chesscomName || siteOf(g)!=='chesscom'));
@@ -2735,7 +2683,6 @@ async function initMyGames(){
   }catch(e){ /* this browser's copy only */ }
   myGames.forEach(g=>{ if(g.status==='failed') g.status = 'queued'; });   // a failed scan is tried again on each launch
   myGamesLoaded = true;
-  fetchAfterLogin = false;
   rotateMyGames();
   if(DIRECT_LICHESS && signedIn()) syncGames();   // new games from Lichess and Chess.com, every visit
   reextractAll();
@@ -2753,7 +2700,8 @@ function clearMyGames(){
   onOwnPositionsChanged();
 }
 
-// The "My games" page: add games, see what was found, next to the master games' figures.
+// The profile's games: where they come from (accountSection on the website, gamesFileSection inside
+// Claude) and the positions found in them, next to the master games' figures.
 const LICHESS_LOGO = '<svg class="li-logo" viewBox="0 0 50 50" aria-hidden="true"><path fill="currentColor" stroke="currentColor" stroke-linejoin="round" d="M38.956.5c-3.53.418-6.452.902-9.286 2.984C5.534 1.786-.692 18.533.68 29.364 3.493 50.214 31.918 55.785 41.329 41.7c-7.444 7.696-19.276 8.752-28.323 3.084S-.506 27.392 4.683 17.567C9.873 7.742 18.996 4.535 29.03 6.405c2.43-1.418 5.225-3.22 7.655-3.187l-1.694 4.86 12.752 21.37c-.439 5.654-5.459 6.112-5.459 6.112-.574-1.47-1.634-2.942-4.842-6.036-3.207-3.094-17.465-10.177-15.788-16.207-2.001 6.967 10.311 14.152 14.04 17.663 3.73 3.51 5.426 6.04 5.795 6.756 0 0 9.392-2.504 7.838-8.927L37.4 7.171z"/></svg>';   // lichess.org's logo (lila, AGPL-3.0+)
 const CHESSCOM_LOGO = '<svg class="cc-logo" aria-hidden="true" viewBox="2.75 -4.25 39.23 53.65"> <g transform="translate(7.136 -.188)"> <clipPath id="cc-a"> <path transform="matrix(1 0 0 -1 0 45)" d="M25.773 12.567c-7.338 5.595-6.523 10.45-6.616 12.447h4.474c.523.971.788 1.871.788 2.993l-5.072 3.341a7.011 7.011 0 0 1 2.912 5.691 7.029 7.029 0 0 1-4.393 6.517c-.814.33-6.56-18.542-6.56-18.542a41.217 41.217 0 0 1-.023-1.679c0-1.874 4.607-1.59 4.362-3.247-.368-2.476-.445-4.356-2.577-10.306-1.44-4.015-11.035 0-11.72-1.97C.87 6.44.616 4.901.616 3.245c0-.177.386-2.833 14.617-2.833 14.23 0 14.614 2.656 14.614 2.833 0 4.036-1.507 7.363-4.075 9.321" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-a)"> <path d="M -4.383 -3.56 L 34.847 -3.56 L 34.847 49.587 L -4.383 49.587 L -4.383 -3.56 Z" fill="#5D9948"/> </g> <clipPath id="cc-c"> <path transform="matrix(1 0 0 -1 0 45)" d="M14.974 10.057c.79 3.6 1.493 7.437 1.92 9.734.532 2.868-3.821 3.38-5.608 3.644-.082-2.448-.765-6.424-6.593-10.867-1.572-1.2-2.743-2.91-3.418-4.982C2.848 6.819 4.949 6.36 8.184 6.36c2.077 0 5.923-.25 6.79 3.696" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-c)"> <path d="M -3.725 16.565 L 21.938 16.565 L 21.938 43.643 L -3.725 43.643 L -3.725 16.565 Z" fill="#81B64C"/> </g> <clipPath id="cc-e"> <path transform="matrix(1 0 0 -1 0 45)" d="M18.03 25.014c.688 1.79.6 2.993.6 2.993l-2.873 3.341c3.054 1.304 4.893 3.755 4.893 6.61a7.013 7.013 0 0 1-2.766 5.59 7.027 7.027 0 0 1-9.679-6.508 7.014 7.014 0 0 1 2.912-5.692l-5.072-3.34c0-1.122.265-2.022.79-2.994H18.03Z" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-e)"> <path d="M 1.045 -4.066 L 25.65 -4.066 L 25.65 24.986 L 1.045 24.986 L 1.045 -4.066 Z" fill="#81B64C"/> </g> <clipPath id="cc-g"> <path transform="matrix(1 0 0 -1 0 45)" d="M14.828 42.633c4.053-.629-1.863-5.33-3.73-5.108-1.777.21-.069 5.7 3.73 5.108" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-g)"> <path d="M 5.393 -2.678 L 21.218 -2.678 L 21.218 12.482 L 5.393 12.482 L 5.393 -2.678 Z" fill="#B2E068"/> </g> </g> </svg>';   // Chess.com's pawn (trademark of Chess.com; from github.com/homarr-labs/dashboard-icons), to name the site
 const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
@@ -2762,7 +2710,7 @@ function lichessExportUrl(name){
   return `https://lichess.org/api/games/user/${encodeURIComponent(name || 'USERNAME')}?max=${CORE_GAMES}&perfType=${perf}&evals=true&clocks=false&opening=false`;
 }
 function countsOf(list){ const c = { analysis:0, candidates:0, final:0 }; list.forEach(p=>(p.acts||[]).forEach(a=>{ if(c[a]!=null) c[a]++; })); return c; }
-// "Up to date with Lichess · 3 new games added." (or why it couldn't check)
+// Only a problem: "Couldn't check Lichess: …" (or why it couldn't check)
 function siteLine(site){
   const r = mySync[site], name = SITE_NAMES[site];
   // Only a problem is shown (games come in by themselves; no news is good news).
@@ -2772,12 +2720,12 @@ function siteLine(site){
 // and the positions found in them.
 function gamesFileSection(){   // inside Claude: games are added as a file
   return `
-      <h2 class="pf-h">Your games</h2>
+      <h2 class="pf-h">My games</h2>
       <section class="mg-card">
         <label class="mg-field" for="lichessUser"><span>Lichess username</span>
           <input id="lichessUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${(myName||'').replace(/"/g,'&quot;')}" placeholder="username"></label>
         <ol class="mg-steps">
-          <li><a id="exportLink" href="${lichessExportUrl(myName)}" target="_blank" rel="noopener">Download your last 50 games from Lichess ↗</a><small>Bullet, blitz, rapid and classical, with Lichess's analysis where you have one.</small></li>
+          <li><a id="exportLink" href="${lichessExportUrl(myName)}" target="_blank" rel="noopener">Download your last ${CORE_GAMES} games from Lichess ↗</a><small>Bullet, blitz, rapid and classical, with Lichess's analysis where you have one.</small></li>
           <li><label class="btn small file-btn" for="pgnFile">Choose the downloaded file<input id="pgnFile" class="file-input" type="file" accept=".pgn,.txt,application/x-chess-pgn,application/vnd.chess-pgn,text/plain"></label>
             <small>Or drop the file on this page, or <button class="link-inline" id="pasteToggle">paste the games instead</button>.</small>
             ${myPasteOpen ? `<div class="mg-paste"><textarea id="pgnPaste" rows="5" placeholder="[Event &quot;Rated Blitz game&quot;] …" spellcheck="false"></textarea><button class="btn small" id="pasteAdd">Add these games</button></div>` : ''}</li>
@@ -2791,7 +2739,7 @@ function positionsSection(){
   // each of its likely mistakes has been checked by the engine.
   const isDone = g=>g.status!=='queued' && !toPrepare.has(g) && !(g.positions||[]).some(p=>p.pending && !myTried.has(p.key));
   const done = myGames.filter(isDone).length;
-  const status = DIRECT_LICHESS && accountLoading() ? 'Retrieving your games…'
+  const status = DIRECT_LICHESS && accountLoading() ? 'Loading your games…'
     : !myGames.length ? ''
     : sfState==='error' ? 'The engine is unavailable, so analysis is paused.'
     : done < myGames.length ? `Analysing your games: ${done} of ${myGames.length} done…`
@@ -2902,12 +2850,12 @@ function renderAnalysis(){
     ${boardHtml(true, bar)}
     ${stackedPanel(`
       ${s.checked ? `
-        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(100 + (acc-100)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Evaluation unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
+        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(100 + (acc-100)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
         ${done ? `<p class="recap${s.justDone ? ' fade-in' : ''}">${analysisRecap(s.guess, truth.pct)}</p>`
                : `<p class="recap">&nbsp;</p>`}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
-        <p class="prompt" id="anaPrompt">Set the bar where you think the evaluation stands.</p>
+        <p class="prompt" id="anaPrompt">Drag the bar to show who's better, and by how much.</p>
         <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(!s.checked){
@@ -3036,7 +2984,7 @@ function renderCandidates(){
       ${posBar()}
       ${boardHtml(false)}
       ${stackedPanel(`
-        <div class="score"><span class="score-num" id="candAcc">${s.countDone ? pctOrDash(acc) : s.countStarted ? '0%' : '—'}</span><span class="score-label" id="candAccLabel">${failed ? 'Evaluation unavailable' : s.countStarted || s.countDone ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.countDone, s.justCounted)}</div>
+        <div class="score"><span class="score-num" id="candAcc">${s.countDone ? pctOrDash(acc) : s.countStarted ? '0%' : '—'}</span><span class="score-label" id="candAccLabel">${failed ? 'Engine unavailable' : s.countStarted || s.countDone ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.countDone, s.justCounted)}</div>
         <div class="review-cols">
           ${col('Your moves', 'mine', showMine, mine, '')}
           ${col('Top moves', 'top', showTop, top, failed ? 'Unavailable' : 'Evaluating…')}
@@ -3136,7 +3084,7 @@ function renderCandidates(){
 //   4. the buttons fade in.
 // Runs once per review; with reduced motion everything shows at once.
 const TOP_FADE = 550, SORT_EASE = 'cubic-bezier(.2,.8,.2,1)';
-const SORT_MOVE = 650, BEAT = 350, COUNT_MS = REVEAL_MS;   // same pace as the board-analysis reveal
+const SORT_MOVE = 650, COUNT_MS = REVEAL_MS;   // same pace as the Position evaluation reveal
 const pickSortKey = r => r.outcome ? r.outcome.moverCp : -Infinity;
 function animateSort(s, mine, acc){
   const order = mine.slice().sort((a,b)=>pickSortKey(b) - pickSortKey(a)).map(r=>r.uci);
@@ -3220,7 +3168,7 @@ function renderFinal(){
       ${header('Move selection')}
       ${posBar()}
       ${boardHtml(false)}
-      ${stackedPanel(`<p class="hint" style="margin:0">${none ? 'No moves to rank: the position couldn\'t be evaluated.' : 'Preparing four candidate moves…'}</p>
+      ${stackedPanel(`<p class="hint" style="margin:0">${none ? 'No moves to rank: the position couldn\'t be evaluated.' : 'Choosing four moves to rank…'}</p>
         ${none ? `<div class="actions-row split">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>` : ''}`, ghostFinal(), engineErrorBanner())}`;
     renderBoard(document.getElementById('board'), bs, p.last);
     wireCommon('final', false);
@@ -3259,7 +3207,7 @@ function renderFinal(){
       ${posBar()}
       ${boardHtml(false)}
       ${stackedPanel(`
-        <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'Evaluation unavailable' : counting ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}</div>
+        <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'Engine unavailable' : counting ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}</div>
         <div id="reviewRows" class="rev-list">${rows.map(reviewRowHtml).join('')}</div>
         <div class="actions-row split${s.revDone ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`, ghostFinal(), engineErrorBanner())}`;
     renderBoard(document.getElementById('board'), bs, p.last);
@@ -3345,7 +3293,7 @@ function renderScreen(){
   syncPos();
   const wrap = document.querySelector('.wrap');
   wrap.classList.toggle('ex', ACTIVITIES.includes(screen));
-  wrap.dataset.screen = screen;
+  const app0 = document.getElementById('app'); if(app0){ app0.ondragover = app0.ondrop = null; }   // file drops: the profile only (inside Claude)
   if(screen==='home') renderHome();
   else if(onProfile()) renderAccount();
   else if(screen==='tests') renderTests();
