@@ -1,6 +1,6 @@
 # Chess Strategy Trainer
 
-A mobile-first chess trainer with three exercises: **Board analysis**, **Candidate moves** and **Final choice**. Free and open: positions from master games, and from your own Lichess games.
+A mobile-first chess trainer with three exercises: **Board analysis**, **Candidate moves** and **Move selection**. Free and open: positions from master games, and from your own Lichess games.
 
 The project has two parts:
 

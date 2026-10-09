@@ -53,7 +53,7 @@
   .panel-stack > .layer{grid-area:1/1; display:flex; flex-direction:column; min-width:0;}
   .panel-stack > .layer.ghost{visibility:hidden; pointer-events:none;}
   .panel-stack > .layer > .actions-row{margin-top:auto; padding-top:5px;}
-  /* Final choice's ranking screen is the tallest panel in the app: keep its instruction and
+  /* Move selection's ranking screen is the tallest panel in the app: keep its instruction and
      Check button tight under the moves so the board keeps more room on small phones. */
   .hint.rank-hint{margin-top:4px;}
   .panel-stack > .layer > .hint + .actions-row{padding-top:2px;}
@@ -65,9 +65,11 @@
   .title-badge{font-family:var(--font-body); font-size:0.78rem; font-weight:600; color:var(--accent); border:1px solid var(--accent); border-radius:10px; padding:2px 9px; white-space:nowrap;}
   .icon-btn{
     width:28px; height:28px; min-width:28px; border-radius:50%; border:1px solid var(--border);
-    background:var(--panel-2); color:var(--text); font-size:1.15rem; font-weight:800; line-height:1;
+    background:var(--panel-2); color:var(--text-mute); font-size:0.9rem; font-weight:700;
     display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
   }
+  .icon-btn.back{color:var(--text);}
+  .icon-btn.back svg{width:16px; height:16px;}
   /* Small round buttons keep their look but get a finger-sized (44px) tap area. */
   .icon-btn,.del-btn,.chip-btn{position:relative;}
   .icon-btn::after,.del-btn::after{content:''; position:absolute; inset:-8px;}
@@ -449,7 +451,7 @@ const HELP = {
     grades: GRADES + " Tap a list's title to show its arrows. Greyed-out top moves are Dubious or worse.",
   },
   final: {
-    title:'Final choice',
+    title:'Move selection',
     what:"Rank the four moves from best to worst. One of them is the move played in the game.",
     eval:"Each of your first three places is compared with the best move you haven't placed yet: 1st counts 50%, 2nd 30%, 3rd 20%. A move as good as that one earns the place in full; the further below it, the less, and a move 10 or more points of winning chances below it earns nothing.",
     grades: GRADES + " <strong>Game move</strong> marks the move actually played.",
@@ -896,7 +898,7 @@ function drawArrows(svg, list, keyPrefix){
 
 let poolShuffleCache = {};
 // Random order for a set of ids, kept per key so it stays put across redraws; it reshuffles if
-// the set itself changes. nextPosition clears Final choice's entry so a revisit gets a new order.
+// the set itself changes. nextPosition clears Move selection's entry so a revisit gets a new order.
 function stableShuffleByIds(poolKey, ids){
   const sig = ids.slice().sort().join(',');
   const cached = poolShuffleCache[poolKey];
@@ -960,7 +962,7 @@ function pickAccuracyPct(picksIn, evalData){
   if(zero - full <= 0) return yours <= full ? 100 : 0;
   return Math.round(100 * Math.max(0, Math.min(1, (zero - yours) / (zero - full))));
 }
-// Final choice accuracy — each place against the best move not placed yet.
+// Move selection accuracy — each place against the best move not placed yet.
 // Going down your ranking, each of your first three places compares the move you put there with
 // the best of the moves you haven't placed so far: how far below it your move is (side to move,
 // centipawns), capped at the Dubious distance as in Candidate moves. Same strength = the place's
@@ -1035,7 +1037,7 @@ function wireDragReorder(listEl, orderArr, onDrop){
 
 // ================= App state =================
 const cols = ['var(--pick1)','var(--pick2)','var(--pick3)'];
-const allCols = ['var(--pick1)','var(--pick2)','var(--pick3)','var(--system)']; // Final choice's four moves
+const allCols = ['var(--pick1)','var(--pick2)','var(--pick3)','var(--system)']; // Move selection's four moves
 const TOP_COLS = ['var(--system)','var(--cyan-arrow)','var(--top3)']; // engine's top 3, distinct from the pick colors
 let screen = 'home';           // 'home' | 'analysis' | 'candidates' | 'final'
 // Each exercise has its own order of positions, drawn by weight (see drawFor) and appended to as
@@ -1231,7 +1233,7 @@ function st(activity){
 //  - the open exercise's own position, as soon as the exercise is on screen;
 //  - that exercise's NEXT position, only once its review is under way (the evaluation is in and
 //    the reveal has started), so it never delays the current review.
-//  - from the home page, the positions Board analysis and Final choice will open on (Candidate
+//  - from the home page, the positions Board analysis and Move selection will open on (Candidate
 //    moves only needs its evaluation at the review, with your picks in it).
 function prefetchCurrent(){ if(ACTIVITIES.includes(screen)) fenEval(pos().fen); }
 function prefetchNext(){
@@ -1249,7 +1251,7 @@ function upcomingFor(t){
   const s = store[t][cur.key];
   return [t, firstAvailable(t, seqBy[t] + (s && s.checked ? 1 : 0))];
 }
-// From the home page: where Board analysis and Final choice would open, and where the routine
+// From the home page: where Board analysis and Move selection would open, and where the routine
 // resumes (unless that's Candidate moves, which is only evaluated at its review).
 function prefetchHome(){
   const ts = [ctx('analysis', false), ctx('final', false)];
@@ -1268,7 +1270,7 @@ function advance(a){
 // ROUTINE MODE: the healthy thought process, one exercise after the other — judge the position,
 // find the candidate moves, choose between them — then round again. Each step is on that
 // exercise's own next position (doing them on one position would let Candidate moves' review
-// give away the Final choice answer).
+// give away the Move selection answer).
 const ROUTINE = ['analysis', 'candidates', 'final'];
 let routine = false;
 // "Next" button: in routine mode, on to the next exercise of the loop; otherwise this exercise's
@@ -1334,7 +1336,7 @@ function candidatesEval(p, picks){
   disc.lines.slice(0, DISCOVERY_MULTIPV).forEach(l=>{ if(l.uci) ucis.push(l.uci); });
   return poolEval(p.fen, Array.from(new Set(ucis)));
 }
-// Final choice: the four moves to rank, picked at runtime from the app's own top 5 (so its best
+// Move selection: the four moves to rank, picked at runtime from the app's own top 5 (so its best
 // move is always one of the four) by the same rule as the position finder (see pickFinalUcis).
 // When the game move isn't in the top 5, it is judged in ONE search with them, and the pick reads
 // that search, so its grade is known. Shuffled so the list never gives the answer away.
@@ -1391,7 +1393,7 @@ function finalEval(p, moves){
 // In the routine the title is "Routine", with the current exercise as a badge beside it.
 function header(title){
   return `<div class="title-row">
-      <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
+      <button class="icon-btn back" id="homeBtn" aria-label="Back to exercises">${BACK_ARROW}</button>
       <h1>${routine ? `Routine <span class="title-badge">${title}</span>` : testMode ? `Test <span class="title-badge">${title}</span>` : replayMode ? `Replay <span class="title-badge">${title}</span>` : title}</h1>
       <button class="icon-btn" id="helpBtn" aria-label="How this exercise works">?</button>
     </div>`;
@@ -1556,7 +1558,7 @@ function positionInfo(p, evalData){
   const info = toWhitePerspective(evalData ? evalData.lines[0] : null, p.fen);
   return info ? { info, pct: cpToPct(info.cp, info.mate), label: fmtSigned(info) } : null;
 }
-// Final choice review row: grade as plain coloured text, like the Candidate moves lists.
+// Move selection review row: grade as plain coloured text, like the Candidate moves lists.
 function reviewRowHtml(m){
   const label = m.outcome ? m.outcome.label : m.na ? '—' : '…';
   const tags = m.historical ? ['Game move'] : [];
@@ -1591,7 +1593,9 @@ function miniRowHtml(m, highlight, fadeIn){
 // close you were — and no opponent rating, since every position is scored on the same scale.
 const ACTS = ['analysis', 'candidates', 'final'];
 const ACT_GLYPHS = { analysis:'⚖', candidates:'♘', final:'♔' };
-const ACT_NAMES = { analysis:'Board analysis', candidates:'Candidate moves', final:'Final choice' };
+const ACT_NAMES = { analysis:'Board analysis', candidates:'Candidate moves', final:'Move selection' };
+const BACK_ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ACT_SHORT = { analysis:'Analysis', candidates:'Candidates', final:'Selection' };   // where space is short (profile)
 const CALIBRATION = 5, LEVEL_K = 0.15, DAILY_GOAL = 5;
 // Shown as "Average 71%"; changes are whole points of the shown value ("▲ 3%").
 const pct = v => Math.round(v) + '%';
@@ -1774,7 +1778,7 @@ function progressSection(){
       </table>
     </section>
     <h2 class="pf-h">Progress</h2>
-    <div class="seg" role="tablist">${ACTS.map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_NAMES[x]}</button>`).join('')}</div>
+    <div class="seg" role="tablist">${ACTS.map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_SHORT[x]}</button>`).join('')}</div>
     ${info.n===0 ? `<p class="empty">No ${ACT_NAMES[a]} positions played yet.<br>Your average appears after ${CALIBRATION} positions.</p>` : `
     <div class="chart-box" id="chartBox">
       <div class="chart-legend"><span><i class="lg-line"></i>Average</span><span><i class="lg-dot"></i>Masters</span><span><i class="lg-dot mine"></i>My games</span>
@@ -1839,7 +1843,7 @@ function renderAccount(){
   const name = displayName(), prog = progressSection();
   app.innerHTML = `
     <div class="title-row">
-      <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
+      <button class="icon-btn back" id="homeBtn" aria-label="Back to exercises">${BACK_ARROW}</button>
       <h1>Profile</h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
@@ -1956,13 +1960,13 @@ function renderHome(){
 
 // ================= My games =================
 // Your own games, uploaded as a Lichess PGN file, become positions for the three exercises:
-//  - Candidate moves and Final choice: the position just before a move of yours that lost 10+
+//  - Candidate moves and Move selection: the position just before a move of yours that lost 10+
 //    points of winning chances (Dubious or worse); your move is the game move. Each mistake goes
-//    into both (Final choice only with at least 4 legal moves).
+//    into both (Move selection only with at least 4 legal moves).
 //  - Board analysis: like the master games (middlegame and endgame starts, then positions at
 //    least 7 half-moves from those kept), draws included, never a mistake position.
 // Games Lichess has already analysed carry an evaluation for every move, trusted as it is: their
-// mistakes go to Candidate moves at once, and to Final choice after one top-5 search. The others
+// mistakes go to Candidate moves at once, and to Move selection after one top-5 search. The others
 // get a quick background scan, only while the engine has nothing else to do, and each likely
 // mistake it flags is checked with the engine first. Everything is saved privately to your account.
 const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacingPlies:7, retryPlies:3, maxMaterialDiff:3, earlyBalancedPlies:14, earlyBalancedCp:100,
@@ -2447,13 +2451,13 @@ function extractOwnPositions(g){
   for(let ply=0; ply<hist.length; ply++){
     const fen = fens[ply], turn = fen.split(' ')[1], moves = new Chess(fen).moves({verbose:true});
     // Your mistakes: every move of yours that lost 10+ points of winning chances, at any move
-    // number. They go into both Candidate moves and Final choice (Final choice needs 4+ legal moves).
+    // number. They go into both Candidate moves and Move selection (Move selection needs 4+ legal moves).
     // A move only counts once the app's engine has checked it (g.checks), unless the game's
     // evaluations are already full-strength (g.verified). A move the quick evaluations (Lichess's,
     // or the app's quick scan) flag as a likely mistake waits for that check ("pending").
     if(turn===g.me && moves.length >= OWN.candidatesMinLegal && ply>0 && lichessEvals(g)){
       // Lichess's analysis is trusted as it is: a move that lost 10+ points is a mistake at once
-      // (Candidate moves); any other move can be a Board analysis position. Final choice waits
+      // (Candidate moves); any other move can be a Board analysis position. Move selection waits
       // only for the app's top-5 search, which must give four moves to rank (g.finals).
       const before = winForMover(g.evals[ply-1], turn), after = winForMover(g.evals[ply], turn);
       const quick = before!=null && after!=null ? before - after : null;
@@ -2474,7 +2478,7 @@ function extractOwnPositions(g){
       }
       if(drop==null && quick!=null && quick >= OWN.flagDrop){ out.push(entry(ply, [], { pending:true })); continue; }
       // The analysis decides each move's place at once: flagged as a likely mistake, it is for
-      // Candidate moves and Final choice (if the engine confirms it), never Board analysis, even
+      // Candidate moves and Move selection (if the engine confirms it), never Board analysis, even
       // when the check finds it isn't one, so Board analysis positions never change afterwards.
       if(quick!=null && quick >= OWN.flagDrop) continue;
     }
@@ -2597,9 +2601,9 @@ async function checkMistake(p){
   const drop = gm ? winPercent(lines[0].cp, lines[0].mate) - winPercent(gm.cp, gm.mate) : 0;
   return Math.round(drop*10)/10;
 }
-// Final choice for a mistake Lichess found: the app's usual top-5 search (with your move, if it
+// Move selection for a mistake Lichess found: the app's usual top-5 search (with your move, if it
 // isn't in the top 5), kept for the exercise, which then opens without waiting. Returns how many
-// moves there are to rank (Final choice needs four).
+// moves there are to rank (Move selection needs four).
 async function prepFinal(p){
   const disc = await bgEval(p.fen, { multipv:DISCOVERY_MULTIPV, movetime:OWN.checkMs });
   if(evalFailed(disc) || !disc.lines.length) return null;
@@ -2738,7 +2742,7 @@ function positionsSection(){
       <h2 class="pf-h">Games and positions</h2>
       <section class="mg-card">
         <div class="mg-table-wrap"><table class="mg-table">
-          <thead><tr><th></th><th>Games</th><th>Board analysis</th><th>Candidate moves</th><th>Final choice</th></tr></thead>
+          <thead><tr><th></th><th>Games</th><th>Analysis</th><th>Candidates</th><th>Selection</th></tr></thead>
           <tbody>${row('Masters', MASTER_GAMES, masters)}${siteRows.map(([label, games, c])=>row(label, games, c)).join('')}</tbody>
         </table></div>
         ${status ? `<p class="mg-status">${status}</p>` : ''}
@@ -2783,7 +2787,7 @@ function renderTests(){
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="title-row">
-      <button class="icon-btn" id="homeBtn" aria-label="Back to profile">‹</button>
+      <button class="icon-btn back" id="homeBtn" aria-label="Back to profile">${BACK_ARROW}</button>
       <h1>Test positions</h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
@@ -3060,7 +3064,7 @@ function renderCandidates(){
 
 // The review's reveal, once the evaluation is in — one step at a time:
 //   1. "Your moves" slide into best → worst order, like a drag-and-drop (moving rows lift, same
-//      look as a dragged row in Final choice);
+//      look as a dragged row in Move selection);
 //   2. the list is redrawn in its new order and the Best highlight fades in;
 //   3. the accuracy counts up from 0% to the final value;
 //   4. the buttons fade in.
@@ -3116,7 +3120,7 @@ function animateSort(s, mine, acc){
   }));
 }
 
-// ================= Final choice =================
+// ================= Move selection =================
 // Timed fade for one element: starts `delay` ms after a sequence began, `elapsed` ms ago. Done by
 // elapsed time rather than on first paint, so a re-render mid-sequence carries on where it was.
 // `kind` is rowIn (plain fade) or fadeIn (fade with a small rise).
@@ -3147,7 +3151,7 @@ function renderFinal(){
     // rank and the only way on is the next position.
     const none = evalFailed(moves);
     app.innerHTML = `
-      ${header('Final choice')}
+      ${header('Move selection')}
       ${posBar()}
       ${boardHtml(false)}
       ${stackedPanel(`<p class="hint" style="margin:0">${none ? 'No moves to rank: the position couldn\'t be evaluated.' : 'Preparing four candidate moves…'}</p>
@@ -3185,7 +3189,7 @@ function renderFinal(){
     const counting = e >= tCount;
     const scoreText = !counting ? '—' : s.revDone ? pctOrDash(acc) : Math.round(acc * easeOut((e - tCount)/COUNT_MS)) + '%';
     app.innerHTML = `
-      ${header('Final choice')}
+      ${header('Move selection')}
       ${posBar()}
       ${boardHtml(false)}
       ${stackedPanel(`
@@ -3224,7 +3228,7 @@ function renderFinal(){
   }
 
   app.innerHTML = `
-    ${header('Final choice')}
+    ${header('Move selection')}
     ${posBar()}
     ${boardHtml(false)}
     ${stackedPanel(`

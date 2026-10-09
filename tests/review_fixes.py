@@ -139,7 +139,7 @@ async def main():
         await pg.evaluate("(()=>{ st('analysis').guess = 70; render(); })()")
         await pg.click('#check'); await pg.wait_for_timeout(2500)
         lbl = await pg.inner_text('#nextPos'); print('7. routine next:', lbl)
-        if lbl != 'Final choice ›': fails.append(f'routine did not skip Candidate moves: {lbl}')
+        if lbl != 'Move selection ›': fails.append(f'routine did not skip Candidate moves: {lbl}')
         await b.close()
 
         # 8. The engine never answers: after the watchdog, the error shows.
