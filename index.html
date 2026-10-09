@@ -182,7 +182,11 @@
   .pf-note a{color:var(--accent);}
   .pf-delete{font-size:0.8rem; padding:4px 0; color:var(--text-mute);}
   .btn.lichess-btn{background:#fff; color:#161512; display:flex; align-items:center; gap:8px; justify-content:center;}
-  .lichess-btn span{font-size:1.2rem; line-height:1;}
+  .lichess-btn .li-logo{width:20px; height:20px;}
+  .ac-site .li-logo{width:15px; height:15px;}
+  .chart-avg{margin-left:auto; color:var(--text-mute);}
+  .chart-avg b{color:var(--text); font-weight:600;}
+  .pf-replay-btn{align-self:flex-start;}
   .btn.google-btn{background:#fff; color:#1f1f1f; display:flex; align-items:center; gap:10px; justify-content:center; margin-top:10px;}
   .google-btn svg{width:18px; height:18px; flex:none;}
   .mg-account{display:flex; justify-content:space-between; gap:12px; align-items:center; margin:0; font-size:0.9rem;}
@@ -245,7 +249,7 @@
   .hero-week{text-align:right; font-size:0.84rem; color:var(--text-mute);}
   .chart-box{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 10px 8px; position:relative;}
   .chart-box svg{display:block; width:100%; height:auto; overflow:visible;}
-  .chart-legend{display:flex; gap:14px; font-size:0.76rem; color:var(--text-mute); margin:2px 4px 6px;}
+  .chart-legend{display:flex; gap:14px; font-size:0.76rem; color:var(--text-mute); margin:2px 4px 6px; flex-wrap:wrap; align-items:baseline;}
   .chart-legend span{display:inline-flex; align-items:center; gap:6px;}
   .lg-line{width:14px; height:2px; background:var(--accent); border-radius:1px;}
   .lg-dot{width:7px; height:7px; border-radius:50%; background:var(--text-mute); opacity:.6;}
@@ -1768,28 +1772,14 @@ function progressSection(){
     <h2 class="pf-h">Progress</h2>
     <div class="seg" role="tablist">${ACTS.map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_NAMES[x]}</button>`).join('')}</div>
     ${info.n===0 ? `<p class="empty">No ${ACT_NAMES[a]} positions played yet.<br>Your average appears after ${CALIBRATION} positions.</p>` : `
-    <div class="hero">
-      <div>
-        <div class="hero-num">${info.rated ? pct(info.level) : '—'}</div>
-        <div class="hero-tier">${info.rated ? 'Average' : `${info.n}/${CALIBRATION} positions to your average`}</div>
-      </div>
-      <div class="hero-week">${weekDelta==null ? '' : `${deltaHtml(weekDelta)}<br>this week`}</div>
-    </div>
     <div class="chart-box" id="chartBox">
-      <div class="chart-legend"><span><i class="lg-line"></i>Average</span><span><i class="lg-dot"></i>Masters</span><span><i class="lg-dot mine"></i>My games</span></div>
+      <div class="chart-legend"><span><i class="lg-line"></i>Average</span><span><i class="lg-dot"></i>Masters</span><span><i class="lg-dot mine"></i>My games</span>
+        <span class="chart-avg">${info.rated ? `Average <b>${pct(info.level)}</b>${weekDelta==null ? '' : ` · ${deltaHtml(weekDelta)} this week`}` : `${info.n}/${CALIBRATION} to your average`}</span></div>
       ${levelChartSvg(sr)}
-    </div>
-    <div class="stats">
-      <div class="stat"><b>${info.n}</b><small>positions</small></div>
-      <div class="stat"><b>${avg10==null ? '—' : avg10+'%'}</b><small>last 10 avg</small></div>
-      <div class="stat"><b>${best<0 ? '—' : pct(best)}</b><small>best average</small></div>
     </div>`}
-    <section class="pf-card pf-replay">
-      <div><h2>Missed positions</h2><p>${ACT_NAMES[a]} positions you scored below your average on. Play them again: at or above your average takes one off. Positions played today come back tomorrow.</p></div>
-      <button class="btn small" id="replayBtn" ${nReplay ? '' : 'disabled'}>${nReplay ? `Replay ${nReplay} ›` : nMissed ? 'All played today' : 'None yet'}</button>
-    </section>`;
+    ${nReplay ? `<button class="btn small secondary pf-replay-btn" id="replayBtn" title="${ACT_NAMES[a]} positions you scored below your average on">Replay ${nReplay} ›</button>` : ''}`;
   return { html, wire: ()=>{
-    document.getElementById('replayBtn').onclick = ()=>startReplay(a);
+    const rb = document.getElementById('replayBtn'); if(rb) rb.onclick = ()=>startReplay(a);
     document.querySelectorAll('.seg-btn[data-tab]').forEach(b=>b.onclick = ()=>{ progressTab = b.dataset.tab; render(); });
     wireChartHover(sr);
   } };
@@ -1810,7 +1800,7 @@ function accountSection(){
       <section class="pf-card ac-card">
         <h2>Account and games</h2>
         <p class="ac-sub">Log in to keep your progress on all your devices and to bring in your own games: they come in by themselves, and positions are found in them for the three exercises. Until then, your progress stays in this browser only.</p>
-        <button class="btn lichess-btn" id="lichessLogin"><span aria-hidden="true">♞</span> Log in with Lichess</button>
+        <button class="btn lichess-btn" id="lichessLogin">${LICHESS_LOGO} Log in with Lichess</button>
         <p class="ac-sub">Recommended: your Lichess games then come in by themselves. Lichess never shares your password with us.</p>
         ${GOOGLE_CLIENT_ID && API_BASE ? `<button class="btn google-btn" id="googleLogin">${GOOGLE_G} Log in with Google</button>
         <p class="ac-sub">No Lichess account? Log in with Google, then add your Chess.com username. You can connect Lichess later. Google only tells us your email address.</p>` : ''}
@@ -1820,13 +1810,13 @@ function accountSection(){
   return `
       <section class="pf-card ac-card">
         <h2>Account and games</h2>
-        <div class="ac-row"><span class="ac-site">♞ Lichess</span>${lich ? `<b>${esc(lich)}</b>` : ''}</div>
-        ${lich ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>`
+        <div class="ac-row"><span class="ac-site">${LICHESS_LOGO} Lichess</span>${lich ? `<b>${esc(lich)}</b>` : ''}</div>
+        ${lich ? (siteLine('lichess') ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : '')
           : `<button class="btn small secondary" id="mgLinkLichess">Connect your Lichess account</button>
              <p class="ac-sub">Your Lichess games then come in by themselves, and you can log in with either. Progress from a Lichess login you used before is added to this account.</p>`}
         ${goo ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}
         <div class="ac-row"><span class="ac-site">Chess.com</span>${chesscomName ? `<b>${esc(chesscomName)}</b><button class="link-inline" id="ccDisconnect">Disconnect</button>` : ''}</div>
-        ${chesscomName ? `<p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>`
+        ${chesscomName ? (siteLine('chesscom') ? `<p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>` : '')
           : `<div class="mg-cc"><input id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Chess.com username" aria-label="Chess.com username"><button class="btn small secondary" id="ccConnect">Add Chess.com</button></div>
              <p class="ac-sub">Your public Chess.com games then come in the same way.</p>`}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
@@ -2672,6 +2662,7 @@ function clearMyGames(){
 }
 
 // The "My games" page: add games, see what was found, next to the master games' figures.
+const LICHESS_LOGO = '<svg class="li-logo" viewBox="0 0 50 50" aria-hidden="true"><path fill="currentColor" stroke="currentColor" stroke-linejoin="round" d="M38.956.5c-3.53.418-6.452.902-9.286 2.984C5.534 1.786-.692 18.533.68 29.364 3.493 50.214 31.918 55.785 41.329 41.7c-7.444 7.696-19.276 8.752-28.323 3.084S-.506 27.392 4.683 17.567C9.873 7.742 18.996 4.535 29.03 6.405c2.43-1.418 5.225-3.22 7.655-3.187l-1.694 4.86 12.752 21.37c-.439 5.654-5.459 6.112-5.459 6.112-.574-1.47-1.634-2.942-4.842-6.036-3.207-3.094-17.465-10.177-15.788-16.207-2.001 6.967 10.311 14.152 14.04 17.663 3.73 3.51 5.426 6.04 5.795 6.756 0 0 9.392-2.504 7.838-8.927L37.4 7.171z"/></svg>';   // lichess.org's logo (lila, AGPL-3.0+)
 const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
 function lichessExportUrl(name){
   const perf = 'bullet,blitz,rapid,classical';
@@ -2681,10 +2672,8 @@ function countsOf(list){ const c = { analysis:0, candidates:0, final:0 }; list.f
 // "Up to date with Lichess · 3 new games added." (or why it couldn't check)
 function siteLine(site){
   const r = mySync[site], name = SITE_NAMES[site];
-  if(myFetching) return `Checking ${name} for new games…`;
-  if(!r) return '';
-  if(r.error) return `Couldn't check ${name}: ${r.error}.`;
-  return `Up to date with ${name}${r.added ? ` · ${r.added} new game${r.added===1?'':'s'} added` : ''}.`;
+  // Only a problem is shown (games come in by themselves; no news is good news).
+  return r && r.error && !myFetching ? `Couldn't check ${name}: ${r.error}.` : '';
 }
 // Your games: where they come from (on the website, merged with your logins: see accountSection)
 // and the positions found in them.

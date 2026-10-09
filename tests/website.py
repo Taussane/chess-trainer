@@ -39,16 +39,19 @@ async def main():
         # No button: games come in by themselves (here: called as on a visit).
         if await pg.query_selector('#fetchGames'): fails.append('a manual download button is still shown')
         await pg.evaluate("syncLichessGames()"); await pg.wait_for_timeout(700)
-        line = await pg.inner_text('#syncLine'); print('first visit:', line)
-        if '10 new games added' not in line: fails.append('first sync: ' + line)
+        n = await pg.evaluate("[myGames.length, !!document.getElementById('syncLine')]"); print('first visit:', n)
+        if n != [10, False]: fails.append(f'first sync (10 games, no status line): {n}')
         u, acc = asked[-1]; print('asked:', u, '|', acc)
         if 'max=100' not in u or 'evals=true' not in u or 'bullet' not in u or 'since=' in u or 'pgn' not in (acc or ''): fails.append('first request to Lichess: ' + u)
         # Next visit: only games played since the newest one here.
         await pg.evaluate("syncLichessGames()"); await pg.wait_for_timeout(700)
         u = asked[-1][0]; newest = await pg.evaluate("myGames.reduce((m,g)=>Math.max(m,g.playedAt||0),0)")
-        line = await pg.inner_text('#syncLine'); print('next visit:', line, '| since', u.split('since=')[-1])
+        print('next visit: since', u.split('since=')[-1])
         if f'since={newest+1000}' not in u: fails.append('next request does not ask only for newer games: ' + u)
-        if line != 'Up to date with Lichess.': fails.append('second sync line: ' + line)
+        # A problem is shown: Lichess not answering.
+        await pg.evaluate("mySync.lichess = { error:'Lichess asks to wait a minute' }; render()")
+        line = await pg.inner_text('#syncLine')
+        if 'wait a minute' not in line: fails.append('a sync problem is not shown: ' + line)
         # Typing in a field while the page keeps redrawing (as during analysis): nothing is lost.
         await pg.evaluate("window.__redraw = setInterval(()=>render(), 50)")
         await pg.click('#ccUser'); await pg.keyboard.type('SomePlayer', delay=60)

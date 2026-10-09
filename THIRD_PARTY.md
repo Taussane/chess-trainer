@@ -38,7 +38,7 @@ THE SOFTWARE.
 
 ## Lichess
 
-The winning-chances curve used to grade moves follows the one Lichess publishes for its accuracy figures. Lichess (https://lichess.org) is free software under the GNU Affero General Public License v3.0. Games are downloaded from Lichess through its public API.
+The winning-chances curve used to grade moves follows the one Lichess publishes for its accuracy figures. Lichess (https://lichess.org) is free software under the GNU Affero General Public License v3.0. Games are downloaded from Lichess through its public API. The Lichess logo (`vendor/lichess-logo.svg`, inlined in the app's login buttons) comes from lila (`public/logo/lichess.svg`), under the same licence.
 
 ## Master games
 

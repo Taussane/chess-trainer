@@ -113,9 +113,9 @@ async def main():
             await A.fill('#ccUser', 'ccplayer'); await A.click('#ccConnect'); await A.wait_for_timeout(2500)
             await A.wait_for_function("myPositions.some(p=>p.gameId && p.gameId.startsWith('cc-'))", timeout=20000)   # once a Chess.com game is scanned
             cc = await A.evaluate("[chesscomName, myGames.filter(g=>siteOf(g)==='chesscom').map(g=>g.id), (myPositions.find(p=>p.gameId && p.gameId.startsWith('cc-'))||{}).year]")
-            line = await A.inner_text('#ccLine'); print('    A:', cc[0], len(cc[1]), 'games,', cc[2], '|', line)
+            line = await A.evaluate("(document.getElementById('ccLine')||{}).innerText || ''"); print('    A:', cc[0], len(cc[1]), 'games,', cc[2], '|', line or '(no line: all fine)')
             if cc[0] != 'CCPlayer' or len(cc[1]) != 9 or not all(i.startswith('cc-') for i in cc[1]) or 'Chess.com' not in (cc[2] or ''): fails.append(f'Chess.com games: {cc}')
-            if '9 new games added' not in line: fails.append('Chess.com line: ' + line)
+            if line: fails.append('Chess.com line should only show problems: ' + line)
             await A.wait_for_timeout(800)
             await B.reload(); await B.wait_for_timeout(600); await stand_in(B); await B.wait_for_timeout(1500)
             n = await B.evaluate("[chesscomName, myGames.filter(g=>siteOf(g)==='chesscom').length]"); print('    B after reload:', n)

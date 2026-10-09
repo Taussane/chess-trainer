@@ -25,7 +25,7 @@ async def main():
         txt = await pg.inner_text('.pf-id'); print(txt.replace('\n', ' '))
         if 'Training since' not in txt or '9 positions completed' not in txt: fails.append('profile header wrong')
         txt = await pg.inner_text('.pf-scroll')
-        if 'All played today' not in txt: fails.append('a position played today was offered for replay')
+        if await pg.query_selector('#replayBtn'): fails.append('a position played today was offered for replay')
         rows = await pg.evaluate("[...document.querySelectorAll('.wk-table tbody tr')].map(r=>r.innerText.replace(/\\s+/g,' '))")
         print('week:', rows[:3])
         if not rows[0].startswith('Today 5') : fails.append(f'today row: {rows[0]}')
