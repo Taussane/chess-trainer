@@ -90,6 +90,7 @@
   .ac-row .ac-site{min-width:96px;}
   .ac-row .link-inline{margin-left:auto;}
   .ac-sep{border-top:1px solid var(--border); padding-top:8px; margin-top:4px;}
+  .ac-divider{height:1px; background:var(--border); margin:4px 0;}
   .link-plain{background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; text-decoration:underline;}
   .pf-scroll{padding-top:12px;}
   .ac-actions{display:flex; align-items:center; justify-content:space-between; gap:12px;}
@@ -1788,45 +1789,42 @@ const displayName = ()=>myName || lichessName() || chesscomName || (googleAuth ?
 // Chess.com: a username (no login there), also before logging in: its games then stay in this
 // browser, and join your account when you log in. Not connected: a button like the logins, the
 // username box below it; connected: the username and Disconnect.
-function chesscomBlock(){
-  if(chesscomName) return `<div class="ac-row"><span class="ac-site">${CHESSCOM_LOGO} Chess.com</span><b>${escHtml(chesscomName)}</b><button class="link-inline" id="ccDisconnect">Disconnect</button></div>
-        ${siteLine('chesscom') ? `<p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>` : ''}`;
-  return `<button class="btn google-btn cc-btn" id="ccConnect">${CHESSCOM_LOGO} Connect with Chess.com</button>
+const ccConnectButton = ()=>`<button class="btn google-btn cc-btn" id="ccConnect">${CHESSCOM_LOGO} Connect with Chess.com</button>
         <input class="cc-field" id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Chess.com username" aria-label="Chess.com username">`;
-}
+const ccConnectedRow = ()=>`<div class="ac-row"><span class="ac-site">${CHESSCOM_LOGO} Chess.com</span><b>${escHtml(chesscomName)}</b><button class="link-inline" id="ccDisconnect">Disconnect</button></div>
+        ${siteLine('chesscom') ? `<p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>` : ''}`;
+// Two parts, a line between them: above, the buttons (log in, connect a site); below, what you're
+// connected with (Chess.com, then the login you're in with: Lichess, else Google), Log out, Delete.
 function accountSection(){
   const esc = escHtml;
   const conn = site=>(accountConnections || []).find(c=>c.site===site);
   const lich = lichessName(), goo = googleAuth ? googleAuth.email : conn('google') && conn('google').username;
   const note = myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : '';
-  if(!signedIn()) return `
+  const card = (top, bottom)=>`
       <h2 class="pf-h">Account</h2>
-      <section class="pf-card ac-card">
+      <section class="pf-card ac-card">${top}${top.trim() && bottom.trim() ? `<div class="ac-divider"></div>` : ''}${bottom}</section>`;
+  if(!signedIn()) return card(`
         <p class="ac-sub">${chesscomName ? 'Log in to keep your progress.' : 'Log in to keep your progress, connect to load your games.'}</p>
         <button class="btn lichess-btn" id="lichessLogin">${LICHESS_LOGO} Log in and connect with Lichess</button>
         ${GOOGLE_CLIENT_ID && API_BASE ? `<button class="btn google-btn" id="googleLogin">${GOOGLE_G} Log in with Google</button>` : ''}
-        ${API_BASE ? chesscomBlock() : ''}
-        ${note}
-      </section>`;
+        ${API_BASE && !chesscomName ? ccConnectButton() : ''}
+        ${note}`,
+    API_BASE && chesscomName ? ccConnectedRow() : '');
   if(accountLoading()) return `<h2 class="pf-h">Account</h2><section class="pf-card ac-card"><p class="mg-status mg-loading">Loading your account…</p></section>`;
-  // Connect buttons first (Lichess for a Google account, Chess.com), then the login you are in with
-  // (Lichess, else Google), just above Log out. An account with Lichess shows as a Lichess account.
-  return `
-      <h2 class="pf-h">Account</h2>
-      <section class="pf-card ac-card">
-        ${lich ? '' : `${chesscomName ? '' : `<p class="ac-sub">Connect to load your games.</p>`}
-        <button class="btn lichess-btn" id="mgLinkLichess">${LICHESS_LOGO} Connect with Lichess</button>`}
-        ${chesscomBlock()}
+  return card(`
+        ${lich || chesscomName ? '' : `<p class="ac-sub">Connect to load your games.</p>`}
+        ${lich ? '' : `<button class="btn lichess-btn" id="mgLinkLichess">${LICHESS_LOGO} Connect with Lichess</button>`}
+        ${chesscomName ? '' : ccConnectButton()}
+        ${note}`, `
+        ${chesscomName ? ccConnectedRow() : ''}
         ${lich ? `<div class="ac-row"><span class="ac-site">${LICHESS_LOGO} Lichess</span><b>${esc(lich)}</b></div>
         ${siteLine('lichess') ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : ''}`
         : goo ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}
-        ${note}
         ${syncStatus && syncStatus!=='ok' ? `<p class="ac-sub" title="${esc(syncStatus)}">Couldn't reach your account. Your progress is saved on this device and will sync next time.</p>` : ''}
         <div class="ac-actions"><button class="btn small secondary" id="pfLogout">Log out</button>
         ${pfConfirmDelete
           ? `</div><div class="mg-confirm"><span>Delete your account, progress and games for good?</span><button class="btn small danger" id="pfDeleteYes">Delete</button><button class="btn small ghost" id="pfDeleteNo">Keep</button></div>`
-          : `<button class="link-btn quiet pf-delete" id="pfDelete">Delete my account</button></div>`}
-      </section>`;
+          : `<button class="link-btn quiet pf-delete" id="pfDelete">Delete my account</button></div>`}`);
 }
 // The profile: who you are, your progress, your account and games, the positions found; then links.
 function renderAccount(){
