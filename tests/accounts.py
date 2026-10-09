@@ -154,6 +154,20 @@ async def main():
             await A.screenshot(path=str(T.SHOTS/'accounts_after_delete.png'))
             for e in errsA + errsB:
                 if 'importScripts' not in e: fails.append('page error: ' + e)
+            # 6. A guest connects Chess.com (no login): its games come in here; logging in then brings
+            #    the username and the games into the account.
+            who[0] = 'tok-taussane'
+            ctxC, C, errsC = await new_browser(p, SITE, who)
+            await C.evaluate("screen='account'; render()"); await C.wait_for_timeout(300)
+            await C.fill('#ccUser', 'ccplayer'); await C.click('#ccConnect')
+            await C.wait_for_function("myGames.filter(g=>siteOf(g)==='chesscom').length===9", timeout=20000)
+            n = await C.evaluate("[!!signedIn(), chesscomName, document.querySelector('.pf-name').innerText]"); print('6. guest with Chess.com:', n)
+            if n[:2] != [False, 'CCPlayer']: fails.append(f'guest Chess.com: {n}')
+            await login(C); await C.wait_for_timeout(2500)
+            srv = api('GET', '/api/games')['games']; meta = api('GET', '/api/meta/chesscom')['data']
+            print('   after logging in: account Chess.com', meta, '| its Chess.com games', sum(1 for g in srv if g['id'].startswith('cc-')))
+            if (meta or {}).get('username') != 'CCPlayer' or sum(1 for g in srv if g['id'].startswith('cc-')) != 9: fails.append('the guest\'s Chess.com did not join the account')
+            errsA += errsC
             await p['b'].close()
     finally:
         server.terminate()

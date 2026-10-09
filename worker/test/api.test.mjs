@@ -95,7 +95,7 @@ test('Chess.com: a player is found or not; their newest live games, after a time
   assert.deepEqual((await j(await call(env, 'GET', '/api/chesscom/player?user=CCPlayer'))).body, { username: 'CCPlayer' });
   assert.equal((await call(env, 'GET', '/api/chesscom/player?user=nobody')).status, 404);
   assert.equal((await call(env, 'GET', '/api/chesscom/player?user=../x')).status, 400);
-  assert.equal((await call(env, 'GET', '/api/chesscom/games?user=ccplayer', { token: null })).status, 401, 'only for signed-in players');
+  assert.equal((await call(env, 'GET', '/api/chesscom/games?user=ccplayer', { token: null })).status, 200, 'public games: also before logging in');
   const all = await (await call(env, 'GET', '/api/chesscom/games?user=ccplayer&max=100')).text();
   const dates = [...all.matchAll(/\[UTCDate "([^"]+)"\]/g)].map(m => m[1]);
   assert.equal(dates.length, 9, 'the daily game is left out');

@@ -105,8 +105,9 @@ async def main():
                 await P4.wait_for_timeout(100)
                 try: await P4.evaluate("if(typeof screen!=='undefined' && screen!=='mygames' && typeof googleAuth!=='undefined' && googleAuth){ screen='mygames'; render(); }")
                 except Exception: pass
-                try: f = await P4.evaluate("[!!document.getElementById('ccUser'), !!document.getElementById('mgLinkLichess'), !!document.querySelector('.mg-loading'), typeof myGamesLoaded!=='undefined' && myGamesLoaded]")
+                try: f = await P4.evaluate("typeof signedIn==='function' && signedIn() ? [!!document.getElementById('ccUser'), !!document.getElementById('mgLinkLichess'), !!document.querySelector('.mg-loading'), myGamesLoaded] : null")   # logged in only (a guest can connect Chess.com)
                 except Exception: continue
+                if f is None: continue
                 seen.add(tuple(f))
                 if f[3]: break
             A.API_DELAY[0] = 0

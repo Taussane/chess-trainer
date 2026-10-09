@@ -1575,8 +1575,8 @@ function miniRowHtml(m, highlight, fadeIn){
 // and in your account: inside Claude, Claude's database; on the website, logged in, the account
 // server (see "Where your progress is kept").
 //
-// LEVEL (0–100, one per activity) = your accuracy, smoothed over recent positions: the first
-// CALIBRATION positions are a plain average, after that each new position moves the level
+// LEVEL (0–100, one per activity) = your accuracy, smoothed over recent positions, shown from the
+// first position on: early on it is a plain average, then each new position moves the level
 // LEVEL_K (15%) of the way toward its accuracy. So one bad position costs a little, a run of
 // good ones lifts it steadily, and old results fade out. Not Elo: there's no win/lose, just how
 // close you were — and no opponent rating, since every position is scored on the same scale.
@@ -1585,7 +1585,7 @@ const ACT_GLYPHS = { analysis:'⚖', candidates:'♘', final:'♔' };
 const ACT_NAMES = { analysis:'Position evaluation', candidates:'Candidate moves', final:'Move selection' };
 const BACK_ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ACT_SHORT = { analysis:'Evaluation', candidates:'Candidates', final:'Selection' };   // where space is short (profile)
-const CALIBRATION = 5, LEVEL_K = 0.15, DAILY_GOAL = 5;
+const LEVEL_K = 0.15, DAILY_GOAL = 5;
 // Shown as "Average 71%"; changes are whole points of the shown value ("▲ 3%").
 const pct = v => Math.round(v) + '%';
 const escHtml = x=>String(x==null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
@@ -1696,7 +1696,7 @@ function levelSeries(a){
 }
 function levelNow(a){
   const sr = levelSeries(a), last = sr[sr.length-1];
-  return { n: sr.length, level: last ? last.level : null, rated: sr.length >= CALIBRATION, series: sr };
+  return { n: sr.length, level: last ? last.level : null, rated: sr.length > 0, series: sr };
 }
 // Records a finished position once (the review's state remembers it) and returns what the
 // review shows: the level after this position and how much it moved.
@@ -1716,11 +1716,11 @@ function recordResult(s, a, acc){
   refreshPools();   // its place in the line (or Replay) changed
   if(pos().gameId) rotateMyGames();
 }
-// "Average 71% ▲ 3%" (or "3/5 to your average") in the review's score line, shown with the buttons.
+// "Average 71% ▲3%" in the review's score line, shown with the buttons.
 function levelChip(s, show, fade){
   if(!s.rec) return '';
   const r = s.rec;
-  const body = r.test ? 'Test position · not recorded' : !r.rated ? `${r.n}/${CALIBRATION} to your average`
+  const body = r.test ? 'Test position · not recorded'
     : `Average <strong>${pct(r.level)}</strong>` + (r.delta==null ? '' : ' ' + deltaHtml(r.delta));
   return `<span class="level${show ? (fade ? ' fade-in' : '') : ''}" style="${show ? '' : 'visibility:hidden'}">${body}</span>`;
 }
@@ -1762,10 +1762,10 @@ function progressSection(){
     </section>
     <h2 class="pf-h">Progress</h2>
     <div class="seg" role="tablist">${ACTS.map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_SHORT[x]}</button>`).join('')}</div>
-    ${info.n===0 ? `<p class="empty">No positions played yet in ${ACT_NAMES[a]}.<br>Your average appears after ${CALIBRATION} positions.</p>` : `
+    ${info.n===0 ? `<p class="empty">No positions played yet in ${ACT_NAMES[a]}.</p>` : `
     <div class="chart-box" id="chartBox">
       <div class="chart-legend"><span><i class="lg-line"></i>Average</span><span><i class="lg-dot"></i>Masters</span><span><i class="lg-dot mine"></i>My games</span>
-        <span class="chart-avg" title="${info.rated ? 'Your average' : 'Positions played, out of those needed for your average'}">${info.rated ? pct(info.level) : `${info.n}/${CALIBRATION}`}</span></div>
+        <span class="chart-avg" title="Your average">${pct(info.level)}</span></div>
       ${levelChartSvg(sr)}
       ${nReplay ? `<div class="chart-foot"><button class="link-inline" id="replayBtn" title="${ACT_NAMES[a]} positions you scored below your average on">Replay ${nReplay} missed</button></div>` : ''}
     </div>`}`;
@@ -1785,6 +1785,15 @@ const displayName = ()=>myName || lichessName() || chesscomName || (googleAuth ?
 // your Lichess games (or connecting Lichess), your Chess.com username; then log out / delete.
 // An account with Lichess shows as a Lichess account: a Google login connected to it still opens it,
 // but isn't shown (connecting Lichess from a Google account "promotes" it to a Lichess account).
+// Chess.com: a username (no login there), also before logging in: its games then stay in this
+// browser, and join your account when you log in.
+function chesscomRow(){
+  const esc = escHtml;
+  return `<div class="ac-row"><span class="ac-site">${CHESSCOM_LOGO} Chess.com</span>${chesscomName ? `<b>${esc(chesscomName)}</b><button class="link-inline" id="ccDisconnect">Disconnect</button>` : ''}</div>
+        ${chesscomName ? (siteLine('chesscom') ? `<p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>` : '')
+          : `<div class="mg-cc"><input id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Username" aria-label="Chess.com username"><button class="btn small secondary" id="ccConnect">Connect Chess.com</button></div>
+             <p class="ac-sub">Bring in your Chess.com games and learn from your mistakes.</p>`}`;
+}
 function accountSection(){
   const esc = x=>String(x).replace(/</g,'&lt;');
   const conn = site=>(accountConnections || []).find(c=>c.site===site);
@@ -1792,10 +1801,10 @@ function accountSection(){
   if(!signedIn()) return `
       <h2 class="pf-h">Account</h2>
       <section class="pf-card ac-card">
-        <p class="ac-sub">Log in to keep your progress on all your devices and learn from your own games.</p>
+        <p class="ac-sub">Log in to keep your progress and learn from your own games.</p>
         <button class="btn lichess-btn" id="lichessLogin">${LICHESS_LOGO} Log in with Lichess</button>
-        ${GOOGLE_CLIENT_ID && API_BASE ? `<button class="btn google-btn" id="googleLogin">${GOOGLE_G} Log in with Google</button>
-        <p class="ac-sub">No Lichess account? Log in with Google, then add your Chess.com username.</p>` : ''}
+        ${GOOGLE_CLIENT_ID && API_BASE ? `<button class="btn google-btn" id="googleLogin">${GOOGLE_G} Log in with Google</button>` : ''}
+        ${API_BASE ? `<div class="ac-sep"></div>${chesscomRow()}` : ''}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
       </section>`;
   if(accountLoading()) return `<h2 class="pf-h">Account</h2><section class="pf-card ac-card"><p class="mg-status mg-loading">Loading your account…</p></section>`;
@@ -1807,10 +1816,7 @@ function accountSection(){
           : `<button class="btn small secondary" id="mgLinkLichess">Connect Lichess</button>
              <p class="ac-sub">Bring in your Lichess games and learn from your mistakes.</p>`}
         ${goo && !lich ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}
-        <div class="ac-row"><span class="ac-site">${CHESSCOM_LOGO} Chess.com</span>${chesscomName ? `<b>${esc(chesscomName)}</b><button class="link-inline" id="ccDisconnect">Disconnect</button>` : ''}</div>
-        ${chesscomName ? (siteLine('chesscom') ? `<p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>` : '')
-          : `<div class="mg-cc"><input id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Username" aria-label="Chess.com username"><button class="btn small secondary" id="ccConnect">Connect Chess.com</button></div>
-             <p class="ac-sub">Bring in your Chess.com games and learn from your mistakes.</p>`}
+        ${chesscomRow()}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
         <p class="ac-sub ac-sep">${syncStatus && syncStatus!=='ok' ? `<span title="${esc(syncStatus)}">Couldn't reach your account. Your progress is saved on this device and will sync next time.</span>` : `Your last ${CORE_GAMES} games from each site sync automatically.`}</p>
         <div class="ac-actions"><button class="btn small secondary" id="pfLogout">Log out</button>
@@ -1832,8 +1838,8 @@ function renderAccount(){
     </div>
     <div class="pf-scroll">
       <section class="pf-card pf-id">
-        <div class="pf-who"><span class="acct-dot big" aria-hidden="true">${name ? esc(name[0].toUpperCase()) : '♚'}</span>
-          <div><div class="pf-name">${esc(name) || 'You'}</div>
+        <div class="pf-who"><span class="acct-dot big" aria-hidden="true">${name ? esc(name[0].toUpperCase()) : 'G'}</span>
+          <div><div class="pf-name">${esc(name) || 'Guest'}</div>
           <div class="pf-facts"><span><b>${results.length}</b> position${results.length===1?'':'s'} played since ${since}</span></div></div></div>
       </section>
       ${prog.html}
@@ -1885,7 +1891,7 @@ function wireChartHover(sr){
     chartHover = { tab: progressTab, i };
     cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.setAttribute('opacity', '.5');
     if(!tip){ tip = document.createElement('div'); tip.className = 'chart-tip'; box.appendChild(tip); }
-    tip.innerHTML = `#${first+i+1} · ${new Date(r.ts).toLocaleDateString(undefined,{month:'short', day:'numeric'})}<br>Accuracy ${r.acc}% · Average ${r.n>=CALIBRATION ? pct(r.level) : '—'}`;
+    tip.innerHTML = `#${first+i+1} · ${new Date(r.ts).toLocaleDateString(undefined,{month:'short', day:'numeric'})}<br>Accuracy ${r.acc}% · Average ${pct(r.level)}`;
     const bx = box.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
     const px = rect.left - bx.left + cx*rect.width/CH.w, py = rect.top - bx.top + chartY(Math.max(r.level, r.acc))*rect.height/CH.h;
     tip.style.left = Math.max(4, Math.min(bx.width - w - 4, px - w/2)) + 'px';
@@ -1910,7 +1916,7 @@ function renderHome(){
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="home-head">
-      <div class="home-top"><button class="acct-chip" id="accountBtn">${DIRECT_LICHESS && !signedIn() ? 'Log in' : `<span class="acct-dot" aria-hidden="true">${(displayName()[0] || '♚').toUpperCase().replace(/</g,'')}</span>${displayName().replace(/</g,'&lt;') || 'Profile'}`}</button></div>
+      <div class="home-top"><button class="acct-chip" id="accountBtn">${DIRECT_LICHESS && !signedIn() ? 'Log in' : `<span class="acct-dot" aria-hidden="true">${(displayName()[0] || 'G').toUpperCase().replace(/</g,'')}</span>${displayName().replace(/</g,'&lt;') || 'Guest'}`}</button></div>
       <h1>Chess Strategy Trainer</h1>
       ${(DIRECT_LICHESS ? !signedIn() : !results.length) ? `<p>Train your strategy beyond tactics puzzles: gauge the position, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
@@ -1929,7 +1935,7 @@ function renderHome(){
         return `<button class="card" data-go="${a}" ${open ? '' : 'disabled'}>
           <span class="card-glyph" aria-hidden="true">${glyph}</span>
           <span><span class="card-title">${ACT_NAMES[a]}</span><span class="card-desc">${desc}</span></span>
-          <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b><small>Average</small>` : `<b>—</b><small>${L.n ? `${L.n}/${CALIBRATION}` : 'Average'}</small>`}</span>
+          <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small></span>
         </button>`; }).join('')}
     </div>
     ${engineErrorBanner()}`;
@@ -2161,10 +2167,14 @@ async function openStore(){
   const owner = localOwner();
   if(owner && owner!==me.account.id){
     // This browser's copy is someone else's account: start from yours only.
-    clearLocalData(); results = []; myGames = []; profile = { joinedAt:null }; legacyMissed = []; played = { day: todayKey(), keys: [] };
+    clearLocalData(); results = []; myGames = []; profile = { joinedAt:null }; legacyMissed = []; played = { day: todayKey(), keys: [] }; chesscomName = '';
   }
   try{ localStorage.setItem(OWNER_LS, me.account.id); }catch(e){}   // a copy with no owner yet joins your account
-  try{ const cc = await db.doc('meta/chesscom').get(); setChesscomName(cc.exists && cc.data() ? cc.data().username : ''); }catch(e){}   // your Chess.com connection
+  try{   // your Chess.com connection; one added before logging in joins an account that has none
+    const cc = await db.doc('meta/chesscom').get(), theirs = cc.exists && cc.data() ? cc.data().username : '';
+    if(theirs || owner) setChesscomName(theirs);
+    else if(chesscomName) await db.doc('meta/chesscom').set({ username: chesscomName });   // added here as a guest (this copy had no owner yet)
+  }catch(e){}
   return { db, id: me.account.id, server: true };
 }
 // Logged in, with the account not read yet: the pages wait for it ("Loading your account…")
@@ -2173,7 +2183,7 @@ const accountLoading = ()=>!!(API_BASE && signedIn() && !myGamesLoaded);
 let accountConnections = null;   // the account's logins, from the server
 let syncStatus = '';   // 'ok', or why the account couldn't be reached (shown in the profile)
 async function serverCall(auth, method, path, body){
-  const headers = { Authorization:'Bearer ' + auth.token, 'X-Auth-Site':auth.site || 'lichess' };
+  const headers = auth ? { Authorization:'Bearer ' + auth.token, 'X-Auth-Site':auth.site || 'lichess' } : {};
   if(body!==undefined) headers['Content-Type'] = 'application/json';
   let r;
   try{ r = await fetch(API_BASE + path, { method, headers, body: body===undefined ? undefined : JSON.stringify(body) }); }
@@ -2265,7 +2275,7 @@ async function syncChesscom(){
   }catch(e){}
   try{
     const r = await fetch(API_BASE + `/api/chesscom/games?user=${encodeURIComponent(chesscomName)}&max=${CORE_GAMES}` + (newest ? '&since=' + (newest + 1000) : ''),
-      { headers:{ Authorization:'Bearer ' + signedIn().token, 'X-Auth-Site':signedIn().site } });
+      { headers: signedIn() ? { Authorization:'Bearer ' + signedIn().token, 'X-Auth-Site':signedIn().site } : {} });
     if(!r.ok){ let why = ''; try{ why = (await r.json()).error; }catch(e){} return { error: why || `error ${r.status}` }; }
     const text = await r.text(), before = myGames.length;
     if(text.trim()) importPgnText(text, true, chesscomName);
@@ -2274,11 +2284,11 @@ async function syncChesscom(){
 }
 let resyncWanted = false;   // asked for during a sync (e.g. Chess.com just connected): runs right after it
 async function syncGames(){
-  if(!signedIn()) return;
+  if(!signedIn() && !chesscomName) return;   // a guest's games: Chess.com only
   if(myFetching){ resyncWanted = true; return; }
   myFetching = true; if(onProfile()) render();
   const lichess = lichessName() ? await syncLichess() : null;
-  const chesscom = chesscomName && API_BASE && signedIn() ? await syncChesscom() : null;
+  const chesscom = chesscomName && API_BASE ? await syncChesscom() : null;
   mySync = { at: Date.now(), lichess, chesscom };
   myFetching = false;
   rotateMyGames();
@@ -2287,7 +2297,7 @@ async function syncGames(){
 }
 const syncLichessGames = syncGames;   // (older name, used by tests)
 document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState==='visible' && DIRECT_LICHESS && signedIn() && myGamesLoaded && Date.now() - mySync.at > 10*6e4) syncGames();
+  if(document.visibilityState==='visible' && DIRECT_LICHESS && (signedIn() || chesscomName) && myGamesLoaded && Date.now() - mySync.at > 10*6e4) syncGames();
 });
 // Connecting a Chess.com username (checked with Chess.com), kept in your account.
 async function connectChesscom(name){
@@ -2684,7 +2694,7 @@ async function initMyGames(){
   myGames.forEach(g=>{ if(g.status==='failed') g.status = 'queued'; });   // a failed scan is tried again on each launch
   myGamesLoaded = true;
   rotateMyGames();
-  if(DIRECT_LICHESS && signedIn()) syncGames();   // new games from Lichess and Chess.com, every visit
+  if(DIRECT_LICHESS && (signedIn() || chesscomName)) syncGames();   // new games from Lichess and Chess.com, every visit
   reextractAll();
   onOwnPositionsChanged();
   if(onProfile()) render();   // these pages waited for the account

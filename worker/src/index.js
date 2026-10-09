@@ -23,7 +23,7 @@
 //   DELETE /api/games/:id               remove one game
 //   GET    /api/meta/:name              a small document (profile, chesscom, replay, games-cleared…)
 //   PUT    /api/meta/:name              replace it
-//   GET    /api/chesscom/player?user=   a Chess.com player's name as Chess.com spells it (404: none)
+//   GET    /api/chesscom/player?user=   a Chess.com player's name as Chess.com spells it (404: none; no sign-in)
 //   GET    /api/chesscom/games?user=&since=&max=  (max: default 100, at most 200)
 //                                       their newest games played after `since` (ms), as PGN text:
 //                                       live games only (no daily, no variants), newest first
@@ -79,6 +79,17 @@ async function route(req, env) {
   const url = new URL(req.url), path = url.pathname.replace(/\/+$/, ''), m = req.method;
   if (path === '/api/health') return json({ ok: true });
   if (m === 'POST' && path === '/api/login/google') return googleLogin(env, (await body(req)).idToken);
+  if (m === 'GET' && path === '/api/chesscom/player') {   // public data: no sign-in needed (also before logging in)
+    const user = ccUser(url);
+    const p = await (await ccFetch('https://api.chess.com/pub/player/' + user)).json();
+    // Chess.com gives "username" in lowercase; the name as the player spells it is in their page's address.
+    const spelled = (String(p.url || '').match(/\/member\/([^/?#]+)/) || [])[1];
+    return json({ username: spelled && spelled.toLowerCase() === String(p.username || user).toLowerCase() ? decodeURIComponent(spelled) : (p.username || user) });
+  }
+  if (m === 'GET' && path === '/api/chesscom/games') {
+    return new Response(await ccGames(ccUser(url), Number(url.searchParams.get('since')) || 0, Math.max(1, Math.min(200, Number(url.searchParams.get('max')) || 100))),
+      { headers: { 'Content-Type': 'application/x-chess-pgn' } });
+  }
   const site = req.headers.get('X-Auth-Site') || 'lichess';
   const token = ((req.headers.get('Authorization') || '').match(/^Bearer (\S+)$/) || [])[1];
   if (!token || !(SITES[site] || site === 'app')) throw fail(401, 'sign in first');
@@ -152,17 +163,6 @@ async function route(req, env) {
       await DB.prepare('INSERT INTO meta (account_id, name, data) VALUES (?, ?, ?) ON CONFLICT (account_id, name) DO UPDATE SET data = excluded.data').bind(account, mm[1], data).run();
       return json({ ok: true });
     }
-  }
-  if (m === 'GET' && path === '/api/chesscom/player') {
-    const user = ccUser(url);
-    const p = await (await ccFetch('https://api.chess.com/pub/player/' + user)).json();
-    // Chess.com gives "username" in lowercase; the name as the player spells it is in their page's address.
-    const spelled = (String(p.url || '').match(/\/member\/([^/?#]+)/) || [])[1];
-    return json({ username: spelled && spelled.toLowerCase() === String(p.username || user).toLowerCase() ? decodeURIComponent(spelled) : (p.username || user) });
-  }
-  if (m === 'GET' && path === '/api/chesscom/games') {
-    return new Response(await ccGames(ccUser(url), Number(url.searchParams.get('since')) || 0, Math.max(1, Math.min(200, Number(url.searchParams.get('max')) || 100))),
-      { headers: { 'Content-Type': 'application/x-chess-pgn' } });
   }
   if (m === 'POST' && path === '/api/link/lichess') {
     const b = await body(req);
