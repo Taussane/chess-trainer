@@ -8,7 +8,7 @@
     "report": "node finder/report.js data",
     "inject": "python3 finder/inject.py data/pools.json",
     "test": "python3 tests/smoke.py",
-    "test:all": "node --test worker/test/api.test.mjs 2>/dev/null | grep -E '^# (pass|fail)' && for t in smoke edge_cases my_games played_today fast_start profile_replay review_fixes lichess_link website lichess_login pgn_import accounts google_login engine_down selection; do echo \"== $t\"; out=$(python3 tests/$t.py 2>&1) || { echo \"$out\"; exit 1; }; echo \"$out\" | tail -1; done",
+    "test:all": "node --test worker/test/api.test.mjs 2>/dev/null | grep -E '^# (pass|fail)' && for t in smoke edge_cases my_games played_today fast_start profile_replay review_fixes lichess_link website lichess_login pgn_import accounts google_login engine_down load_speed selection; do echo \"== $t\"; out=$(python3 tests/$t.py 2>&1) || { echo \"$out\"; exit 1; }; echo \"$out\" | tail -1; done",
     "site": "python3 scripts/build-site.py",
     "test:server": "node --test worker/test/api.test.mjs"
   }

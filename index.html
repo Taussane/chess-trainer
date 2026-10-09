@@ -1193,7 +1193,7 @@ function firstAvailable(t, i){
   return -1;
 }
 // Is there anything still being worked on in your games (likely mistakes to check, games to scan)?
-function myWorkPending(){ return myGames.some(g=>g.status==='queued' || (g.positions||[]).some(p=>p.pending)); }
+function myWorkPending(){ return toPrepare.size>0 || myGames.some(g=>g.status==='queued' || (g.positions||[]).some(p=>p.pending)); }
 // Why an exercise can't go on: positions are still coming, or everything was played today.
 function waitText(a, r, short){
   if(!progressLoaded) return 'Loading…';
@@ -2398,13 +2398,15 @@ function importPgnText(text, quiet, playerName){
     const g = { id, white:h.White||'?', black:h.Black||'?', me:side, year:(h.UTCDate||h.Date||'').slice(0,4), speed, result:h.Result||'*',
                 sans, evals: full ? evals : null, status: full ? 'evaluated' : 'queued', ...(full ? { evalBy:'lichess' } : {}), positions:[], addedAt: Date.now(), playedAt,
                 site: /lichess\.org\//.test(h.Site || '') ? 'lichess' : /chess\.com/i.test((h.Site || '') + (h.Link || '')) ? 'chesscom' : 'file' };
-    extractOwnPositions(g);   // a game Lichess analysed gives its positions at once (likely mistakes flagged); the others after their scan
+    // its positions are found just after (in slices, below): a game Lichess analysed gives them at
+    // once (likely mistakes flagged); the others after their scan
     added.push(g);
   }
   const meName = spelled[me] || me;
   if(me && !myName && !playerName){ myName = meName; try{ localStorage.setItem('cst.lichess', meName); }catch(e){} }
   myGames = myGames.concat(added);
   added.forEach(saveMyGame);
+  reextractAll(added);
   const parts = [];
   if(skipped.already) parts.push(`${skipped.already} already added`);
   if(skipped.bullet) parts.push(`${skipped.bullet} UltraBullet`);
@@ -2431,7 +2433,16 @@ function winForMover(e, turn){
 // Were this game's evaluations made by Lichess (its own analysis), not by the app's quick scan?
 // Games saved before this was recorded: Lichess and file games count as Lichess's.
 function lichessEvals(g){ return !!g.evals && (g.evalBy ? g.evalBy==='lichess' : siteOf(g)!=='chesscom'); }
+// What a game's positions depend on: when none of it changed, the positions found before are kept
+// (finding them takes time; at load, for a few hundred games, it would freeze the page).
+const OWN_SIG = JSON.stringify(OWN) + '|2';
+const posSig = g=>[OWN_SIG, g.me, g.sans.length, g.evals ? g.evals.length : 0, g.evalBy || '', g.site || '', g.verified ? 1 : 0,
+  JSON.stringify(g.checks || {}), JSON.stringify(g.finals || {})].join('|');
+const positionsUpToDate = g=>Array.isArray(g.positions) && g.posSig===posSig(g);
 function extractOwnPositions(g){
+  extractOwnPositions0(g); g.posSig = posSig(g);
+}
+function extractOwnPositions0(g){
   // A game gives positions only once it is analysed (Lichess's analysis, or the app's scan): every
   // rule is then known, so a position never appears and later goes. Counts only go up.
   if(!g.evals){ g.positions = []; return; }
@@ -2449,31 +2460,33 @@ function extractOwnPositions(g){
   const out = [], ba = [];
   // One pass over the game, every half-move checked once (early exits).
   for(let ply=0; ply<hist.length; ply++){
-    const fen = fens[ply], turn = fen.split(' ')[1], moves = new Chess(fen).moves({verbose:true});
+    // Counting the legal moves (perft 1) is many times faster than listing them (chess.js writes
+    // each one's notation, checking for check and mate): the full list is only made when needed.
+    const fen = fens[ply], turn = fen.split(' ')[1], pc = new Chess(fen), nLegal = pc.perft(1);
     // Your mistakes: every move of yours that lost 10+ points of winning chances, at any move
     // number. They go into both Candidate moves and Move selection (Move selection needs 4+ legal moves).
     // A move only counts once the app's engine has checked it (g.checks), unless the game's
     // evaluations are already full-strength (g.verified). A move the quick evaluations (Lichess's,
     // or the app's quick scan) flag as a likely mistake waits for that check ("pending").
-    if(turn===g.me && moves.length >= OWN.candidatesMinLegal && ply>0 && lichessEvals(g)){
+    if(turn===g.me && nLegal >= OWN.candidatesMinLegal && ply>0 && lichessEvals(g)){
       // Lichess's analysis is trusted as it is: a move that lost 10+ points is a mistake at once
       // (Candidate moves); any other move can be a Position evaluation position. Move selection waits
       // only for the app's top-5 search, which must give four moves to rank (g.finals).
       const before = winForMover(g.evals[ply-1], turn), after = winForMover(g.evals[ply], turn);
       const quick = before!=null && after!=null ? before - after : null;
       if(quick!=null && quick >= OWN.mistakeDrop){
-        const canFinal = moves.length >= OWN.finalMinLegal, ready = g.finals && g.finals[ply]!=null ? g.finals[ply] : null;
+        const canFinal = nLegal >= OWN.finalMinLegal, ready = g.finals && g.finals[ply]!=null ? g.finals[ply] : null;
         const final = canFinal && ready!=null && ready >= 4;
         out.push(entry(ply, final ? ['candidates','final'] : ['candidates'], { drop: Math.round(quick), ...(canFinal && ready==null ? { pending:true, prep:'final' } : {}) }));
         continue;
       }
-    } else if(turn===g.me && moves.length >= OWN.candidatesMinLegal && ply>0){
+    } else if(turn===g.me && nLegal >= OWN.candidatesMinLegal && ply>0){
       const checked = g.checks && g.checks[ply]!=null ? g.checks[ply] : null;
       const before = g.evals ? winForMover(g.evals[ply-1], turn) : null, after = g.evals ? winForMover(g.evals[ply], turn) : null;
       const quick = before!=null && after!=null ? before - after : null;
       const drop = checked!=null ? checked : g.verified ? quick : null;
       if(drop!=null && drop >= OWN.mistakeDrop){
-        out.push(entry(ply, moves.length >= OWN.finalMinLegal ? ['candidates','final'] : ['candidates'], { drop: Math.round(drop) }));
+        out.push(entry(ply, nLegal >= OWN.finalMinLegal ? ['candidates','final'] : ['candidates'], { drop: Math.round(drop) }));
         continue;   // a mistake position is never a Position evaluation position
       }
       if(drop==null && quick!=null && quick >= OWN.flagDrop){ out.push(entry(ply, [], { pending:true })); continue; }
@@ -2485,9 +2498,9 @@ function extractOwnPositions(g){
     // Position evaluation: middlegame start to endgame start, general rules, not in check, material within 3.
     if(baFrom<0 || ply<baFrom || ply>baTo) continue;
     const moveNo = +fen.split(' ')[5];
-    if(moveNo < OWN.minMove || moveNo > OWN.maxMove || moves.length < OWN.minLegal) continue;
-    const prev = hist[ply-1]; if(prev && prev.captured && moves.some(m=>m.to===prev.to && m.captured)) continue;
-    const pc = new Chess(fen); if(pc.in_check() || Math.abs(materialDiff(pc)) > OWN.maxMaterialDiff) continue;
+    if(moveNo < OWN.minMove || moveNo > OWN.maxMove || nLegal < OWN.minLegal) continue;
+    const prev = hist[ply-1]; if(prev && prev.captured && pc.moves({verbose:true}).some(m=>m.to===prev.to && m.captured)) continue;
+    if(pc.in_check() || Math.abs(materialDiff(pc)) > OWN.maxMaterialDiff) continue;
     // Balanced (within ±1.00) early in the middlegame (its first 14 half-moves): skipped.
     const ev = g.evals && ply>0 ? g.evals[ply-1] : null;
     if(div.mid>=0 && ply < div.mid + OWN.earlyBalancedPlies && ev && ev.mate==null && ev.cp!=null && Math.abs(ev.cp) < OWN.earlyBalancedCp) continue;
@@ -2549,7 +2562,7 @@ let myBgRunning = false;
 const myTried = new Set();   // likely mistakes already checked in this session: never checked twice
 const currentGame = id=>myGames.find(x=>x.id===id);   // games can be reloaded meanwhile: always write to the current copy
 async function myBackground(){
-  if(myBgRunning || sfState!=='ready' || !myGamesLoaded) return;
+  if(myBgRunning || sfState!=='ready' || !myGamesLoaded || toPrepare.size) return;   // positions being found: it starts again after
   myBgRunning = true;
   let retry = false;
   try{
@@ -2641,7 +2654,28 @@ async function scanOwnGame(g){
 // --- Loading and clearing ---
 // Positions are always worked out again from each game's evaluations when loading, so games
 // saved under earlier rules follow the current ones.
-function reextractAll(){ myGames.forEach(g=>{ if(Array.isArray(g.sans)) extractOwnPositions(g); }); }
+// Games whose positions must be found again are done a few at a time, letting the page draw and
+// answer in between (a game takes a few milliseconds; a few hundred at once would freeze it).
+const toPrepare = new Set();
+let preparing = null;
+function reextractAll(games){
+  (games || myGames).forEach(g=>{ if(Array.isArray(g.sans) && !positionsUpToDate(g)) toPrepare.add(g); });
+  if(!preparing && toPrepare.size) preparing = new Promise(done=>{
+    const slice = ()=>{
+      const t0 = performance.now();
+      for(const g of toPrepare){
+        toPrepare.delete(g);
+        if(myGames.includes(g)) extractOwnPositions(g);
+        if(performance.now() - t0 > 25) break;
+      }
+      onOwnPositionsChanged();
+      if(toPrepare.size) return setTimeout(slice, 0);
+      preparing = null; saveMyLocal(); myBackground(); done();
+    };
+    setTimeout(slice, 0);
+  });
+  return preparing || Promise.resolve();
+}
 async function initMyGames(){
   try{ const r = JSON.parse(localStorage.getItem(MY_LS) || 'null'); if(Array.isArray(r)) myGames = r; }catch(e){}
   reextractAll();
@@ -2656,6 +2690,7 @@ async function initMyGames(){
         const [snap, cd] = await Promise.all([col.limit(1000).get(), myClearedDoc.get()]);
         const clearedAt = cd.exists ? (cd.data().at || 0) : 0;
         const fromDb = snap.docs.map(d=>d.data()).filter(g=>g && g.id && Array.isArray(g.sans));
+        fromDb.forEach(x=>{ const l = myGames.find(g=>g.id===x.id); if(l && Array.isArray(l.positions) && l.posSig && l.posSig===posSig(x)){ x.positions = l.positions; x.posSig = l.posSig; } });
         // Games only on this device go up to your account, unless "Remove my games" was used
         // (on any device) after they were added.
         // (Chess.com games only while Chess.com is connected: disconnected on another device, they go here too.)
@@ -2723,7 +2758,7 @@ function positionsSection(){
   const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = { analysis:POOLS.analysis.length, candidates:POOLS.candidates.length, final:POOLS.final.length };
   // One counter: a game is done once it is read (Lichess's analysis or the app's quick scan) and
   // each of its likely mistakes has been checked by the engine.
-  const isDone = g=>g.status!=='queued' && !(g.positions||[]).some(p=>p.pending && !myTried.has(p.key));
+  const isDone = g=>g.status!=='queued' && !toPrepare.has(g) && !(g.positions||[]).some(p=>p.pending && !myTried.has(p.key));
   const done = myGames.filter(isDone).length;
   const status = DIRECT_LICHESS && accountLoading() ? 'Retrieving your games…'
     : !myGames.length ? ''
