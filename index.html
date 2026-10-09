@@ -174,6 +174,8 @@
   .pf-scroll .seg{margin:0;}
   .btn.google-btn{background:#fff; color:#1f1f1f; display:flex; align-items:center; gap:10px; justify-content:center; margin-top:10px;}
   .google-btn svg{width:18px; height:18px; flex:none;}
+  .cc-btn .cc-logo{width:16px; height:20px;}
+  .cc-field{background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:9px 12px; font:inherit; font-size:0.9rem; margin-top:-2px;}
   .mg-cc{display:flex; gap:8px;}
   .mg-cc input{flex:1; min-width:0; background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:7px 10px; font:inherit; font-size:0.9rem;}
   .mg-account .link-inline{white-space:nowrap;}
@@ -1801,10 +1803,12 @@ function accountSection(){
   if(!signedIn()) return `
       <h2 class="pf-h">Account</h2>
       <section class="pf-card ac-card">
-        <p class="ac-sub">Log in to keep your progress and learn from your own games.</p>
-        <button class="btn lichess-btn" id="lichessLogin">${LICHESS_LOGO} Log in with Lichess</button>
+        <p class="ac-sub">Log in to keep your progress, connect to load your own games.</p>
+        <button class="btn lichess-btn" id="lichessLogin">${LICHESS_LOGO} Log in and connect with Lichess</button>
         ${GOOGLE_CLIENT_ID && API_BASE ? `<button class="btn google-btn" id="googleLogin">${GOOGLE_G} Log in with Google</button>` : ''}
-        ${API_BASE ? `<div class="ac-sep"></div>${chesscomRow()}` : ''}
+        ${API_BASE ? (chesscomName ? `<div class="ac-sep"></div>${chesscomRow()}`
+          : `<button class="btn google-btn cc-btn" id="ccConnect">${CHESSCOM_LOGO} Connect with Chess.com</button>
+             <input class="cc-field" id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Chess.com username" aria-label="Chess.com username">`) : ''}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
       </section>`;
   if(accountLoading()) return `<h2 class="pf-h">Account</h2><section class="pf-card ac-card"><p class="mg-status mg-loading">Loading your account…</p></section>`;
@@ -2777,7 +2781,9 @@ function positionsSection(){
 }
 function wireGames(){
   const user = document.getElementById('lichessUser'), link = document.getElementById('exportLink');
-  const ccc = document.getElementById('ccConnect'); if(ccc) ccc.onclick = ()=>connectChesscom(document.getElementById('ccUser').value);
+  const ccc = document.getElementById('ccConnect'); if(ccc) ccc.onclick = ()=>{ const f = document.getElementById('ccUser');
+    if(f && !f.value.trim()){ f.focus(); myImportNote = 'Enter your Chess.com username, then connect.'; render(); return; }
+    connectChesscom(f ? f.value : ''); };
   const ccu = document.getElementById('ccUser'); if(ccu) ccu.onkeydown = e=>{ if(e.key==='Enter') connectChesscom(ccu.value); };
   const ccd = document.getElementById('ccDisconnect'); if(ccd) ccd.onclick = ()=>{ disconnectChesscom(); };
   const mll = document.getElementById('mgLinkLichess'); if(mll) mll.onclick = ()=>lichessLogin(true);
