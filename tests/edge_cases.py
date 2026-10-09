@@ -40,7 +40,7 @@ async def main():
         await pg.set_content('<!doctype html><html><head><meta charset="utf-8"></head><body>'+SRC+'</body></html>')
         await pg.wait_for_timeout(300)
         await pg.evaluate("(()=>{"+FAKE+"})()")
-        await pg.click('#testsBtn'); await pg.wait_for_timeout(200)
+        await pg.click('#accountBtn'); await pg.click('#testsBtn'); await pg.wait_for_timeout(200)
         await pg.screenshot(path=str(SHOTS/'00_list.png'))
         names = await pg.evaluate("TEST_POSITIONS.map(p=>p.title)")
         for i, name in enumerate(names):

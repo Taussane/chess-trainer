@@ -18,7 +18,7 @@ async def main():
         await pg.evaluate("""(()=>{ window.__log=[]; window.__hold=true; const real=bgEval;
           bgEval = (fen,o)=>new Promise(res=>{ const go=()=>{ __log.push(o && o.multipv===1 ? 'scan' : 'check'); real(fen,o).then(res); };
             const wait=()=>{ if(__hold) setTimeout(wait,20); else go(); }; wait(); }); })()""")
-        await pg.click('#myGamesBtn'); await pg.fill('#lichessUser', 'TestPlayer')
+        await pg.click('#accountBtn'); await pg.click('#myGamesBtn'); await pg.fill('#lichessUser', 'TestPlayer')
         await pg.set_input_files('#pgnFile', T.SAMPLE); await pg.wait_for_timeout(300)
         st = await pg.evaluate("({games:myGames.length, analysed:myGames.filter(g=>g.evals).length, gamesWithBA:myGames.filter(g=>g.positions.some(p=>p.acts.includes('analysis'))).length, unanalysedWithPositions:myGames.filter(g=>!g.evals && g.positions.length).length, flagged:myGames.flatMap(g=>g.positions).filter(p=>p.pending).length, c:countsOf(myPositions)})")
         print('right after upload:', st)
@@ -26,7 +26,7 @@ async def main():
         if not st['flagged']: fails.append('no likely mistakes flagged from Lichess evaluations')
         if not st['c']['candidates']: fails.append("Lichess's mistakes should be in Candidate moves at once")
         if st['c']['final']: fails.append('Final choice used before its search')
-        await pg.click('#homeBtn'); await pg.click('[data-src="mine"]'); await pg.wait_for_timeout(100)
+        await pg.click('#homeBtn'); await pg.click('#homeBtn'); await pg.click('[data-src="mine"]'); await pg.wait_for_timeout(100)
         cards = await pg.evaluate("[...document.querySelectorAll('.card')].map(c=>c.dataset.go+':'+(c.disabled?'off':'on')+':'+c.querySelector('.card-desc').innerText)")
         print('home:', cards)
         if not cards[0].startswith('analysis:on') or not cards[1].startswith('candidates:on'): fails.append(f'Board analysis and Candidate moves should open at once: {cards}')

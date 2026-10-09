@@ -29,7 +29,7 @@ async def main():
         print('page:', st)
         if st != ['CSS1Compat', True, 'Chess Strategy Trainer', 'undefined', True]: fails.append(f'page setup: {st}')
         await pg.evaluate("(()=>{"+T.FAKE+" render(); })()")
-        await pg.click('#myGamesBtn')
+        await pg.click('#accountBtn'); await pg.click('#myGamesBtn')
         if await pg.query_selector('#exportLink'): fails.append('the website still shows the download steps')
         # Logged out: only the Lichess login, no way to download someone's games by name.
         found = await pg.evaluate("['#lichessUser','#fetchGames','#bulletBox'].filter(s=>document.querySelector(s))")

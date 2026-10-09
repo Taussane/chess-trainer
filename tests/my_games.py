@@ -45,7 +45,7 @@ async def main():
         b, pg, errs = await page_with_app(p)
         dis = await pg.evaluate("[...document.querySelectorAll('[data-src]')].map(x=>x.dataset.src+':'+x.disabled).join(' ')")
         if 'mine:true' not in dis: fails.append('source buttons not disabled before any games: '+dis)
-        await pg.click('#myGamesBtn'); await pg.wait_for_timeout(200)
+        await pg.click('#accountBtn'); await pg.click('#myGamesBtn'); await pg.wait_for_timeout(200)
         await pg.fill('#lichessUser', 'TestPlayer')
         href = await pg.get_attribute('#exportLink', 'href')
         if 'games/user/TestPlayer' not in href or 'evals=true' not in href or 'bullet,blitz' not in href: fails.append('export link: '+href)
@@ -85,7 +85,7 @@ async def main():
         await pg.screenshot(path=str(SHOTS/'mg_2_done.png'))
         print('status:', await pg.inner_text('.mg-status'), '| table:', (await pg.inner_text('.mg-table')).replace('\n',' | ').replace('\t',' '))
         # Exercises on "My games"
-        await pg.click('#homeBtn'); await pg.wait_for_timeout(200)
+        await pg.click('#homeBtn'); await pg.click('#homeBtn'); await pg.wait_for_timeout(200)
         await pg.click('[data-src="mine"]'); await pg.wait_for_timeout(200)
         await pg.screenshot(path=str(SHOTS/'mg_3_home.png'))
         for act in ['analysis','candidates','final']:
@@ -106,7 +106,7 @@ async def main():
         n = await pg.evaluate("[myGames.length, myPositions.length, myGames.filter(g=>g.status!=='evaluated').length]"); print('after reload:', n)
         if n[0] != 10 or n[1] == 0 or n[2] != 0: fails.append(f'after reload: {n}')
         # Upload again: everything already there
-        await pg.click('#myGamesBtn'); await pg.set_input_files('#pgnFile', SAMPLE); await pg.wait_for_timeout(300)
+        await pg.click('#accountBtn'); await pg.click('#myGamesBtn'); await pg.set_input_files('#pgnFile', SAMPLE); await pg.wait_for_timeout(300)
         note = await pg.inner_text('.mg-note')
         if 'Added 0 games' not in note or '10 already added' not in note: fails.append('re-upload note: '+note)
         # Paste route: remove, then paste the same file's text

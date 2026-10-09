@@ -68,6 +68,17 @@
   .home-top{display:flex; justify-content:flex-end; margin:-4px 0 6px;}
   .acct-chip{display:inline-flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:5px 12px 5px 6px; font:inherit; font-size:0.86rem; font-weight:600; cursor:pointer; max-width:60%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .acct-chip:not(:has(.acct-dot)){padding:6px 14px; color:var(--accent);}
+  .acct-dot.big{width:44px; height:44px; font-size:1.2rem;}
+  .pf-who{display:flex; gap:12px; align-items:center;}
+  .pf-nav{padding:4px 0; gap:0;}
+  .pf-nav-row{display:flex; align-items:center; justify-content:space-between; gap:12px; background:none; border:none; color:var(--text); font:inherit; text-align:left; padding:10px 14px; cursor:pointer; text-decoration:none;}
+  .pf-nav-row + .pf-nav-row{border-top:1px solid var(--border);}
+  .pf-nav-row span{display:flex; flex-direction:column; gap:2px; min-width:0;}
+  .pf-nav-row b{font-size:0.95rem;} .pf-nav-row small{font-size:0.78rem; color:var(--text-mute);}
+  .pf-nav-row i{font-style:normal; color:var(--text-mute); font-size:1.1rem;}
+  .pf-nav-row:focus-visible{outline:2px solid var(--accent); outline-offset:-2px;}
+  .pf-more b{font-weight:500;}
+  .ac-actions{display:flex; align-items:center; justify-content:space-between; gap:12px;}
   .acct-dot{width:22px; height:22px; border-radius:50%; background:var(--accent); color:#161512; display:inline-grid; place-items:center; font-size:0.78rem; font-weight:700; flex:none;}
   .nav-tiles{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
   .nav-tile{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 14px; text-align:left; color:var(--text); font:inherit; cursor:pointer; display:flex; flex-direction:column; gap:4px; min-width:0;}
@@ -1733,15 +1744,11 @@ function renderProgress(){
   const since = new Date(joinedAt()).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
   app.innerHTML = `
     <div class="title-row">
-      <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
+      <button class="icon-btn" id="homeBtn" aria-label="Back to profile">‹</button>
       <h1>Progress</h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
     <div class="pf-scroll">
-    <section class="pf-card pf-id">
-      <div class="pf-name">${displayName().replace(/</g,'&lt;') || 'You'}</div>
-      <div class="pf-facts"><span>Training since <b>${since}</b></span><span><b>${results.length}</b> position${results.length===1?'':'s'} completed</span></div>
-    </section>
     <section class="pf-card">
       <h2>This week</h2>
       <table class="wk-table">
@@ -1773,61 +1780,78 @@ function renderProgress(){
       <button class="btn small" id="replayBtn" ${nReplay ? '' : 'disabled'}>${nReplay ? `Replay ${nReplay} ›` : nMissed ? 'All played today' : 'None yet'}</button>
     </section>
     </div>`;
-  document.getElementById('homeBtn').onclick = ()=>{ screen='home'; render(); };
+  document.getElementById('homeBtn').onclick = ()=>{ screen='account'; render(); };
   document.getElementById('replayBtn').onclick = ()=>startReplay(a);
   app.querySelectorAll('.seg-btn').forEach(b=>b.onclick = ()=>{ progressTab = b.dataset.tab; render(); });
   wireChartHover(sr);
 }
-// ================= Account (website) =================
-// The one place to log in, see your logins, log out or delete the account. Lichess first (its games
-// come in by themselves); Google for players without Lichess, who can connect Lichess in My games.
+// ================= Profile =================
+// Everything about you, from the chip at the top of the home page: who you are, your progress, your
+// games, your login (website), and the rest (source code, test positions, privacy, terms).
 const displayName = ()=>myName || lichessName() || chesscomName || (googleAuth ? googleAuth.email.split('@')[0] : '');
 function renderAccount(){
   const app = document.getElementById('app'), esc = x=>String(x).replace(/</g,'&lt;');
   const conn = site=>(accountConnections || []).find(c=>c.site===site);
   const lich = lichessName(), goo = googleAuth ? googleAuth.email : conn('google') && conn('google').username;
-  const body = !signedIn() ? `
+  const since = new Date(joinedAt()).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
+  const name = displayName();
+  const core = myGames.filter(g=>!g.retired).length;
+  const login = !DIRECT_LICHESS ? ''
+    : !signedIn() ? `
       <section class="pf-card">
         <h2>Log in</h2>
-        <p class="ac-sub">Keep your progress on all your devices, and get positions from your own games.</p>
+        <p class="ac-sub">Keep your progress on all your devices, and get positions from your own games. Until then, it stays in this browser only.</p>
         <button class="btn lichess-btn" id="lichessLogin"><span aria-hidden="true">♞</span> Log in with Lichess</button>
         <p class="ac-sub">Recommended: your Lichess games then come in by themselves. Lichess never shares your password with us.</p>
         ${GOOGLE_CLIENT_ID && API_BASE ? `<button class="btn google-btn" id="googleLogin">${GOOGLE_G} Log in with Google</button>
         <p class="ac-sub">No Lichess account? Log in with Google, then add your Chess.com username in My games. You can connect Lichess later. Google only tells us your email address.</p>` : ''}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
-      </section>
-      <p class="ac-foot">Until you log in, your progress stays in this browser only.</p>`
+      </section>`
     : accountLoading() ? `<section class="pf-card"><p class="mg-status mg-loading">Retrieving your account…</p></section>`
     : `
       <section class="pf-card">
-        <h2>Logged in</h2>
+        <h2>Account</h2>
         <ul class="ac-logins">
           ${lich ? `<li><span class="ac-site">♞ Lichess</span><b>${esc(lich)}</b></li>` : ''}
           ${goo ? `<li><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></li>` : ''}
         </ul>
-        ${!lich ? `<p class="ac-sub">Play on Lichess? <button class="link-inline" id="acToGames">Connect it in My games ›</button></p>` : ''}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
         <p class="ac-sub">${syncStatus && syncStatus!=='ok' ? `Couldn't reach your account: ${esc(syncStatus)}. Your progress stays on this device for now and is sent next time.` : 'Your progress and games are saved to your account, on every device you log in.'}</p>
-        <button class="btn secondary" id="pfLogout">Log out</button>
-      </section>
-      <section class="pf-card ac-danger">
+        <div class="ac-actions"><button class="btn small secondary" id="pfLogout">Log out</button>
         ${pfConfirmDelete
-          ? `<div class="mg-confirm"><span>Delete your account, progress and games for good?</span><button class="btn small danger" id="pfDeleteYes">Delete</button><button class="btn small ghost" id="pfDeleteNo">Keep</button></div>`
-          : `<button class="link-btn quiet pf-delete" id="pfDelete">Delete my account</button>`}
+          ? `</div><div class="mg-confirm"><span>Delete your account, progress and games for good?</span><button class="btn small danger" id="pfDeleteYes">Delete</button><button class="btn small ghost" id="pfDeleteNo">Keep</button></div>`
+          : `<button class="link-btn quiet pf-delete" id="pfDelete">Delete my account</button></div>`}
       </section>`;
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
-      <h1>Account</h1>
+      <h1>Profile</h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
-    <div class="pf-scroll">${body}
-      <p class="ac-foot"><a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a></p>
+    <div class="pf-scroll">
+      <section class="pf-card pf-id">
+        <div class="pf-who"><span class="acct-dot big" aria-hidden="true">${esc((name[0] || '♟').toUpperCase())}</span>
+          <div><div class="pf-name">${esc(name) || 'You'}</div>
+          <div class="pf-facts"><span>Training since <b>${since}</b></span><span><b>${results.length}</b> position${results.length===1?'':'s'} completed</span></div></div></div>
+      </section>
+      ${DIRECT_LICHESS && !signedIn() ? login : ''}
+      <nav class="pf-card pf-nav">
+        <button class="pf-nav-row" id="progressBtn"><span><b>Progress</b><small>Your averages, this week, missed positions</small></span><i aria-hidden="true">›</i></button>
+        <button class="pf-nav-row" id="myGamesBtn"><span><b>My games</b><small>${core ? `${core} game${core===1?'':'s'}` : 'Positions from your own games'}${DIRECT_LICHESS && signedIn() && !lich ? ' · connect Lichess here' : ''}</small></span><i aria-hidden="true">›</i></button>
+      </nav>
+      ${signedIn() ? login : ''}
+      <nav class="pf-card pf-nav pf-more">
+        <a class="pf-nav-row" href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener"><span><b>Source code</b><small>Free and open (AGPL), on GitHub</small></span><i aria-hidden="true">↗</i></a>
+        <button class="pf-nav-row" id="testsBtn"><span><b>Test positions</b><small>Checks, castling, promotions… to try the board</small></span><i aria-hidden="true">›</i></button>
+      </nav>
+      ${DIRECT_LICHESS ? `<p class="ac-foot"><a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a></p>` : ''}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; render(); };
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
+  on('progressBtn', ()=>{ screen = 'progress'; render(); });
+  on('myGamesBtn', ()=>{ screen = 'mygames'; render(); });
+  on('testsBtn', ()=>{ screen = 'tests'; render(); });
   on('lichessLogin', ()=>lichessLogin()); on('googleLogin', ()=>googleLogin());
-  on('acToGames', ()=>{ screen = 'mygames'; render(); });
   on('pfLogout', logout);
   on('pfDelete', ()=>{ pfConfirmDelete = true; render(); }); on('pfDeleteNo', ()=>{ pfConfirmDelete = false; render(); }); on('pfDeleteYes', deleteMyAccount);
 }
@@ -1879,7 +1903,7 @@ function renderHome(){
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="home-head">
-      ${DIRECT_LICHESS ? `<div class="home-top"><button class="acct-chip" id="accountBtn">${signedIn() ? `<span class="acct-dot" aria-hidden="true">${(displayName()[0] || '?').toUpperCase().replace(/</g,'')}</span>${displayName().replace(/</g,'&lt;')}` : 'Log in'}</button></div>` : ''}
+      <div class="home-top"><button class="acct-chip" id="accountBtn" aria-label="Your profile">${DIRECT_LICHESS && !signedIn() ? 'Log in' : `<span class="acct-dot" aria-hidden="true">${(displayName()[0] || '♟').toUpperCase().replace(/</g,'')}</span>${displayName().replace(/</g,'&lt;') || 'Profile'}`}</button></div>
       <h1>Chess Strategy Trainer</h1>
       <p>Three short exercises on positions from master games or your own, each checked by Stockfish.</p>
     </div>
@@ -1901,18 +1925,10 @@ function renderHome(){
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b><small>Average</small>` : `<b>—</b><small>${L.n ? `${L.n}/${CALIBRATION}` : 'Average'}</small>`}</span>
         </button>`; }).join('')}
     </div>
-    <div class="nav-tiles">
-      <button class="nav-tile" id="progressBtn"><b>Progress ›</b><small>Your averages, this week, missed positions</small></button>
-      <button class="nav-tile" id="myGamesBtn"><b>My games ›</b><small>${myGames.length ? `${myGames.filter(g=>!g.retired).length} games` : 'Positions from your own games'}</small></button>
-    </div>
-    <footer class="home-foot">${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a><span>·</span><a href="terms.html" target="_blank" rel="noopener">Terms</a><span>·</span>` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a><span>·</span><button id="testsBtn">Test positions</button></footer>
     ${engineErrorBanner()}`;
-  document.getElementById('testsBtn').onclick = ()=>{ screen = 'tests'; render(); };
-  document.getElementById('myGamesBtn').onclick = ()=>{ screen = 'mygames'; render(); };
   app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>setSource(b.dataset.src));
   app.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
-  document.getElementById('progressBtn').onclick = ()=>{ screen = 'progress'; render(); };
-  const ab = document.getElementById('accountBtn'); if(ab) ab.onclick = ()=>{ screen = 'account'; render(); };
+  document.getElementById('accountBtn').onclick = ()=>{ screen = 'account'; render(); };
   document.getElementById('routineBtn').onclick = startRoutine;
   prefetchHome();
   progressJustLoaded = false;
@@ -2680,7 +2696,7 @@ function renderMyGames(){
   const row = (label, games, c)=>`<tr><th scope="row">${label}</th><td>${games}</td><td>${c.analysis}</td><td>${c.candidates}</td><td>${c.final}</td></tr>`;
   app.innerHTML = `
     <div class="title-row">
-      <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
+      <button class="icon-btn" id="homeBtn" aria-label="Back to profile">‹</button>
       <h1>My games</h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
@@ -2723,7 +2739,7 @@ function renderMyGames(){
           : myGamesLoaded ? `<button class="link-btn quiet" id="clearBtn">Remove my games</button>` : '') : ''}
       </section>
     </div>`;
-  document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; myConfirmClear = false; render(); };
+  document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; myConfirmClear = false; render(); };
   const user = document.getElementById('lichessUser'), link = document.getElementById('exportLink');
   const ccc = document.getElementById('ccConnect'); if(ccc) ccc.onclick = ()=>connectChesscom(document.getElementById('ccUser').value);
   const ccu = document.getElementById('ccUser'); if(ccu) ccu.onkeydown = e=>{ if(e.key==='Enter') connectChesscom(ccu.value); };
@@ -2759,7 +2775,7 @@ function renderTests(){
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="title-row">
-      <button class="icon-btn" id="homeBtn" aria-label="Back to exercises">‹</button>
+      <button class="icon-btn" id="homeBtn" aria-label="Back to profile">‹</button>
       <h1>Test positions</h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
@@ -2769,7 +2785,7 @@ function renderTests(){
         <div class="test-go">${ACTIVITIES.map(a=>`<button class="chip-btn" data-i="${i}" data-a="${a}">${ACT_NAMES[a]}</button>`).join('')}</div>
       </div>`).join('')}
     </div>`;
-  document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; render(); };
+  document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
   app.querySelectorAll('.chip-btn').forEach(b=>b.onclick = ()=>{
     const a = b.dataset.a, t = 't-'+a, i = +b.dataset.i;
     testMode = true; routine = false;
