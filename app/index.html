@@ -1798,15 +1798,15 @@ function accountSection(){
         ${note}
       </section>`;
   if(accountLoading()) return `<h2 class="pf-h">Account</h2><section class="pf-card ac-card"><p class="mg-status mg-loading">Loading your account…</p></section>`;
-  // A Google account shows the same buttons as logged out (Lichess to connect, Chess.com); once
-  // Lichess is connected it shows as a Lichess account.
+  // A Google account shows the same order as logged out: Lichess (to connect), Google, Chess.com;
+  // once Lichess is connected it shows as a Lichess account.
   return `
       <h2 class="pf-h">Account</h2>
       <section class="pf-card ac-card">
         ${lich ? `<div class="ac-row"><span class="ac-site">${LICHESS_LOGO} Lichess</span><b>${esc(lich)}</b></div>
         ${siteLine('lichess') ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : ''}`
-        : `${goo ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}
-        <button class="btn lichess-btn" id="mgLinkLichess">${LICHESS_LOGO} Connect with Lichess</button>`}
+        : `<button class="btn lichess-btn" id="mgLinkLichess">${LICHESS_LOGO} Connect with Lichess</button>
+        ${goo ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}`}
         ${chesscomBlock()}
         ${note}
         ${syncStatus && syncStatus!=='ok' ? `<p class="ac-sub" title="${esc(syncStatus)}">Couldn't reach your account. Your progress is saved on this device and will sync next time.</p>` : ''}
