@@ -45,8 +45,7 @@
   .stage .board-col > .board-row{flex:none; width:auto; max-width:none; margin:0;}
   .stage .board-col > .board-row .board-outer{flex:none; width:min(100cqw - 44px, 100cqh - 44px, 420px);}
   .pl-line{height:22px; display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .pl-dot{width:11px; height:11px; border-radius:50%; flex:none;}
-  .pl-dot.w{background:#f2f2f2;} .pl-dot.b{background:#111; box-shadow:0 0 0 1px #6b7280;}
+  .pl-elo{color:var(--text-mute); font-weight:500;}
   .wrap.ex .posbar{margin:8px 0 10px;}
   .wrap.ex .panel{flex:none; margin-top:10px; display:flex; flex-direction:column; padding:12px 14px;}
   /* Every exercise keeps one panel height from question to review (see .panel-stack). */
@@ -1421,7 +1420,7 @@ function posSource(p){
     const g = currentGame(p.gameId), site = g ? siteOf(g) : 'lichess';
     const name = site==='chesscom' ? 'Chess.com' : site==='file' ? 'Your games' : 'Lichess';
     const when = g && g.playedAt ? new Date(g.playedAt).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' }) : (g && g.year) || '';
-    return [name, when].filter(Boolean).join(' · ');
+    return [name, g && SPEED_NAMES[g.speed], when].filter(Boolean).join(' · ');
   }
   if(p.game) return ['Masters', fmtGameDate(GAME_DATES[p.game]) || p.year].filter(Boolean).join(' · ');
   return testMode ? 'Test position' : ['Masters', p.year].filter(Boolean).join(' · ');
@@ -1432,7 +1431,8 @@ function playerLine(where){
   const names = p && p.title && p.title.includes(' – ') ? p.title.split(' – ') : null;
   if(!names) return `<div class="pl-line" aria-hidden="true"></div>`;
   const color = where==='bottom' ? p.side : (p.side==='w' ? 'b' : 'w');
-  return `<div class="pl-line"><span class="pl-dot ${color}" aria-hidden="true"></span>${String(names[color==='w' ? 0 : 1]).replace(/</g,'&lt;')}</div>`;
+  const g = p.gameId ? currentGame(p.gameId) : null, elo = g ? (color==='w' ? g.whiteElo : g.blackElo) : null;
+  return `<div class="pl-line">${String(names[color==='w' ? 0 : 1]).replace(/</g,'&lt;')}${elo ? `<span class="pl-elo">${elo}</span>` : ''}</div>`;
 }
 function wireCommon(helpKey, checked){
   document.getElementById('homeBtn').onclick = ()=>{
@@ -2296,7 +2296,7 @@ function setChesscomName(n){ chesscomName = n || ''; if(leaving) return; try{ n 
 const lichessName = ()=>lichessAuth ? lichessAuth.username : (((accountConnections || []).find(c=>c.site==='lichess')) || {}).username || '';
 const newestOf = site=>myGames.filter(g=>siteOf(g)===site).reduce((m, g)=>Math.max(m, g.playedAt || 0), 0);
 async function syncLichess(){
-  const newest = newestOf('lichess');
+  const newest = myGames.some(g=>siteOf(g)==='lichess' && g.whiteElo===undefined) ? 0 : newestOf('lichess');   // 0: ratings to fill in
   const name = lichessName(), url = lichessExportUrl(name) + (newest ? '&since=' + (newest + 1000) : '');
   try{
     const headers = { Accept:'application/x-chess-pgn' }; if(lichessAuth) headers.Authorization = 'Bearer ' + lichessAuth.token;
@@ -2310,7 +2310,7 @@ async function syncLichess(){
   }catch(e){ return { error:"couldn't reach Lichess" }; }
 }
 async function syncChesscom(){
-  const newest = newestOf('chesscom');
+  const newest = myGames.some(g=>siteOf(g)==='chesscom' && g.whiteElo===undefined) ? 0 : newestOf('chesscom');
   if(chesscomName && chesscomName===chesscomName.toLowerCase()) try{   // saved before names kept their capitals
     const r = await serverCall(signedIn(), 'GET', '/api/chesscom/player?user=' + encodeURIComponent(chesscomName));
     if(r.username && r.username!==chesscomName && r.username.toLowerCase()===chesscomName){ setChesscomName(r.username); const st = await getStore(); if(st && st.db) st.db.doc('meta/chesscom').set({ username:r.username }).catch(()=>{}); }
@@ -2381,6 +2381,7 @@ function rotateMyGames(){
   if(changed) onOwnPositionsChanged();
 }
 // When the game was played (ms), from its PGN headers; null if unknown.
+const eloOf = v=>/^\d{3,4}$/.test(v || '') ? +v : null;
 function playedAtOf(h){
   const d = (h.UTCDate || h.Date || '').match(/^(\d{4})\.(\d{2})\.(\d{2})$/); if(!d) return null;
   const t = (h.UTCTime || '').match(/^(\d{2}):(\d{2}):(\d{2})$/) || [0, 12, 0, 0];
@@ -2422,9 +2423,10 @@ function importPgnText(text, quiet, playerName){
       if(full0) old.evalBy = 'lichess'; else delete old.evalBy;
       extractOwnPositions(old); saveMyGame(old); repaired++; continue;
     }
+    if(old && old.whiteElo===undefined){ old.whiteElo = eloOf(h.WhiteElo); old.blackElo = eloOf(h.BlackElo); saveMyGame(old); }   // saved before ratings were kept
     if(old || added.some(g=>g.id===id)){ skipped.already++; continue; }
     const full = evals.filter(Boolean).length >= sans.length - 1;   // the last move may have none
-    const g = { id, white:h.White||'?', black:h.Black||'?', me:side, year:(h.UTCDate||h.Date||'').slice(0,4), speed, result:h.Result||'*',
+    const g = { id, white:h.White||'?', black:h.Black||'?', whiteElo:eloOf(h.WhiteElo), blackElo:eloOf(h.BlackElo), me:side, year:(h.UTCDate||h.Date||'').slice(0,4), speed, result:h.Result||'*',
                 sans, evals: full ? evals : null, status: full ? 'evaluated' : 'queued', ...(full ? { evalBy:'lichess' } : {}), positions:[], addedAt: Date.now(), playedAt,
                 site: /lichess\.org\//.test(h.Site || '') ? 'lichess' : /chess\.com/i.test((h.Site || '') + (h.Link || '')) ? 'chesscom' : 'file' };
     // its positions are found just after (in slices, below): a game Lichess analysed gives them at

@@ -105,8 +105,14 @@ async def main():
         b, pg, errs2 = await page_with_app(p, saved)
         n = await pg.evaluate("[myGames.length, myPositions.length, myGames.filter(g=>g.status!=='evaluated').length]"); print('after reload:', n)
         if n[0] != 10 or n[1] == 0 or n[2] != 0: fails.append(f'after reload: {n}')
+        # Ratings are kept; a game saved before they were is filled in when it comes in again.
+        r = await pg.evaluate("[myGames[0].whiteElo, myGames[0].blackElo]"); print('ratings:', r)
+        if r != [1650, 1640]: fails.append(f'ratings: {r}')
+        await pg.evaluate("delete myGames[0].whiteElo; delete myGames[0].blackElo")
         # Upload again: everything already there
         await pg.click('#accountBtn'); await pg.set_input_files('#pgnFile', SAMPLE); await pg.wait_for_timeout(300)
+        r = await pg.evaluate("[myGames[0].whiteElo, myGames[0].blackElo]")
+        if r != [1650, 1640]: fails.append(f'ratings not filled in: {r}')
         note = await pg.inner_text('.mg-note')
         if 'Added 0 games' not in note or '10 already added' not in note: fails.append('re-upload note: '+note)
         # Paste route: remove, then paste the same file's text
