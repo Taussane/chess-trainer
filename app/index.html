@@ -175,7 +175,10 @@
   .ac-site .li-logo{width:15px; height:15px;}
   .ac-site .cc-logo{width:15px; height:17px;}
   .chart-avg{margin-left:auto; color:var(--text-mute);}
-  .chart-avg{color:var(--text); font-weight:600; font-variant-numeric:tabular-nums;}
+  .chart-avg{color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; line-height:1;}
+  .chart-legend span{line-height:1;}
+  .chart-foot{display:flex; justify-content:flex-end; padding:4px 4px 0;}
+  .pf-scroll .seg{margin:0;}
   .pf-replay-btn{align-self:flex-start;}
   .btn.google-btn{background:#fff; color:#1f1f1f; display:flex; align-items:center; gap:10px; justify-content:center; margin-top:10px;}
   .google-btn svg{width:18px; height:18px; flex:none;}
@@ -239,12 +242,12 @@
   .hero-week{text-align:right; font-size:0.84rem; color:var(--text-mute);}
   .chart-box{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 10px 8px; position:relative;}
   .chart-box svg{display:block; width:100%; height:auto; overflow:visible;}
-  .chart-legend{display:flex; gap:14px; font-size:0.76rem; color:var(--text-mute); margin:2px 4px 6px; flex-wrap:wrap; align-items:baseline;}
+  .chart-legend{display:flex; gap:14px; font-size:0.76rem; color:var(--text-mute); margin:2px 4px 6px; flex-wrap:wrap; align-items:center;}
   .chart-legend span{display:inline-flex; align-items:center; gap:6px;}
   .lg-line{width:14px; height:2px; background:var(--accent); border-radius:1px;}
   .lg-dot{width:7px; height:7px; border-radius:50%; background:var(--text-mute); opacity:.6;}
   .lg-dot.mine{background:var(--cyan-arrow); opacity:.85;}
-  .chart-tip{position:absolute; pointer-events:none; background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:0.76rem; line-height:1.35; white-space:nowrap; transform:translate(-50%, -100%); color:var(--text);}
+  .chart-tip{position:absolute; pointer-events:none; background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:0.76rem; line-height:1.35; white-space:nowrap; color:var(--text); z-index:2;}
   .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
   .stat{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px 12px;}
   .stat b{display:block; font-family:var(--font-display); font-size:1.3rem; font-weight:600; font-variant-numeric:tabular-nums;}
@@ -1766,8 +1769,8 @@ function progressSection(){
       <div class="chart-legend"><span><i class="lg-line"></i>Average</span><span><i class="lg-dot"></i>Masters</span><span><i class="lg-dot mine"></i>My games</span>
         <span class="chart-avg" title="${info.rated ? 'Your average' : 'Positions played, out of those needed for your average'}">${info.rated ? pct(info.level) : `${info.n}/${CALIBRATION}`}</span></div>
       ${levelChartSvg(sr)}
-    </div>`}
-    ${nReplay ? `<button class="btn small secondary pf-replay-btn" id="replayBtn" title="${ACT_NAMES[a]} positions you scored below your average on">Replay ${nReplay} ›</button>` : ''}`;
+      ${nReplay ? `<div class="chart-foot"><button class="link-inline" id="replayBtn" title="${ACT_NAMES[a]} positions you scored below your average on">Replay ${nReplay} ›</button></div>` : ''}
+    </div>`}`;
   return { html, wire: ()=>{
     const rb = document.getElementById('replayBtn'); if(rb) rb.onclick = ()=>startReplay(a);
     document.querySelectorAll('.seg-btn[data-tab]').forEach(b=>b.onclick = ()=>{ progressTab = b.dataset.tab; render(); });
@@ -1787,7 +1790,7 @@ function accountSection(){
   const conn = site=>(accountConnections || []).find(c=>c.site===site);
   const lich = lichessName(), goo = googleAuth ? googleAuth.email : conn('google') && conn('google').username;
   if(!signedIn()) return `
-      <h2 class="pf-h">Account and games</h2>
+      <h2 class="pf-h">Account</h2>
       <section class="pf-card ac-card">
         <p class="ac-sub">Log in to keep your progress on all your devices and to bring in your own games: they come in by themselves, and positions are found in them for the three exercises. Until then, your progress stays in this browser only.</p>
         <button class="btn lichess-btn" id="lichessLogin">${LICHESS_LOGO} Log in with Lichess</button>
@@ -1796,9 +1799,9 @@ function accountSection(){
         <p class="ac-sub">No Lichess account? Log in with Google, then add your Chess.com username. You can connect Lichess later. Google only tells us your email address.</p>` : ''}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
       </section>`;
-  if(accountLoading()) return `<h2 class="pf-h">Account and games</h2><section class="pf-card ac-card"><p class="mg-status mg-loading">Retrieving your account…</p></section>`;
+  if(accountLoading()) return `<h2 class="pf-h">Account</h2><section class="pf-card ac-card"><p class="mg-status mg-loading">Retrieving your account…</p></section>`;
   return `
-      <h2 class="pf-h">Account and games</h2>
+      <h2 class="pf-h">Account</h2>
       <section class="pf-card ac-card">
         <div class="ac-row"><span class="ac-site">${LICHESS_LOGO} Lichess</span>${lich ? `<b>${esc(lich)}</b>` : ''}</div>
         ${lich ? (siteLine('lichess') ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : '')
@@ -1832,7 +1835,7 @@ function renderAccount(){
       <section class="pf-card pf-id">
         <div class="pf-who"><span class="acct-dot big" aria-hidden="true">${name ? esc(name[0].toUpperCase()) : '♚'}</span>
           <div><div class="pf-name">${esc(name) || 'You'}</div>
-          <div class="pf-facts"><span>Training since <b>${since}</b></span><span><b>${results.length}</b> position${results.length===1?'':'s'} completed</span></div></div></div>
+          <div class="pf-facts"><span><b>${results.length}</b> position${results.length===1?'':'s'} completed since ${since}</span></div></div></div>
       </section>
       ${prog.html}
       ${DIRECT_LICHESS ? accountSection() : gamesFileSection()}
@@ -1868,23 +1871,33 @@ function levelChartSvg(sr){
     </svg>`;
 }
 // Hover / tap: the nearest position's level and accuracy.
+let chartHover = null;   // { tab, i }: the chart point being looked at
 function wireChartHover(sr){
   const svg = document.getElementById('levelChart'), box = document.getElementById('chartBox');
   if(!svg) return;
   const pts = sr.slice(-60), n = pts.length, first = sr.length - n;
   let tip = null;
-  const show = e=>{
-    const rect = svg.getBoundingClientRect(), x = (e.clientX - rect.left) * CH.w / rect.width;
-    const i = Math.max(0, Math.min(n-1, Math.round(n<=1 ? 0 : (x-CH.l)/((CH.w-CH.l-CH.r)/(n-1)))));
+  // The point shown is kept (chartHover) so the page redrawing meanwhile (e.g. while your games are
+  // analysed) shows it again instead of closing it. The tip stays inside the chart's box.
+  const showAt = i=>{
+    const rect = svg.getBoundingClientRect();
     const r = pts[i], cx = chartX(i,n), cross = document.getElementById('chCross');
+    if(!r || !cross) return;
+    chartHover = { tab: progressTab, i };
     cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.setAttribute('opacity', '.5');
     if(!tip){ tip = document.createElement('div'); tip.className = 'chart-tip'; box.appendChild(tip); }
-    const bx = box.getBoundingClientRect();
-    tip.style.left = Math.max(60, Math.min(bx.width-60, rect.left - bx.left + cx*rect.width/CH.w)) + 'px';
-    tip.style.top = (rect.top - bx.top + chartY(Math.max(r.level, r.acc))*rect.height/CH.h - 8) + 'px';
     tip.innerHTML = `#${first+i+1} · ${new Date(r.ts).toLocaleDateString(undefined,{month:'short', day:'numeric'})}<br>Accuracy ${r.acc}% · Average ${r.n>=CALIBRATION ? pct(r.level) : '—'}`;
+    const bx = box.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    const px = rect.left - bx.left + cx*rect.width/CH.w, py = rect.top - bx.top + chartY(Math.max(r.level, r.acc))*rect.height/CH.h;
+    tip.style.left = Math.max(4, Math.min(bx.width - w - 4, px - w/2)) + 'px';
+    tip.style.top = (py - h - 8 < 4 ? py + 12 : py - h - 8) + 'px';
   };
-  const hide = ()=>{ const c = document.getElementById('chCross'); if(c) c.setAttribute('opacity','0'); if(tip){ tip.remove(); tip = null; } };
+  const show = e=>{
+    const rect = svg.getBoundingClientRect(), x = (e.clientX - rect.left) * CH.w / rect.width;
+    showAt(Math.max(0, Math.min(n-1, Math.round(n<=1 ? 0 : (x-CH.l)/((CH.w-CH.l-CH.r)/(n-1))))));
+  };
+  const hide = ()=>{ chartHover = null; const c = document.getElementById('chCross'); if(c) c.setAttribute('opacity','0'); if(tip){ tip.remove(); tip = null; } };
+  if(chartHover && chartHover.tab===progressTab && chartHover.i < n) showAt(chartHover.i);
   svg.addEventListener('pointermove', show);
   svg.addEventListener('pointerdown', show);
   svg.addEventListener('pointerleave', hide);
@@ -2707,7 +2720,7 @@ function positionsSection(){
         .filter(([, shown])=>shown).map(([label])=>{ const site = { Lichess:'lichess', 'Chess.com':'chesscom', 'PGN files':'file' }[label], gs = ofSite(site); return [label, gs.length, countsFor(gs)]; });
   const row = (label, games, c)=>`<tr><th scope="row">${label}</th><td>${games}</td><td>${c.analysis}</td><td>${c.candidates}</td><td>${c.final}</td></tr>`;
   return `
-      <h2 class="pf-h">Positions</h2>
+      <h2 class="pf-h">Games and positions</h2>
       <section class="mg-card">
         <div class="mg-table-wrap"><table class="mg-table">
           <thead><tr><th></th><th>Games</th><th>Board analysis</th><th>Candidate moves</th><th>Final choice</th></tr></thead>

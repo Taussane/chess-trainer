@@ -23,13 +23,22 @@ async def main():
         if f'analysis:{k}' not in lst: fails.append('a position below the average did not join the replay list')
         await pg.click('#homeBtn'); await pg.click('#accountBtn')
         txt = await pg.inner_text('.pf-id'); print(txt.replace('\n', ' '))
-        if 'Training since' not in txt or '9 positions completed' not in txt: fails.append('profile header wrong')
+        if '9 positions completed since' not in txt: fails.append('profile header wrong: ' + txt)
         txt = await pg.inner_text('.pf-scroll')
         if await pg.query_selector('#replayBtn'): fails.append('a position played today was offered for replay')
         rows = await pg.evaluate("[...document.querySelectorAll('.wk-table tbody tr')].map(r=>r.innerText.replace(/\\s+/g,' '))")
         print('week:', rows[:3])
         if not rows[0].startswith('Today 5') : fails.append(f'today row: {rows[0]}')
         await pg.screenshot(path=str(T.SHOTS/'profile.png'), full_page=True)
+        # The chart's tip: stays open when the page redraws, and stays inside the chart at both ends.
+        box = await pg.query_selector('#levelChart'); bb = await box.bounding_box()
+        for fx in (0.01, 0.99):
+            await pg.mouse.move(bb['x'] + bb['width']*fx, bb['y'] + bb['height']/2); await pg.wait_for_timeout(100)
+            await pg.evaluate("render()"); await pg.wait_for_timeout(100)
+            t = await pg.evaluate("(()=>{ const t=document.querySelector('.chart-tip'), b=document.getElementById('chartBox'); if(!t) return null; const r=t.getBoundingClientRect(), q=b.getBoundingClientRect(); return [r.left>=q.left, r.right<=q.right]; })()")
+            print('tip at', fx, ':', t)
+            if t != [True, True]: fails.append(f'chart tip at {fx}: {t} (None: closed by a redraw)')
+        await pg.mouse.move(0, 0)
         # Next day: the position is offered again. Replay it well -> off the list, and it counts.
         await pg.evaluate("played = { day: todayKey(), keys: [] }; render()")
         txt = await pg.inner_text('.pf-scroll')
