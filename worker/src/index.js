@@ -15,9 +15,6 @@
 //   POST   /api/link/lichess {token}    add a Lichess login to this account ("Connect Lichess" from a
 //                                       Google account); if that login already has an account, the
 //                                       two are merged into this one: progress, games and settings
-//   POST   /api/link/google  {idToken}  the same for a Google login (not offered in the app)
-//   DELETE /api/link/lichess            remove Lichess while another login stays, with its games
-//                                       (not offered in the app: an account with Lichess keeps it)
 //   GET    /api/me                      account, its connections
 //   GET    /api/results?after=&limit=   results after a time, oldest first (at most 1000)
 //   POST   /api/results   {rows:[…]}    add results (a row already there is ignored)
@@ -167,30 +164,20 @@ async function route(req, env) {
     return new Response(await ccGames(ccUser(url), Number(url.searchParams.get('since')) || 0, Math.max(1, Math.min(200, Number(url.searchParams.get('max')) || 100))),
       { headers: { 'Content-Type': 'application/x-chess-pgn' } });
   }
-  if (m === 'POST' && (path === '/api/link/google' || path === '/api/link/lichess')) {
-    const b = await body(req), google = path.endsWith('google');
-    const player = google ? await verifyGoogle(env, b.idToken) : await SITES.lichess(String(b.token || ''));
-    if (!player) throw fail(401, (google ? 'Google' : 'Lichess') + ' did not accept this login');
-    const linkSite = google ? 'google' : 'lichess', now = Date.now();
+  if (m === 'POST' && path === '/api/link/lichess') {
+    const b = await body(req);
+    const player = await SITES.lichess(String(b.token || ''));
+    if (!player) throw fail(401, 'Lichess did not accept this login');
+    const linkSite = 'lichess', now = Date.now();
     const c = await DB.prepare('SELECT account_id FROM connections WHERE site = ? AND site_user_id = ?').bind(linkSite, player.id).first();
     const stmts = [];
     if (c && c.account_id !== account) stmts.push(...await mergeInto(DB, c.account_id, account));
     if (c) stmts.push(DB.prepare('UPDATE connections SET account_id = ?, username = ?, verified = 1 WHERE site = ? AND site_user_id = ?').bind(account, player.username, linkSite, player.id));
     else stmts.push(DB.prepare('INSERT INTO connections (site, site_user_id, account_id, username, verified, added_at) VALUES (?, ?, ?, ?, 1, ?)').bind(linkSite, player.id, account, player.username, now));
-    if (!google) stmts.push(DB.prepare('INSERT INTO sessions (token_hash, account_id, site, checked_at) VALUES (?, ?, ?, ?) ON CONFLICT (token_hash) DO UPDATE SET account_id = excluded.account_id, checked_at = excluded.checked_at')
+    stmts.push(DB.prepare('INSERT INTO sessions (token_hash, account_id, site, checked_at) VALUES (?, ?, ?, ?) ON CONFLICT (token_hash) DO UPDATE SET account_id = excluded.account_id, checked_at = excluded.checked_at')
       .bind(await sha256('lichess:' + b.token), account, 'lichess', now));
     await DB.batch(stmts);
     return json({ ok: true, merged: !!(c && c.account_id !== account) });
-  }
-  if (m === 'DELETE' && path === '/api/link/lichess') {   // only while another login (Google) stays
-    const others = await DB.prepare("SELECT COUNT(*) n FROM connections WHERE account_id = ? AND site <> 'lichess' AND verified = 1").bind(account).first();
-    if (!others || !others.n) throw fail(400, 'Lichess is your only login: log out or delete the account instead');
-    await DB.batch([
-      DB.prepare("DELETE FROM connections WHERE account_id = ? AND site = 'lichess'").bind(account),
-      DB.prepare("DELETE FROM sessions WHERE account_id = ? AND site = 'lichess'").bind(account),
-      DB.prepare("DELETE FROM games WHERE account_id = ? AND site = 'lichess'").bind(account),
-    ]);
-    return json({ ok: true });
   }
   if (m === 'DELETE' && path === '/api/account') {
     await DB.batch(['results', 'games', 'meta', 'sessions', 'connections'].map(t => DB.prepare(`DELETE FROM ${t} WHERE account_id = ?`).bind(account))
