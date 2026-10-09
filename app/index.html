@@ -1901,7 +1901,7 @@ function renderHome(){
     <div class="home-head">
       <div class="home-top"><button class="acct-chip" id="accountBtn">${DIRECT_LICHESS && !signedIn() ? 'Log in' : `<span class="acct-dot" aria-hidden="true">${(displayName()[0] || '♚').toUpperCase().replace(/</g,'')}</span>${displayName().replace(/</g,'&lt;') || 'Profile'}`}</button></div>
       <h1>Chess Strategy Trainer</h1>
-      ${(DIRECT_LICHESS ? !signedIn() : !results.length) ? `<p>Train the way strong players think: weigh up the position, find the candidate moves, choose the best. On master games and your own, checked by Stockfish.</p>` : ''}
+      ${(DIRECT_LICHESS ? !signedIn() : !results.length) ? `<p>Train your strategy beyond tactics puzzles: gauge the position, find good candidates, choose the best. Learn from master games and your own mistakes.</p>` : ''}
     </div>
     ${routineCard()}
     <div class="source-row"><span class="source-label">Positions from</span>
