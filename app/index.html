@@ -429,7 +429,7 @@ function labelColor(label){
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
 const HELP = {
   analysis: {
-    title:'Board analysis',
+    title:'Position evaluation',
     what:"Judge who's better and by how much, from the position's features (king safety, material, space, activity) rather than by calculating. Drag the bar to your estimate.",
     eval:"Your cursor is compared with the engine's evaluation: each board square off costs 25%.",
   },
@@ -708,7 +708,7 @@ function toWhitePerspective(info, fen){
   if(turn==='w') return info;
   return { cp: info.cp!=null ? -info.cp : null, mate: info.mate!=null ? -info.mate : null };
 }
-// The eval bar's height (and the Board analysis score built from it) uses the same win% curve
+// The eval bar's height (and the Position evaluation score built from it) uses the same win% curve
 // as move grading (winPercent, below). Clamped to 1-99 so the bar always keeps a sliver of the
 // other colour, even at a reported mate.
 function cpToPct(cp, mate){
@@ -903,7 +903,7 @@ function stableShuffleByIds(poolKey, ids){
 }
 
 
-// Board analysis score: only the two positions on the bar are compared. Same spot = 100%;
+// Position evaluation score: only the two positions on the bar are compared. Same spot = 100%;
 // half the bar or more apart = 0%, linear in between. The bar's usable range is 1–99%
 // (both ends keep a sliver of the other colour), so "half the bar" is 49 points: in an equal
 // position only a cursor at either end scores 0%, and against a forced mate, calling it equal
@@ -1222,7 +1222,7 @@ function st(activity){
 //  - the open exercise's own position, as soon as the exercise is on screen;
 //  - that exercise's NEXT position, only once its review is under way (the evaluation is in and
 //    the reveal has started), so it never delays the current review.
-//  - from the home page, the positions Board analysis and Move selection will open on (Candidate
+//  - from the home page, the positions Position evaluation and Move selection will open on (Candidate
 //    moves only needs its evaluation at the review, with your picks in it).
 function prefetchCurrent(){ if(ACTIVITIES.includes(screen)) fenEval(pos().fen); }
 function prefetchNext(){
@@ -1240,7 +1240,7 @@ function upcomingFor(t){
   const s = store[t][cur.key];
   return [t, firstAvailable(t, seqBy[t] + (s && s.checked ? 1 : 0))];
 }
-// From the home page: where Board analysis and Move selection would open, and where the routine
+// From the home page: where Position evaluation and Move selection would open, and where the routine
 // resumes (unless that's Candidate moves, which is only evaluated at its review).
 function prefetchHome(){
   const ts = [ctx('analysis', false), ctx('final', false)];
@@ -1482,7 +1482,7 @@ function fmtBarScore(info){
   const r = Math.round(info.cp/10)/10;
   return (r>0 ? '+' : r<0 ? '−' : '') + Math.abs(r).toFixed(1);
 }
-// ---- Board analysis recap: "<verdict>, <explanation>." ----
+// ---- Position evaluation recap: "<verdict>, <explanation>." ----
 // Table 1 — verdict, from the accuracy (25% per board square the cursor is off).
 const RECAP_VERDICTS = [
   { min:88, text:'Spot on' },               // within ½ square — no explanation added
@@ -1582,9 +1582,9 @@ function miniRowHtml(m, highlight, fadeIn){
 // close you were — and no opponent rating, since every position is scored on the same scale.
 const ACTS = ['analysis', 'candidates', 'final'];
 const ACT_GLYPHS = { analysis:'⚖', candidates:'♘', final:'♔' };
-const ACT_NAMES = { analysis:'Board analysis', candidates:'Candidate moves', final:'Move selection' };
+const ACT_NAMES = { analysis:'Position evaluation', candidates:'Candidate moves', final:'Move selection' };
 const BACK_ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const ACT_SHORT = { analysis:'Analysis', candidates:'Candidates', final:'Selection' };   // where space is short (profile)
+const ACT_SHORT = { analysis:'Evaluation', candidates:'Candidates', final:'Selection' };   // where space is short (profile)
 const CALIBRATION = 5, LEVEL_K = 0.15, DAILY_GOAL = 5;
 // Shown as "Average 71%"; changes are whole points of the shown value ("▲ 3%").
 const pct = v => Math.round(v) + '%';
@@ -1952,7 +1952,7 @@ function renderHome(){
 //  - Candidate moves and Move selection: the position just before a move of yours that lost 10+
 //    points of winning chances (Dubious or worse); your move is the game move. Each mistake goes
 //    into both (Move selection only with at least 4 legal moves).
-//  - Board analysis: like the master games (middlegame and endgame starts, then positions at
+//  - Position evaluation: like the master games (middlegame and endgame starts, then positions at
 //    least 7 half-moves from those kept), draws included, never a mistake position.
 // Games Lichess has already analysed carry an evaluation for every move, trusted as it is: their
 // mistakes go to Candidate moves at once, and to Move selection after one top-5 search. The others
@@ -2446,7 +2446,7 @@ function extractOwnPositions(g){
     // or the app's quick scan) flag as a likely mistake waits for that check ("pending").
     if(turn===g.me && moves.length >= OWN.candidatesMinLegal && ply>0 && lichessEvals(g)){
       // Lichess's analysis is trusted as it is: a move that lost 10+ points is a mistake at once
-      // (Candidate moves); any other move can be a Board analysis position. Move selection waits
+      // (Candidate moves); any other move can be a Position evaluation position. Move selection waits
       // only for the app's top-5 search, which must give four moves to rank (g.finals).
       const before = winForMover(g.evals[ply-1], turn), after = winForMover(g.evals[ply], turn);
       const quick = before!=null && after!=null ? before - after : null;
@@ -2463,15 +2463,15 @@ function extractOwnPositions(g){
       const drop = checked!=null ? checked : g.verified ? quick : null;
       if(drop!=null && drop >= OWN.mistakeDrop){
         out.push(entry(ply, moves.length >= OWN.finalMinLegal ? ['candidates','final'] : ['candidates'], { drop: Math.round(drop) }));
-        continue;   // a mistake position is never a Board analysis position
+        continue;   // a mistake position is never a Position evaluation position
       }
       if(drop==null && quick!=null && quick >= OWN.flagDrop){ out.push(entry(ply, [], { pending:true })); continue; }
       // The analysis decides each move's place at once: flagged as a likely mistake, it is for
-      // Candidate moves and Move selection (if the engine confirms it), never Board analysis, even
-      // when the check finds it isn't one, so Board analysis positions never change afterwards.
+      // Candidate moves and Move selection (if the engine confirms it), never Position evaluation, even
+      // when the check finds it isn't one, so Position evaluation positions never change afterwards.
       if(quick!=null && quick >= OWN.flagDrop) continue;
     }
-    // Board analysis: middlegame start to endgame start, general rules, not in check, material within 3.
+    // Position evaluation: middlegame start to endgame start, general rules, not in check, material within 3.
     if(baFrom<0 || ply<baFrom || ply>baTo) continue;
     const moveNo = +fen.split(' ')[5];
     if(moveNo < OWN.minMove || moveNo > OWN.maxMove || moves.length < OWN.minLegal) continue;
@@ -2482,7 +2482,7 @@ function extractOwnPositions(g){
     if(div.mid>=0 && ply < div.mid + OWN.earlyBalancedPlies && ev && ev.mate==null && ev.cp!=null && Math.abs(ev.cp) < OWN.earlyBalancedCp) continue;
     ba.push(ply);
   }
-  // Board analysis: the middlegame and endgame starts first (or up to 3 half-moves later), then
+  // Position evaluation: the middlegame and endgame starts first (or up to 3 half-moves later), then
   // positions 7 half-moves from those already kept, in move order.
   const kept = [];
   const take = ply=>{ if(kept.some(k=>Math.abs(k-ply) < OWN.spacingPlies)) return; kept.push(ply); };
@@ -2731,7 +2731,7 @@ function positionsSection(){
       <h2 class="pf-h">Games and positions</h2>
       <section class="mg-card">
         <div class="mg-table-wrap"><table class="mg-table">
-          <thead><tr><th></th><th>Games</th><th>Analysis</th><th>Candidates</th><th>Selection</th></tr></thead>
+          <thead><tr><th></th><th>Games</th><th>Evaluation</th><th>Candidates</th><th>Selection</th></tr></thead>
           <tbody>${row('Masters', MASTER_GAMES, masters)}${siteRows.map(([label, games, c])=>row(label, games, c)).join('')}</tbody>
         </table></div>
         ${status ? `<p class="mg-status">${status}</p>` : ''}
@@ -2798,7 +2798,7 @@ function renderTests(){
   });
 }
 
-// ================= Board analysis =================
+// ================= Position evaluation =================
 // The reveal: once the engine's number is in, the bar and its score slide from your guess to
 // the engine's value while the accuracy counts down from 100%; the recap and buttons appear
 // when it lands. `s.animT` (0→1) is the progress, so a re-render mid-way just redraws the
@@ -2820,7 +2820,7 @@ function renderAnalysis(){
     ? evalBarHtml(barPct, done ? fmtBarScore(truth.info) : truth ? fmtGuess(barPct) : '…', s.guess, false)
     : evalBarHtml(s.guess, fmtGuess(s.guess), s.guess, true);
   app.innerHTML = `
-    ${header('Board analysis')}
+    ${header('Position evaluation')}
     ${posBar()}
     ${boardHtml(true, bar)}
     ${stackedPanel(`
@@ -3120,8 +3120,8 @@ function timedFade(el, delay, elapsed, dur, kind, easing){
   const done = ev=>{ if(ev.target!==el) return; el.style.animation = ''; el.removeEventListener('animationend', done); };
   el.addEventListener('animationend', done);
 }
-const SLIDE_MS = 350;   // = .fade-in, the Board analysis recap/buttons fade-and-rise
-// Question screens of Board analysis and Candidate moves: the instruction and Check button fade
+const SLIDE_MS = 350;   // = .fade-in, the Position evaluation recap/buttons fade-and-rise
+// Question screens of Position evaluation and Candidate moves: the instruction and Check button fade
 // and rise in together, once per position, as soon as the screen opens.
 function introFade(s, ids){
   if(s.introAt==null) s.introAt = performance.now();
@@ -3231,7 +3231,7 @@ function renderFinal(){
   // first time they're shown, so a re-render mid-way picks the animation up where it was.
   if(s.introAt==null) s.introAt = performance.now();
   const introEl = performance.now() - s.introAt;
-  // Moves: plain fade. Instruction + Check: fade with the small rise used in Board analysis.
+  // Moves: plain fade. Instruction + Check: fade with the small rise used in Position evaluation.
   const fadeAt = (el, delay, kind)=>timedFade(el, delay, introEl, INTRO_FADE, kind || 'rowIn');
   ordered.forEach((m,i)=>{
     const row = document.createElement('div');
