@@ -24,7 +24,6 @@ async def main():
         await pg.click('#homeBtn'); await pg.click('#accountBtn')
         txt = await pg.inner_text('.pf-id'); print(txt.replace('\n', ' '))
         if 'Training since' not in txt or '9 positions completed' not in txt: fails.append('profile header wrong')
-        await pg.click('#progressBtn'); await pg.wait_for_timeout(200)
         txt = await pg.inner_text('.pf-scroll')
         if 'All played today' not in txt: fails.append('a position played today was offered for replay')
         rows = await pg.evaluate("[...document.querySelectorAll('.wk-table tbody tr')].map(r=>r.innerText.replace(/\\s+/g,' '))")
@@ -51,7 +50,7 @@ async def main():
         if nxt != "Finish": fails.append(f'next label: {nxt}')
         await pg.click('#nextPos'); await pg.wait_for_timeout(200)
         if await pg.evaluate("screen") != 'progress': fails.append('finishing the replay should return to the profile')
-        await pg.click('#homeBtn'); txt = await pg.inner_text('.pf-id')
+        txt = await pg.inner_text('.pf-id')
         if '10 positions completed' not in txt: fails.append('the replay is not in the positions completed')
         await b.close()
     errs = [e for e in errs if 'importScripts' not in e]
