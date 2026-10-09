@@ -1796,6 +1796,8 @@ const onProfile = ()=>screen==='account' || screen==='progress' || screen==='myg
 const displayName = ()=>myName || lichessName() || chesscomName || (googleAuth ? googleAuth.email.split('@')[0] : '');
 // Your account and your games' sources together (website): your logins (or the ways to log in),
 // your Lichess games (or connecting Lichess), your Chess.com username; then log out / delete.
+// An account with Lichess shows as a Lichess account: a Google login connected to it still opens it,
+// but isn't shown (connecting Lichess from a Google account "promotes" it to a Lichess account).
 function accountSection(){
   const esc = x=>String(x).replace(/</g,'&lt;');
   const conn = site=>(accountConnections || []).find(c=>c.site===site);
@@ -1813,11 +1815,11 @@ function accountSection(){
   return `
       <h2 class="pf-h">Account</h2>
       <section class="pf-card ac-card">
-        <div class="ac-row"><span class="ac-site">${LICHESS_LOGO} Lichess</span>${lich ? `<b>${esc(lich)}</b>${googleAuth ? `<button class="link-inline" id="liDisconnect">Disconnect</button>` : ''}` : ''}</div>
+        <div class="ac-row"><span class="ac-site">${LICHESS_LOGO} Lichess</span>${lich ? `<b>${esc(lich)}</b>` : ''}</div>
         ${lich ? (siteLine('lichess') ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : '')
           : `<button class="btn small secondary" id="mgLinkLichess">Connect Lichess</button>
              <p class="ac-sub">Bring in your Lichess games and learn from your mistakes.</p>`}
-        ${goo ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}
+        ${goo && !lich ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}
         <div class="ac-row"><span class="ac-site">${CHESSCOM_LOGO} Chess.com</span>${chesscomName ? `<b>${esc(chesscomName)}</b><button class="link-inline" id="ccDisconnect">Disconnect</button>` : ''}</div>
         ${chesscomName ? (siteLine('chesscom') ? `<p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>` : '')
           : `<div class="mg-cc"><input id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Chess.com username" aria-label="Chess.com username"><button class="btn small secondary" id="ccConnect">Add Chess.com</button></div>
@@ -2076,7 +2078,7 @@ async function finishLichessLogin(){
       catch(e){ myImportNote = `Lichess couldn't be added to your account: ${e.message}.`; render(); return; }
     }
     setLichessAuth({ token:tok.access_token, username:acc.username });
-    myImportNote = pending.link ? 'Lichess connected: your Lichess games come in by themselves, and both logins open this account.' : '';
+    myImportNote = pending.link ? 'Lichess connected: your Lichess games now come in by themselves.' : '';
     fetchAfterLogin = true;   // no games yet (here or in your account): your games right away
   }catch(e){ myImportNote = "Lichess login didn't go through. Try again."; }
   render();
@@ -2314,19 +2316,6 @@ async function connectChesscom(name){
     myImportNote = ''; render();
     syncGames();
   }catch(e){ myImportNote = /404/.test(e.message) ? `No Chess.com player named ${name.replace(/</g,'&lt;')}.` : `Couldn't check Chess.com: ${e.message}.`; render(); }
-}
-// Lichess off this account (logged in here with Google, which stays): its games go, with their positions.
-async function disconnectLichess(){
-  if(!googleAuth) return;
-  try{ await serverCall(googleAuth, 'DELETE', '/api/link/lichess'); }
-  catch(e){ myImportNote = `Lichess couldn't be disconnected: ${e.message}.`; render(); return; }
-  const a = lichessAuth; setLichessAuth(null);
-  if(a) try{ await fetch(LICHESS + '/api/token', { method:'DELETE', headers:{ Authorization:'Bearer ' + a.token } }); }catch(e){}
-  myName = ''; try{ localStorage.removeItem('cst.lichess'); }catch(e){}
-  accountConnections = (accountConnections || []).filter(c=>c.site!=='lichess');
-  myGames = myGames.filter(g=>siteOf(g)!=='lichess'); saveMyLocal();   // the account removed them already
-  if(mySync) mySync.lichess = null;
-  onOwnPositionsChanged(); render();
 }
 async function disconnectChesscom(){
   setChesscomName('');
@@ -2765,7 +2754,6 @@ function wireGames(){
   const ccu = document.getElementById('ccUser'); if(ccu) ccu.onkeydown = e=>{ if(e.key==='Enter') connectChesscom(ccu.value); };
   const ccd = document.getElementById('ccDisconnect'); if(ccd) ccd.onclick = ()=>{ disconnectChesscom(); };
   const mll = document.getElementById('mgLinkLichess'); if(mll) mll.onclick = ()=>lichessLogin(true);
-  const lid = document.getElementById('liDisconnect'); if(lid) lid.onclick = disconnectLichess;
   if(user) user.oninput = ()=>{ myName = user.value.trim(); try{ localStorage.setItem('cst.lichess', myName); }catch(e){} if(link) link.href = lichessExportUrl(myName); };
   const readFile = f=>{
     if(!f) return;

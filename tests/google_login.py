@@ -85,7 +85,7 @@ async def main():
             if n[:4] != [True, True, 3, 'google,lichess']: fails.append(f'linking Lichess to the Google account: {n}')
             await P1.evaluate("screen='account'; render()")
             pf = await P1.inner_text('.ac-card'); print('   profile:', pf.replace('\n', ' '))
-            if 'Lichess' not in pf or 'Other' not in pf or 'g-2001@example.com' not in pf: fails.append('profile after linking: ' + pf)
+            if 'Lichess' not in pf or 'Other' not in pf or 'g-2001@example.com' in pf: fails.append('profile after linking: ' + pf)
             await P1.screenshot(path=str(T.SHOTS/'google_3_linked.png'))
             await P2.reload(); await P2.wait_for_timeout(600); await A.stand_in(P2); await P2.wait_for_timeout(1500)
             n = await P2.evaluate("[results.length, chesscomName]"); print('   P2 (Lichess) after reload:', n)
@@ -127,15 +127,11 @@ async def main():
             line = await P4.inner_text('.mg-card'); print('   ', line.replace('\n', ' ')[:160])
             await P4.screenshot(path=str(T.SHOTS/'google_4_linked_mygames.png'))
             errs3 = errs4
-            # 6. P1 (logged in with Google here) disconnects Lichess: its games go, Google stays.
+            # 6. Once Lichess is connected, the account shows as a Lichess account (Google not shown, no
+            #    way to remove Lichess); logging in with Google still opens it.
             await P1.evaluate("screen='account'; render()"); await P1.wait_for_timeout(300)
-            await P1.click('#liDisconnect'); await P1.wait_for_timeout(1500)
-            n = await P1.evaluate("[!!lichessAuth, !!googleAuth, lichessName(), myGames.filter(g=>siteOf(g)==='lichess').length, myGames.filter(g=>siteOf(g)==='chesscom').length, !!document.getElementById('mgLinkLichess'), !!document.getElementById('clearBtn')]")
-            gtok = await P1.evaluate("googleAuth.token")
-            srv = __import__('json').loads(urllib.request.urlopen(urllib.request.Request(A.API + '/api/games', headers={'Authorization': 'Bearer ' + gtok, 'X-Auth-Site': 'app'})).read())['games']
-            me = __import__('json').loads(urllib.request.urlopen(urllib.request.Request(A.API + '/api/me', headers={'Authorization': 'Bearer ' + gtok, 'X-Auth-Site': 'app'})).read())
-            print('6. after disconnecting Lichess:', n, '| account games', len(srv), [c['site'] for c in me['connections']])
-            if n != [False, True, '', 0, 9, True, False] or any(g.get('site')=='lichess' for g in srv) or [c['site'] for c in me['connections']] != ['google']: fails.append(f'disconnect Lichess: {n}')
+            txt = await P1.inner_text('.ac-card'); print('6. account card:', txt.replace('\n', ' ')[:120])
+            if 'g-2001@example.com' in txt or 'Google' in txt or await P1.query_selector('#liDisconnect'): fails.append('a Lichess account should not show Google: ' + txt)
             # A Lichess account isn't offered a Google login (Lichess is the main login).
             ctx3, P3, errs5 = await A.new_browser(p, SITE, who); errs3 += errs5
             who[0] = 'tok-taussane'; await A.login(P3)
