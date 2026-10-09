@@ -127,6 +127,15 @@ async def main():
             line = await P4.inner_text('.mg-card'); print('   ', line.replace('\n', ' ')[:160])
             await P4.screenshot(path=str(T.SHOTS/'google_4_linked_mygames.png'))
             errs3 = errs4
+            # 6. P1 (logged in with Google here) disconnects Lichess: its games go, Google stays.
+            await P1.evaluate("screen='account'; render()"); await P1.wait_for_timeout(300)
+            await P1.click('#liDisconnect'); await P1.wait_for_timeout(1500)
+            n = await P1.evaluate("[!!lichessAuth, !!googleAuth, lichessName(), myGames.filter(g=>siteOf(g)==='lichess').length, myGames.filter(g=>siteOf(g)==='chesscom').length, !!document.getElementById('mgLinkLichess'), !!document.getElementById('clearBtn')]")
+            gtok = await P1.evaluate("googleAuth.token")
+            srv = __import__('json').loads(urllib.request.urlopen(urllib.request.Request(A.API + '/api/games', headers={'Authorization': 'Bearer ' + gtok, 'X-Auth-Site': 'app'})).read())['games']
+            me = __import__('json').loads(urllib.request.urlopen(urllib.request.Request(A.API + '/api/me', headers={'Authorization': 'Bearer ' + gtok, 'X-Auth-Site': 'app'})).read())
+            print('6. after disconnecting Lichess:', n, '| account games', len(srv), [c['site'] for c in me['connections']])
+            if n != [False, True, '', 0, 9, True, False] or any(g.get('site')=='lichess' for g in srv) or [c['site'] for c in me['connections']] != ['google']: fails.append(f'disconnect Lichess: {n}')
             # A Lichess account isn't offered a Google login (Lichess is the main login).
             ctx3, P3, errs5 = await A.new_browser(p, SITE, who); errs3 += errs5
             who[0] = 'tok-taussane'; await A.login(P3)

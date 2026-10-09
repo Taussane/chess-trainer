@@ -14,6 +14,7 @@
 //   POST   /api/link/google  {idToken}  add a Google login to this account (not offered in the app:
 //                                       Lichess is the main login, Google links Lichess instead)
 //   POST   /api/link/lichess {token}    add a Lichess login to this account
+//   DELETE /api/link/lichess            remove it (only while another login stays), with its games
 //                                       (if that login already has an account, the two are merged
 //                                       into this one: progress, games and settings together)
 //   GET    /api/me                      account, its connections
@@ -121,9 +122,13 @@ async function route(req, env) {
     // a disconnect yet can't bring them back).
     const cc = await DB.prepare("SELECT data FROM meta WHERE account_id = ? AND name = 'chesscom'").bind(account).first();
     let ccOn = false; try { ccOn = !!(cc && JSON.parse(cc.data).username); } catch (e) {}
+    // Lichess games only while Lichess is connected (same reason).
+    const li = await DB.prepare("SELECT COUNT(*) n FROM connections WHERE account_id = ? AND site = 'lichess'").bind(account).first();
+    const liOn = !!(li && li.n);
     for (const g of games) {
       if (!g || typeof g.id !== 'string' || !g.id || !Array.isArray(g.sans)) continue;
       if (!ccOn && (g.site === 'chesscom' || g.id.startsWith('cc-'))) continue;
+      if (!liOn && g.site === 'lichess') continue;
       const { positions, ...keep } = g;   // positions are worked out again by the app
       const data = JSON.stringify(keep);
       if (data.length > MAX_GAME_BYTES) continue;
@@ -175,6 +180,16 @@ async function route(req, env) {
       .bind(await sha256('lichess:' + b.token), account, 'lichess', now));
     await DB.batch(stmts);
     return json({ ok: true, merged: !!(c && c.account_id !== account) });
+  }
+  if (m === 'DELETE' && path === '/api/link/lichess') {   // only while another login (Google) stays
+    const others = await DB.prepare("SELECT COUNT(*) n FROM connections WHERE account_id = ? AND site <> 'lichess' AND verified = 1").bind(account).first();
+    if (!others || !others.n) throw fail(400, 'Lichess is your only login: log out or delete the account instead');
+    await DB.batch([
+      DB.prepare("DELETE FROM connections WHERE account_id = ? AND site = 'lichess'").bind(account),
+      DB.prepare("DELETE FROM sessions WHERE account_id = ? AND site = 'lichess'").bind(account),
+      DB.prepare("DELETE FROM games WHERE account_id = ? AND site = 'lichess'").bind(account),
+    ]);
+    return json({ ok: true });
   }
   if (m === 'DELETE' && path === '/api/account') {
     await DB.batch(['results', 'games', 'meta', 'sessions', 'connections'].map(t => DB.prepare(`DELETE FROM ${t} WHERE account_id = ?`).bind(account))

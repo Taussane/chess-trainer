@@ -1803,28 +1803,27 @@ function accountSection(){
   if(!signedIn()) return `
       <h2 class="pf-h">Account</h2>
       <section class="pf-card ac-card">
-        <p class="ac-sub">Log in to keep your progress on all your devices and to bring in your own games: they come in by themselves, and positions are found in them for the three exercises. Until then, your progress stays in this browser only.</p>
+        <p class="ac-sub">Log in to keep your progress on all your devices and learn from your own games.</p>
         <button class="btn lichess-btn" id="lichessLogin">${LICHESS_LOGO} Log in with Lichess</button>
-        <p class="ac-sub">Recommended: your Lichess games then come in by themselves. Lichess never shares your password with us.</p>
         ${GOOGLE_CLIENT_ID && API_BASE ? `<button class="btn google-btn" id="googleLogin">${GOOGLE_G} Log in with Google</button>
-        <p class="ac-sub">No Lichess account? Log in with Google, then add your Chess.com username. You can connect Lichess later. Google only tells us your email address.</p>` : ''}
+        <p class="ac-sub">No Lichess account? Log in with Google, then add your Chess.com username.</p>` : ''}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
       </section>`;
   if(accountLoading()) return `<h2 class="pf-h">Account</h2><section class="pf-card ac-card"><p class="mg-status mg-loading">Retrieving your account…</p></section>`;
   return `
       <h2 class="pf-h">Account</h2>
       <section class="pf-card ac-card">
-        <div class="ac-row"><span class="ac-site">${LICHESS_LOGO} Lichess</span>${lich ? `<b>${esc(lich)}</b>` : ''}</div>
+        <div class="ac-row"><span class="ac-site">${LICHESS_LOGO} Lichess</span>${lich ? `<b>${esc(lich)}</b>${googleAuth ? `<button class="link-inline" id="liDisconnect">Disconnect</button>` : ''}` : ''}</div>
         ${lich ? (siteLine('lichess') ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : '')
-          : `<button class="btn small secondary" id="mgLinkLichess">Connect your Lichess account</button>
-             <p class="ac-sub">Your Lichess games then come in by themselves, and you can log in with either. Progress from a Lichess login you used before is added to this account.</p>`}
+          : `<button class="btn small secondary" id="mgLinkLichess">Connect Lichess</button>
+             <p class="ac-sub">Bring in your Lichess games and learn from your mistakes.</p>`}
         ${goo ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}
         <div class="ac-row"><span class="ac-site">${CHESSCOM_LOGO} Chess.com</span>${chesscomName ? `<b>${esc(chesscomName)}</b><button class="link-inline" id="ccDisconnect">Disconnect</button>` : ''}</div>
         ${chesscomName ? (siteLine('chesscom') ? `<p class="mg-status" id="ccLine">${siteLine('chesscom')}</p>` : '')
           : `<div class="mg-cc"><input id="ccUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Chess.com username" aria-label="Chess.com username"><button class="btn small secondary" id="ccConnect">Add Chess.com</button></div>
-             <p class="ac-sub">Your public Chess.com games then come in the same way.</p>`}
+             <p class="ac-sub">Bring in your Chess.com games and learn from your mistakes.</p>`}
         ${myImportNote ? `<p class="mg-note" role="status">${myImportNote}</p>` : ''}
-        <p class="ac-sub ac-sep">Your last ${CORE_GAMES} games of each site (bullet to classical) come in by themselves. ${syncStatus && syncStatus!=='ok' ? `Couldn't reach your account: ${esc(syncStatus)}. Your progress stays on this device for now and is sent next time.` : 'Your progress and games are saved to your account, on every device you log in.'}</p>
+        <p class="ac-sub ac-sep">${syncStatus && syncStatus!=='ok' ? `Couldn't reach your account: ${esc(syncStatus)}. Your progress stays on this device for now and is sent next time.` : `Your last ${CORE_GAMES} games from each site sync automatically.`}</p>
         <div class="ac-actions"><button class="btn small secondary" id="pfLogout">Log out</button>
         ${pfConfirmDelete
           ? `</div><div class="mg-confirm"><span>Delete your account, progress and games for good?</span><button class="btn small danger" id="pfDeleteYes">Delete</button><button class="btn small ghost" id="pfDeleteNo">Keep</button></div>`
@@ -1882,7 +1881,7 @@ function levelChartSvg(sr){
     </svg>`;
 }
 // Hover / tap: the nearest position's level and accuracy.
-let chartHover = null;   // { tab, i }: the chart point being looked at
+let chartHover = null, chartOutside = null;   // { tab, i }: the chart point being looked at
 function wireChartHover(sr){
   const svg = document.getElementById('levelChart'), box = document.getElementById('chartBox');
   if(!svg) return;
@@ -1911,7 +1910,10 @@ function wireChartHover(sr){
   if(chartHover && chartHover.tab===progressTab && chartHover.i < n) showAt(chartHover.i);
   svg.addEventListener('pointermove', show);
   svg.addEventListener('pointerdown', show);
-  svg.addEventListener('pointerleave', hide);
+  // Closed when the mouse leaves the chart, or (touch) when you tap elsewhere. Not when the page is
+  // redrawn under the pointer: the old chart's "leave" then comes from a chart no longer shown.
+  svg.addEventListener('pointerleave', e=>{ if(svg.isConnected && e.pointerType==='mouse') hide(); });
+  if(!chartOutside){ chartOutside = e=>{ const c = document.getElementById('levelChart'); if(chartHover && c && !c.contains(e.target)){ chartHover = null; render(); } }; document.addEventListener('pointerdown', chartOutside); }
 }
 
 // ================= Home =================
@@ -2312,6 +2314,19 @@ async function connectChesscom(name){
     myImportNote = ''; render();
     syncGames();
   }catch(e){ myImportNote = /404/.test(e.message) ? `No Chess.com player named ${name.replace(/</g,'&lt;')}.` : `Couldn't check Chess.com: ${e.message}.`; render(); }
+}
+// Lichess off this account (logged in here with Google, which stays): its games go, with their positions.
+async function disconnectLichess(){
+  if(!googleAuth) return;
+  try{ await serverCall(googleAuth, 'DELETE', '/api/link/lichess'); }
+  catch(e){ myImportNote = `Lichess couldn't be disconnected: ${e.message}.`; render(); return; }
+  const a = lichessAuth; setLichessAuth(null);
+  if(a) try{ await fetch(LICHESS + '/api/token', { method:'DELETE', headers:{ Authorization:'Bearer ' + a.token } }); }catch(e){}
+  myName = ''; try{ localStorage.removeItem('cst.lichess'); }catch(e){}
+  accountConnections = (accountConnections || []).filter(c=>c.site!=='lichess');
+  myGames = myGames.filter(g=>siteOf(g)!=='lichess'); saveMyLocal();   // the account removed them already
+  if(mySync) mySync.lichess = null;
+  onOwnPositionsChanged(); render();
 }
 async function disconnectChesscom(){
   setChesscomName('');
@@ -2740,7 +2755,7 @@ function positionsSection(){
         ${status ? `<p class="mg-status">${status}</p>` : ''}
         ${myGames.length ? (myConfirmClear
           ? `<div class="mg-confirm"><span>Remove all your games and their positions?</span><button class="btn small danger" id="clearYes">Remove</button><button class="btn small ghost" id="clearNo">Keep</button></div>`
-          : myGamesLoaded ? `<button class="link-btn quiet" id="clearBtn">Remove my games</button>` : '') : ''}
+          : myGamesLoaded && !DIRECT_LICHESS ? `<button class="link-btn quiet" id="clearBtn">Remove my games</button>` : '') : ''}
       </section>`;
 }
 function wireGames(){
@@ -2750,6 +2765,7 @@ function wireGames(){
   const ccu = document.getElementById('ccUser'); if(ccu) ccu.onkeydown = e=>{ if(e.key==='Enter') connectChesscom(ccu.value); };
   const ccd = document.getElementById('ccDisconnect'); if(ccd) ccd.onclick = ()=>{ disconnectChesscom(); };
   const mll = document.getElementById('mgLinkLichess'); if(mll) mll.onclick = ()=>lichessLogin(true);
+  const lid = document.getElementById('liDisconnect'); if(lid) lid.onclick = disconnectLichess;
   if(user) user.oninput = ()=>{ myName = user.value.trim(); try{ localStorage.setItem('cst.lichess', myName); }catch(e){} if(link) link.href = lichessExportUrl(myName); };
   const readFile = f=>{
     if(!f) return;

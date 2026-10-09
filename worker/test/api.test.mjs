@@ -167,4 +167,9 @@ test('linking: a Google login added to a Lichess account; an existing Google acc
   const hid = (await j(await call(env, 'GET', '/api/me', app(h.token)))).body.account.id;
   assert.equal((await j(await call(env, 'GET', '/api/me', { token: 'tok-other' }))).body.account.id, hid);
   assert.equal((await call(env, 'POST', '/api/link/lichess', { ...app(h.token), body: { token: 'tok-nobody' } })).status, 401);
+  // Lichess off again: only while Google stays; its games go.
+  assert.equal((await call(env, 'DELETE', '/api/link/lichess', { token: 'tok-taussane' })).status, 200, 'Taussane has Google (sub 77) linked');
+  assert.deepEqual((await j(await call(env, 'GET', '/api/me', app(g2.token)))).body.connections.map(c => c.site), ['google']);
+  const solo = makeEnv(); await call(solo, 'GET', '/api/me');
+  assert.equal((await call(solo, 'DELETE', '/api/link/lichess')).status, 400, 'not when Lichess is the only login');
 });
