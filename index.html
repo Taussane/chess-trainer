@@ -1802,23 +1802,24 @@ function accountSection(){
   if(!signedIn()) return `
       <h2 class="pf-h">Account</h2>
       <section class="pf-card ac-card">
-        <p class="ac-sub">Log in to keep your progress, connect to load your games.</p>
+        <p class="ac-sub">${chesscomName ? 'Log in to keep your progress.' : 'Log in to keep your progress, connect to load your games.'}</p>
         <button class="btn lichess-btn" id="lichessLogin">${LICHESS_LOGO} Log in and connect with Lichess</button>
         ${GOOGLE_CLIENT_ID && API_BASE ? `<button class="btn google-btn" id="googleLogin">${GOOGLE_G} Log in with Google</button>` : ''}
         ${API_BASE ? chesscomBlock() : ''}
         ${note}
       </section>`;
   if(accountLoading()) return `<h2 class="pf-h">Account</h2><section class="pf-card ac-card"><p class="mg-status mg-loading">Loading your account…</p></section>`;
-  // A Google account shows the same order as logged out: Lichess (to connect), Google, Chess.com;
-  // once Lichess is connected it shows as a Lichess account.
+  // A Google account shows the buttons as logged out (Lichess to connect, Chess.com), then the Google
+  // login itself; once Lichess is connected it shows as a Lichess account.
   return `
       <h2 class="pf-h">Account</h2>
       <section class="pf-card ac-card">
         ${lich ? `<div class="ac-row"><span class="ac-site">${LICHESS_LOGO} Lichess</span><b>${esc(lich)}</b></div>
         ${siteLine('lichess') ? `<p class="mg-status" id="syncLine">${siteLine('lichess')}</p>` : ''}`
-        : `<button class="btn lichess-btn" id="mgLinkLichess">${LICHESS_LOGO} Connect with Lichess</button>
-        ${goo ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}`}
+        : `${chesscomName ? '' : `<p class="ac-sub">Connect to load your games.</p>`}
+        <button class="btn lichess-btn" id="mgLinkLichess">${LICHESS_LOGO} Connect with Lichess</button>`}
         ${chesscomBlock()}
+        ${!lich && goo ? `<div class="ac-row"><span class="ac-site">${GOOGLE_G} Google</span><b>${esc(goo)}</b></div>` : ''}
         ${note}
         ${syncStatus && syncStatus!=='ok' ? `<p class="ac-sub" title="${esc(syncStatus)}">Couldn't reach your account. Your progress is saved on this device and will sync next time.</p>` : ''}
         <div class="ac-actions"><button class="btn small secondary" id="pfLogout">Log out</button>
