@@ -1425,14 +1425,18 @@ function wireCommon(helpKey, checked){
     document.getElementById('closeHelp').onclick = ()=>{ helpVisible=false; render(); };
   }
 }
-// Opens the exact position on Lichess's analysis board, seen from the side to play.
-// The whole game on Lichess's analysis board, opened at this position (#ply), from the side to
-// play; test positions (no game) open on their own.
+// The whole game on Lichess, opened at this position (#ply), from the side to play; test positions
+// (no game) open on their own.
 function gameSans(p){
   if(p.gameId){ const g = myGames.find(x=>x.id===p.gameId); return g && Array.isArray(g.sans) ? g.sans : null; }
   return p.game && GAME_MOVES[p.game] ? GAME_MOVES[p.game].split(' ') : null;
 }
 function lichessUrl(p){
+  // One of your Lichess games: the game's own page (players, ratings, clocks, Lichess's analysis),
+  // at this move, from the side to play. Lichess's analysis board, used for the others, keeps the
+  // moves only (it drops a PGN's names and event).
+  const g = p.gameId ? myGames.find(x=>x.id===p.gameId) : null;
+  if(g && siteOf(g)==='lichess' && /^[A-Za-z0-9]{8}$/.test(g.id) && p.ply!=null) return `https://lichess.org/${g.id}${p.side==='b' ? '/black' : ''}#${p.ply}`;
   const color = '?color=' + (p.side==='b' ? 'black' : 'white'), sans = gameSans(p);
   if(sans && p.ply!=null) return 'https://lichess.org/analysis/pgn/' + sans.map(s=>encodeURIComponent(s.replace(/[+#]/g,''))).join('_') + color + '#' + p.ply;
   return 'https://lichess.org/analysis/standard/' + p.fen.replace(/ /g,'_') + color;

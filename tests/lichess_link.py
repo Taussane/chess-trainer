@@ -1,6 +1,6 @@
-# "Open in Lichess": a position from a game opens the WHOLE game on Lichess's analysis board, at
-# that position (#ply), from the side to play; replaying the link's moves up to that ply must give
-# the position shown. Checked on master positions and on the owner's own games.
+# "Open in Lichess": a position from a game opens the WHOLE game at that position (#ply), from the
+# side to play. Master games (and Chess.com's): Lichess's analysis board with the moves; replaying
+# them up to that ply must give the position shown. Your Lichess games: the game's own page.
 import asyncio, sys, pathlib, urllib.parse
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
@@ -21,7 +21,9 @@ async def main():
         if list(r) != ['ok']: fails.append(f'masters: {r}')
         await pg.click('#accountBtn'); await pg.fill('#lichessUser', 'TestPlayer')
         await pg.set_input_files('#pgnFile', T.SAMPLE); await pg.wait_for_timeout(500)
-        r = await pg.evaluate(f"(()=>{{ const f = {CHECK}; const out = {{}}; myPositions.forEach(x=>{{ const v = f(x); out[v] = (out[v]||0)+1; }}); return out; }})()")
+        r = await pg.evaluate("""(()=>{ const out = {}; myPositions.forEach(x=>{ const u = lichessUrl(x), m = u.match(/^https:\/\/lichess\.org\/([A-Za-z0-9]{8})(\/black)?#(\d+)$/);
+          const v = !m ? 'not the game page: ' + u : m[1]!==x.gameId ? 'wrong game' : +m[3]!==x.ply ? 'wrong move' : (!!m[2])!==(x.side==='b') ? 'wrong side' : 'ok';
+          out[v] = (out[v]||0)+1; }); return out; })()""")
         print('my games:', r)
         if list(r) != ['ok']: fails.append(f'my games: {r}')
         t = await pg.evaluate("lichessUrl(TEST_POSITIONS[0])")
