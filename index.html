@@ -287,12 +287,11 @@
   .panel{width:100%; max-width:420px; margin:16px auto 0; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px;}
   .hint{color:var(--text-mute); font-size:0.86rem; line-height:1.5; margin:10px 0 0;}
   .engine-error{color:var(--bad); margin-top:12px;}
-  /* Key aspects (Position evaluation review): static and dynamic columns of name + badge, then the decisive move. */
+  /* Key aspects (Position evaluation review): static and dynamic columns of name + badge, then a note when tactics take the evaluation away from them. */
   .aspects{margin:6px 0 10px;}
   .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:16px; row-gap:6px;}
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
-  .asp-tactic{margin-top:8px; font-size:0.9rem; display:flex; align-items:center; gap:8px;}
-  .asp-tactic .move-chip{background:var(--accent); color:var(--on-accent);}
+  .asp-note{margin:8px 0 0; font-size:0.84rem; line-height:1.4; color:var(--text-mute);}
   .asp-item{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.9rem; min-width:0;}
   .asp-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .asp-badge{flex:none; min-width:2.9em; text-align:center; padding:1px 4px; border-radius:4px; font-size:0.9rem; font-weight:700; letter-spacing:0.04em; border:1px solid transparent;}
@@ -418,9 +417,9 @@ const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good
 const HELP = {
   analysis: {
     title:'Position evaluation',
-    what:"Gauge each aspect of the position (material, pawns, space, activity, king safety, threats), weigh them (one can outweigh several), look for a decisive tactic, then drag the bar to your evaluation.",
+    what:"Gauge each aspect of the position (material, pawns, space, activity, king safety, threats), weigh them (one can outweigh several), keep an eye out for tactics, then drag the bar to your evaluation.",
     eval:"Your bar is compared with the engine's: every square of height you're off costs 25%.",
-    grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves. <strong>Decisive move</strong>: the best move is a pawn or more better than any other and leaves the side to play clearly better (<strong>Only move</strong> when it just holds the position).",
+    grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves. When tactics take the evaluation far from the aspects, a note says so.",
   },
   candidates: {
     title:'Candidate moves',
@@ -1551,11 +1550,12 @@ const ASPECTS = [
 ];
 // Each aspect as signs, from its value in pawns: under 0.3 "=", then +, ++ from 0.8, +++ from 2
 // (− for Black). Fitted on the 468 master positions: counting the signs points to the wrong side in
-// 7% of the positions where one side is a pawn ahead (3% when there's no decisive move).
+// 7% of the positions where one side is a pawn ahead.
 const ASPECT_LEVELS = [0.3, 0.8, 2];
-// A decisive move: the engine's best move is at least DECISIVE_GAP pawns better than the second
-// best, for the side to play (mates count as 10 pawns).
-const DECISIVE_GAP = 1;
+// When the aspects' total (their exact values, as winning chances) and the engine's evaluation are
+// 2 squares of the bar apart or more, a note says tactics shift the evaluation: about 1 master
+// position in 7.
+const ASPECTS_FAR = 25;
 // Stockfish 10's piece values [middlegame, endgame], and its game-phase limits (non-pawn material).
 const SF_VALUES = { p:[136,208], n:[782,865], b:[830,918], r:[1289,1378], q:[2529,2687] };
 const SF_PAWN_EG = 208, SF_MG_LIMIT = 15258, SF_EG_LIMIT = 3915;
@@ -1600,8 +1600,8 @@ function aspectsEntry(fen){
   return entry;
 }
 // In the review panel, under the score: static aspects on the left, dynamic on the right, each as
-// signs on a badge (white for White, black for Black, grey "=" when balanced). Below, the decisive
-// move, if there is one. `vals` null: placeholders (the panel's ghost, or while waiting).
+// signs on a badge (white for White, black for Black, grey "=" when balanced). Below, a note when
+// tactics take the evaluation far from them. `vals` null: placeholders (the panel's ghost, or while waiting).
 function aspectLevel(v){
   const a = Math.abs(v), n = ASPECT_LEVELS.filter(t=>a>=t).length;
   return n * Math.sign(v);
@@ -1612,30 +1612,20 @@ function aspectBadge(v){
   if(!l) return `<span class="asp-badge eq">=</span>`;
   return `<span class="asp-badge ${l>0 ? 'w' : 'b'}">${(l>0 ? '+' : '−').repeat(Math.abs(l))}</span>`;
 }
-function aspectsGridHtml(vals, decisive, fadeIn, hidden){   // hidden: holds the space, no id (ghost, before the reveal)
+function aspectsGridHtml(vals, far, fadeIn, hidden){   // hidden: holds the space, no id (ghost, before the reveal)
   const item = x=>`<div class="asp-item"><span class="asp-name">${x.name}</span>${aspectBadge(vals ? vals[x.key] : null)}</div>`;
   return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
-      <div class="asp-tactic"${decisive ? ' id="aspTactic"' : ' style="visibility:hidden"'}>${decisive ? decisive.label : 'Decisive move'}: <span class="move-chip">${decisive ? escHtml(decisive.san) : 'Qxd8+'}</span></div>
+      <p class="asp-note"${far ? ' id="aspFar"' : ' style="visibility:hidden"'}>Tactics shift this evaluation away from the key aspects. Open it in Lichess to see how.</p>
     </div>`;
 }
-// The decisive move from the engine's lines for this position (best first, side to play's view),
-// or null. "Decisive move" when it leaves the side to play clearly better (+1.5 or more), "Only
-// move" when it just holds the position.
-function decisiveMove(p, evalData){
-  const lines = evalData && evalData.lines;
-  if(!lines || lines.length<2 || !lines[0].uci) return null;
-  const gap = (moverScore(lines[0]) - moverScore(lines[1])) / 100;
-  if(gap < DECISIVE_GAP) return null;
-  const u = lines[0].uci, mv = new Chess(p.fen).move({ from:u.slice(0,2), to:u.slice(2,4), promotion:u[4] });
-  if(!mv) return null;
-  return { san: mv.san, label: moverScore(lines[0]) >= 150 ? 'Decisive move' : 'Only move' };
-}
-function aspectsHtml(p, evalData, fadeIn){
+// `truthPct`: the engine's evaluation as White's winning chances (what the bar shows).
+function aspectsHtml(p, truthPct, fadeIn){
   const entry = aspectsEntry(p.fen);
-  if(entry.status!=='done') return aspectsGridHtml(null, null, fadeIn);
+  if(entry.status!=='done') return aspectsGridHtml(null, false, fadeIn);
   if(!entry.data) return '';
-  return aspectsGridHtml(entry.data, decisiveMove(p, evalData), fadeIn);
+  const sum = ASPECTS.reduce((t, x)=>t + entry.data[x.key], 0);
+  return aspectsGridHtml(entry.data, Math.abs(cpToPct(sum*100, null) - truthPct) >= ASPECTS_FAR, fadeIn);
 }
 // A panel whose height never changes within an exercise: `inner` is what's shown, `ghosts` are
 // invisible stand-ins for the exercise's other states (no ids, not focusable), stacked in the
@@ -1647,7 +1637,7 @@ function stackedPanel(inner, ghosts, extra){
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
   `<p class="prompt">Drag the bar to show who's better, and by how much.</p><div class="actions-row"><span class="btn">Check</span></div>`,
-  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, false, true)}${GHOST_ACTIONS}`,
+  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, false, false, true)}${GHOST_ACTIONS}`,
 ];
 function ghostCandidates(){
   const mini = `<div class="mini-row"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span><span class="mini-result"><span class="mini-label">Dubious</span><span class="move-eval">−1.6</span></span></div>`;
@@ -2987,7 +2977,7 @@ function renderAnalysis(){
     ${stackedPanel(`
       ${s.checked ? `
         <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(100 + (acc-100)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
-        ${done ? aspectsHtml(p, disc, s.justDone) : aspectsGridHtml(null, null, false, true)}
+        ${done ? aspectsHtml(p, truth.pct, s.justDone) : aspectsGridHtml(null, false, false, true)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Drag the bar to show who's better, and by how much.</p>
