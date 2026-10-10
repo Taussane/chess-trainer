@@ -1626,7 +1626,7 @@ function aspectsGridHtml(vals, guesses, shown, hidden){   // hidden: holds the s
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
     </div>`;
 }
-const ASP_START = 500, ASP_STEP = 950, ASP_CLIMB_MS = 600;   // ms: before the first aspect turns, between two, the score's climb
+const ASP_START = 500, ASP_STEP = 800, ASP_CLIMB_MS = 600;   // ms: before the first aspect turns, between two, the score's climb
 // Score: up to 10% for each aspect (60% for the six): 10 at the engine's level, 6.67 one level off,
 // 3.33 two off, 0 beyond. The bar the other 40%. Without the aspects (engine without its `eval`
 // table), the bar counts for all of it.
