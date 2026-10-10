@@ -37,16 +37,28 @@ async def main():
         await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000)
         rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+r.querySelector('.asp-badge').className.split(' ').pop()+' '+r.querySelector('.asp-badge').textContent)")
         heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.textContent)")
-        acc = await pg.text_content('#aspAcc')
-        print('rows:', rows, heads, 'aspects alone:', acc)
+        print('rows:', rows, heads)
         if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King safety', 'Threats']: fails.append(f'rows: {rows}')
         if heads != ['Static', 'Dynamic']: fails.append(f'column titles: {heads}')
         vals = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>a[x.key]); })()")
-        def badge(v): return ('eq' if abs(round(v,1)) < 0.2 else 'w' if v > 0 else 'b') + ' ' + ('+' if round(v,1) > 0 else '−' if round(v,1) < 0 else '') + f'{abs(round(v,1)):.1f}'
+        def badge(v):
+            n = sum(abs(v) >= t for t in (0.3, 0.8, 2))
+            return 'eq =' if n == 0 else ('w ' + '+'*n if v > 0 else 'b ' + '−'*n)
         if rows and [r.split(': ')[1] for r in rows] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
-        want = await pg.evaluate("s=>evalAccuracyPct(cpToPct(s*100, null), cpToPct(250, null))", sum(vals))
-        if acc != f'{want}%': fails.append(f'aspects alone: {acc}, expected {want}%')
-        if await pg.query_selector('text=Dynamics'): fails.append('Dynamics should be gone')
+        if await pg.query_selector('#aspTactic'): fails.append('one line only: no decisive move to show')
+        if await pg.query_selector('text=Dynamics') or await pg.query_selector('text=Aspects alone'): fails.append('Dynamics / Aspects alone should be gone')
+        # a decisive move: best line 1.5 pawns above the second, and clearly better for the side to play
+        dm = await pg.evaluate("""()=>{ const p = pos(), g = new Chess(p.fen), ms = g.moves({verbose:true});
+          const u = m=>m.from+m.to+(m.promotion||'');
+          fenEvalStore[p.fen] = { status:'done', data:{ lines:[{cp:250, mate:null, uci:u(ms[0])}, {cp:100, mate:null, uci:u(ms[1])}], bestUci:u(ms[0]) } };
+          render(); const t = document.getElementById('aspTactic'); return { text: t && t.textContent.trim(), san: ms[0].san }; }""")
+        print('decisive:', dm)
+        if dm['text'] != f"Decisive move: {dm['san']}": fails.append(f'decisive move: {dm}')
+        dm = await pg.evaluate("""()=>{ const p = pos(), d = fenEvalStore[p.fen].data; d.lines[0].cp = 20; d.lines[1].cp = -150; render();
+          const t = document.getElementById('aspTactic'); return t && t.textContent.trim(); }""")
+        if not dm or not dm.startswith('Only move:'): fails.append(f'only move: {dm}')
+        dm = await pg.evaluate("""()=>{ const p = pos(), d = fenEvalStore[p.fen].data; d.lines[1].cp = -50; render(); return !!document.getElementById('aspTactic'); }""")
+        if dm: fails.append('a gap under a pawn is not decisive')
         if await pg.query_selector('.recap'): fails.append('the recap sentence should be gone')
         # the panel keeps its height from the question to the review
         await pg.click('#nextPos'); await pg.wait_for_timeout(400)
