@@ -52,7 +52,7 @@ async def main():
           const show = cp=>{ fenEvalStore[p.fen] = { status:'done', data:{ lines:[{cp: p.side==='w' ? cp : -cp, mate:null, uci:null}], bestUci:null } }; render(); return note(); };
           return { near: show(Math.round(sum*100)), far: show(Math.round(sum*100) + 700), mate: (()=>{ fenEvalStore[p.fen].data.lines[0] = {cp:null, mate: sum>0 ? -2 : 2, uci:null}; render(); return note(); })() }; }""")
         print('note:', far)
-        if far != {'near': 'Tactics may shift the evaluation.', 'far': 'Tactics shift the evaluation here.', 'mate': 'Tactics shift the evaluation here.'}: fails.append(f'tactics note: {far}')
+        if far != {'near': 'Tactics may shift the positional evaluation.', 'far': 'Tactics shift the positional evaluation here.', 'mate': 'Tactics shift the positional evaluation here.'}: fails.append(f'tactics note: {far}')
         if await pg.query_selector('.recap'): fails.append('the recap sentence should be gone')
         # the panel keeps its height from the question to the review
         await pg.click('#nextPos'); await pg.wait_for_timeout(400)

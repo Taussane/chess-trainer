@@ -1553,9 +1553,9 @@ const ASPECTS = [
 // (− for Black). Fitted on the 468 master positions: counting the signs points to the wrong side in
 // 7% of the positions where one side is a pawn ahead.
 const ASPECT_LEVELS = [0.3, 0.8, 2];
-// Under the aspects, always: "Tactics may shift the evaluation." When the aspects' total (their exact
+// Under the aspects, always: "Tactics may shift the positional evaluation." When the aspects' total (their exact
 // values, as winning chances) and the engine's evaluation are 2 squares of the bar apart or more
-// (about 1 master position in 7): "Tactics shift the evaluation here."
+// (about 1 master position in 7): "Tactics shift the positional evaluation here."
 const ASPECTS_FAR = 25;
 // Stockfish 10's piece values [middlegame, endgame], and its game-phase limits (non-pawn material).
 const SF_VALUES = { p:[136,208], n:[782,865], b:[830,918], r:[1289,1378], q:[2529,2687] };
@@ -1617,7 +1617,7 @@ function aspectsGridHtml(vals, far, fadeIn, hidden){   // hidden: holds the spac
   const item = x=>`<div class="asp-item"><span class="asp-name">${x.name}</span>${aspectBadge(vals ? vals[x.key] : null)}</div>`;
   return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
-      <p class="asp-note${far ? ' far' : ''}"${hidden ? '' : far ? ' id="aspFar"' : ' id="aspNote"'}>${far ? 'Tactics shift the evaluation here.' : 'Tactics may shift the evaluation.'}</p>
+      <p class="asp-note${far ? ' far' : ''}"${hidden ? '' : far ? ' id="aspFar"' : ' id="aspNote"'}>${far ? 'Tactics shift the positional evaluation here.' : 'Tactics may shift the positional evaluation.'}</p>
     </div>`;
 }
 // `truthPct`: the engine's evaluation as White's winning chances (what the bar shows).
