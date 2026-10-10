@@ -1637,7 +1637,7 @@ function aspectsGridHtml(vals, guesses, shown, hidden){   // hidden: holds the s
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
     </div>`;
 }
-const ASP_START = 350, ASP_STEP = 450;   // ms: before the first aspect turns, then between two
+const ASP_START = 350, ASP_STEP = 450, ASP_CLIMB_MS = 400;   // ms: before the first aspect turns, between two, the score's climb
 // Score: up to 10% for each aspect (60% for the six): 10 at the engine's level, 6.67 one level off,
 // 3.33 two off, 0 beyond. The bar the other 40%. Without the aspects (engine without its `eval`
 // table), the bar counts for all of it.
@@ -1669,8 +1669,17 @@ function startAspectsReveal(p, s, vals){
       // the new badge starts from your level's look, then fades to the engine's
       const nb = el && el.querySelector('.asp-badge'), g = s.asp[x.key] || 0;
       if(nb){ const final = nb.className; nb.className = `asp-badge ${levelCls(g)}`; nb.offsetWidth; nb.className = final; }
-      const a = document.getElementById('revealAcc');
-      if(a) a.textContent = Math.round(aspectPoints(vals, s.asp, s.aspShown))+'%';
+      // the score climbs to its new value while the badge fades
+      const from = aspectPoints(vals, s.asp, s.aspShown - 1), to = aspectPoints(vals, s.asp, s.aspShown);
+      let t0 = null;
+      const climb = ts=>{
+        if(t0===null) t0 = ts;
+        const k = Math.min(1, (ts - t0) / ASP_CLIMB_MS), a = document.getElementById('revealAcc');
+        if(!a || pos().key!==key) return;
+        a.textContent = Math.round(from + (to - from) * easeOut(k)) + '%';
+        if(k < 1) requestAnimationFrame(climb);
+      };
+      if(to > from) requestAnimationFrame(climb);
       setTimeout(tick, ASP_STEP);
     } else { s.aspDone = true; render(); }
   };
