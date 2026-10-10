@@ -48,10 +48,11 @@ async def main():
         if await pg.query_selector('text=Dynamics') or await pg.query_selector('text=Aspects alone') or await pg.query_selector('text=Decisive move'): fails.append('Dynamics / Aspects alone / Decisive move should be gone')
         # the note: only when the engine is 2 squares of the bar or more away from the aspects' total
         far = await pg.evaluate("""()=>{ const p = pos(), a = aspectsStore[p.fen].data, sum = ASPECTS.reduce((t,x)=>t+a[x.key],0);
-          const show = cp=>{ fenEvalStore[p.fen] = { status:'done', data:{ lines:[{cp: p.side==='w' ? cp : -cp, mate:null, uci:null}], bestUci:null } }; render(); return !!document.getElementById('aspFar'); };
-          return { near: show(Math.round(sum*100)), far: show(Math.round(sum*100) + 700), mate: (()=>{ fenEvalStore[p.fen].data.lines[0] = {cp:null, mate: sum>0 ? -2 : 2, uci:null}; render(); return !!document.getElementById('aspFar'); })() }; }""")
+          const note = ()=>document.querySelector('#aspects .asp-note').textContent;
+          const show = cp=>{ fenEvalStore[p.fen] = { status:'done', data:{ lines:[{cp: p.side==='w' ? cp : -cp, mate:null, uci:null}], bestUci:null } }; render(); return note(); };
+          return { near: show(Math.round(sum*100)), far: show(Math.round(sum*100) + 700), mate: (()=>{ fenEvalStore[p.fen].data.lines[0] = {cp:null, mate: sum>0 ? -2 : 2, uci:null}; render(); return note(); })() }; }""")
         print('note:', far)
-        if far != {'near': False, 'far': True, 'mate': True}: fails.append(f'tactics note: {far}')
+        if far != {'near': 'Tactics may shift the evaluation.', 'far': 'Tactics shift the evaluation here.', 'mate': 'Tactics shift the evaluation here.'}: fails.append(f'tactics note: {far}')
         if await pg.query_selector('.recap'): fails.append('the recap sentence should be gone')
         # the panel keeps its height from the question to the review
         await pg.click('#nextPos'); await pg.wait_for_timeout(400)

@@ -281,6 +281,7 @@
   .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:16px; row-gap:6px;}
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
   .asp-note{margin:8px 0 0; font-size:0.84rem; line-height:1.4; color:var(--text-mute);}
+  .asp-note.far{color:var(--text);}
   .asp-item{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.9rem; min-width:0;}
   .asp-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .asp-badge{flex:none; min-width:2.9em; text-align:center; padding:1px 4px; border-radius:4px; font-size:0.9rem; font-weight:700; letter-spacing:0.04em; border:1px solid transparent;}
@@ -408,7 +409,7 @@ const HELP = {
     title:'Position evaluation',
     what:"Gauge each aspect of the position (material, pawns, space, activity, king safety, threats), weigh them (one can outweigh several), keep an eye out for tactics, then drag the bar to your evaluation.",
     eval:"Your bar is compared with the engine's: every square of height you're off costs 25%.",
-    grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves. When tactics take the evaluation far from the aspects, a note says so.",
+    grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves. The note under them says when tactics take the evaluation far from the aspects.",
   },
   candidates: {
     title:'Candidate moves',
@@ -1541,9 +1542,9 @@ const ASPECTS = [
 // (− for Black). Fitted on the 468 master positions: counting the signs points to the wrong side in
 // 7% of the positions where one side is a pawn ahead.
 const ASPECT_LEVELS = [0.3, 0.8, 2];
-// When the aspects' total (their exact values, as winning chances) and the engine's evaluation are
-// 2 squares of the bar apart or more, a note says tactics shift the evaluation: about 1 master
-// position in 7.
+// Under the aspects, always: "Tactics may shift the evaluation." When the aspects' total (their exact
+// values, as winning chances) and the engine's evaluation are 2 squares of the bar apart or more
+// (about 1 master position in 7): "Tactics shift the evaluation here."
 const ASPECTS_FAR = 25;
 // Stockfish 10's piece values [middlegame, endgame], and its game-phase limits (non-pawn material).
 const SF_VALUES = { p:[136,208], n:[782,865], b:[830,918], r:[1289,1378], q:[2529,2687] };
@@ -1605,7 +1606,7 @@ function aspectsGridHtml(vals, far, fadeIn, hidden){   // hidden: holds the spac
   const item = x=>`<div class="asp-item"><span class="asp-name">${x.name}</span>${aspectBadge(vals ? vals[x.key] : null)}</div>`;
   return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
-      <p class="asp-note"${far ? ' id="aspFar"' : ' style="visibility:hidden"'}>Tactics shift this evaluation away from the key aspects. Open it in Lichess to see how.</p>
+      <p class="asp-note${far ? ' far' : ''}"${hidden ? '' : far ? ' id="aspFar"' : ' id="aspNote"'}>${far ? 'Tactics shift the evaluation here.' : 'Tactics may shift the evaluation.'}</p>
     </div>`;
 }
 // `truthPct`: the engine's evaluation as White's winning chances (what the bar shows).
