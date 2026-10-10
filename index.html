@@ -289,12 +289,21 @@
   .engine-error{color:var(--bad); margin-top:12px;}
   /* Key aspects (Position evaluation review): static and dynamic columns of name + badge, then a reminder about tactics. */
   .aspects{margin:6px 0 10px;}
-  .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:16px; row-gap:6px;}
+  .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:12px; row-gap:6px;}
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
   .asp-note{margin:8px 0 0; font-size:0.84rem; line-height:1.4; color:var(--text-mute);}
-  .asp-item{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.9rem; min-width:0;}
+  .asp-badges{display:flex; align-items:center; gap:4px; flex:none;}
+  .asp-yours{font-size:0.72rem; font-weight:700; color:var(--text-mute); border:1px solid var(--border); border-radius:4px; padding:0 2px; min-width:1.6em; text-align:center; white-space:nowrap; letter-spacing:0;}
+  .aspects.asp-input{position:relative; margin:10px 0 4px;}
+  button.asp-badge{font-family:inherit; line-height:1.35; cursor:pointer;}
+  .asp-pick.eq{border-color:var(--border);}
+  .asp-picker{position:absolute; left:0; right:0; z-index:5; display:flex; justify-content:space-between; gap:4px; padding:6px;
+    background:var(--panel-2); border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 18px var(--shadow); touch-action:none;}
+  .asp-picker .asp-badge{flex:1 1 0; min-width:0; padding:6px 0; font-size:0.8rem; letter-spacing:0;}
+  .asp-picker .asp-badge.on{outline:2px solid var(--accent); outline-offset:1px;}
+  .asp-item{display:flex; justify-content:space-between; align-items:center; gap:4px; font-size:0.88rem; min-width:0;}
   .asp-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .asp-badge{flex:none; min-width:2.9em; text-align:center; padding:1px 4px; border-radius:4px; font-size:0.9rem; font-weight:700; letter-spacing:0.04em; border:1px solid transparent;}
+  .asp-badge{flex:none; min-width:2.4em; text-align:center; padding:1px 4px; white-space:nowrap; border-radius:4px; font-size:0.9rem; font-weight:700; letter-spacing:0.04em; border:1px solid transparent;}
   .asp-badge.w{background:var(--white-fill); color:var(--black-fill);}
   .asp-badge.b{background:var(--black-fill); color:var(--white-fill); border-color:var(--text-mute);}
   .asp-badge.eq{background:var(--panel-2); color:var(--text-mute);}
@@ -417,9 +426,9 @@ const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good
 const HELP = {
   analysis: {
     title:'Position evaluation',
-    what:"Gauge each aspect of the position (material, pawns, space, activity, king safety, threats), weigh them (one can outweigh several), keep an eye out for tactics, then drag the bar to your evaluation.",
+    what:"Gauge each aspect of the position (material, pawns, space, activity, king safety, threats), weigh them (one can outweigh several), keep an eye out for tactics, then drag the bar to your evaluation. Tap a badge to gauge its aspect: tap a level, or slide along the scale.",
     eval:"Your bar is compared with the engine's: every square of height you're off costs 25%.",
-    grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves.",
+    grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves. Where your guess differs, it's shown small, before the engine's.",
   },
   candidates: {
     title:'Candidate moves',
@@ -1233,7 +1242,7 @@ function st(activity){
   ensureTrack(ctx(activity));
   const p = pos(), bucket = store[ctx(activity)];
   if(!bucket[p.key]){
-    bucket[p.key] = activity==='analysis' ? { guess:50, checked:false, animT:null }
+    bucket[p.key] = activity==='analysis' ? { guess:50, asp:{}, checked:false, animT:null }
                   : activity==='candidates' ? { picks:[], checked:false, sortDone:false, countDone:false, sortStarted:false }
                   : { order:null, checked:false };
   }
@@ -1602,25 +1611,82 @@ function aspectLevel(v){
   const a = Math.abs(v), n = ASPECT_LEVELS.filter(t=>a>=t).length;
   return n * Math.sign(v);
 }
+const SIGNS = l=>!l ? '=' : (l>0 ? '+' : '−').repeat(Math.abs(l));
+const levelCls = l=>!l ? 'eq' : l>0 ? 'w' : 'b';
 function aspectBadge(v){
   if(v==null) return `<span class="asp-badge eq">…</span>`;
   const l = aspectLevel(v);
-  if(!l) return `<span class="asp-badge eq">=</span>`;
-  return `<span class="asp-badge ${l>0 ? 'w' : 'b'}">${(l>0 ? '+' : '−').repeat(Math.abs(l))}</span>`;
+  return `<span class="asp-badge ${levelCls(l)}">${SIGNS(l)}</span>`;
 }
-function aspectsGridHtml(vals, fadeIn, hidden){   // hidden: holds the space, no id (ghost, before the reveal)
-  const item = x=>`<div class="asp-item"><span class="asp-name">${x.name}</span>${aspectBadge(vals ? vals[x.key] : null)}</div>`;
+// The review: the engine's level for each aspect; where yours differs, yours stands crossed out
+// before it. `guesses`: {key: -3..3} (missing = "="); `vals` null: placeholders.
+function aspectsGridHtml(vals, guesses, fadeIn, hidden){   // hidden: holds the space, no id (ghost, before the reveal)
+  const item = x=>{
+    const g = (guesses && guesses[x.key]) || 0, differs = vals && aspectLevel(vals[x.key])!==g;
+    return `<div class="asp-item"><span class="asp-name">${x.name}</span><span class="asp-badges">${differs ? `<span class="asp-yours" title="Your guess">${SIGNS(g)}</span>` : ''}${aspectBadge(vals ? vals[x.key] : null)}</span></div>`;
+  };
   return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
       <p class="asp-note">Tactics can also shift the positional evaluation.</p>
     </div>`;
 }
-function aspectsHtml(p, fadeIn){
+function aspectsHtml(p, guesses, fadeIn){
   const entry = aspectsEntry(p.fen);
-  if(entry.status!=='done') return aspectsGridHtml(null, fadeIn);
+  if(entry.status!=='done') return aspectsGridHtml(null, null, fadeIn);
   if(!entry.data) return '';
-  return aspectsGridHtml(entry.data, fadeIn);
+  return aspectsGridHtml(entry.data, guesses, fadeIn);
 }
+// The question: the same grid, every aspect "=" until you gauge it. Tap a badge: a scale from −−−
+// to +++ opens under it; tap a level, or slide along the scale and let go. Arrow keys on a badge
+// step it up or down.
+function aspectsInputHtml(s, hidden){
+  const item = x=>{ const l = (s && s.asp[x.key]) || 0;
+    return `<div class="asp-item"><span class="asp-name">${x.name}</span>${hidden
+      ? `<span class="asp-badge eq asp-pick">=</span>`
+      : `<button class="asp-badge ${levelCls(l)} asp-pick" data-asp="${x.key}" aria-label="${x.name}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
+  return `<div class="aspects asp-input"${hidden ? '' : ' id="aspInput"'}>
+      <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
+    </div>`;
+}
+let aspPicker = null;   // {key, el, sliding}: the scale open under a badge
+function closeAspPicker(){ if(aspPicker){ aspPicker.el.remove(); aspPicker = null; } }
+function setAspect(s, key, l){
+  s.asp[key] = Math.max(-3, Math.min(3, l));
+  const b = document.querySelector(`.asp-pick[data-asp="${key}"]`);
+  if(b){ b.className = `asp-badge ${levelCls(s.asp[key])} asp-pick`; b.textContent = SIGNS(s.asp[key]); b.setAttribute('aria-label', `${ASPECTS.find(x=>x.key===key).name}: ${SIGNS(s.asp[key])}`); }
+  if(aspPicker && aspPicker.key===key) aspPicker.el.querySelectorAll('[data-l]').forEach(o=>o.classList.toggle('on', +o.dataset.l===s.asp[key]));
+}
+function openAspPicker(s, key){
+  closeAspPicker();
+  const box = document.getElementById('aspInput'), badge = box && box.querySelector(`.asp-pick[data-asp="${key}"]`);
+  if(!badge) return;
+  const el = document.createElement('div');
+  el.className = 'asp-picker'; el.setAttribute('role', 'listbox'); el.setAttribute('aria-label', ASPECTS.find(x=>x.key===key).name);
+  el.innerHTML = [-3,-2,-1,0,1,2,3].map(l=>`<button class="asp-badge ${levelCls(l)}${((s.asp[key]||0)===l) ? ' on' : ''}" data-l="${l}" role="option">${SIGNS(l)}</button>`).join('');
+  box.appendChild(el);
+  const item = badge.closest('.asp-item');
+  el.style.top = (item.offsetTop + item.offsetHeight + 4) + 'px';
+  aspPicker = { key, el, sliding:false };
+  const levelAt = e=>{ const o = document.elementFromPoint(e.clientX, e.clientY); return o && o.dataset && o.dataset.l!=null && el.contains(o) ? +o.dataset.l : null; };
+  el.addEventListener('pointerdown', e=>{ aspPicker.sliding = true; const l = levelAt(e); if(l!=null) setAspect(s, key, l); e.preventDefault(); });
+  el.addEventListener('pointermove', e=>{ if(!aspPicker || !aspPicker.sliding) return; const l = levelAt(e); if(l!=null) setAspect(s, key, l); });
+  el.addEventListener('pointerup', e=>{ const l = levelAt(e); if(l!=null) setAspect(s, key, l); closeAspPicker(); });
+  el.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeAspPicker(); badge.focus(); } });
+}
+function wireAspectsInput(s){
+  aspPicker = null;
+  document.querySelectorAll('#aspInput .asp-pick').forEach(b=>{
+    b.onclick = e=>{ e.stopPropagation(); if(aspPicker && aspPicker.key===b.dataset.asp) closeAspPicker(); else openAspPicker(s, b.dataset.asp); };
+    b.onkeydown = e=>{
+      const step = (e.key==='ArrowUp' || e.key==='ArrowRight') ? 1 : (e.key==='ArrowDown' || e.key==='ArrowLeft') ? -1 : 0;
+      if(step){ setAspect(s, b.dataset.asp, (s.asp[b.dataset.asp]||0) + step); e.preventDefault(); }
+    };
+  });
+}
+// A tap anywhere else closes the scale (registered once).
+document.addEventListener('pointerdown', e=>{
+  if(aspPicker && !aspPicker.el.contains(e.target) && !(e.target.closest && e.target.closest('.asp-pick'))) closeAspPicker();
+});
 // A panel whose height never changes within an exercise: `inner` is what's shown, `ghosts` are
 // invisible stand-ins for the exercise's other states (no ids, not focusable), stacked in the
 // same spot so the panel takes the tallest one's height.
@@ -1630,8 +1696,8 @@ function stackedPanel(inner, ghosts, extra){
 }
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
-  `<p class="prompt">Drag the bar to show who's better, and by how much.</p><div class="actions-row"><span class="btn">Check</span></div>`,
-  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, false, true)}${GHOST_ACTIONS}`,
+  `<p class="prompt">Gauge each aspect, then drag the bar to your evaluation.</p>${aspectsInputHtml(null, true)}<div class="actions-row"><span class="btn">Check</span></div>`,
+  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, false, true)}${GHOST_ACTIONS}`,
 ];
 function ghostCandidates(){
   const mini = `<div class="mini-row"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span><span class="mini-result"><span class="mini-label">Dubious</span><span class="move-eval">−1.6</span></span></div>`;
@@ -2971,16 +3037,18 @@ function renderAnalysis(){
     ${stackedPanel(`
       ${s.checked ? `
         <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(100 + (acc-100)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
-        ${done ? aspectsHtml(p, s.justDone) : aspectsGridHtml(null, false, true)}
+        ${done ? aspectsHtml(p, s.asp, s.justDone) : aspectsGridHtml(null, null, false, true)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
-        <p class="prompt" id="anaPrompt">Drag the bar to show who's better, and by how much.</p>
+        <p class="prompt" id="anaPrompt">Gauge each aspect, then drag the bar to your evaluation.</p>
+        ${aspectsInputHtml(s)}
         <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(!s.checked){
     setupGauge(s);
-    introFade(s, ['anaPrompt', 'anaCheckRow']);
-    document.getElementById('check').onclick = ()=>{ s.checked = true; s.animT = null; s.justDone = false; fenEval(p.fen); aspectsEntry(p.fen); render(); };
+    introFade(s, ['anaPrompt', 'aspInput', 'anaCheckRow']);
+    wireAspectsInput(s);
+    document.getElementById('check').onclick = ()=>{ closeAspPicker(); s.checked = true; s.animT = null; s.justDone = false; fenEval(p.fen); aspectsEntry(p.fen); render(); };
   }
   wireCommon('analysis', s.checked);
   s.justDone = false;   // the recap/buttons fade plays once, when the reveal lands — not on later redraws

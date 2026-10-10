@@ -34,6 +34,20 @@ async def main():
         await pg.evaluate("""t=>{ const p = pos(); engineAspects = fen=>Promise.resolve(t.split('\\n'));
           engineEval = fen=>new Promise(res=>setTimeout(()=>res({ lines:[{cp: p.side==='w' ? 250 : -250, mate:null, uci:null}], bestUci:null }), 20));
           fenEvalStore = {}; aspectsStore = {}; render(); }""", TABLE)
+        # 4. Gauging the aspects before Check: all "=" at first; tap a badge, then a level; slide; arrow keys.
+        start = await pg.evaluate("[...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' ')")
+        if start != '= = = = = =': fails.append(f'aspects should start at =: {start}')
+        await pg.click('.asp-pick[data-asp="material"]'); await pg.wait_for_timeout(100)
+        await pg.click('.asp-picker [data-l="2"]'); await pg.wait_for_timeout(100)
+        await pg.click('.asp-pick[data-asp="king"]'); await pg.wait_for_timeout(100)
+        xy = await pg.evaluate("[0,-3].map(l=>{ const r = document.querySelector('.asp-picker [data-l=\"'+l+'\"]').getBoundingClientRect(); return [r.x+r.width/2, r.y+r.height/2]; })")
+        await pg.mouse.move(*xy[0]); await pg.mouse.down(); await pg.mouse.move(xy[1][0], xy[1][1], steps=8); await pg.mouse.up(); await pg.wait_for_timeout(100)
+        await pg.focus('.asp-pick[data-asp="space"]'); await pg.keyboard.press('ArrowUp'); await pg.keyboard.press('ArrowUp'); await pg.keyboard.press('ArrowDown')
+        await pg.click('.asp-pick[data-asp="threats"]'); await pg.wait_for_timeout(100)
+        await pg.mouse.click(5, 5); await pg.wait_for_timeout(100)   # a tap elsewhere closes the scale
+        r = await pg.evaluate("({ asp: st('analysis').asp, badges: [...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' '), open: !!document.querySelector('.asp-picker') })")
+        print('gauged:', r)
+        if r['asp'] != {'material': 2, 'king': -3, 'space': 1} or r['badges'] != '++ = + = −−− =' or r['open']: fails.append(f'gauging: {r}')
         await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000)
         rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+r.querySelector('.asp-badge').className.split(' ').pop()+' '+r.querySelector('.asp-badge').textContent)")
         heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.textContent)")
@@ -45,6 +59,12 @@ async def main():
             n = sum(abs(v) >= t for t in (0.3, 0.8, 2))
             return 'eq =' if n == 0 else ('w ' + '+'*n if v > 0 else 'b ' + '−'*n)
         if rows and [r.split(': ')[1] for r in rows] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
+        yours = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(i=>(i.querySelector('.asp-yours')||{}).textContent||'')")
+        lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key])); })()")
+        mine = [2, 0, 1, 0, -3, 0]
+        want = [('=' if m == 0 else ('+' if m > 0 else '−') * abs(m)) if m != l else '' for m, l in zip(mine, lv)]
+        print('yours:', yours)
+        if yours != want: fails.append(f'your guesses in the review: {yours}, expected {want}')
         if await pg.query_selector('text=Dynamics') or await pg.query_selector('text=Aspects alone') or await pg.query_selector('text=Decisive move'): fails.append('Dynamics / Aspects alone / Decisive move should be gone')
         # the reminder: always the same, in grey, whatever the evaluation
         note = await pg.evaluate("""()=>{ const p = pos(), out = [];
