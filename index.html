@@ -296,6 +296,7 @@
   .asp-badge{line-height:1.35; transition:background-color .45s, color .45s, border-color .45s, box-shadow .45s;}
   .asp-badge.ok{border-color:var(--best-green); box-shadow:0 0 0 1px var(--best-green);}
   .asp-badge.near{border-color:var(--dubious); box-shadow:0 0 0 1px var(--dubious);}
+  .asp-badge.far{border-color:var(--mistake); box-shadow:0 0 0 1px var(--mistake);}
   .asp-badge.bad{border-color:var(--bad); box-shadow:0 0 0 1px var(--bad);}
   .asp-pick{font-family:inherit; cursor:pointer;}
   .asp-picker .asp-badge{font-family:inherit; line-height:1.35; cursor:pointer;}
@@ -431,7 +432,7 @@ const HELP = {
     title:'Position evaluation',
     what:"Gauge each aspect of the position (material, pawns, space, activity, king safety, threats), weigh them (one can outweigh several), keep an eye out for tactics, then drag the bar to your evaluation. Tap a badge to gauge its aspect: tap a level, or slide along the scale.",
     eval:"Each aspect scores up to 10% (60% for the six): 10% at the engine's level, 6.7% one level off, 3.3% two off. The bar scores the other 40%: every square of height you're off costs a quarter of it.",
-    grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves. In the review, each aspect turns from your level to the engine's: green border if you matched it, yellow if one level off, red if further.",
+    grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves. In the review, each aspect turns from your level to the engine's: green border if you matched it, yellow one level off, orange two off, red further.",
   },
   candidates: {
     title:'Candidate moves',
@@ -1621,14 +1622,14 @@ function aspectBadge(v){
   return `<span class="asp-badge ${levelCls(l)}">${SIGNS(l)}</span>`;
 }
 // The review: your level for each aspect, then, one by one (startAspectsReveal), the engine's,
-// its border turning green where you matched it, yellow one level off, red further. `vals`: the engine's
+// its border turning green where you matched it, yellow one level off, orange two off, red further. `vals`: the engine's
 // values (null: not in yet); `guesses`: {key: -3..3} (missing = "="); `shown`: how many are revealed.
 function reviewBadge(vals, guesses, x, i, shown){
   const g = (guesses && guesses[x.key]) || 0;
   if(!vals || i >= shown) return `<span class="asp-badge ${levelCls(g)}">${SIGNS(g)}</span>`;
   const l = aspectLevel(vals[x.key]);
   const off = Math.abs(l - g);
-  return `<span class="asp-badge ${levelCls(l)} ${off===0 ? 'ok' : off===1 ? 'near' : 'bad'}">${SIGNS(l)}</span>`;
+  return `<span class="asp-badge ${levelCls(l)} ${off===0 ? 'ok' : off===1 ? 'near' : off===2 ? 'far' : 'bad'}">${SIGNS(l)}</span>`;
 }
 function aspectsGridHtml(vals, guesses, shown, hidden){   // hidden: holds the space, no id (ghost)
   const item = (x, i)=>`<div class="asp-item" data-asp="${x.key}"><span class="asp-name">${x.name}</span>${reviewBadge(vals, guesses, x, i, shown)}</div>`;

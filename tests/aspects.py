@@ -84,10 +84,10 @@ async def main():
             n = sum(abs(v) >= t for t in (0.3, 0.8, 2))
             return 'eq =' if n == 0 else ('w ' + '+'*n if v > 0 else 'b ' + '−'*n)
         if rows and [r.split(': ')[1] for r in rows] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
-        marks = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>['ok','near','bad'].find(c=>b.classList.contains(c)) || '?')")
+        marks = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>['ok','near','far','bad'].find(c=>b.classList.contains(c)) || '?')")
         lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key])); })()")
         mine = [2, 0, 1, 0, -3, 0]
-        want = ['ok' if m == l else 'near' if abs(m - l) == 1 else 'bad' for m, l in zip(mine, lv)]
+        want = ['ok' if m == l else 'near' if abs(m - l) == 1 else 'far' if abs(m - l) == 2 else 'bad' for m, l in zip(mine, lv)]
         print('borders:', marks)
         if marks != want: fails.append(f'green/red borders: {marks}, expected {want}')
         if not await pg.evaluate("!document.querySelector('.actions-row.split').classList.contains('pending')"): fails.append('buttons should be in at the end')
