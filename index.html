@@ -287,7 +287,7 @@
   .panel{width:100%; max-width:420px; margin:16px auto 0; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px;}
   .hint{color:var(--text-mute); font-size:0.86rem; line-height:1.5; margin:10px 0 0;}
   .engine-error{color:var(--bad); margin-top:12px;}
-  /* Key aspects (Position evaluation review): static and dynamic columns of name + badge, then a reminder about tactics. */
+  /* Key aspects (Position evaluation): static and dynamic columns of name + badge; in the question, a reminder about tactics. */
   .aspects{margin:6px 0 10px;}
   .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:12px; row-gap:6px;}
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
@@ -295,7 +295,8 @@
   .asp-badges{display:flex; align-items:center; gap:4px; flex:none;}
   .asp-yours{font-size:0.72rem; font-weight:700; color:var(--text-mute); border:1px solid var(--border); border-radius:4px; padding:0 2px; min-width:1.6em; text-align:center; white-space:nowrap; letter-spacing:0;}
   .aspects.asp-input{position:relative; margin:10px 0 4px;}
-  button.asp-badge{font-family:inherit; line-height:1.35; cursor:pointer;}
+  .asp-pick{font-family:inherit; line-height:1.35; cursor:pointer;}
+  .asp-picker .asp-badge{font-family:inherit; line-height:1.35; cursor:pointer;}
   .asp-pick.eq{border-color:var(--border);}
   .asp-picker{position:absolute; left:0; right:0; z-index:5; display:flex; justify-content:space-between; gap:4px; padding:6px;
     background:var(--panel-2); border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 18px var(--shadow); touch-action:none;}
@@ -1605,8 +1606,7 @@ function aspectsEntry(fen){
   return entry;
 }
 // In the review panel, under the score: static aspects on the left, dynamic on the right, each as
-// signs on a badge (white for White, black for Black, grey "=" when balanced), and a reminder that
-// tactics can shift it. `vals` null: placeholders (the panel's ghost, or while waiting).
+// signs on a badge (white for White, black for Black, grey "=" when balanced). `vals` null: placeholders (the panel's ghost, or while waiting).
 function aspectLevel(v){
   const a = Math.abs(v), n = ASPECT_LEVELS.filter(t=>a>=t).length;
   return n * Math.sign(v);
@@ -1627,7 +1627,6 @@ function aspectsGridHtml(vals, guesses, fadeIn, hidden){   // hidden: holds the 
   };
   return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
-      <p class="asp-note">Tactics can also shift the positional evaluation.</p>
     </div>`;
 }
 function aspectsHtml(p, guesses, fadeIn){
@@ -1636,8 +1635,8 @@ function aspectsHtml(p, guesses, fadeIn){
   if(!entry.data) return '';
   return aspectsGridHtml(entry.data, guesses, fadeIn);
 }
-// The question: the same grid, every aspect "=" until you gauge it. Tap a badge: a scale from −−−
-// to +++ opens under it; tap a level, or slide along the scale and let go. Arrow keys on a badge
+// The question: the same grid, every aspect "=" until you gauge it, and a reminder about tactics.
+// Tap a badge: a scale from −−− to +++ opens above it; tap a level, or slide along the scale and let go. Arrow keys on a badge
 // step it up or down.
 function aspectsInputHtml(s, hidden){
   const item = x=>{ const l = (s && s.asp[x.key]) || 0;
@@ -1646,6 +1645,7 @@ function aspectsInputHtml(s, hidden){
       : `<button class="asp-badge ${levelCls(l)} asp-pick" data-asp="${x.key}" aria-label="${x.name}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
   return `<div class="aspects asp-input"${hidden ? '' : ' id="aspInput"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
+      <p class="asp-note">Tactics can also shift the positional evaluation.</p>
     </div>`;
 }
 let aspPicker = null;   // {key, el, sliding}: the scale open under a badge
@@ -1665,7 +1665,7 @@ function openAspPicker(s, key){
   el.innerHTML = [-3,-2,-1,0,1,2,3].map(l=>`<button class="asp-badge ${levelCls(l)}${((s.asp[key]||0)===l) ? ' on' : ''}" data-l="${l}" role="option">${SIGNS(l)}</button>`).join('');
   box.appendChild(el);
   const item = badge.closest('.asp-item');
-  el.style.top = (item.offsetTop + item.offsetHeight + 4) + 'px';
+  el.style.top = (item.offsetTop - el.offsetHeight - 4) + 'px';   // above the badge, so the finger doesn't hide it
   aspPicker = { key, el, sliding:false };
   const levelAt = e=>{ const o = document.elementFromPoint(e.clientX, e.clientY); return o && o.dataset && o.dataset.l!=null && el.contains(o) ? +o.dataset.l : null; };
   el.addEventListener('pointerdown', e=>{ aspPicker.sliding = true; const l = levelAt(e); if(l!=null) setAspect(s, key, l); e.preventDefault(); });
@@ -1696,7 +1696,7 @@ function stackedPanel(inner, ghosts, extra){
 }
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
-  `<p class="prompt">Gauge each aspect, then drag the bar to your evaluation.</p>${aspectsInputHtml(null, true)}<div class="actions-row"><span class="btn">Check</span></div>`,
+  `<p class="prompt">Gauge each positional aspect, then drag the bar to your evaluation.</p>${aspectsInputHtml(null, true)}<div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, false, true)}${GHOST_ACTIONS}`,
 ];
 function ghostCandidates(){
@@ -3040,7 +3040,7 @@ function renderAnalysis(){
         ${done ? aspectsHtml(p, s.asp, s.justDone) : aspectsGridHtml(null, null, false, true)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
-        <p class="prompt" id="anaPrompt">Gauge each aspect, then drag the bar to your evaluation.</p>
+        <p class="prompt" id="anaPrompt">Gauge each positional aspect, then drag the bar to your evaluation.</p>
         ${aspectsInputHtml(s)}
         <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);

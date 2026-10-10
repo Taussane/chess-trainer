@@ -34,10 +34,17 @@ async def main():
         await pg.evaluate("""t=>{ const p = pos(); engineAspects = fen=>Promise.resolve(t.split('\\n'));
           engineEval = fen=>new Promise(res=>setTimeout(()=>res({ lines:[{cp: p.side==='w' ? 250 : -250, mate:null, uci:null}], bestUci:null }), 20));
           fenEvalStore = {}; aspectsStore = {}; render(); }""", TABLE)
+        note = await pg.evaluate("(()=>{ const n = document.querySelectorAll('#aspInput .asp-note'); return n.length + ' ' + (n[0] ? n[0].textContent + ' ' + getComputedStyle(n[0]).color : ''); })()")
+        grey = await pg.evaluate("getComputedStyle(document.querySelector('.hint, .score-label, .asp-head')).color")
+        if note != '1 Tactics can also shift the positional evaluation. ' + await pg.evaluate("getComputedStyle(document.querySelector('.asp-head')).color"): fails.append(f'tactics reminder: {note}')
+        prompt = await pg.text_content('#anaPrompt')
+        if prompt != 'Gauge each positional aspect, then drag the bar to your evaluation.': fails.append(f'prompt: {prompt}')
         # 4. Gauging the aspects before Check: all "=" at first; tap a badge, then a level; slide; arrow keys.
         start = await pg.evaluate("[...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' ')")
         if start != '= = = = = =': fails.append(f'aspects should start at =: {start}')
         await pg.click('.asp-pick[data-asp="material"]'); await pg.wait_for_timeout(100)
+        above = await pg.evaluate("document.querySelector('.asp-picker').getBoundingClientRect().bottom <= document.querySelector('.asp-pick[data-asp=\"material\"]').getBoundingClientRect().top")
+        if not above: fails.append('the scale should open above the badge')
         await pg.click('.asp-picker [data-l="2"]'); await pg.wait_for_timeout(100)
         await pg.click('.asp-pick[data-asp="king"]'); await pg.wait_for_timeout(100)
         xy = await pg.evaluate("[0,-3].map(l=>{ const r = document.querySelector('.asp-picker [data-l=\"'+l+'\"]').getBoundingClientRect(); return [r.x+r.width/2, r.y+r.height/2]; })")
@@ -66,14 +73,7 @@ async def main():
         print('yours:', yours)
         if yours != want: fails.append(f'your guesses in the review: {yours}, expected {want}')
         if await pg.query_selector('text=Dynamics') or await pg.query_selector('text=Aspects alone') or await pg.query_selector('text=Decisive move'): fails.append('Dynamics / Aspects alone / Decisive move should be gone')
-        # the reminder: always the same, in grey, whatever the evaluation
-        note = await pg.evaluate("""()=>{ const p = pos(), out = [];
-          for(const cp of [0, 900]){ fenEvalStore[p.fen] = { status:'done', data:{ lines:[{cp, mate:null, uci:null}], bestUci:null } }; render();
-            const n = document.querySelectorAll('#aspects .asp-note'); out.push(n.length + ' ' + n[0].textContent + ' ' + getComputedStyle(n[0]).color); }
-          return out; }""")
-        print('note:', note)
-        grey = await pg.evaluate("getComputedStyle(document.querySelector('.score-label')).color")
-        if note[0] != note[1] or note[0] != '1 Tactics can also shift the positional evaluation. ' + grey: fails.append(f'tactics note: {note}')
+        if await pg.query_selector('#aspects .asp-note'): fails.append('the tactics reminder belongs to the question, not the review')
         if await pg.query_selector('.recap'): fails.append('the recap sentence should be gone')
         # the panel keeps its height from the question to the review
         await pg.click('#nextPos'); await pg.wait_for_timeout(400)
