@@ -84,10 +84,10 @@ async def main():
             n = sum(abs(v) >= t for t in (0.3, 0.8, 2))
             return 'eq =' if n == 0 else ('w ' + '+'*n if v > 0 else 'b ' + '−'*n)
         if rows and [r.split(': ')[1] for r in rows] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
-        marks = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>b.classList.contains('ok') ? 'ok' : b.classList.contains('bad') ? 'bad' : '?')")
+        marks = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>['ok','near','bad'].find(c=>b.classList.contains(c)) || '?')")
         lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key])); })()")
         mine = [2, 0, 1, 0, -3, 0]
-        want = ['ok' if m == l else 'bad' for m, l in zip(mine, lv)]
+        want = ['ok' if m == l else 'near' if abs(m - l) == 1 else 'bad' for m, l in zip(mine, lv)]
         print('borders:', marks)
         if marks != want: fails.append(f'green/red borders: {marks}, expected {want}')
         if not await pg.evaluate("!document.querySelector('.actions-row.split').classList.contains('pending')"): fails.append('buttons should be in at the end')
@@ -96,7 +96,7 @@ async def main():
         want_final = await pg.evaluate("(()=>{ const s = st('analysis'), p = pos(); return analysisScore(aspectsStore[p.fen].data, s.asp, s.guess, positionInfo(p, fenEval(p.fen)).pct).final; })()")
         bar = await pg.evaluate("(()=>{ const s = st('analysis'), p = pos(); return evalAccuracyPct(s.guess, positionInfo(p, fenEval(p.fen)).pct); })()")
         print('score while the aspects turn:', scores, '→', final, '(bar', bar, ')')
-        pts = 10 * want.count('ok')
+        pts = sum(10 * max(0, 3 - abs(m - l)) / 3 for m, l in zip(mine, lv))
         if final != f'{want_final}%' or want_final != round(pts + 0.4*bar): fails.append(f'final score {final}, expected {pts} + 40% of {bar}')
         nums = [int(x[:-1]) for x in scores if x.endswith('%')]
         if nums != sorted(nums) or not nums or nums[0] != 0 or max(nums) > want_final: fails.append(f'scores along the way should count up from 0: {scores}')
