@@ -106,6 +106,32 @@ async def main():
         cut = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-name')].filter(n=>n.scrollWidth>n.clientWidth).map(n=>n.textContent+' '+n.scrollWidth+'/'+n.clientWidth+' item '+n.parentNode.offsetWidth+' badges '+n.nextElementSibling.offsetWidth)")
         await pg.set_viewport_size({'width': 390, 'height': 760})
         if cut: fails.append(f'names cut at 360 px wide: {cut}')
+        # 6. Tap an aspect: its marks on the board; tap another: that one instead; tap again: none.
+        await pg.click('#aspects .asp-item[data-asp="activity"]'); await pg.wait_for_timeout(100)
+        r = await pg.evaluate("({ sel: [...document.querySelectorAll('#aspects .asp-item.sel')].map(e=>e.dataset.asp), nums: document.querySelectorAll('#arrows text').length })")
+        await pg.click('#aspects .asp-item[data-asp="space"]'); await pg.wait_for_timeout(100)
+        r2 = await pg.evaluate("({ sel: [...document.querySelectorAll('#aspects .asp-item.sel')].map(e=>e.dataset.asp), nums: document.querySelectorAll('#arrows text').length })")
+        await pg.click('#aspects .asp-item[data-asp="space"]'); await pg.wait_for_timeout(100)
+        r3 = await pg.evaluate("({ sel: document.querySelectorAll('#aspects .asp-item.sel').length, marks: document.getElementById('arrows').children.length })")
+        print('tap aspects:', r, r2, r3)
+        if r['sel'] != ['activity'] or r['nums'] < 1 or r2['sel'] != ['space'] or r2['nums'] != 0 or r3 != {'sel': 0, 'marks': 0}: fails.append(f'tapping aspects: {r} {r2} {r3}')
+        # what each aspect marks, on small positions
+        marks = await pg.evaluate("""(()=>{ const M = (fen, k)=>{ const m = aspectMarks(fen, k); return {
+            c: m.circles.map(x=>x.sq+x.c).sort().join(' '), a: m.arrows.map(x=>x.from+x.to+x.c).sort().join(' '), t: m.tints.length, n: m.nums.map(x=>x.sq+x.n).sort().join(' ') }; };
+          return {
+            material: M('4k3/8/8/8/8/8/3PP3/1R2K3 w - - 0 1', 'material').c,                 // White: a rook and 2 pawns more
+            pair: M('4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').c,                     // 2 bishops against none
+            pawns: M('4k3/8/8/3p4/8/8/P1P3PP/4K3 w - - 0 1', 'pawns').c,                     // a2 g2 h2 passed; c2 and d5 isolated
+            threats: M('4k3/8/2n5/3P4/8/8/8/4K3 w - - 0 1', 'threats').a,                  // d5 pawn attacks the c6 knight
+            hanging: M('4k3/8/8/3r4/8/8/3Q4/4K3 b - - 0 1', 'threats').a,                  // the rook attacks the queen (a lesser piece); the queen, the undefended rook
+            spaceFew: M('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 'space').t,                       // few pieces: no space
+            knight: M('4k3/8/8/8/8/8/8/1N2K3 w - - 0 1', 'activity').n,
+          }; })()""")
+        print('marks:', marks)
+        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'spaceFew': 0, 'knight': 'b13'}
+        for k, v in want.items():
+            if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
+        if marks['pawns'] != 'a2w c2b d5w g2w h2w': fails.append(f'pawn marks: {marks["pawns"]}')
         if await pg.query_selector('text=Dynamics') or await pg.query_selector('text=Aspects alone') or await pg.query_selector('text=Decisive move'): fails.append('Dynamics / Aspects alone / Decisive move should be gone')
         if await pg.query_selector('#aspects .asp-note'): fails.append('the tactics reminder belongs to the question, not the review')
         if await pg.query_selector('.recap'): fails.append('the recap sentence should be gone')

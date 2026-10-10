@@ -294,6 +294,10 @@
   .asp-note{margin:0; flex:1 1 0; font-size:0.84rem; line-height:1.35; color:var(--text-mute);}
   .aspects.asp-input{position:relative;}
   .asp-badge{line-height:1.35; transition:background-color .6s, color .6s, border-color .6s, box-shadow .6s;}
+  .asp-item.pickable{cursor:pointer; border-radius:6px; margin:-3px -6px; padding:3px 6px; -webkit-tap-highlight-color:transparent;}
+  .asp-item.pickable .asp-name{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
+  .asp-item.sel{background:var(--panel-2); box-shadow:inset 0 0 0 1px var(--accent);}
+  .asp-item.sel .asp-name{text-decoration:none;}
   .asp-badge.ok{border-color:var(--best-green); box-shadow:0 0 0 1px var(--best-green);}
   .asp-badge.near{border-color:var(--dubious); box-shadow:0 0 0 1px var(--dubious);}
   .asp-badge.far{border-color:#E0823D; box-shadow:0 0 0 1px #E0823D;}   /* orange: between the yellow and the red */
@@ -432,7 +436,7 @@ const HELP = {
     title:'Position evaluation',
     what:"Gauge each aspect of the position (material, pawns, space, activity, king safety, threats), weigh them (one can outweigh several), keep an eye out for tactics, then drag the bar to your evaluation. Tap a badge to gauge its aspect: tap a level, or slide along the scale.",
     eval:"Each aspect scores up to 10% (60% for the six): 10% at the engine's level, 6.7% one level off, 3.3% two off. The bar scores the other 40%: every square of height you're off costs a quarter of it.",
-    grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves. In the review, each aspect turns from your level to the engine's: green border if you matched it, yellow one level off, orange two off, red further.",
+    grades:"Each aspect turns from your level to the engine's: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Green border: you matched it; yellow: one level off; orange: two; red: further. Static aspects last; dynamic ones can change within a few moves. Then tap an aspect to see on the board what it's about, white marks favouring White and black ones Black: <strong>Material</strong> the extra pieces (and the bishop pair); <strong>Pawns</strong> passed pawns, and weak ones (isolated, doubled, backward) in the other side's colour; <strong>Space</strong> the safe central squares behind each side's pawns; <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> the squares around each king under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, or undefended.",
   },
   candidates: {
     title:'Candidate moves',
@@ -1631,8 +1635,10 @@ function reviewBadge(vals, guesses, x, i, shown){
   const off = Math.abs(l - g);
   return `<span class="asp-badge ${levelCls(l)} ${off===0 ? 'ok' : off===1 ? 'near' : off===2 ? 'far' : 'bad'}">${SIGNS(l)}</span>`;
 }
-function aspectsGridHtml(vals, guesses, shown, hidden){   // hidden: holds the space, no id (ghost)
-  const item = (x, i)=>`<div class="asp-item" data-asp="${x.key}"><span class="asp-name">${x.name}</span>${reviewBadge(vals, guesses, x, i, shown)}</div>`;
+// `view`: once revealed, every aspect can be tapped (one at a time, like radio buttons) to draw on the
+// board what it's about; `view` is the one shown (or null), `pickable` whether tapping works yet.
+function aspectsGridHtml(vals, guesses, shown, hidden, view, pickable){   // hidden: holds the space, no id (ghost)
+  const item = (x, i)=>`<div class="asp-item${pickable ? ' pickable' : ''}${view===x.key ? ' sel' : ''}" data-asp="${x.key}"${pickable ? ` role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}><span class="asp-name">${x.name}</span>${reviewBadge(vals, guesses, x, i, shown)}</div>`;
   return `<div class="aspects"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
     </div>`;
@@ -1737,6 +1743,147 @@ function wireAspectsInput(s){
 document.addEventListener('pointerdown', e=>{
   if(aspPicker && !aspPicker.el.contains(e.target) && !(e.target.closest && e.target.closest('.asp-pick'))) closeAspPicker();
 });
+// ---- What each aspect is about, drawn on the board (the review; tap an aspect) ----
+// Simplified from Stockfish 10's own definitions. One rule for every aspect: a white mark favours
+// White, a black one Black. Returns {circles:[{sq,c}], tints:[{sq,c,strong}], nums:[{sq,n,c}],
+// arrows:[{from,to,c}]}, c = 'w' | 'b'.
+const VAL = { p:1, n:3, b:3, r:5, q:9, k:0 };
+function boardMap(fen){
+  const m = {}; let r = 8, f = 0;
+  for(const ch of fen.split(' ')[0]){
+    if(ch==='/'){ r--; f = 0; continue; }
+    if(/\d/.test(ch)){ f += +ch; continue; }
+    m[FILES[f]+r] = { t: ch.toLowerCase(), c: ch===ch.toUpperCase() ? 'w' : 'b' }; f++;
+  }
+  return m;
+}
+const sqAt = (f, r)=>f>=0 && f<8 && r>=1 && r<=8 ? FILES[f]+r : null;
+const relRank = (sq, c)=>c==='w' ? +sq[1] : 9 - +sq[1];
+function attacksFrom(m, sq){
+  const pc = m[sq], f = FILES.indexOf(sq[0]), r = +sq[1], out = [];
+  const add = (df, dr)=>{ const t = sqAt(f+df, r+dr); if(t) out.push(t); };
+  const ray = (df, dr)=>{ let k = 1; for(;;){ const t = sqAt(f+df*k, r+dr*k); if(!t) return; out.push(t); if(m[t]) return; k++; } };
+  if(pc.t==='p'){ const d = pc.c==='w' ? 1 : -1; add(-1, d); add(1, d); }
+  else if(pc.t==='n') [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]].forEach(([a,b])=>add(a,b));
+  else if(pc.t==='k') [[1,1],[1,0],[1,-1],[0,1],[0,-1],[-1,1],[-1,0],[-1,-1]].forEach(([a,b])=>add(a,b));
+  else {
+    if(pc.t!=='r') [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([a,b])=>ray(a,b));
+    if(pc.t!=='b') [[1,0],[-1,0],[0,1],[0,-1]].forEach(([a,b])=>ray(a,b));
+  }
+  return out;
+}
+function attackMaps(m){   // {w: {sq: [attacker squares]}, b: …}
+  const A = { w:{}, b:{} };
+  for(const sq in m) for(const t of attacksFrom(m, sq)) (A[m[sq].c][t] = A[m[sq].c][t] || []).push(sq);
+  return A;
+}
+const other = c=>c==='w' ? 'b' : 'w';
+const pawnsOf = (m, c)=>Object.keys(m).filter(sq=>m[sq].t==='p' && m[sq].c===c);
+function passedPawn(m, sq, c){
+  const f = FILES.indexOf(sq[0]);
+  return !pawnsOf(m, other(c)).some(e=>Math.abs(FILES.indexOf(e[0]) - f)<=1 && relRank(e, c) > relRank(sq, c));
+}
+function aspectMarks(fen, key){
+  const m = boardMap(fen), A = attackMaps(m), out = { circles:[], tints:[], nums:[], arrows:[] };
+  const pieces = c=>Object.keys(m).filter(sq=>m[sq].c===c);
+  if(key==='material'){
+    for(const t of ['q','r','b','n','p']){
+      const w = pieces('w').filter(sq=>m[sq].t===t), b = pieces('b').filter(sq=>m[sq].t===t), d = w.length - b.length;
+      if(!d) continue;
+      const more = d>0 ? 'w' : 'b';
+      let list = d>0 ? w : b;
+      // the extra pawns: passed ones first, then the most advanced
+      if(t==='p') list = list.slice().sort((x, y)=>(passedPawn(m, y, more) - passedPawn(m, x, more)) || (relRank(y, more) - relRank(x, more)));
+      list.slice(0, Math.abs(d)).forEach(sq=>out.circles.push({ sq, c: more }));
+    }
+    for(const c of ['w','b']){   // the bishop pair against a side without it
+      const bs = pieces(c).filter(sq=>m[sq].t==='b');
+      if(bs.length>=2 && pieces(other(c)).filter(sq=>m[sq].t==='b').length<2) bs.forEach(sq=>{ if(!out.circles.some(x=>x.sq===sq)) out.circles.push({ sq, c }); });
+    }
+  }
+  if(key==='pawns'){
+    for(const c of ['w','b']){
+      const mine = pawnsOf(m, c), up = c==='w' ? 1 : -1;
+      for(const sq of mine){
+        const f = FILES.indexOf(sq[0]), r = +sq[1];
+        const adj = mine.filter(o=>Math.abs(FILES.indexOf(o[0]) - f)===1);
+        const isolated = !adj.length;
+        const doubled = mine.some(o=>o[0]===sq[0] && relRank(o, c) < relRank(sq, c));
+        const stop = sqAt(f, r+up);
+        const backward = !isolated && !adj.some(o=>relRank(o, c) <= relRank(sq, c)) && stop && (A[other(c)][stop] || []).some(a=>m[a].t==='p');
+        if(passedPawn(m, sq, c)) out.circles.push({ sq, c });                  // a passed pawn: good for its side
+        else if(isolated || doubled || backward) out.circles.push({ sq, c: other(c) });   // a weak pawn: good for the other side
+      }
+    }
+  }
+  if(key==='space'){
+    // Stockfish counts space only while enough pieces are on the board
+    let npm = 0; for(const sq in m) if('nbrq'.includes(m[sq].t)) npm += SF_VALUES[m[sq].t][0];
+    if(npm >= 12222) for(const c of ['w','b']){
+      const mine = pawnsOf(m, c);
+      for(const fl of 'cdef') for(const rr of [2,3,4]){
+        const sq = fl + (c==='w' ? rr : 9-rr);
+        if(m[sq] && m[sq].t==='p' && m[sq].c===c) continue;
+        if((A[other(c)][sq] || []).some(a=>m[a].t==='p')) continue;
+        const behind = mine.some(o=>o[0]===fl && relRank(o, c) > relRank(sq, c) && relRank(o, c) - relRank(sq, c) <= 3);
+        out.tints.push({ sq, c, strong: behind });
+      }
+    }
+  }
+  if(key==='activity'){
+    for(const c of ['w','b']){
+      const enemyPawnAtt = new Set(Object.keys(A[other(c)]).filter(sq=>A[other(c)][sq].some(a=>m[a].t==='p')));
+      const blocked = sq=>{ const pc = m[sq]; if(!pc || pc.t!=='p' || pc.c!==c) return false; const f = FILES.indexOf(sq[0]); return relRank(sq, c)<=3 || !!m[sqAt(f, +sq[1] + (c==='w' ? 1 : -1))]; };
+      const area = sq=>!enemyPawnAtt.has(sq) && !(m[sq] && m[sq].c===c && (m[sq].t==='k' || m[sq].t==='q' || blocked(sq)));
+      for(const sq of pieces(c).filter(x=>'nbrq'.includes(m[x].t))){
+        out.nums.push({ sq, n: attacksFrom(m, sq).filter(area).length, c });
+        const f = FILES.indexOf(sq[0]);
+        if((m[sq].t==='n' || m[sq].t==='b') && relRank(sq, c)>=4 && relRank(sq, c)<=6
+           && !pawnsOf(m, other(c)).some(e=>Math.abs(FILES.indexOf(e[0]) - f)===1 && relRank(e, c) > relRank(sq, c))) out.circles.push({ sq, c });   // an outpost
+        if(m[sq].t==='r' && !pawnsOf(m, c).some(o=>o[0]===sq[0])) out.circles.push({ sq, c });   // a rook on an open or half-open file
+      }
+    }
+  }
+  if(key==='king'){
+    for(const c of ['w','b']){
+      const k = pieces(c).find(sq=>m[sq].t==='k'); if(!k) continue;
+      const f = FILES.indexOf(k[0]), r = +k[1], up = c==='w' ? 1 : -1;
+      const ring = new Set([k, ...attacksFrom(m, k)]);
+      if(relRank(k, c)===1) for(const df of [-1,0,1]){ const t = sqAt(f+df, r+2*up); if(t) ring.add(t); }
+      const attackers = new Set();
+      for(const sq of ring){ const at = (A[other(c)][sq] || []).filter(a=>m[a].t!=='k'); if(at.length){ out.tints.push({ sq, c: other(c), strong: at.length>1 }); at.forEach(a=>attackers.add(a)); } }
+      attackers.forEach(sq=>out.circles.push({ sq, c: other(c) }));
+    }
+  }
+  if(key==='threats'){
+    for(const c of ['w','b']) for(const tsq of pieces(other(c))){
+      const target = m[tsq]; if(target.t==='k') continue;
+      const defended = (A[other(c)][tsq] || []).length > 0;
+      for(const a of (A[c][tsq] || [])){
+        const att = m[a];
+        const lesser = VAL[att.t] < VAL[target.t] && att.t!=='k';
+        if((att.t==='p' && target.t!=='p') || lesser || (!defended && target.t!=='p') || (!defended && att.t!=='k' && target.t==='p' && att.t==='p'))
+          out.arrows.push({ from: a, to: tsq, c });
+      }
+    }
+  }
+  return out;
+}
+// Squares, rings, numbers and arrows on the board's overlay (the arrows svg, 480×480).
+const MARK = { w:{ fill:'rgba(255,255,255,', ink:'#F7F3EA', edge:'#1A1612' }, b:{ fill:'rgba(0,0,0,', ink:'#15110D', edge:'#F2ECDF' } };
+function drawMarks(svg, marks){
+  const R = sq=>{ const c = squareCenter(sq); return { x:c.x-30, y:c.y-30, cx:c.x, cy:c.y }; };
+  const tints = marks.tints.map(t=>{ const r = R(t.sq); return `<rect x="${r.x}" y="${r.y}" width="60" height="60" fill="${MARK[t.c].fill}${t.c==='w' ? (t.strong ? .55 : .32) : (t.strong ? .45 : .25)})"/>`; }).join('');
+  const circles = marks.circles.map(t=>{ const r = R(t.sq); return `<circle cx="${r.cx}" cy="${r.cy}" r="26" fill="none" stroke="${MARK[t.c].edge}" stroke-width="7" opacity=".55"/><circle cx="${r.cx}" cy="${r.cy}" r="26" fill="none" stroke="${MARK[t.c].ink}" stroke-width="4"/>`; }).join('');
+  const nums = marks.nums.map(t=>{ const r = R(t.sq); return `<text x="${r.x+56}" y="${r.y+17}" text-anchor="end" font-size="17" font-weight="700" font-family="system-ui,sans-serif" fill="${MARK[t.c].ink}" stroke="${MARK[t.c].edge}" stroke-width="3" paint-order="stroke">${t.n}</text>`; }).join('');
+  const defs = ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="4" markerHeight="4" refX="2.4" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 Z" fill="${MARK[c].ink}" stroke="${MARK[c].edge}" stroke-width=".4"/></marker>`).join('');
+  const arrows = marks.arrows.map(t=>{
+    const a = squareCenter(t.from), b = squareCenter(t.to), dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx, dy) || 1;
+    const ex = b.x - dx/len*18, ey = b.y - dy/len*18;
+    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].edge}" stroke-width="10" stroke-linecap="round" opacity=".5"/><line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="6" stroke-linecap="round" marker-end="url(#mk_${t.c})"/>`;
+  }).join('');
+  svg.innerHTML = `<defs>${defs}</defs>${tints}${circles}${arrows}${nums}`;
+}
 // A panel whose height never changes within an exercise: `inner` is what's shown, `ghosts` are
 // invisible stand-ins for the exercise's other states (no ids, not focusable), stacked in the
 // same spot so the panel takes the tallest one's height.
@@ -3099,13 +3246,21 @@ function renderAnalysis(){
     ${stackedPanel(`
       ${s.checked ? `
         <div class="score"><span class="score-num" id="revealAcc">${shownScore!=null ? shownScore+'%' : '—'}</span><span class="score-label">${evalTruth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
-        ${aspectsGridHtml(aspVals, s.asp, s.aspShown || 0)}
+        ${aspectsGridHtml(aspVals, s.asp, s.aspShown || 0, false, s.aspView, done && !!aspVals)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Gauge each positional aspect, then drag the bar to your evaluation.</p>
         ${aspectsInputHtml(s)}
         <div class="actions-row" id="anaCheckRow"><p class="asp-note">Tactics can also shift the evaluation.</p><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
+  if(s.checked && done && aspVals){
+    if(s.aspView) drawMarks(document.getElementById('arrows'), aspectMarks(p.fen, s.aspView));
+    document.querySelectorAll('#aspects .asp-item.pickable').forEach(el=>{
+      const pick = ()=>{ s.aspView = s.aspView===el.dataset.asp ? null : el.dataset.asp; render(); const again = document.querySelector(`#aspects .asp-item[data-asp="${el.dataset.asp}"]`); if(again && document.activeElement===document.body) again.focus(); };
+      el.onclick = pick;
+      el.onkeydown = e=>{ if(e.key==='Enter' || e.key===' '){ pick(); e.preventDefault(); } };
+    });
+  }
   if(!s.checked){
     setupGauge(s);
     introFade(s, ['anaPrompt', 'aspInput', 'anaCheckRow']);
