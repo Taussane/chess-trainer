@@ -31,21 +31,25 @@ async def main():
         await pg.evaluate("sfWorker = null")
         # 3. The review: six aspects, a divider, Dynamics = search minus the aspects.
         await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
-        await pg.evaluate("""t=>{ const p = pos(); engineAspects = fen=>Promise.resolve(fen===p.fen ? t.split('\\n') : null);
+        await pg.evaluate("""t=>{ const p = pos(); engineAspects = fen=>Promise.resolve(t.split('\\n'));
           engineEval = fen=>new Promise(res=>setTimeout(()=>res({ lines:[{cp: p.side==='w' ? 250 : -250, mate:null, uci:null}], bestUci:null }), 20));
           fenEvalStore = {}; aspectsStore = {}; render(); }""", TABLE)
         await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000)
-        rows = await pg.evaluate("[...document.querySelectorAll('#aspects .aspect-row')].map(r=>r.querySelector('.aspect-name').textContent+': '+r.querySelector('.aspect-verdict').textContent)")
-        hint = await pg.text_content('#aspects .hint')
-        print('rows:', rows); print('hint:', hint)
-        if [x.split(':')[0] for x in rows] != ['Material', 'Activity', 'Pawn structure', 'King safety', 'Space', 'Threats', 'Dynamics']: fails.append(f'rows: {rows}')
-        # search +2.50 vs aspects about +0.8: White gains about 1.7 from concrete moves
-        if rows and rows[-1] != 'Dynamics: White, big': fails.append(f'dynamics: {rows[-1]}')
-        if 'more to White' not in hint: fails.append(f'hint: {hint}')
-        # a forced mate
-        await pg.evaluate("""()=>{ const p = pos(); fenEvalStore[p.fen] = { status:'done', data:{ lines:[{cp:null, mate: p.side==='w' ? 3 : -3, uci:null}], bestUci:null } }; render(); }""")
-        hint = await pg.text_content('#aspects .hint')
-        if 'White has a forced mate' not in hint: fails.append(f'mate hint: {hint}')
+        rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+r.querySelector('.asp-badge').className.split(' ').pop()+' '+r.querySelector('.asp-badge').textContent)")
+        print('rows:', rows)
+        if [x.split(':')[0] for x in rows] != ['Material', 'Activity', 'Pawns', 'King safety', 'Space', 'Threats', 'Dynamics']: fails.append(f'rows: {rows}')
+        vals = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>a[x.key]); })()")
+        def badge(v): return ('eq' if abs(v) < 0.2 else 'w' if v > 0 else 'b') + ' ' + ('+' if round(v,1) > 0 else '−' if round(v,1) < 0 else '') + f'{abs(round(v,1)):.1f}'
+        if rows and [r.split(': ')[1] for r in rows[:6]] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
+        dyn = 2.5 - sum(vals)
+        if rows and rows[-1] != 'Dynamics: ' + badge(dyn): fails.append(f'dynamics: {rows[-1]} (expected {badge(dyn)})')
+        if await pg.query_selector('.recap'): fails.append('the recap sentence should be gone')
+        # the panel keeps its height from the question to the review
+        await pg.click('#nextPos'); await pg.wait_for_timeout(400)
+        h1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
+        await pg.click('#check'); await pg.wait_for_selector('#aspects .asp-badge.w, #aspects .asp-badge.b, #aspects .asp-badge.eq', timeout=5000); await pg.wait_for_timeout(1500)
+        h2 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
+        if h1 != h2: fails.append(f'panel height changed: {h1} -> {h2}')
         await b.close()
     errs = [e for e in errs if 'importScripts' not in e]
     if errs: fails.append(f'page errors: {errs}')

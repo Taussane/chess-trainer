@@ -287,30 +287,21 @@
   .panel{width:100%; max-width:420px; margin:16px auto 0; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px;}
   .hint{color:var(--text-mute); font-size:0.86rem; line-height:1.5; margin:10px 0 0;}
   .engine-error{color:var(--bad); margin-top:12px;}
-  /* Key aspects: one row per aspect, a track split in the middle (Black's half left, White's right). */
-  .aspects{padding:12px 16px 14px;}
-  .aspects-grid{display:grid; grid-template-columns:auto 1fr auto; column-gap:12px; row-gap:8px; align-items:center;}
-  .aspect-row, .aspects-head{display:contents;}
-  .aspects-title{font-weight:600; font-size:0.9rem;}
-  .aspects-legend{display:flex; justify-content:space-between; font-size:0.74rem; color:var(--text-mute);}
-  .aspect-name{font-size:0.9rem; white-space:nowrap;}
-  .aspect-track{display:flex; height:8px; position:relative;}
-  .aspect-track::after{content:''; position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:var(--text-mute);}
-  .aspect-half{flex:1 1 0; display:flex; background:var(--panel-2); border-radius:0 4px 4px 0;}
-  .aspect-half.left{justify-content:flex-end; border-radius:4px 0 0 4px;}
-  .aspect-fill{display:block; height:100%;}
-  .aspect-fill.white{background:var(--white-fill); border-radius:0 4px 4px 0;}
-  .aspect-fill.black{background:var(--black-fill); box-shadow:inset 0 0 0 1px var(--text-mute); border-radius:4px 0 0 4px;}
-  .aspect-verdict{font-size:0.84rem; white-space:nowrap;}
-  .aspect-verdict.eq{color:var(--text-mute);}
-  .aspects-divider{grid-column:1 / -1; height:1px; background:var(--border);}
-  .aspects .hint{margin-top:10px;}
+  /* Key aspects (Position evaluation review): two columns of name + badge, Dynamics below. */
+  .aspects{margin:6px 0 10px;}
+  .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(3, auto); column-gap:22px; row-gap:6px;}
+  .asp-grid.asp-dyn{grid-template-rows:auto; margin-top:6px; padding-top:6px; border-top:1px solid var(--border);}
+  .asp-item{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.9rem; min-width:0;}
+  .asp-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .asp-badge{flex:none; min-width:3.3em; text-align:center; padding:1px 6px; border-radius:4px; font-size:0.84rem; font-variant-numeric:tabular-nums; border:1px solid transparent;}
+  .asp-badge.w{background:var(--white-fill); color:var(--black-fill);}
+  .asp-badge.b{background:var(--black-fill); color:var(--white-fill); border-color:var(--text-mute);}
+  .asp-badge.eq{background:var(--panel-2); color:var(--text-mute);}
   .score{display:flex; align-items:baseline; gap:8px; margin-bottom:6px;}
   .score-num{font-family:var(--font-display); font-size:1.7rem; line-height:1.15; font-variant-numeric:tabular-nums;}
   .score-label{color:var(--text-mute); font-size:0.86rem;}
 
   .prompt{margin:0; font-size:1rem; line-height:1.45;}
-  .recap{margin:0; font-size:1rem; line-height:1.45; min-height:2.9em;}
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
   .actions-row.pending{visibility:hidden;}
   .fade-in{animation:fadeIn .35s ease-out both;}
@@ -427,7 +418,7 @@ const HELP = {
     title:'Position evaluation',
     what:"Judge who's better and by how much, from the position's features (king safety, material, space, activity) rather than by calculating. Drag the bar to your estimate.",
     eval:"Your bar is compared with the engine's: every square of height you're off costs 25%.",
-    grades:"<strong>Key aspects</strong> split the engine's view of the position into material, activity, pawn structure, king safety, space and threats, each equal or a small or big edge. <strong>Dynamics</strong> is what concrete moves add on top: when it's big, look for forcing moves.",
+    grades:"The review splits the engine's view of the position into material, activity, pawn structure, king safety, space and threats, in pawns: a white badge favours White, a black one Black, grey is balanced. <strong>Dynamics</strong> is what concrete moves add on top.",
   },
   candidates: {
     title:'Candidate moves',
@@ -1541,71 +1532,6 @@ function fmtBarScore(info){
   const r = Math.round(info.cp/10)/10;
   return (r>0 ? '+' : r<0 ? '−' : '') + Math.abs(r).toFixed(1);
 }
-// ---- Position evaluation recap: "<verdict>, <explanation>." ----
-// Table 1 — verdict, from the accuracy (25% per board square the cursor is off).
-const RECAP_VERDICTS = [
-  { min:88, text:'Spot on' },               // within ½ square — no explanation added
-  { min:63, text:'Close' },                 // ½ to 1½ squares off
-  { min:38, text:'Slightly off' },          // 1½ to 2½ squares off
-  { min:13, text:'Off' },                   // 2½ to 3½ squares off
-  { min:0,  text:'Way off' },               // 3½ squares or more
-];
-// Table 2 — explanation, from how the guess compares with the engine. "Balanced" = within
-// 5 win% points of the middle (about ±0.5).
-// Checked in this order; the side named is always the one the engine favours.
-function recapExplanation(guess, truth){
-  const gs = guess-50, ts = truth-50, BAL = 5;
-  const side = ts>0 ? 'White' : 'Black', other = ts>0 ? 'Black' : 'White';
-  if(Math.abs(ts)<=BAL) return Math.abs(gs)<=BAL ? 'the position is roughly balanced' : 'the position is more balanced than that';
-  if(Math.abs(gs)<=BAL) return Math.abs(ts)>=30 ? `${side} is winning here` : `${side} has the advantage here`; // 30 = "clearly winning" (about ±2.5)
-  if(Math.sign(gs)!==Math.sign(ts)) return `it's ${side} who's better, not ${other}`;
-  return Math.abs(ts)>Math.abs(gs) ? `${side}'s advantage is bigger than that` : `${side}'s advantage is smaller than that`;
-}
-function analysisRecap(guess, truth){
-  const acc = evalAccuracyPct(guess, truth);
-  const verdict = RECAP_VERDICTS.find(v=>acc>=v.min).text;
-  return acc>=88 ? verdict+'.' : `${verdict}, ${recapExplanation(guess, truth)}.`;
-}
-// A panel whose height never changes within an exercise: `inner` is what's shown, `ghosts` are
-// invisible stand-ins for the exercise's other states (no ids, not focusable), stacked in the
-// same spot so the panel takes the tallest one's height.
-function stackedPanel(inner, ghosts, extra){
-  return `<div class="panel"><div class="panel-stack"><div class="layer">${inner}</div>${
-    ghosts.map(g=>`<div class="layer ghost" aria-hidden="true" inert>${g}</div>`).join('')}</div></div>${extra||''}`;
-}
-const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
-const GHOST_ANALYSIS = [
-  `<p class="prompt">Drag the bar to show who's better, and by how much.</p><div class="actions-row"><span class="btn">Check</span></div>`,
-  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><p class="recap">x</p>${GHOST_ACTIONS}`,
-];
-function ghostCandidates(){
-  const mini = `<div class="mini-row"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span><span class="mini-result"><span class="mini-label">Dubious</span><span class="move-eval">−1.6</span></span></div>`;
-  const col = `<div class="review-col"><div class="col-toggle"><span class="col-toggle-box"></span>Top moves</div>${mini.repeat(3)}</div>`;
-  const pick = `<div class="review-row pick-row"><div class="move-tag"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span></div><span class="del-btn">✕</span></div>`;
-  return [
-    `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="review-cols">${col}${col}</div>${GHOST_ACTIONS}`,
-    `<div>${pick.repeat(3)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
-  ];
-}
-function ghostFinal(){
-  const chip = `<span class="move-chip" style="background:var(--text-mute)">Qxd8+</span>`;
-  const rank = `<div class="rate-row"><div class="move-tag"><span class="num">1</span>${chip}</div><span class="drag-handle">⠿</span></div>`;
-  const rev = tag=>`<div class="review-row"><div class="move-tag"><span class="num">1</span>${chip}${tag ? '<span class="badges"><span class="badge">Game move</span></span>' : ''}</div><div class="move-result"><span class="grade">Dubious</span><span class="move-eval">−1.6</span></div></div>`;
-  return [
-    `<div>${rank.repeat(4)}</div><p class="hint rank-hint">Drag the moves into order, best at the top.</p><div class="actions-row"><span class="btn">Check</span></div>`,
-    `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="rev-list">${rev(true)}${rev(false).repeat(3)}</div>${GHOST_ACTIONS}`,
-  ];
-}
-function boardHtml(withBar, barHtml){
-  const b = `<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>`;
-  return `<div class="stage"><div class="board-col">${playerLine('top')}${withBar ? `<div class="board-row">${b}${barHtml}</div>` : b}${playerLine('bottom')}</div></div>`;
-}
-// The position's own evaluation, White's perspective, from whichever single evaluation the
-// exercise reads — so the bar always agrees with the Best row.
-function positionInfo(p, evalData){
-  const info = toWhitePerspective(evalData ? evalData.lines[0] : null, p.fen);
-  return info ? { info, pct: cpToPct(info.cp, info.mate), label: fmtSigned(info) } : null;
-}
 // ================= Key aspects (Position evaluation review) =================
 // Stockfish 10 still evaluates with a hand-written formula, and prints it term by term on `eval`.
 // Its terms are grouped into the aspects a player weighs, in pawns, from White's side; the
@@ -1615,12 +1541,12 @@ function positionInfo(p, evalData){
 const ASPECTS = [
   { key:'material', name:'Material' },
   { key:'activity', name:'Activity' },
-  { key:'pawns',    name:'Pawn structure' },
+  { key:'pawns',    name:'Pawns' },
   { key:'king',     name:'King safety' },
   { key:'space',    name:'Space' },
   { key:'threats',  name:'Threats' },
 ];
-const ASPECT_SMALL = 0.2, ASPECT_BIG = 0.6;   // pawns: below small = equal; from big = big
+const ASPECT_SMALL = 0.2;   // pawns: below this, balanced (grey)
 // Stockfish 10's piece values [middlegame, endgame], and its game-phase limits (non-pawn material).
 const SF_VALUES = { p:[136,208], n:[782,865], b:[830,918], r:[1289,1378], q:[2529,2687] };
 const SF_PAWN_EG = 208, SF_MG_LIMIT = 15258, SF_EG_LIMIT = 3915;
@@ -1664,39 +1590,75 @@ function aspectsEntry(fen){
   }
   return entry;
 }
-// -1/1 = small edge to Black/White, -2/2 = big, 0 = equal.
-function aspectLevel(v){
-  const a = Math.abs(v);
-  return a < ASPECT_SMALL ? 0 : (a < ASPECT_BIG ? 1 : 2) * Math.sign(v);
+// In the review panel, under the score: the six aspects in two columns, then Dynamics. Each has a
+// badge with its value (pawns, from White's side): white for White, black for Black, grey when
+// balanced (under ASPECT_SMALL). `vals` null: placeholders (the panel's ghost, or while waiting).
+function fmtPawns(v){
+  const r = Math.round(v*10)/10;
+  return (r>0 ? '+' : r<0 ? '−' : '') + Math.abs(r).toFixed(1);
 }
-function aspectRowHtml(name, v){
-  const lvl = aspectLevel(v), side = lvl>0 ? 'White' : 'Black';
-  const text = lvl===0 ? 'Equal' : `${side}, ${Math.abs(lvl)===2 ? 'big' : 'small'}`;
-  const w = Math.abs(lvl)*50;   // % of its half of the track
-  return `<div class="aspect-row"><span class="aspect-name">${name}</span>
-      <span class="aspect-track" aria-hidden="true"><span class="aspect-half left">${lvl<0 ? `<span class="aspect-fill black" style="width:${w}%"></span>` : ''}</span><span class="aspect-half">${lvl>0 ? `<span class="aspect-fill white" style="width:${w}%"></span>` : ''}</span></span>
-      <span class="aspect-verdict${lvl===0 ? ' eq' : ''}">${text}</span></div>`;
+function aspectBadge(v){
+  if(v==null) return `<span class="asp-badge eq">…</span>`;
+  const cls = Math.abs(v) < ASPECT_SMALL ? 'eq' : v>0 ? 'w' : 'b';
+  return `<span class="asp-badge ${cls}">${fmtPawns(v)}</span>`;
 }
-// Below the review panel, once the evaluation is revealed. `info`: the search's evaluation, from
-// White's side ({cp, mate}).
-function aspectsCard(p, info, fadeIn){
+function aspectsGridHtml(vals, fadeIn, hidden){   // hidden: holds the space, no id (ghost, before the reveal)
+  const item = (name, v)=>`<div class="asp-item"><span class="asp-name">${name}</span>${aspectBadge(vals ? v : null)}</div>`;
+  return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
+      <div class="asp-grid">${ASPECTS.map(x=>item(x.name, vals && vals[x.key])).join('')}</div>
+      <div class="asp-grid asp-dyn">${item('Dynamics', vals && vals.dynamics)}</div>
+    </div>`;
+}
+// `info`: the search's evaluation, from White's side ({cp, mate}). Dynamics: the search minus the
+// aspects (a forced mate counts as 10).
+function aspectsHtml(p, info, fadeIn){
   const entry = aspectsEntry(p.fen);
-  if(entry.status!=='done' || !entry.data) return '';
+  if(entry.status!=='done') return aspectsGridHtml(null, fadeIn);
+  if(!entry.data) return '';
   const a = entry.data;
   const total = info.mate!=null ? (info.mate>0 ? 1 : -1) * 10 : info.cp/100;
-  const sum = ASPECTS.reduce((t, x)=>t + a[x.key], 0), dyn = total - sum;
-  const bigDyn = Math.abs(aspectLevel(dyn))===2;
-  return `<div class="panel aspects${fadeIn ? ' fade-in' : ''}" id="aspects">
-      <div class="aspects-grid">
-        <div class="aspects-head"><span class="aspects-title">Key aspects</span><span class="aspects-legend"><span>Black</span><span>White</span></span><span></span></div>
-        ${ASPECTS.map(x=>aspectRowHtml(x.name, a[x.key])).join('')}
-        <div class="aspects-divider"></div>
-        ${aspectRowHtml('Dynamics', dyn)}
-      </div>
-      <p class="hint">${info.mate!=null ? `Dynamics: ${info.mate>0 ? 'White' : 'Black'} has a forced mate, so concrete moves decide.`
-        : bigDyn ? `Dynamics: concrete moves (threats, tactics, the initiative) are worth more to ${dyn>0 ? 'White' : 'Black'} than the aspects above show.`
-        : 'Dynamics: what concrete moves add to the aspects above. Small here, so the aspects explain the evaluation.'}</p>
-    </div>`;
+  const dynamics = total - ASPECTS.reduce((t, x)=>t + a[x.key], 0);
+  return aspectsGridHtml({ ...a, dynamics }, fadeIn);
+}
+// A panel whose height never changes within an exercise: `inner` is what's shown, `ghosts` are
+// invisible stand-ins for the exercise's other states (no ids, not focusable), stacked in the
+// same spot so the panel takes the tallest one's height.
+function stackedPanel(inner, ghosts, extra){
+  return `<div class="panel"><div class="panel-stack"><div class="layer">${inner}</div>${
+    ghosts.map(g=>`<div class="layer ghost" aria-hidden="true" inert>${g}</div>`).join('')}</div></div>${extra||''}`;
+}
+const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
+const GHOST_ANALYSIS = [
+  `<p class="prompt">Drag the bar to show who's better, and by how much.</p><div class="actions-row"><span class="btn">Check</span></div>`,
+  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, false, true)}${GHOST_ACTIONS}`,
+];
+function ghostCandidates(){
+  const mini = `<div class="mini-row"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span><span class="mini-result"><span class="mini-label">Dubious</span><span class="move-eval">−1.6</span></span></div>`;
+  const col = `<div class="review-col"><div class="col-toggle"><span class="col-toggle-box"></span>Top moves</div>${mini.repeat(3)}</div>`;
+  const pick = `<div class="review-row pick-row"><div class="move-tag"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span></div><span class="del-btn">✕</span></div>`;
+  return [
+    `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="review-cols">${col}${col}</div>${GHOST_ACTIONS}`,
+    `<div>${pick.repeat(3)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
+  ];
+}
+function ghostFinal(){
+  const chip = `<span class="move-chip" style="background:var(--text-mute)">Qxd8+</span>`;
+  const rank = `<div class="rate-row"><div class="move-tag"><span class="num">1</span>${chip}</div><span class="drag-handle">⠿</span></div>`;
+  const rev = tag=>`<div class="review-row"><div class="move-tag"><span class="num">1</span>${chip}${tag ? '<span class="badges"><span class="badge">Game move</span></span>' : ''}</div><div class="move-result"><span class="grade">Dubious</span><span class="move-eval">−1.6</span></div></div>`;
+  return [
+    `<div>${rank.repeat(4)}</div><p class="hint rank-hint">Drag the moves into order, best at the top.</p><div class="actions-row"><span class="btn">Check</span></div>`,
+    `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="rev-list">${rev(true)}${rev(false).repeat(3)}</div>${GHOST_ACTIONS}`,
+  ];
+}
+function boardHtml(withBar, barHtml){
+  const b = `<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>`;
+  return `<div class="stage"><div class="board-col">${playerLine('top')}${withBar ? `<div class="board-row">${b}${barHtml}</div>` : b}${playerLine('bottom')}</div></div>`;
+}
+// The position's own evaluation, White's perspective, from whichever single evaluation the
+// exercise reads — so the bar always agrees with the Best row.
+function positionInfo(p, evalData){
+  const info = toWhitePerspective(evalData ? evalData.lines[0] : null, p.fen);
+  return info ? { info, pct: cpToPct(info.cp, info.mate), label: fmtSigned(info) } : null;
 }
 // Move selection review row: grade as plain coloured text, like the Candidate moves lists.
 function reviewRowHtml(m){
@@ -3008,12 +2970,11 @@ function renderAnalysis(){
     ${stackedPanel(`
       ${s.checked ? `
         <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(100 + (acc-100)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
-        ${done ? `<p class="recap${s.justDone ? ' fade-in' : ''}">${analysisRecap(s.guess, truth.pct)}</p>`
-               : `<p class="recap">&nbsp;</p>`}
+        ${done ? aspectsHtml(p, truth.info, s.justDone) : aspectsGridHtml(null, false, true)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Drag the bar to show who's better, and by how much.</p>
-        <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner() + (done ? aspectsCard(p, truth.info, s.justDone) : ''))}`;
+        <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(!s.checked){
     setupGauge(s);
