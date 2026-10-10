@@ -12,7 +12,7 @@ async def main():
         b, pg, errs = await T.page_with_app(p)
         await pg.evaluate("fenEvalStore = {}; poolEvalStore = {}")   # forget searches the blocked real engine failed before the stand-in took over
         # A history: 8 Board analysis positions at 80%, two days ago and today.
-        await pg.evaluate("""(()=>{ const now=Date.now(); results = Array.from({length:8},(_,i)=>({a:'analysis', acc:80, ts: now - (i<4 ? 2*864e5 : 0) - (8-i)*6e4, src:'masters'})); saveLocal(); progressReady(); render(); })()""")
+        await pg.evaluate("""(()=>{ const t0=new Date(); t0.setHours(0,10,0,0); const now=Math.max(Date.now(), t0.getTime()); results = Array.from({length:8},(_,i)=>({a:'analysis', acc:80, ts: now - (i<4 ? 2*864e5 : 0) - (8-i)*6e4, src:'masters'})); saveLocal(); progressReady(); render(); })()""")
         # Play a Board analysis position badly (guess far from the engine's value) -> joins the list.
         await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
         k = await pg.evaluate("pos().key"); await pg.wait_for_function("!!fenEval(pos().fen)")

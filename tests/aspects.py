@@ -36,13 +36,17 @@ async def main():
           fenEvalStore = {}; aspectsStore = {}; render(); }""", TABLE)
         await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000)
         rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+r.querySelector('.asp-badge').className.split(' ').pop()+' '+r.querySelector('.asp-badge').textContent)")
-        print('rows:', rows)
-        if [x.split(':')[0] for x in rows] != ['Material', 'Activity', 'Pawns', 'King safety', 'Space', 'Threats', 'Dynamics']: fails.append(f'rows: {rows}')
+        heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.textContent)")
+        acc = await pg.text_content('#aspAcc')
+        print('rows:', rows, heads, 'aspects alone:', acc)
+        if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King safety', 'Threats']: fails.append(f'rows: {rows}')
+        if heads != ['Static', 'Dynamic']: fails.append(f'column titles: {heads}')
         vals = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>a[x.key]); })()")
-        def badge(v): return ('eq' if abs(v) < 0.2 else 'w' if v > 0 else 'b') + ' ' + ('+' if round(v,1) > 0 else '−' if round(v,1) < 0 else '') + f'{abs(round(v,1)):.1f}'
-        if rows and [r.split(': ')[1] for r in rows[:6]] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
-        dyn = 2.5 - sum(vals)
-        if rows and rows[-1] != 'Dynamics: ' + badge(dyn): fails.append(f'dynamics: {rows[-1]} (expected {badge(dyn)})')
+        def badge(v): return ('eq' if abs(round(v,1)) < 0.2 else 'w' if v > 0 else 'b') + ' ' + ('+' if round(v,1) > 0 else '−' if round(v,1) < 0 else '') + f'{abs(round(v,1)):.1f}'
+        if rows and [r.split(': ')[1] for r in rows] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
+        want = await pg.evaluate("s=>evalAccuracyPct(cpToPct(s*100, null), cpToPct(250, null))", sum(vals))
+        if acc != f'{want}%': fails.append(f'aspects alone: {acc}, expected {want}%')
+        if await pg.query_selector('text=Dynamics'): fails.append('Dynamics should be gone')
         if await pg.query_selector('.recap'): fails.append('the recap sentence should be gone')
         # the panel keeps its height from the question to the review
         await pg.click('#nextPos'); await pg.wait_for_timeout(400)

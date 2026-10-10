@@ -287,10 +287,12 @@
   .panel{width:100%; max-width:420px; margin:16px auto 0; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px;}
   .hint{color:var(--text-mute); font-size:0.86rem; line-height:1.5; margin:10px 0 0;}
   .engine-error{color:var(--bad); margin-top:12px;}
-  /* Key aspects (Position evaluation review): two columns of name + badge, Dynamics below. */
+  /* Key aspects (Position evaluation review): static and dynamic columns of name + badge, then the aspects-alone accuracy. */
   .aspects{margin:6px 0 10px;}
-  .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(3, auto); column-gap:22px; row-gap:6px;}
-  .asp-grid.asp-dyn{grid-template-rows:auto; margin-top:6px; padding-top:6px; border-top:1px solid var(--border);}
+  .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:22px; row-gap:6px;}
+  .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
+  .asp-acc{margin-top:8px; font-size:0.84rem; color:var(--text-mute);}
+  .asp-acc span{color:var(--text); font-variant-numeric:tabular-nums;}
   .asp-item{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.9rem; min-width:0;}
   .asp-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .asp-badge{flex:none; min-width:3.3em; text-align:center; padding:1px 6px; border-radius:4px; font-size:0.84rem; font-variant-numeric:tabular-nums; border:1px solid transparent;}
@@ -418,7 +420,7 @@ const HELP = {
     title:'Position evaluation',
     what:"Judge who's better and by how much, from the position's features (king safety, material, space, activity) rather than by calculating. Drag the bar to your estimate.",
     eval:"Your bar is compared with the engine's: every square of height you're off costs 25%.",
-    grades:"The review splits the engine's view of the position into material, activity, pawn structure, king safety, space and threats, in pawns: a white badge favours White, a black one Black, grey is balanced. <strong>Dynamics</strong> is what concrete moves add on top.",
+    grades:"The review splits the engine's view of the position into static aspects (material, pawns, space) and dynamic ones (activity, king safety, threats), in pawns: a white badge favours White, a black one Black, grey is balanced. <strong>Aspects alone</strong> scores their sum like your bar: how much of the evaluation they explain.",
   },
   candidates: {
     title:'Candidate moves',
@@ -1535,15 +1537,18 @@ function fmtBarScore(info){
 // ================= Key aspects (Position evaluation review) =================
 // Stockfish 10 still evaluates with a hand-written formula, and prints it term by term on `eval`.
 // Its terms are grouped into the aspects a player weighs, in pawns, from White's side; the
-// search's evaluation minus their sum is "Dynamics": what concrete moves add or take away.
+// review also shows how close their sum alone comes to the search (the same accuracy as the player's).
 // Measured on the master positions: the aspects agree with the search on who is better about
-// 80% of the time, and the large gaps are tactical (a hanging piece, a mating attack).
+// 80% of the time; scored like the player's bar, the aspects alone average 75% (always "equal": 66%).
+// Static (lasting) on the left, dynamic on the right. Measured on the 40 master games (quiet
+// positions, correlation of each aspect with itself 3 moves later): space 0.77, pawns 0.67,
+// material 0.66; activity 0.55, king safety 0.54, threats 0.22.
 const ASPECTS = [
   { key:'material', name:'Material' },
-  { key:'activity', name:'Activity' },
   { key:'pawns',    name:'Pawns' },
-  { key:'king',     name:'King safety' },
   { key:'space',    name:'Space' },
+  { key:'activity', name:'Activity' },
+  { key:'king',     name:'King safety' },
   { key:'threats',  name:'Threats' },
 ];
 const ASPECT_SMALL = 0.2;   // pawns: below this, balanced (grey)
@@ -1575,10 +1580,10 @@ function parseAspects(lines, fen){
   return {
     material: pieces + g('Imbalance'),
     activity: g('Material') - pieces + g('Mobility') + g('Knights') + g('Bishops') + g('Rooks') + g('Queens'),
-    pawns:    g('Pawns') + g('Passed'),
+    pawns:    g('Pawns') + g('Passed') + g('Initiative'),   // Initiative: an endgame correction, mostly from passed pawns and pawn spread
     king:     g('King safety'),
     space:    g('Space'),
-    threats:  g('Threats') + g('Initiative'),
+    threats:  g('Threats'),
   };
 }
 let aspectsStore = {};
@@ -1590,35 +1595,34 @@ function aspectsEntry(fen){
   }
   return entry;
 }
-// In the review panel, under the score: the six aspects in two columns, then Dynamics. Each has a
-// badge with its value (pawns, from White's side): white for White, black for Black, grey when
-// balanced (under ASPECT_SMALL). `vals` null: placeholders (the panel's ghost, or while waiting).
+// In the review panel, under the score: static aspects on the left, dynamic on the right, each with a
+// badge showing its value (pawns, from White's side): white for White, black for Black, grey when
+// balanced (under ASPECT_SMALL). Then how close the aspects alone come to the engine's evaluation.
+// `vals` null: placeholders (the panel's ghost, or while waiting).
 function fmtPawns(v){
   const r = Math.round(v*10)/10;
   return (r>0 ? '+' : r<0 ? '−' : '') + Math.abs(r).toFixed(1);
 }
 function aspectBadge(v){
   if(v==null) return `<span class="asp-badge eq">…</span>`;
-  const cls = Math.abs(v) < ASPECT_SMALL ? 'eq' : v>0 ? 'w' : 'b';
+  const r = Math.round(v*10)/10;   // the colour follows the value shown
+  const cls = Math.abs(r) < ASPECT_SMALL ? 'eq' : r>0 ? 'w' : 'b';
   return `<span class="asp-badge ${cls}">${fmtPawns(v)}</span>`;
 }
-function aspectsGridHtml(vals, fadeIn, hidden){   // hidden: holds the space, no id (ghost, before the reveal)
-  const item = (name, v)=>`<div class="asp-item"><span class="asp-name">${name}</span>${aspectBadge(vals ? v : null)}</div>`;
+function aspectsGridHtml(vals, acc, fadeIn, hidden){   // hidden: holds the space, no id (ghost, before the reveal)
+  const item = x=>`<div class="asp-item"><span class="asp-name">${x.name}</span>${aspectBadge(vals ? vals[x.key] : null)}</div>`;
   return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
-      <div class="asp-grid">${ASPECTS.map(x=>item(x.name, vals && vals[x.key])).join('')}</div>
-      <div class="asp-grid asp-dyn">${item('Dynamics', vals && vals.dynamics)}</div>
+      <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
+      <div class="asp-acc">Aspects alone: <span id="aspAcc">${acc==null ? '…' : acc+'%'}</span></div>
     </div>`;
 }
-// `info`: the search's evaluation, from White's side ({cp, mate}). Dynamics: the search minus the
-// aspects (a forced mate counts as 10).
-function aspectsHtml(p, info, fadeIn){
+// `truthPct`: the engine's evaluation as White's winning chances (what the player's bar is scored on).
+function aspectsHtml(p, truthPct, fadeIn){
   const entry = aspectsEntry(p.fen);
-  if(entry.status!=='done') return aspectsGridHtml(null, fadeIn);
+  if(entry.status!=='done') return aspectsGridHtml(null, null, fadeIn);
   if(!entry.data) return '';
-  const a = entry.data;
-  const total = info.mate!=null ? (info.mate>0 ? 1 : -1) * 10 : info.cp/100;
-  const dynamics = total - ASPECTS.reduce((t, x)=>t + a[x.key], 0);
-  return aspectsGridHtml({ ...a, dynamics }, fadeIn);
+  const sum = ASPECTS.reduce((t, x)=>t + entry.data[x.key], 0);
+  return aspectsGridHtml(entry.data, evalAccuracyPct(cpToPct(sum*100, null), truthPct), fadeIn);
 }
 // A panel whose height never changes within an exercise: `inner` is what's shown, `ghosts` are
 // invisible stand-ins for the exercise's other states (no ids, not focusable), stacked in the
@@ -1630,7 +1634,7 @@ function stackedPanel(inner, ghosts, extra){
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
   `<p class="prompt">Drag the bar to show who's better, and by how much.</p><div class="actions-row"><span class="btn">Check</span></div>`,
-  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, false, true)}${GHOST_ACTIONS}`,
+  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, false, true)}${GHOST_ACTIONS}`,
 ];
 function ghostCandidates(){
   const mini = `<div class="mini-row"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span><span class="mini-result"><span class="mini-label">Dubious</span><span class="move-eval">−1.6</span></span></div>`;
@@ -2970,7 +2974,7 @@ function renderAnalysis(){
     ${stackedPanel(`
       ${s.checked ? `
         <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(100 + (acc-100)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
-        ${done ? aspectsHtml(p, truth.info, s.justDone) : aspectsGridHtml(null, false, true)}
+        ${done ? aspectsHtml(p, truth.pct, s.justDone) : aspectsGridHtml(null, null, false, true)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Drag the bar to show who's better, and by how much.</p>
