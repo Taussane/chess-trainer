@@ -418,7 +418,7 @@ const HELP = {
   analysis: {
     title:'Position evaluation',
     what:"Gauge each aspect of the position (material, pawns, space, activity, king safety, threats), weigh them (one can outweigh several), keep an eye out for tactics, then drag the bar to your evaluation. Tap a badge to gauge its aspect: tap a level, or slide along the scale.",
-    eval:"Your bar is compared with the engine's: every square of height you're off costs 25%.",
+    eval:"Each aspect at the engine's level scores 10% (60% for the six). The bar scores the other 40%: every square of height you're off costs a quarter of it.",
     grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves. In the review, each aspect turns from your level to the engine's: green border if you matched it, red if not.",
   },
   candidates: {
@@ -1624,6 +1624,20 @@ function aspectsGridHtml(vals, guesses, shown, hidden){   // hidden: holds the s
     </div>`;
 }
 const ASP_START = 350, ASP_STEP = 450;   // ms: before the first aspect turns, then between two
+// Score: 10% for each aspect at the engine's level (60% for the six), the bar the other 40%. Without
+// the aspects (engine without its \`eval\` table), the bar counts for all of it.
+const ASPECT_PTS = 10, BAR_SHARE = 0.4;
+function aspectPoints(vals, guesses, shown){
+  if(!vals) return 0;
+  return ASPECTS.slice(0, shown).reduce((t, x)=>t + (aspectLevel(vals[x.key])===((guesses && guesses[x.key]) || 0) ? ASPECT_PTS : 0), 0);
+}
+// {base, final}: the score once the aspects are all revealed, and the full score with the bar.
+function analysisScore(vals, guesses, guess, truePct){
+  const bar = evalAccuracyPct(guess, truePct);
+  if(!vals) return { base:0, final:bar };
+  const base = aspectPoints(vals, guesses, ASPECTS.length);
+  return { base, final: Math.round(base + BAR_SHARE*bar) };
+}
 function startAspectsReveal(p, s, vals){
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(reduced){ s.aspShown = ASPECTS.length; s.aspDone = true; return; }
@@ -1639,6 +1653,8 @@ function startAspectsReveal(p, s, vals){
       // the new badge starts from your level's look, then fades to the engine's
       const nb = el && el.querySelector('.asp-badge'), g = s.asp[x.key] || 0;
       if(nb){ const final = nb.className; nb.className = `asp-badge ${levelCls(g)}`; nb.offsetWidth; nb.className = final; }
+      const a = document.getElementById('revealAcc');
+      if(a) a.textContent = aspectPoints(vals, s.asp, s.aspShown)+'%';
       setTimeout(tick, ASP_STEP);
     } else { s.aspDone = true; render(); }
   };
@@ -3039,10 +3055,14 @@ function renderAnalysis(){
     if(asp.data) startAspectsReveal(p, s, asp.data); else { s.aspShown = ASPECTS.length; s.aspDone = true; }
   }
   const truth = evalTruth && s.aspDone ? evalTruth : null;
-  if(truth && s.animT==null){ recordResult(s, 'analysis', evalAccuracyPct(s.guess, truth.pct)); startReveal(p, s, truth); prefetchNext(); }
+  const aspVals = asp && asp.status==='done' ? asp.data : null;
+  const score = evalTruth ? analysisScore(aspVals, s.asp, s.guess, evalTruth.pct) : null;
+  if(truth && s.animT==null){ recordResult(s, 'analysis', score.final); startReveal(p, s, truth, score); prefetchNext(); }
   const t = truth ? easeOut(s.animT ?? 1) : 0;
   const done = !!truth && (s.animT ?? 1) >= 1;
-  const acc = truth ? evalAccuracyPct(s.guess, truth.pct) : null;
+  // The score counts up: the aspects' points as they turn, then the bar's share with the bar.
+  const shownScore = truth ? Math.round(score.base + (score.final - score.base)*t)
+                   : evalTruth && aspVals && s.aspShown!=null ? aspectPoints(aspVals, s.asp, s.aspShown) : null;
   const barPct = truth ? s.guess + (truth.pct - s.guess)*t : s.guess;
   const bar = s.checked
     ? evalBarHtml(barPct, done ? fmtBarScore(truth.info) : truth ? fmtGuess(barPct) : '…', s.guess, false)
@@ -3053,8 +3073,8 @@ function renderAnalysis(){
     ${boardHtml(true, bar)}
     ${stackedPanel(`
       ${s.checked ? `
-        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(100 + (acc-100)*t)+'%' : '—'}</span><span class="score-label">${evalTruth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
-        ${aspectsGridHtml(asp && asp.status==='done' ? asp.data : null, s.asp, s.aspShown || 0)}
+        <div class="score"><span class="score-num" id="revealAcc">${shownScore!=null ? shownScore+'%' : '—'}</span><span class="score-label">${evalTruth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
+        ${aspectsGridHtml(aspVals, s.asp, s.aspShown || 0)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Gauge each positional aspect, then drag the bar to your evaluation.</p>
@@ -3070,11 +3090,11 @@ function renderAnalysis(){
   wireCommon('analysis', s.checked);
   s.justDone = false;   // the recap/buttons fade plays once, when the reveal lands — not on later redraws
 }
-function startReveal(p, s, truth){
+function startReveal(p, s, truth, score){
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(reduced){ s.animT = 1; return; }
   s.animT = 0;
-  const key = p.key, acc = evalAccuracyPct(s.guess, truth.pct);
+  const key = p.key;
   let start = null;
   const step = ts=>{
     if(start===null) start = ts;
@@ -3086,7 +3106,7 @@ function startReveal(p, s, truth){
           n = document.getElementById('barNum'), a = document.getElementById('revealAcc');
     if(w){ w.style.height = pct+'%'; b.style.height = (100-pct)+'%'; }
     if(n){ n.textContent = fmtGuess(pct); n.setAttribute('style', barNumStyle(pct)); }
-    if(a) a.textContent = Math.round(100 + (acc-100)*t)+'%';
+    if(a) a.textContent = Math.round(score.base + (score.final - score.base)*t)+'%';
     if(s.animT<1) requestAnimationFrame(step); else { s.justDone = true; render(); }
   };
   requestAnimationFrame(step);

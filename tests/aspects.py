@@ -62,10 +62,12 @@ async def main():
         await pg.wait_for_timeout(150)
         first = await pg.evaluate(badges); acc0 = await pg.text_content('#revealAcc')
         print('at first:', first, acc0)
-        if first != '++ | = | + | = | −−− | =' or acc0 != '—': fails.append(f'the review should open on your levels, no score yet: {first} {acc0}')
-        seen = set()
+        if first != '++ | = | + | = | −−− | =' or acc0 not in ('—', '0%'): fails.append(f'the review should open on your levels, no score yet: {first} {acc0}')
+        seen = set(); scores = []
         for _ in range(60):
             n = await pg.evaluate("st('analysis').aspShown || 0"); seen.add(n)
+            sc = await pg.text_content('#revealAcc')
+            if not scores or scores[-1] != sc: scores.append(sc)
             if await pg.evaluate("!!st('analysis').aspDone"): break
             await pg.wait_for_timeout(100)
         mid = await pg.evaluate("st('analysis').animT")
@@ -89,6 +91,17 @@ async def main():
         print('borders:', marks)
         if marks != want: fails.append(f'green/red borders: {marks}, expected {want}')
         if not await pg.evaluate("!document.querySelector('.actions-row.split').classList.contains('pending')"): fails.append('buttons should be in at the end')
+        # score: 10 points per matched aspect as they turn, then 40% of the bar's accuracy
+        final = await pg.text_content('#revealAcc')
+        want_final = await pg.evaluate("(()=>{ const s = st('analysis'), p = pos(); return analysisScore(aspectsStore[p.fen].data, s.asp, s.guess, positionInfo(p, fenEval(p.fen)).pct).final; })()")
+        bar = await pg.evaluate("(()=>{ const s = st('analysis'), p = pos(); return evalAccuracyPct(s.guess, positionInfo(p, fenEval(p.fen)).pct); })()")
+        print('score while the aspects turn:', scores, '→', final, '(bar', bar, ')')
+        pts = 10 * want.count('ok')
+        if final != f'{want_final}%' or want_final != round(pts + 0.4*bar): fails.append(f'final score {final}, expected {pts} + 40% of {bar}')
+        nums = [int(x[:-1]) for x in scores if x.endswith('%')]
+        if nums != sorted(nums) or not nums or nums[0] != 0 or max(nums) > want_final: fails.append(f'scores along the way should count up from 0: {scores}')
+        rec = await pg.evaluate("results[results.length-1].acc")
+        if rec != want_final: fails.append(f'recorded {rec}, shown {final}')
         await pg.set_viewport_size({'width': 360, 'height': 760}); await pg.wait_for_timeout(200)
         cut = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-name')].filter(n=>n.scrollWidth>n.clientWidth).map(n=>n.textContent+' '+n.scrollWidth+'/'+n.clientWidth+' item '+n.parentNode.offsetWidth+' badges '+n.nextElementSibling.offsetWidth)")
         await pg.set_viewport_size({'width': 390, 'height': 760})
