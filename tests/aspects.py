@@ -64,7 +64,7 @@ async def main():
         print('at first:', first, acc0)
         if first != '++ | = | + | = | −−− | =' or acc0 not in ('—', '0%'): fails.append(f'the review should open on your levels, no score yet: {first} {acc0}')
         seen = set(); scores = []
-        for _ in range(60):
+        for _ in range(120):
             n = await pg.evaluate("st('analysis').aspShown || 0"); seen.add(n)
             sc = await pg.text_content('#revealAcc')
             if not scores or scores[-1] != sc: scores.append(sc)
@@ -73,7 +73,7 @@ async def main():
         mid = await pg.evaluate("st('analysis').animT")
         print('aspects revealed in steps:', sorted(seen))
         if len(seen) < 4: fails.append(f'the aspects should turn one by one: {sorted(seen)}')
-        await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=5000); await pg.wait_for_timeout(300)
+        await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=10000); await pg.wait_for_timeout(300)
         rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+[...r.querySelector('.asp-badge').classList].filter(c=>['w','b','eq'].includes(c))[0]+' '+r.querySelector('.asp-badge').textContent)")
         heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.textContent)")
         print('rows:', rows, heads)
@@ -112,7 +112,7 @@ async def main():
         # the panel keeps its height from the question to the review
         await pg.click('#nextPos'); await pg.wait_for_timeout(400)
         h1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
-        await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=8000); await pg.wait_for_timeout(300)
+        await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=15000); await pg.wait_for_timeout(300)
         h2 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
         if h1 != h2: fails.append(f'panel height changed: {h1} -> {h2}')
         await b.close()

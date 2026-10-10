@@ -293,7 +293,7 @@
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
   .asp-note{margin:0; flex:1 1 0; font-size:0.84rem; line-height:1.35; color:var(--text-mute);}
   .aspects.asp-input{position:relative;}
-  .asp-badge{line-height:1.35; transition:background-color .45s, color .45s, border-color .45s, box-shadow .45s;}
+  .asp-badge{line-height:1.35; transition:background-color .6s, color .6s, border-color .6s, box-shadow .6s;}
   .asp-badge.ok{border-color:var(--best-green); box-shadow:0 0 0 1px var(--best-green);}
   .asp-badge.near{border-color:var(--dubious); box-shadow:0 0 0 1px var(--dubious);}
   .asp-badge.far{border-color:#E0823D; box-shadow:0 0 0 1px #E0823D;}   /* orange: between the yellow and the red */
@@ -1637,7 +1637,7 @@ function aspectsGridHtml(vals, guesses, shown, hidden){   // hidden: holds the s
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
     </div>`;
 }
-const ASP_START = 350, ASP_STEP = 450, ASP_CLIMB_MS = 400;   // ms: before the first aspect turns, between two, the score's climb
+const ASP_START = 500, ASP_STEP = 950, ASP_CLIMB_MS = 600;   // ms: before the first aspect turns, between two, the score's climb
 // Score: up to 10% for each aspect (60% for the six): 10 at the engine's level, 6.67 one level off,
 // 3.33 two off, 0 beyond. The bar the other 40%. Without the aspects (engine without its `eval`
 // table), the bar counts for all of it.
