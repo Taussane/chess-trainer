@@ -56,7 +56,23 @@ async def main():
         print('gauged:', r)
         if r['asp'] != {'material': 2, 'king': -3, 'space': 1} or r['badges'] != '++ = + = −−− =' or r['open']: fails.append(f'gauging: {r}')
         await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000)
-        rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+r.querySelector('.asp-badge').className.split(' ').pop()+' '+r.querySelector('.asp-badge').textContent)")
+        # 5. The review: your levels first, the score not shown yet; then the aspects turn one by one;
+        #    then the bar and the accuracy; the buttons last.
+        badges = "[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>b.textContent+(b.classList.contains('ok') ? ' ok' : b.classList.contains('bad') ? ' bad' : '')).join(' | ')"
+        await pg.wait_for_timeout(150)
+        first = await pg.evaluate(badges); acc0 = await pg.text_content('#revealAcc')
+        print('at first:', first, acc0)
+        if first != '++ | = | + | = | −−− | =' or acc0 != '—': fails.append(f'the review should open on your levels, no score yet: {first} {acc0}')
+        seen = set()
+        for _ in range(60):
+            n = await pg.evaluate("st('analysis').aspShown || 0"); seen.add(n)
+            if await pg.evaluate("!!st('analysis').aspDone"): break
+            await pg.wait_for_timeout(100)
+        mid = await pg.evaluate("st('analysis').animT")
+        print('aspects revealed in steps:', sorted(seen))
+        if len(seen) < 4: fails.append(f'the aspects should turn one by one: {sorted(seen)}')
+        await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=5000); await pg.wait_for_timeout(300)
+        rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+[...r.querySelector('.asp-badge').classList].filter(c=>['w','b','eq'].includes(c))[0]+' '+r.querySelector('.asp-badge').textContent)")
         heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.textContent)")
         print('rows:', rows, heads)
         if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King safety', 'Threats']: fails.append(f'rows: {rows}')
@@ -66,12 +82,13 @@ async def main():
             n = sum(abs(v) >= t for t in (0.3, 0.8, 2))
             return 'eq =' if n == 0 else ('w ' + '+'*n if v > 0 else 'b ' + '−'*n)
         if rows and [r.split(': ')[1] for r in rows] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
-        yours = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(i=>(i.querySelector('.asp-yours')||{}).textContent||'')")
+        marks = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>b.classList.contains('ok') ? 'ok' : b.classList.contains('bad') ? 'bad' : '?')")
         lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key])); })()")
         mine = [2, 0, 1, 0, -3, 0]
-        want = [('=' if m == 0 else ('+' if m > 0 else '−') * abs(m)) if m != l else '' for m, l in zip(mine, lv)]
-        print('yours:', yours)
-        if yours != want: fails.append(f'your guesses in the review: {yours}, expected {want}')
+        want = ['ok' if m == l else 'bad' for m, l in zip(mine, lv)]
+        print('borders:', marks)
+        if marks != want: fails.append(f'green/red borders: {marks}, expected {want}')
+        if not await pg.evaluate("!document.querySelector('.actions-row.split').classList.contains('pending')"): fails.append('buttons should be in at the end')
         await pg.set_viewport_size({'width': 360, 'height': 760}); await pg.wait_for_timeout(200)
         cut = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-name')].filter(n=>n.scrollWidth>n.clientWidth).map(n=>n.textContent+' '+n.scrollWidth+'/'+n.clientWidth+' item '+n.parentNode.offsetWidth+' badges '+n.nextElementSibling.offsetWidth)")
         await pg.set_viewport_size({'width': 390, 'height': 760})
@@ -82,7 +99,7 @@ async def main():
         # the panel keeps its height from the question to the review
         await pg.click('#nextPos'); await pg.wait_for_timeout(400)
         h1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
-        await pg.click('#check'); await pg.wait_for_selector('#aspects .asp-badge.w, #aspects .asp-badge.b, #aspects .asp-badge.eq', timeout=5000); await pg.wait_for_timeout(1500)
+        await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=8000); await pg.wait_for_timeout(300)
         h2 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
         if h1 != h2: fails.append(f'panel height changed: {h1} -> {h2}')
         await b.close()

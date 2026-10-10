@@ -281,11 +281,10 @@
   .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:10px; row-gap:10px;}
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
   .asp-note{margin:0; flex:1 1 0; font-size:0.84rem; line-height:1.35; color:var(--text-mute);}
-  .asp-badges{display:flex; align-items:center; gap:3px; flex:none;}
-  #aspects .asp-name{white-space:normal; line-height:1.15;}   /* review: a long name wraps rather than being cut when your guess sits beside it */
-  .asp-yours{font-size:0.72rem; font-weight:700; color:var(--text-mute); border:1px solid var(--border); border-radius:4px; padding:0 2px; min-width:1.6em; text-align:center; white-space:nowrap; letter-spacing:-0.06em;}
   .aspects.asp-input{position:relative;}
-  .asp-badge{line-height:1.35;}
+  .asp-badge{line-height:1.35; transition:background-color .45s, color .45s, border-color .45s, box-shadow .45s;}
+  .asp-badge.ok{border-color:var(--best-green); box-shadow:0 0 0 1px var(--best-green);}
+  .asp-badge.bad{border-color:var(--bad); box-shadow:0 0 0 1px var(--bad);}
   .asp-pick{font-family:inherit; cursor:pointer;}
   .asp-picker .asp-badge{font-family:inherit; line-height:1.35; cursor:pointer;}
   .asp-pick.eq{border-color:var(--border);}
@@ -420,7 +419,7 @@ const HELP = {
     title:'Position evaluation',
     what:"Gauge each aspect of the position (material, pawns, space, activity, king safety, threats), weigh them (one can outweigh several), keep an eye out for tactics, then drag the bar to your evaluation. Tap a badge to gauge its aspect: tap a level, or slide along the scale.",
     eval:"Your bar is compared with the engine's: every square of height you're off costs 25%.",
-    grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves. Where your guess differs, it's shown small, before the engine's.",
+    grades:"The review shows the engine's view of each aspect: = balanced, + to +++ for White, − to −−− for Black (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Static aspects last; dynamic ones can change within a few moves. In the review, each aspect turns from your level to the engine's: green border if you matched it, red if not.",
   },
   candidates: {
     title:'Candidate moves',
@@ -669,7 +668,7 @@ function engineEval(fen, searchmoves){
 // exercise's search.
 function engineAspects(fen){
   return new Promise(resolve=>{
-    if(sfState==='error'){ resolve(null); return; }
+    if(sfState==='error' || (sfState==='ready' && !sfWorker)){ resolve(null); return; }   // (the second: tests' stand-in engines)
     sfQueue.push({ fen, aspects:true, resolve });
     pumpEngineQueue();
   });
@@ -1609,22 +1608,41 @@ function aspectBadge(v){
   const l = aspectLevel(v);
   return `<span class="asp-badge ${levelCls(l)}">${SIGNS(l)}</span>`;
 }
-// The review: the engine's level for each aspect; where yours differs, yours stands crossed out
-// before it. `guesses`: {key: -3..3} (missing = "="); `vals` null: placeholders.
-function aspectsGridHtml(vals, guesses, fadeIn, hidden){   // hidden: holds the space, no id (ghost, before the reveal)
-  const item = x=>{
-    const g = (guesses && guesses[x.key]) || 0, differs = vals && aspectLevel(vals[x.key])!==g;
-    return `<div class="asp-item"><span class="asp-name">${x.name}</span><span class="asp-badges">${differs ? `<span class="asp-yours" title="Your guess">${SIGNS(g)}</span>` : ''}${aspectBadge(vals ? vals[x.key] : null)}</span></div>`;
-  };
-  return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
-      <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
+// The review: your level for each aspect, then, one by one (startAspectsReveal), the engine's,
+// its border turning green where you matched it and red where you didn't. `vals`: the engine's
+// values (null: not in yet); `guesses`: {key: -3..3} (missing = "="); `shown`: how many are revealed.
+function reviewBadge(vals, guesses, x, i, shown){
+  const g = (guesses && guesses[x.key]) || 0;
+  if(!vals || i >= shown) return `<span class="asp-badge ${levelCls(g)}">${SIGNS(g)}</span>`;
+  const l = aspectLevel(vals[x.key]);
+  return `<span class="asp-badge ${levelCls(l)} ${l===g ? 'ok' : 'bad'}">${SIGNS(l)}</span>`;
+}
+function aspectsGridHtml(vals, guesses, shown, hidden){   // hidden: holds the space, no id (ghost)
+  const item = (x, i)=>`<div class="asp-item" data-asp="${x.key}"><span class="asp-name">${x.name}</span>${reviewBadge(vals, guesses, x, i, shown)}</div>`;
+  return `<div class="aspects"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
+      <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
     </div>`;
 }
-function aspectsHtml(p, guesses, fadeIn){
-  const entry = aspectsEntry(p.fen);
-  if(entry.status!=='done') return aspectsGridHtml(null, null, fadeIn);
-  if(!entry.data) return '';
-  return aspectsGridHtml(entry.data, guesses, fadeIn);
+const ASP_START = 350, ASP_STEP = 450;   // ms: before the first aspect turns, then between two
+function startAspectsReveal(p, s, vals){
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduced){ s.aspShown = ASPECTS.length; s.aspDone = true; return; }
+  s.aspShown = 0;
+  const key = p.key;
+  const tick = ()=>{
+    // Left the screen or moved on: just finish it silently.
+    if(screen!=='analysis' || pos().key!==key){ s.aspShown = ASPECTS.length; s.aspDone = true; return; }
+    if(s.aspShown < ASPECTS.length){
+      const i = s.aspShown, x = ASPECTS[i], el = document.querySelector(`#aspects .asp-item[data-asp="${x.key}"]`);
+      s.aspShown++;
+      if(el) el.querySelector('.asp-badge').outerHTML = reviewBadge(vals, s.asp, x, i, s.aspShown);
+      // the new badge starts from your level's look, then fades to the engine's
+      const nb = el && el.querySelector('.asp-badge'), g = s.asp[x.key] || 0;
+      if(nb){ const final = nb.className; nb.className = `asp-badge ${levelCls(g)}`; nb.offsetWidth; nb.className = final; }
+      setTimeout(tick, ASP_STEP);
+    } else { s.aspDone = true; render(); }
+  };
+  setTimeout(tick, ASP_START);
 }
 // The question: the same grid, every aspect "=" until you gauge it (a reminder about tactics sits
 // beside Check).
@@ -1688,7 +1706,7 @@ function stackedPanel(inner, ghosts, extra){
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
   `<p class="prompt">Gauge each positional aspect, then drag the bar to your evaluation.</p>${aspectsInputHtml(null, true)}<div class="actions-row"><p class="asp-note">Tactics can also shift the evaluation.</p><span class="btn">Check</span></div>`,
-  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, false, true)}${GHOST_ACTIONS}`,
+  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, 0, true)}${GHOST_ACTIONS}`,
 ];
 function ghostCandidates(){
   const mini = `<div class="mini-row"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span><span class="mini-result"><span class="mini-label">Dubious</span><span class="move-eval">−1.6</span></span></div>`;
@@ -3012,7 +3030,15 @@ function renderAnalysis(){
   const p = pos(), s = st('analysis');
   const disc = s.checked ? fenEval(p.fen) : null;
   const failed = evalFailed(disc);
-  const truth = s.checked && !failed ? positionInfo(p, disc) : null;
+  const evalTruth = s.checked && !failed ? positionInfo(p, disc) : null;
+  // First the aspects turn one by one (startAspectsReveal), then the bar and the accuracy.
+  const asp = s.checked ? aspectsEntry(p.fen) : null;
+  if(!s.asp) s.asp = {};
+  if(s.animT!=null) s.aspDone = true;
+  if(evalTruth && asp.status==='done' && s.aspShown==null){
+    if(asp.data) startAspectsReveal(p, s, asp.data); else { s.aspShown = ASPECTS.length; s.aspDone = true; }
+  }
+  const truth = evalTruth && s.aspDone ? evalTruth : null;
   if(truth && s.animT==null){ recordResult(s, 'analysis', evalAccuracyPct(s.guess, truth.pct)); startReveal(p, s, truth); prefetchNext(); }
   const t = truth ? easeOut(s.animT ?? 1) : 0;
   const done = !!truth && (s.animT ?? 1) >= 1;
@@ -3027,8 +3053,8 @@ function renderAnalysis(){
     ${boardHtml(true, bar)}
     ${stackedPanel(`
       ${s.checked ? `
-        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(100 + (acc-100)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
-        ${done ? aspectsHtml(p, s.asp, s.justDone) : aspectsGridHtml(null, null, false, true)}
+        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(100 + (acc-100)*t)+'%' : '—'}</span><span class="score-label">${evalTruth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
+        ${aspectsGridHtml(asp && asp.status==='done' ? asp.data : null, s.asp, s.aspShown || 0)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Gauge each positional aspect, then drag the bar to your evaluation.</p>
