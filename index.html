@@ -56,6 +56,12 @@
   .panel-stack > .layer{grid-area:1/1; display:flex; flex-direction:column; min-width:0;}
   .panel-stack > .layer.ghost{visibility:hidden; pointer-events:none;}
   .panel-stack > .layer > .actions-row{margin-top:auto; padding-top:5px;}
+  /* Every review: score, 12 px, the content, 16 px, the buttons. */
+  .panel-stack > .layer > .score + *{margin-top:0;}
+  .panel-stack > .layer > .score ~ *:not(.actions-row){margin-bottom:0;}
+  .panel-stack > .layer > .actions-row.split{padding-top:16px;}
+  .panel-stack > .layer > .score + .rev-list{margin-top:-6px;}       /* its rows' text sits lower in the row */
+  .panel-stack > .layer > .score + .review-cols{margin-top:-2px;}
   /* Move selection's ranking screen is the tallest panel in the app: keep its instruction and
      Check button tight under the moves so the board keeps more room on small phones. */
   .hint.rank-hint{margin-top:4px;}
@@ -294,9 +300,7 @@
   .aspects:not(.plan){margin:6px 0 0;}
   .aspects:not(.plan) .asp-grid{row-gap:6px;}
   /* In the review the score sits where the prompt was: pull the grid up so each imbalance stays put. */
-  .prompt + .aspects.asp-input{margin-top:10px;}
-  .score:has(+ .aspects:not(.plan)) .score-num{line-height:1;}
-  .score + .aspects:not(.plan){margin-top:0;}
+  .prompt + .aspects.asp-input{margin-top:16px;}   /* the review's score is 4 px taller than the prompt: the imbalances stay put */
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
   .aspects.asp-input{position:relative;}
   .asp-badge{line-height:1.35; transition:background-color .6s, color .6s, border-color .6s, box-shadow .6s;}
@@ -335,8 +339,8 @@
   .asp-badge.bad{border-color:var(--bad); box-shadow:0 0 0 1px var(--bad);}
   .asp-picker .asp-badge.eq{border-color:var(--border);}
   .asp-pick.editing{box-shadow:0 0 0 2px var(--dubious);}
-  .score{display:flex; align-items:baseline; gap:8px; margin-bottom:6px;}
-  .score-num{font-family:var(--font-display); font-size:1.7rem; line-height:1.15; font-variant-numeric:tabular-nums;}
+  .score{display:flex; align-items:baseline; gap:8px; margin-bottom:12px;}
+  .score-num{font-family:var(--font-display); font-size:1.7rem; line-height:1; font-variant-numeric:tabular-nums;}
   .score-label{color:var(--text-mute); font-size:0.86rem;}
 
   .prompt{margin:0; font-size:1rem; line-height:1.45;}
@@ -365,8 +369,13 @@
      including the last. */
   .rate-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 -8px; padding:2px 8px 2px 12px;
     border-bottom:1px solid var(--border); border-left:3px solid transparent; border-radius:6px;}
-  .review-row.pick-row{min-height:40px; padding-block:2px;}
-  .rate-row, .rev-list .review-row{min-height:34px; padding-block:2px;}
+  .rate-row, .review-row.pick-row, .rev-list .review-row{min-height:34px; padding-block:2px;}
+  /* One line per move, even with a long move, the "Game move" tag and a long grade: the tag gives way. */
+  .rev-list .review-row{flex-wrap:nowrap;}
+  .rev-list .review-row .move-tag{flex-wrap:nowrap; min-width:0;}
+  .rev-list .review-row .badges{min-width:0; flex-wrap:nowrap; overflow:hidden;}
+  .rev-list .review-row .badge{overflow:hidden; text-overflow:ellipsis; min-width:0;}
+  .rev-list .review-row .move-result{flex:none;}
   .move-tag{display:flex;align-items:center;gap:8px; font-size:0.96rem; min-width:0; flex-wrap:wrap;}
   .move-tag .num{opacity:.6; min-width:1ch; font-variant-numeric:tabular-nums;}
   .del-btn{width:26px; height:26px; margin-block:-4px; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; padding:0;
@@ -2059,7 +2068,7 @@ function ghostFinal(){
   const rank = `<div class="rate-row"><div class="move-tag"><span class="num">1</span>${chip}</div><span class="drag-handle">⠿</span></div>`;
   const rev = tag=>`<div class="review-row"><div class="move-tag"><span class="num">1</span>${chip}${tag ? '<span class="badges"><span class="badge">Game move</span></span>' : ''}</div><div class="move-result"><span class="grade">Dubious</span><span class="move-eval">−1.6</span></div></div>`;
   return [
-    `<p class="prompt top">Drag the moves into order, best at the top.</p><div>${rank.repeat(4)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
+    `<p class="prompt top">Order the moves, best first.</p><div>${rank.repeat(4)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
     `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="rev-list">${rev(true)}${rev(false).repeat(3)}</div>${GHOST_ACTIONS}`,
   ];
 }
@@ -3853,7 +3862,7 @@ function renderFinal(){
     ${posBar()}
     ${boardHtml(false)}
     ${stackedPanel(`
-      <p class="prompt top" id="finalHint">Drag the moves into order, best at the top.</p>
+      <p class="prompt top" id="finalHint">Order the moves, best first.</p>
       <div id="ranked"></div>
       <div class="actions-row" id="finalCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), bs, p.last);
