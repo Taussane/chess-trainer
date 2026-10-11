@@ -2042,11 +2042,19 @@ function drawMarks(svg, marks){
     return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="6" stroke-linecap="round"${dash} marker-end="url(#mk_${t.c})"/>`;
   }).join('');
   // A small badge across the middle of the square (kept inside the board).
-  const labels = (marks.labels||[]).map(t=>{ const r = R(t.sq), w = t.text.length*7.6 + 14, h = 19;
+  const labels = (marks.labels||[]).map(t=>{ const r = R(t.sq), w = t.text.length*7 + 8, h = 16;
     const x = Math.max(1, Math.min(480 - w - 1, r.cx - w/2)), y = r.cy - h/2;
-    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9.5" fill="${MARK[t.c].ink}" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 13.5}" text-anchor="middle" font-size="13" font-weight="700" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.text}</text>`; }).join('');
+    return `<rect class="mk-label" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="700" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.text}</text>`; }).join('');
   const shadow = `<filter id="mkShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.8" flood-color="#000" flood-opacity=".6"/></filter>`;
   svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}${circles}${arrows}${nums}${labels}`;
+  // Badges fit their text: 4 units each side.
+  svg.querySelectorAll('rect.mk-label').forEach(rc=>{
+    const tx = rc.nextElementSibling; let tw = 0;
+    try{ tw = tx.getComputedTextLength(); }catch(e){}
+    if(!tw) return;
+    const cx = +tx.getAttribute('x'), w = tw + 8, x = Math.max(1, Math.min(480 - w - 1, cx - w/2));
+    rc.setAttribute('x', x); rc.setAttribute('width', w); tx.setAttribute('x', x + w/2);
+  });
 }
 // A panel whose height never changes within an exercise: `inner` is what's shown, `ghosts` are
 // invisible stand-ins for the exercise's other states (no ids, not focusable), stacked in the
