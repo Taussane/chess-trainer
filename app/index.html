@@ -433,7 +433,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces (and the bishop pair); <strong>Pawns</strong> passed pawns, and weak ones (isolated, doubled, backward) in the other side's colour; <strong>Space</strong> the safe central squares behind each side's pawns, and the pawns that gain them; <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> the squares around each king under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, or undefended.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces (and the bishop pair); <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour; <strong>Space</strong> the safe central squares behind each side's pawns, and the pawns that gain them; <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
