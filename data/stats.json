@@ -1,5 +1,5 @@
 {
- "version": "2026-10-07.1",
+ "version": "2026-10-10.1",
  "engine": {
   "depth": 18,
   "multipv": 5,
@@ -782,7 +782,7 @@
    "endgame": 44,
    "checked": 45,
    "passedGeneral": 34,
-   "analysis": 2,
+   "analysis": 3,
    "candidates": 7,
    "final": 9
   },
@@ -2593,7 +2593,7 @@
    "endgame": 35,
    "checked": 62,
    "passedGeneral": 50,
-   "analysis": 1,
+   "analysis": 2,
    "candidates": 4,
    "final": 1
   },
@@ -3623,15 +3623,15 @@
   "mate already under way": 9
  },
  "eligible": {
-  "analysis": 786,
+  "analysis": 796,
   "candidates": 635,
   "final": 206,
-  "anchors": 40
+  "anchors": 41
  },
  "analysis": {
-  "rejected: balanced, early in the middlegame": 260,
+  "rejected: balanced, early in the middlegame": 261,
   "rejected: in check": 22,
-  "rejected: material": 19
+  "rejected: big material gap, decided": 6
  },
  "candidates": {
   "rejected: no trap in top 5": 1298
@@ -3643,5 +3643,5 @@
   "rejected: fewer than 3 grades among the 4 shown": 64,
   "rejected: two moves of the same bad grade": 48
  },
- "multi": 454
+ "multi": 462
 }

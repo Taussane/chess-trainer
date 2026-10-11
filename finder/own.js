@@ -72,7 +72,11 @@ const OWN = { candidatesMinLegal:2, finalMinLegal:4, mistakeDrop:10 };
       if(baFrom<0 || ply<baFrom || ply>baTo) continue;
       if(moveNo < R.GENERAL.minMove || moveNo > R.GENERAL.maxMove || moves.length < R.GENERAL.minLegalMoves) continue;
       const prev = hist[ply-1]; if(prev && prev.captured && moves.some(m=>m.to===prev.to && m.captured)) continue;
-      if(c.in_check() || Math.abs(L.materialDiff(c)) > R.ANALYSIS.maxMaterialDiff) continue;
+      if(c.in_check()) continue;
+      if(Math.abs(L.materialDiff(c)) > R.ANALYSIS.maxMaterialDiff){   // a big material gap: only when not decided
+        const l0 = (await analyse(fen))[0], white = (c.turn()==='w' ? 1 : -1) * L.moverScore(l0);
+        if(L.winPct(Math.sign(L.materialDiff(c)) * white, null) >= R.ANALYSIS.bigMaterialMaxWin) continue;
+      }
       if(div.mid>=0 && ply < div.mid + R.ANALYSIS.earlyBalanced.plies){   // balanced, early in the middlegame: skipped
         const l0 = (await analyse(fen))[0];
         if(l0.mate==null && Math.abs(l0.cp) < R.ANALYSIS.earlyBalanced.maxEval) continue;

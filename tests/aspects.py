@@ -112,9 +112,12 @@ async def main():
         prompt = await pg.text_content('#anaPrompt'); note = await pg.text_content('#anaCheckRow .asp-note')
         if prompt != "Drag the bar to show who's better, and by how much." or note != 'Tactics can also shift the evaluation.': fails.append(f'evaluation question: {prompt} / {note}')
         if await pg.query_selector('#aspInput'): fails.append('Position evaluation asks for no imbalances')
+        e1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
         await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=8000); await pg.wait_for_timeout(300)
+        e2 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
+        if e1 != e2: fails.append(f'Position evaluation panel height changed: {e1} -> {e2}')
         r = await pg.evaluate("""(()=>{ const s = st('analysis'), p = pos(); return { acc: document.getElementById('revealAcc').textContent, want: evalAccuracyPct(s.guess, positionInfo(p, fenEval(p.fen)).pct),
-            head: document.querySelector('#aspects .asp-head').textContent, lines: [...document.querySelectorAll('#aspects .plan-row:not(.empty)')].map(r=>r.textContent),
+            head: document.querySelector('#aspects .asp-head').textContent, lines: [...document.querySelectorAll('#aspects .plan-row:not(.plan-blank)')].map(r=>r.textContent),
             badges: document.querySelectorAll('#aspects .asp-badge').length, rec: results[results.length-1].a, who: p.side==='w' ? 'White' : 'Black' }; })()""")
         print('evaluation review:', r)
         if r['acc'] != f"{r['want']}%" or r['head'] != 'Plan for ' + r['who'] or not 1 <= len(r['lines']) <= 3 or r['badges'] or r['rec'] != 'analysis': fails.append(f'evaluation review: {r}')
@@ -123,14 +126,16 @@ async def main():
             k = await row.get_attribute('data-asp'); await row.click(); await pg.wait_for_timeout(100)
             if await pg.evaluate("st('analysis').aspView") != k: fails.append('tapping a plan line should show its imbalance')
         # the plan, from made-up imbalances (White to play)
-        plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side)=>planFor({ fen:'4k3/8/8/8/8/8/8/4K3 '+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.text);
-          return { ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:2.5 }, 200), cramped: P({ space:-0.5 }, -30),
+        plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side)=>planFor({ fen:'4k3/8/8/8/8/8/8/4K3 '+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.plan);
+          const Q = (vals, side)=>planFor({ fen:'4k3/8/8/8/8/8/P7/4K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);
+          return { passed: Q({ pawns:0.5 }, 'w'), blockade: Q({ pawns:0.5 }, 'b'),
+                   ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:2.5 }, 200), cramped: P({ space:-0.5 }, -30),
                    blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400) }; })()""")
         print('plans:', plans)
-        if plans['ahead'][0] != 'Trade pieces, not pawns' or plans['behind'][0] != 'Keep pieces on, play actively' \
-           or plans['king'][0] != 'Attack the king, open lines' or plans['cramped'] != ['Trade pieces to free yourself'] \
-           or plans['blackAhead'][0] != 'Trade pieces, not pawns' or plans['even'] != ['Improve pieces, find a break'] \
-           or plans['lost'][0] != 'Avoid trades, complicate': fails.append(f'plans: {plans}')
+        if plans['ahead'][0] != 'Trade pieces, not pawns' or plans['behind'][0] != 'Avoid trades, counterattack' \
+           or plans['king'][0] != 'Bring pieces, open lines' or plans['cramped'] != ['Trade pieces to breathe'] \
+           or plans['blackAhead'][0] != 'Trade pieces, not pawns' or plans['even'] != ['Improve pieces, find a pawn break'] \
+           or plans['lost'][0] != 'Avoid trades, complicate' or plans['passed'] != ['You have a passed pawn: Push it, with support'] or plans['blockade'] != ['They have a passed pawn: Blockade it, then win it']: fails.append(f'plans: {plans}')
         # Imbalance reading in your games: only positions whose evaluation is near the imbalances' total
         q = await pg.evaluate("""async t=>{
           const lines = t.split('\\n');   // total ≈ +0.8 for this table's position

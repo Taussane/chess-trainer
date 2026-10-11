@@ -1,7 +1,7 @@
 {
- "version": "2026-10-07.1",
+ "version": "2026-10-10.1",
  "engine": "Stockfish 16.1, depth 18",
- "generated": "2026-10-07T13:26:59.701Z",
+ "generated": "2026-10-11T02:10:13.804Z",
  "pools": {
   "analysis": [
    {
@@ -1243,6 +1243,33 @@
     "anchor": false,
     "metrics": {
      "evalWhite": 391,
+     "mate": null
+    }
+   },
+   {
+    "key": "2r2r2/ppQqkp1p/5n2/1p6/8/2P5/P4PPP/5RK1 w - -",
+    "fen": "2r2r2/ppQqkp1p/5n2/1p6/8/2P5/P4PPP/5RK1 w - - 0 24",
+    "game": "g8",
+    "title": "Fischer – Celle",
+    "event": "Clock simul, 10b",
+    "year": "1964",
+    "ply": 46,
+    "added": 1790985600000,
+    "moveNo": 24,
+    "side": "w",
+    "last": [
+     "g4",
+     "f6"
+    ],
+    "hist": {
+     "uci": "f1e1",
+     "san": "Re1+",
+     "from": "f1",
+     "to": "e1"
+    },
+    "anchor": true,
+    "metrics": {
+     "evalWhite": 685,
      "mate": null
     }
    },
@@ -3272,6 +3299,33 @@
     }
    },
    {
+    "key": "Qn2r1k1/p1pq2pp/bp2p3/5p2/2PP4/B1PB4/P4PPP/R3K2R b KQ -",
+    "fen": "Qn2r1k1/p1pq2pp/bp2p3/5p2/2PP4/B1PB4/P4PPP/R3K2R b KQ - 0 14",
+    "game": "g28",
+    "title": "Portisch – Fischer",
+    "event": "Second Piatigorsky Cup",
+    "year": "1966",
+    "ply": 27,
+    "added": 1790985600000,
+    "moveNo": 14,
+    "side": "b",
+    "last": [
+     "e4",
+     "a8"
+    ],
+    "hist": {
+     "uci": "b8c6",
+     "san": "Nc6",
+     "from": "b8",
+     "to": "c6"
+    },
+    "anchor": false,
+    "metrics": {
+     "evalWhite": -117,
+     "mate": null
+    }
+   },
+   {
     "key": "4q1k1/p1p3pp/1p2p3/5p2/2nP4/B1P5/P4PPP/4RRK1 w - -",
     "fen": "4q1k1/p1p3pp/1p2p3/5p2/2nP4/B1P5/P4PPP/4RRK1 w - - 0 19",
     "game": "g28",
@@ -3893,29 +3947,29 @@
     }
    },
    {
-    "key": "1q3kr1/3Qb2p/p7/8/1p6/8/PPP3PP/4R2K b - -",
-    "fen": "1q3kr1/3Qb2p/p7/8/1p6/8/PPP3PP/4R2K b - - 0 26",
+    "key": "1q4r1/3rbk1p/p1Q5/8/1p6/8/PPP3PP/4R2K w - -",
+    "fen": "1q4r1/3rbk1p/p1Q5/8/1p6/8/PPP3PP/4R2K w - - 0 25",
     "game": "g34",
     "title": "Fischer – Tal",
     "event": "Bled-Zagreb-Belgrade Candidates",
     "year": "1959",
-    "ply": 51,
+    "ply": 48,
     "added": 1790985600000,
-    "moveNo": 26,
-    "side": "b",
+    "moveNo": 25,
+    "side": "w",
     "last": [
-     "e6",
-     "d7"
+     "e8",
+     "f7"
     ],
     "hist": {
-     "uci": "b8d6",
-     "san": "Qd6",
-     "from": "b8",
-     "to": "d6"
+     "uci": "c6e6",
+     "san": "Qe6+",
+     "from": "c6",
+     "to": "e6"
     },
     "anchor": true,
     "metrics": {
-     "evalWhite": -246,
+     "evalWhite": -252,
      "mate": null
     }
    },
