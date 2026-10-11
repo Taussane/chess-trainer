@@ -448,9 +448,9 @@ const IMB_MARKS = "<strong>Material</strong> the extra pieces (and the bishop pa
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
-    what:"Read the position's imbalances, the lasting (static) ones and those that can change within a few moves (dynamic): for each, who has the edge, and how big? Tap a badge, then a level (= balanced, + to +++ for White, − to −−− for Black), or slide along the scale.",
+    what:"Read the position's imbalances, the lasting (static) ones and those that can change within a few moves (dynamic): for each, who has the edge, and how big? Tap a badge, then a level (= balanced, + or ++ for White, − or −− for Black), or slide along the scale.",
     eval:"Each imbalance counts in proportion to how often it matters in master games (Activity, Material and King safety most, Space least): all of it at the engine's level, half one level off, nothing beyond.",
-    grades:"Each imbalance turns from your level to the engine's (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Green border: you matched it; yellow: one level off; red: further. Then tap an imbalance to see on the board what it's about, white marks favouring White and black ones Black: " + IMB_MARKS,
+    grades:"Each imbalance turns from your level to the engine's (+ from 0.3 pawns, ++ from 0.8). Green border: you matched it; yellow: one level off; red: further. Then tap an imbalance to see on the board what it's about, white marks favouring White and black ones Black: " + IMB_MARKS,
   },
   analysis: {
     title:'Position evaluation',
@@ -1596,10 +1596,12 @@ const ASPECTS = [
   { key:'king',     name:'King safety', weight:0.59 },
   { key:'threats',  name:'Threats',     weight:0.53 },
 ];
-// Each aspect as signs, from its value in pawns: under 0.3 "=", then +, ++ from 0.8, +++ from 2
+// Each aspect as signs, from its value in pawns: under 0.3 "=", then +, ++ from 0.8 (a third level, from 2,
+// was dropped for simplicity: it only told a piece up from a pawn up, and a mating attack from a weak king)
 // (− for Black). Fitted on the 468 master positions: counting the signs points to the wrong side in
 // 7% of the positions where one side is a pawn ahead.
-const ASPECT_LEVELS = [0.3, 0.8, 2];
+const ASPECT_LEVELS = [0.3, 0.8];
+const ASPECT_MAX = ASPECT_LEVELS.length;
 // Stockfish 10's piece values [middlegame, endgame], and its game-phase limits (non-pawn material).
 const SF_VALUES = { p:[136,208], n:[782,865], b:[830,918], r:[1289,1378], q:[2529,2687] };
 const SF_PAWN_EG = 208, SF_MG_LIMIT = 15258, SF_EG_LIMIT = 3915;
@@ -1677,8 +1679,8 @@ function planFor(p, vals, info){
   if(mat <= -1) add('material', 3 - mat, 'Down material', 'Avoid trades, counterattack');
   if(!mat && Math.abs(E) < 99 && E >= 2) add(null, 4, 'Clearly better', 'Trade down, cut counterplay');
   if(!mat && Math.abs(E) < 99 && E <= -2) add(null, 4, 'Clearly worse', 'Avoid trades, complicate');
-  if(lv('king') >= 2) add('king', 2 + lv('king'), 'Their king is weak', 'Bring pieces, open lines');
-  if(lv('king') <= -2) add('king', 2 - lv('king'), 'Your king is weak', 'Defend it, trade attackers');
+  if(lv('king') >= 2) add('king', 3 + lv('king'), 'Their king is weak', 'Bring pieces, open lines');
+  if(lv('king') <= -2) add('king', 3 - lv('king'), 'Your king is weak', 'Defend it, trade attackers');
   if(lv('threats') >= 1) add('threats', 2 + lv('threats'), 'You have threats', 'Forcing moves first');
   if(lv('threats') <= -1) add('threats', 2 - lv('threats'), 'They have threats', 'Parry them first');
   if(lv('pawns') >= 1) add('pawns', 1 + lv('pawns'), ...(ring(me, me) ? ['You have a passed pawn', 'Push it, with support'] : ['Their pawns are weak', 'Attack the weak pawns']));
@@ -1774,7 +1776,7 @@ function startAspectsReveal(p, s, vals){
 }
 // The question: the same grid, every aspect "=" until you gauge it (a reminder about tactics sits
 // beside Check).
-// Tap a badge: a scale from −−− to +++ opens above it; tap a level, or slide along the scale and let go. Arrow keys on a badge
+// Tap a badge: a scale from −− to ++ opens above it; tap a level, or slide along the scale and let go. Arrow keys on a badge
 // step it up or down.
 function aspectsInputHtml(s, hidden){
   const item = x=>{ const l = (s && s.asp[x.key]) || 0;
@@ -1788,7 +1790,7 @@ function aspectsInputHtml(s, hidden){
 let aspPicker = null;   // {key, el, sliding}: the scale open under a badge
 function closeAspPicker(){ if(aspPicker){ aspPicker.el.remove(); aspPicker = null; } }
 function setAspect(s, key, l){
-  s.asp[key] = Math.max(-3, Math.min(3, l));
+  s.asp[key] = Math.max(-ASPECT_MAX, Math.min(ASPECT_MAX, l));
   const b = document.querySelector(`.asp-pick[data-asp="${key}"]`);
   if(b){ b.className = `asp-badge ${levelCls(s.asp[key])} asp-pick`; b.textContent = SIGNS(s.asp[key]); b.setAttribute('aria-label', `${ASPECTS.find(x=>x.key===key).name}: ${SIGNS(s.asp[key])}`); }
   if(aspPicker && aspPicker.key===key) aspPicker.el.querySelectorAll('[data-l]').forEach(o=>o.classList.toggle('on', +o.dataset.l===s.asp[key]));
@@ -1799,7 +1801,7 @@ function openAspPicker(s, key){
   if(!badge) return;
   const el = document.createElement('div');
   el.className = 'asp-picker'; el.setAttribute('role', 'listbox'); el.setAttribute('aria-label', ASPECTS.find(x=>x.key===key).name);
-  el.innerHTML = [-3,-2,-1,0,1,2,3].map(l=>`<button class="asp-badge ${levelCls(l)}${((s.asp[key]||0)===l) ? ' on' : ''}" data-l="${l}" role="option">${SIGNS(l)}</button>`).join('');
+  el.innerHTML = Array.from({ length: 2*ASPECT_MAX + 1 }, (_, i)=>i - ASPECT_MAX).map(l=>`<button class="asp-badge ${levelCls(l)}${((s.asp[key]||0)===l) ? ' on' : ''}" data-l="${l}" role="option">${SIGNS(l)}</button>`).join('');
   box.appendChild(el);
   const item = badge.closest('.asp-item');
   el.style.top = (item.offsetTop - el.offsetHeight - 4) + 'px';   // above the badge, so the finger doesn't hide it
@@ -3368,7 +3370,7 @@ function renderAnalysis(){
   s.justDone = false;   // the buttons' fade plays once, when the reveal lands — not on later redraws
 }
 // ================= Imbalance reading =================
-// Gauge the six imbalances (−−− to +++); the review turns them one by one to the engine's levels
+// Gauge the six imbalances (−− to ++); the review turns them one by one to the engine's levels
 // (Stockfish 10's own evaluation, term by term: no search), the score climbing as they turn.
 function renderImbalances(){
   const app = document.getElementById('app');

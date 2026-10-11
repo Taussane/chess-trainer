@@ -1,5 +1,5 @@
 # Imbalance reading, and the imbalances in Position evaluation's review: Stockfish 10's `eval` table,
-# grouped into six imbalances, gauged as signs (−−− to +++), revealed one by one, drawn on the board.
+# grouped into six imbalances, gauged as signs (−− to ++), revealed one by one, drawn on the board.
 import asyncio, sys, pathlib, json
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
@@ -44,19 +44,19 @@ async def main():
         if not above: fails.append('the scale should open above the badge')
         await pg.click('.asp-picker [data-l="2"]'); await pg.wait_for_timeout(100)
         await pg.click('.asp-pick[data-asp="king"]'); await pg.wait_for_timeout(100)
-        xy = await pg.evaluate("[0,-3].map(l=>{ const r = document.querySelector('.asp-picker [data-l=\"'+l+'\"]').getBoundingClientRect(); return [r.x+r.width/2, r.y+r.height/2]; })")
+        xy = await pg.evaluate("[0,-2].map(l=>{ const r = document.querySelector('.asp-picker [data-l=\"'+l+'\"]').getBoundingClientRect(); return [r.x+r.width/2, r.y+r.height/2]; })")
         await pg.mouse.move(*xy[0]); await pg.mouse.down(); await pg.mouse.move(xy[1][0], xy[1][1], steps=8); await pg.mouse.up(); await pg.wait_for_timeout(100)
         await pg.focus('.asp-pick[data-asp="space"]'); await pg.keyboard.press('ArrowUp'); await pg.keyboard.press('ArrowUp'); await pg.keyboard.press('ArrowDown')
         await pg.click('.asp-pick[data-asp="threats"]'); await pg.wait_for_timeout(100)
         await pg.mouse.click(5, 5); await pg.wait_for_timeout(100)
         r = await pg.evaluate("({ asp: st('imbalances').asp, badges: [...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' '), open: !!document.querySelector('.asp-picker') })")
         print('gauged:', r)
-        if r['asp'] != {'material': 2, 'king': -3, 'space': 1} or r['badges'] != '++ = + = −−− =' or r['open']: fails.append(f'gauging: {r}')
+        if r['asp'] != {'material': 2, 'king': -2, 'space': 1} or r['badges'] != '++ = + = −− =' or r['open']: fails.append(f'gauging: {r}')
         # 5. The review: your levels first; then one by one the engine's, the score climbing; the buttons last.
         await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000); await pg.wait_for_timeout(150)
         first = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>b.textContent).join(' | ')"); acc0 = await pg.text_content('#revealAcc')
         print('at first:', first, acc0)
-        if first != '++ | = | + | = | −−− | =' or acc0 not in ('—', '0%'): fails.append(f'the review should open on your levels: {first} {acc0}')
+        if first != '++ | = | + | = | −− | =' or acc0 not in ('—', '0%'): fails.append(f'the review should open on your levels: {first} {acc0}')
         seen = set(); scores = []
         for _ in range(120):
             seen.add(await pg.evaluate("st('imbalances').aspShown || 0"))
@@ -74,12 +74,12 @@ async def main():
         if heads != ['Static', 'Dynamic']: fails.append(f'column titles: {heads}')
         vals = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>a[x.key]); })()")
         def badge(v):
-            n = sum(abs(v) >= t for t in (0.3, 0.8, 2))
+            n = sum(abs(v) >= t for t in (0.3, 0.8))
             return 'eq =' if n == 0 else ('w ' + '+'*n if v > 0 else 'b ' + '−'*n)
         if [r.split(': ')[1] for r in rows] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
         borders = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>['ok','near','far','bad'].find(c=>b.classList.contains(c)) || '?')")
         lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key])); })()")
-        mine = [2, 0, 1, 0, -3, 0]
+        mine = [2, 0, 1, 0, -2, 0]
         want = ['ok' if m == l else 'near' if abs(m - l) == 1 else 'bad' for m, l in zip(mine, lv)]
         print('borders:', borders)
         if borders != want: fails.append(f'borders: {borders}, expected {want}')
