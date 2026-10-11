@@ -295,6 +295,11 @@
   .asp-note{margin:0; flex:1 1 0; font-size:0.84rem; line-height:1.35; color:var(--text-mute);}
   .aspects.asp-input{position:relative;}
   .asp-badge{line-height:1.35; transition:background-color .6s, color .6s, border-color .6s, box-shadow .6s;}
+  .aspects.plan .asp-head{margin-bottom:6px;}
+  .plan-row{display:flex; align-items:baseline; gap:8px; font-size:0.9rem; line-height:1.3; padding:3px 0; min-height:1.3em;}
+  .plan-row.asp-item{justify-content:flex-start;}
+  .plan-tag{flex:none; font-size:0.76rem; color:var(--text-mute); min-width:5.6em;}
+  .plan-text{min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .asp-item.pickable{cursor:pointer; border-radius:6px; margin:-3px -6px; padding:3px 6px; -webkit-tap-highlight-color:transparent;}
   .asp-item.pickable .asp-name{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
   .asp-item.sel{background:var(--panel-2); box-shadow:inset 0 0 0 1px var(--accent);}
@@ -450,7 +455,7 @@ const HELP = {
     title:'Position evaluation',
     what:"Judge who's better and by how much: weigh the imbalances (one can outweigh several), keep an eye out for tactics, then drag the bar to your evaluation.",
     eval:"Your bar is compared with the engine's: every square of height you're off costs 25%.",
-    grades:"The review shows the engine's imbalances (= balanced, + to +++ for White, − to −−− for Black). Tap one to see on the board what it's about: " + IMB_MARKS,
+    grades:"The review suggests a plan for the side to play, from the strongest imbalances and the evaluation: general principles (trade pieces when ahead in material, keep them on when behind, attack an exposed king…), not a calculated line. Tap a line to see its imbalance on the board: " + IMB_MARKS,
   },
   candidates: {
     title:'Candidate moves',
@@ -692,6 +697,14 @@ function engineEval(fen, searchmoves){
   return new Promise(resolve=>{
     if(sfState==='error'){ resolve(FAILED); return; }
     sfQueue.push({fen, searchmoves, resolve});
+    pumpEngineQueue();
+  });
+}
+// The same, queued behind every exercise's search (background checks).
+function engineAspectsBg(fen){
+  return new Promise(resolve=>{
+    if(sfState==='error' || (sfState==='ready' && !sfWorker)){ resolve(null); return; }
+    bgQueue.push({ fen, aspects:true, resolve });
     pumpEngineQueue();
   });
 }
@@ -1129,7 +1142,7 @@ function candidatesFor(a, src){
   if(cached && cached.ck===ck) return cached.v;
   const last = new Map(); results.forEach(r=>{ if(r.key && r.a===a) last.set(r.key, r); });
   const games = new Map(myGames.map(g=>[g.id, g])), now = Date.now(), core = [], replay = [];
-  const list = src==='mine' ? myPositions.filter(p=>posIn(p, a)) : POOLS[a];
+  const list = src==='mine' ? myPositions.filter(p=>posIn(p, a) && (a!=='imbalances' || quietOwn(p))) : POOLS[a];
   for(const p of list){
     const r = last.get(p.key), g = p.gameId ? games.get(p.gameId) : null;
     if(r && r.miss){ if(now - r.ts >= REPLAY_GAP) replay.push(p); continue; }
@@ -1640,6 +1653,48 @@ function aspectBadge(v){
   const l = aspectLevel(v);
   return `<span class="asp-badge ${levelCls(l)}">${SIGNS(l)}</span>`;
 }
+// ---- Position evaluation's review: a plan for the side to play ----
+// General principles read from the imbalances and the evaluation (not calculated by the engine):
+// up to three lines, the strongest imbalances first, each tied to the imbalance it comes from (tap
+// it to see that imbalance on the board).
+function planFor(p, vals, info){
+  const me = p.side, sgn = me==='w' ? 1 : -1, who = me==='w' ? 'White' : 'Black';
+  const lv = k=>aspectLevel(vals[k]) * sgn;   // + good for the side to play
+  const E = info.mate!=null ? (info.mate*sgn > 0 ? 99 : -99) : info.cp/100*sgn;
+  const pawnMarks = aspectMarks(p.fen, 'pawns').circles.filter(c=>c.c===me), m = boardMap(p.fen);
+  const passed = pawnMarks.some(c=>m[c.sq] && m[c.sq].c===me), targets = pawnMarks.some(c=>m[c.sq] && m[c.sq].c!==me);
+  const out = [];
+  const add = (key, weight, text)=>out.push({ key, weight, text });
+  if(Math.abs(E) >= 99){ add('threats', 9, E > 0 ? 'Mate is on: look at checks' : 'Mate threat: defend first'); }
+  if(lv('material') >= 1) add('material', 3 + lv('material'), E > 0.5 ? 'Trade pieces, not pawns' : 'Keep the extra material');
+  if(lv('material') <= -1) add('material', 3 - lv('material'), E > -1 ? 'Keep pieces on, play actively' : 'Avoid trades, make it messy');
+  if(lv('king') >= 2) add('king', 2 + lv('king'), 'Attack the king, open lines');
+  if(lv('king') <= -2) add('king', 2 - lv('king'), 'Guard your king, trade attackers');
+  if(lv('threats') >= 1) add('threats', 2 + lv('threats'), 'Forcing moves first');
+  if(lv('threats') <= -1) add('threats', 2 - lv('threats'), 'Parry their threats first');
+  if(lv('pawns') >= 1) add('pawns', 1 + lv('pawns'), passed ? 'Push the passed pawn' : 'Target their weak pawns');
+  if(lv('pawns') <= -1) add('pawns', 1 - lv('pawns'), 'Stay active, avoid endgames');
+  if(lv('space') >= 1) add('space', 1 + lv('space'), 'Keep the bind, prepare a break');
+  if(lv('space') <= -1) add('space', 1 - lv('space'), 'Trade pieces to free yourself');
+  if(lv('activity') >= 1) add('activity', 1 + lv('activity'), 'Keep the initiative, open lines');
+  if(lv('activity') <= -1) add('activity', 1 - lv('activity'), 'Improve your worst piece');
+  if(!out.length) add(null, 0, 'Improve pieces, find a break');
+  if(!out.some(x=>x.key==='material') && E <= -2) add(null, 8, 'Avoid trades, complicate');
+  return { who, lines: out.sort((a, b)=>b.weight - a.weight).filter((x, i, a)=>a.findIndex(y=>y.text===x.text)===i).slice(0, 3) };
+}
+const PLAN_ROWS = 3;
+// `plan` null: placeholders (the panel's ghost). The rows hold their space even when fewer.
+function planHtml(plan, view, fadeIn, hidden){
+  const rows = Array.from({ length: PLAN_ROWS }, (_, i)=>{
+    const x = plan && plan.lines[i];
+    if(!x) return `<div class="plan-row empty"${hidden ? '' : ' aria-hidden="true"'}>&nbsp;</div>`;
+    const name = x.key ? ASPECTS.find(a=>a.key===x.key).name : '';
+    return `<div class="plan-row${x.key ? ' asp-item pickable' : ''}${x.key && view===x.key ? ' sel' : ''}"${x.key ? ` data-asp="${x.key}" role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}>${name ? `<span class="plan-tag">${name}</span>` : ''}<span class="plan-text">${x.text}</span></div>`;
+  }).join('');
+  return `<div class="aspects plan${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
+      <div class="asp-head">${plan ? 'Plan for ' + plan.who : 'Plan'}</div>${rows}
+    </div>`;
+}
 // Imbalance reading's review: your level for each aspect, then, one by one (startAspectsReveal), the
 // engine's, its border turning green where you matched it, yellow one level off, orange two off, red
 // further. `vals`: the engine's values (null: not in yet); `guesses`: {key: -3..3} (missing = "="),
@@ -1911,7 +1966,7 @@ function stackedPanel(inner, ghosts, extra){
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
   `<p class="prompt">Drag the bar to show who's better, and by how much.</p><div class="actions-row"><p class="asp-note">Tactics can also shift the evaluation.</p><span class="btn">Check</span></div>`,
-  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, 0, true)}${GHOST_ACTIONS}`,
+  `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planHtml(null, null, false, true)}${GHOST_ACTIONS}`,
 ];
 const GHOST_IMBALANCES = [
   `<p class="prompt">Gauge each imbalance: who has the edge, and how big?</p>${aspectsInputHtml(null, true)}<div class="actions-row"><span class="btn">Check</span></div>`,
@@ -2027,6 +2082,27 @@ function missedList(){
 function joinedAt(){ return Math.min(...[profile.joinedAt, results.length ? results[0].ts : null, Date.now()].filter(x=>x!=null)); }
 function saveProfile(){ if(leaving) return; try{ localStorage.setItem(PROFILE_LS, JSON.stringify(profile)); }catch(e){} if(metaCol) metaCol.doc('profile').set(profile).catch(()=>{}); }
 function findPosition(key, a){ return POOLS[a].find(p=>p.key===key) || myPositions.find(p=>p.key===key && posIn(p, a)) || null; }
+// Imbalance reading in your games: Position evaluation's positions less the tactical ones, as for the
+// masters (IMBALANCE_SKIP): the evaluation your game already has (Lichess's, or the app's scan) 2
+// squares of the bar or more from the imbalances' total. Each is checked once, in the background
+// (Stockfish's eval table: no search); until then it isn't offered. No evaluation, or no engine: kept.
+const quietChecked = new Map();   // position key -> true (quiet) | false (tactical)
+function quietOwn(p){
+  if(quietChecked.has(p.key)) return quietChecked.get(p.key);
+  quietChecked.set(p.key, undefined);
+  engineAspectsBg(p.fen).then(lines=>{
+    const a = parseAspects(lines, p.fen), g = myGames.find(x=>x.id===p.gameId), e = g && g.evals && p.ply>0 ? g.evals[p.ply-1] : null;
+    let quiet = true;
+    if(a && e && (e.cp!=null || e.mate!=null)){
+      const sum = ASPECTS.reduce((t, x)=>t + a[x.key], 0);
+      quiet = Math.abs(cpToPct(sum*100, null) - cpToPct(e.cp, e.mate)) < IMBALANCE_FAR;
+    }
+    quietChecked.set(p.key, quiet);
+    if(quiet){ myPosVersion++; refreshPools(); render(); }
+  });
+  return undefined;
+}
+const IMBALANCE_FAR = 25;   // 2 squares of the bar, in winning chances
 // One of your positions in exercise `a`: Imbalance reading takes Position evaluation's.
 function posIn(p, a){ return Array.isArray(p.acts) && p.acts.includes(a==='imbalances' ? 'analysis' : a); }
 // Missed positions still in the app; positions played today wait for tomorrow.
@@ -2319,7 +2395,7 @@ function renderHome(){
     <div class="home-head">
       <div class="home-top"><button class="acct-chip" id="accountBtn">${DIRECT_LICHESS && !signedIn() ? 'Log in' : `<span class="acct-dot" aria-hidden="true">${(displayName()[0] || 'G').toUpperCase().replace(/</g,'')}</span>${displayName().replace(/</g,'&lt;') || 'Guest'}`}</button></div>
       <h1>Chess Strategy Trainer</h1>
-      ${(DIRECT_LICHESS ? !signedIn() : !results.length) ? `<p>Train your strategy beyond tactics puzzles: gauge the position, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
+      ${(DIRECT_LICHESS ? !signedIn() : !results.length) ? `<p>Train your strategy beyond tactics puzzles: gauge the imbalances, evaluate the position, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
     ${routineCard()}
     <div class="source-row"><span class="source-label">Positions from</span>
@@ -3121,7 +3197,7 @@ function lichessExportUrl(name){
   const perf = 'bullet,blitz,rapid,classical';
   return `https://lichess.org/api/games/user/${encodeURIComponent(name || 'USERNAME')}?max=${CORE_GAMES}&perfType=${perf}&evals=true&clocks=false&opening=false`;
 }
-function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTS.forEach(a=>{ if(posIn(p, a)) c[a]++; })); return c; }
+function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTS.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); return c; }
 // Only a problem: "Couldn't check Lichess: …" (or why it couldn't check)
 function siteLine(site){
   const r = mySync[site], name = SITE_NAMES[site];
@@ -3248,7 +3324,7 @@ function renderAnalysis(){
   if(truth && s.animT==null){ recordResult(s, 'analysis', score.final); startReveal(p, s, truth, score); prefetchNext(); }
   const t = truth ? easeOut(s.animT ?? 1) : 0;
   const done = !!truth && (s.animT ?? 1) >= 1;
-  // The review also shows the engine's imbalances (tap one to see it on the board): not scored here.
+  // The review also suggests a plan, from the imbalances (tap a line to see its imbalance on the board): not scored.
   const asp = done ? aspectsEntry(p.fen) : null, aspVals = asp && asp.status==='done' ? asp.data : null;
   const barPct = truth ? s.guess + (truth.pct - s.guess)*t : s.guess;
   const bar = s.checked
@@ -3261,7 +3337,7 @@ function renderAnalysis(){
     ${stackedPanel(`
       ${s.checked ? `
         <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(score.base + (score.final - score.base)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
-        ${aspVals ? aspectsGridHtml(aspVals, null, ASPECTS.length, false, s.aspView, true, s.justDone) : aspectsGridHtml(null, null, 0, true)}
+        ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, s.justDone) : planHtml(null, null, false, true)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Drag the bar to show who's better, and by how much.</p>
