@@ -80,11 +80,12 @@ async def main():
         borders = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>['ok','near','far','bad'].find(c=>b.classList.contains(c)) || '?')")
         lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key])); })()")
         mine = [2, 0, 1, 0, -3, 0]
-        want = ['ok' if m == l else 'near' if abs(m - l) == 1 else 'far' if abs(m - l) == 2 else 'bad' for m, l in zip(mine, lv)]
+        want = ['ok' if m == l else 'near' if abs(m - l) == 1 else 'bad' for m, l in zip(mine, lv)]
         print('borders:', borders)
         if borders != want: fails.append(f'borders: {borders}, expected {want}')
         final = await pg.text_content('#revealAcc')
-        pts = round(sum(100 / 6 * max(0, 3 - abs(m - l)) / 3 for m, l in zip(mine, lv)))
+        W = [0.63, 0.24, 0.08, 0.73, 0.59, 0.53]
+        pts = round(sum(100 * w / sum(W) * {0: 1, 1: 0.5}.get(abs(m - l), 0) for w, m, l in zip(W, mine, lv)))
         nums = [int(x[:-1]) for x in scores if x.endswith('%')]
         if final != f'{pts}%': fails.append(f'score {final}, expected {pts}%')
         if nums != sorted(nums) or not nums or nums[0] != 0: fails.append(f'the score should climb from 0: {scores}')

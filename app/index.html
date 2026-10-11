@@ -297,7 +297,6 @@
   .asp-item.sel .asp-name{text-decoration:none;}
   .asp-badge.ok{border-color:var(--best-green); box-shadow:0 0 0 1px var(--best-green);}
   .asp-badge.near{border-color:var(--dubious); box-shadow:0 0 0 1px var(--dubious);}
-  .asp-badge.far{border-color:#E0823D; box-shadow:0 0 0 1px #E0823D;}   /* orange: between the yellow and the red */
   .asp-badge.bad{border-color:var(--bad); box-shadow:0 0 0 1px var(--bad);}
   .asp-pick{font-family:inherit; cursor:pointer;}
   .asp-picker .asp-badge{font-family:inherit; line-height:1.35; cursor:pointer;}
@@ -439,8 +438,8 @@ const HELP = {
   imbalances: {
     title:'Imbalance reading',
     what:"Read the position's imbalances, the lasting (static) ones and those that can change within a few moves (dynamic): for each, who has the edge, and how big? Tap a badge, then a level (= balanced, + to +++ for White, − to −−− for Black), or slide along the scale.",
-    eval:"Each imbalance scores a sixth: all of it at the engine's level, two thirds one level off, a third two off.",
-    grades:"Each imbalance turns from your level to the engine's (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Green border: you matched it; yellow: one level off; orange: two; red: further. Then tap an imbalance to see on the board what it's about, white marks favouring White and black ones Black: " + IMB_MARKS,
+    eval:"Each imbalance counts in proportion to how often it matters in master games (Activity, Material and King safety most, Space least): all of it at the engine's level, half one level off, nothing beyond.",
+    grades:"Each imbalance turns from your level to the engine's (+ from 0.3 pawns, ++ from 0.8, +++ from 2). Green border: you matched it; yellow: one level off; red: further. Then tap an imbalance to see on the board what it's about, white marks favouring White and black ones Black: " + IMB_MARKS,
   },
   analysis: {
     title:'Position evaluation',
@@ -1576,13 +1575,15 @@ function fmtBarScore(info){
 // Static (lasting) on the left, dynamic on the right. Measured on the 40 master games (quiet
 // positions, correlation of each aspect with itself 3 moves later): space 0.77, pawns 0.67,
 // material 0.66; activity 0.55, king safety 0.54, threats 0.22.
+// weight: Imbalance reading's score, in proportion to how often the imbalance isn't "=" in the
+// master positions (Space almost never matters there, Activity most often).
 const ASPECTS = [
-  { key:'material', name:'Material' },
-  { key:'pawns',    name:'Pawns' },
-  { key:'space',    name:'Space' },
-  { key:'activity', name:'Activity' },
-  { key:'king',     name:'King safety' },
-  { key:'threats',  name:'Threats' },
+  { key:'material', name:'Material',    weight:0.63 },
+  { key:'pawns',    name:'Pawns',       weight:0.24 },
+  { key:'space',    name:'Space',       weight:0.08 },
+  { key:'activity', name:'Activity',    weight:0.73 },
+  { key:'king',     name:'King safety', weight:0.59 },
+  { key:'threats',  name:'Threats',     weight:0.53 },
 ];
 // Each aspect as signs, from its value in pawns: under 0.3 "=", then +, ++ from 0.8, +++ from 2
 // (− for Black). Fitted on the 468 master positions: counting the signs points to the wrong side in
@@ -1700,7 +1701,7 @@ function reviewBadge(vals, guesses, x, i, shown){
   if(!vals || i >= shown) return `<span class="asp-badge ${levelCls(g)}">${SIGNS(g)}</span>`;
   const l = aspectLevel(vals[x.key]);
   const off = Math.abs(l - g);
-  return `<span class="asp-badge ${levelCls(l)} ${off===0 ? 'ok' : off===1 ? 'near' : off===2 ? 'far' : 'bad'}">${SIGNS(l)}</span>`;
+  return `<span class="asp-badge ${levelCls(l)} ${off===0 ? 'ok' : off===1 ? 'near' : 'bad'}">${SIGNS(l)}</span>`;
 }
 // `view`: once revealed, every aspect can be tapped (one at a time, like radio buttons) to draw on the
 // board what it's about; `view` is the one shown (or null), `pickable` whether tapping works yet.
@@ -1720,12 +1721,14 @@ function wireAspectView(p, s){
   });
 }
 const ASP_START = 500, ASP_STEP = 800, ASP_CLIMB_MS = 600;   // ms: before the first aspect turns, between two, the score's climb
-// Imbalance reading's score: a sixth for each aspect: all of it at the engine's level, two thirds one
-// level off, a third two off, nothing beyond.
+// Imbalance reading's score: each imbalance counts in proportion to its weight: all of it at the
+// engine's level, half one level off, nothing beyond. Leaving all six at "=" averages 56% on the master
+// positions (equal sixths with partial credit gave 76%: Space and Pawns are nearly always "=").
 const aspectOff = (vals, guesses, x)=>Math.abs(aspectLevel(vals[x.key]) - ((guesses && guesses[x.key]) || 0));
 function imbalanceScore(vals, guesses, shown){
   if(!vals) return 0;
-  return ASPECTS.slice(0, shown).reduce((t, x)=>t + 100 / ASPECTS.length * Math.max(0, 3 - aspectOff(vals, guesses, x)) / 3, 0);
+  const total = ASPECTS.reduce((t, x)=>t + x.weight, 0);
+  return ASPECTS.slice(0, shown).reduce((t, x)=>t + 100 * x.weight / total * ([1, 0.5][aspectOff(vals, guesses, x)] || 0), 0);
 }
 function startAspectsReveal(p, s, vals){
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
