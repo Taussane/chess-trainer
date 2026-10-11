@@ -64,12 +64,12 @@ async def main():
             if not st['queued'] and not st['pending'] and not st['running']: break
             await pg.wait_for_timeout(500)
         import re as _re
-        await pg.wait_for_timeout(300); seen.append(await pg.inner_text('.mg-status'))
+        await pg.wait_for_timeout(300); seen.append(await pg.evaluate("(document.querySelector('.mg-status')||{}).innerText || ''"))
         nums = [int(m.group(1)) for t in seen for m in [_re.match(r'Analysing your games: (\d+) of 10 done', t)] if m]
         print('status lines:', sorted(set(seen))[:4], '…', seen[-1])
-        if any(t and not (_re.match(r'Analysing your games: \d+ of 10 done', t) or t == 'All games analysed.') for t in seen): fails.append(f'unexpected status line: {set(seen)}')
+        if any(t and not (_re.match(r'Analysing your games: \d+ of 10 done', t) ) for t in seen): fails.append(f'unexpected status line: {set(seen)}')
         if nums != sorted(nums): fails.append(f'the counter went backwards: {nums}')
-        if seen[-1] != 'All games analysed.': fails.append('final status: ' + seen[-1])
+        if seen[-1] != '': fails.append('no status line once all games are analysed: ' + seen[-1])
         if any(not (ba_keys[i] <= ba_keys[i+1]) for i in range(len(ba_keys)-1)): fails.append('a Board analysis position was removed during analysis')
         for a in ('analysis','candidates','final'):
             xs = [c[a] for c in counts_seen]
@@ -83,7 +83,7 @@ async def main():
         excl = await pg.evaluate("new Set(myPositions.map(p=>p.key)).size===myPositions.length")
         if not excl: fails.append('a position is used twice')
         await pg.screenshot(path=str(SHOTS/'mg_2_done.png'))
-        print('status:', await pg.inner_text('.mg-status'), '| table:', (await pg.inner_text('.mg-table')).replace('\n',' | ').replace('\t',' '))
+        print('status:', await pg.evaluate("(document.querySelector('.mg-status')||{}).innerText || ''"), '| table:', (await pg.inner_text('.mg-table')).replace('\n',' | ').replace('\t',' '))
         # Exercises on "My games"
         await pg.click('#homeBtn'); await pg.wait_for_timeout(200)
         await pg.click('[data-src="mine"]'); await pg.wait_for_timeout(200)

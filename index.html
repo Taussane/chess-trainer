@@ -219,7 +219,8 @@
   .mg-table{border-collapse:collapse; width:100%; font-size:0.84rem; font-variant-numeric:tabular-nums;}
   .mg-table th, .mg-table td{padding:6px 4px; text-align:right; border-bottom:1px solid var(--border);}
   .mg-table thead th{font-weight:500; color:var(--text-mute); font-size:0.74rem; vertical-align:bottom;}
-  .mg-table tbody th{text-align:left; font-weight:600;}
+  .mg-table tbody th{text-align:left; font-weight:600; white-space:nowrap;}
+  .mg-glyph{display:inline-block; width:1.3em; color:var(--text-mute); font-weight:400;}
   .mg-table tr:last-child th, .mg-table tr:last-child td{border-bottom:none;}
   .mg-confirm{display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:0.86rem;}
   .seg-btn:focus-visible{outline:2px solid var(--accent); outline-offset:-2px;}
@@ -3309,7 +3310,7 @@ function positionsSection(){
     : !myGames.length ? ''
     : sfState==='error' ? 'The engine is unavailable, so analysis is paused.'
     : done < myGames.length ? `Analysing your games: ${done} of ${myGames.length} done…`
-    : 'All games analysed.';
+    : '';
   // One row per site on the website (Lichess when logged in, Chess.com when connected, files only if
   // some were added before); inside Claude, one "My games" row.
   const core = myGames.filter(g=>!g.retired), ofSite = site=>core.filter(g=>siteOf(g)===site);
@@ -3317,13 +3318,15 @@ function positionsSection(){
   const siteRows = !DIRECT_LICHESS ? [['My games', core.length, mine]] : accountLoading() ? []
     : [['Lichess', lichessName() || ofSite('lichess').length], ['Chess.com', chesscomName || ofSite('chesscom').length], ['PGN files', ofSite('file').length]]
         .filter(([, shown])=>shown).map(([label])=>{ const site = { Lichess:'lichess', 'Chess.com':'chesscom', 'PGN files':'file' }[label], gs = ofSite(site); return [label, gs.length, countsFor(gs)]; });
-  const row = (label, games, c)=>`<tr><th scope="row">${label}</th><td>${games}</td>${ACTS.map(a=>`<td>${c[a]}</td>`).join('')}</tr>`;
+  // Sources across, exercises down (the exercises' names need the width).
+  const cols = [['Masters', MASTER_GAMES, masters], ...siteRows];
+  const row = (label, cell)=>`<tr><th scope="row">${label}</th>${cols.map(c=>`<td>${cell(c)}</td>`).join('')}</tr>`;
   return `
       <h2 class="pf-h">Games and positions</h2>
       <section class="mg-card">
         <div class="mg-table-wrap"><table class="mg-table">
-          <thead><tr><th></th><th>Games</th>${ACTS.map(a=>`<th scope="col" title="${ACT_NAMES[a]}"><span aria-hidden="true">${ACT_GLYPHS[a]}</span><span class="sr">${ACT_NAMES[a]}</span></th>`).join('')}</tr></thead>
-          <tbody>${row('Masters', MASTER_GAMES, masters)}${siteRows.map(([label, games, c])=>row(label, games, c)).join('')}</tbody>
+          <thead><tr><th></th>${cols.map(([label])=>`<th scope="col">${label}</th>`).join('')}</tr></thead>
+          <tbody>${row('Games', ([, games])=>games)}${ACTS.map(a=>row(`<span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}`, ([, , c])=>c[a])).join('')}</tbody>
         </table></div>
         ${status ? `<p class="mg-status">${status}</p>` : ''}
         ${myGames.length ? (myConfirmClear
