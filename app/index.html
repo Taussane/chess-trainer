@@ -277,27 +277,24 @@
   .panel{width:100%; max-width:420px; margin:16px auto 0; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px;}
   .hint{color:var(--text-mute); font-size:0.86rem; line-height:1.5; margin:10px 0 0;}
   .engine-error{color:var(--bad); margin-top:12px;}
-  /* Key aspects (Position evaluation): static and dynamic columns of name + badge; beside Check, a reminder about tactics. */
+  /* Key aspects (Position evaluation): static and dynamic columns of name + badge */
   .aspects{margin:12px 0 6px;}
   .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:10px; row-gap:10px;}
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
-  .asp-note{margin:0; flex:1 1 0; font-size:0.84rem; line-height:1.35; color:var(--text-mute);}
   .aspects.asp-input{position:relative;}
   .asp-badge{line-height:1.35; transition:background-color .6s, color .6s, border-color .6s, box-shadow .6s;}
   .aspects.plan .asp-head{margin-bottom:6px;}
   .plan-rows{display:grid; grid-template-columns:1fr; row-gap:4px;}
-  .plan-row{display:flex; flex-direction:column; gap:1px; line-height:1.25; padding:3px 6px; margin:-3px -6px; border-radius:6px;}
-  .plan-row.asp-item{align-items:flex-start; justify-content:flex-start; gap:1px;}
-  .plan-sit{font-size:0.74rem; color:var(--text-mute);}
-  .plan-text{font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  /* Each row: the situation (grey) on the left, its plan beside it. */
+  .plan-row{display:grid; grid-template-columns:minmax(0,8.6rem) minmax(0,1fr); align-items:baseline; column-gap:10px; line-height:1.3; padding:3px 6px; margin:-3px -6px; border-radius:6px;}
+  .plan-row.asp-item{display:grid; gap:0 10px;}
+  .plan-sit{font-size:0.8rem; color:var(--text-mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .plan-text{font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
   .plan-row.asp-item.pickable .plan-text{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
   .asp-item.pickable{cursor:pointer; border-radius:6px; margin:-3px -6px; padding:3px 6px; -webkit-tap-highlight-color:transparent;}
   .asp-item.pickable .asp-name{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
   .asp-item.sel{background:var(--panel-2); box-shadow:inset 0 0 0 1px var(--accent);}
   .asp-item.sel .asp-name{text-decoration:none;}
-  .asp-badge.ok{border-color:var(--best-green); box-shadow:0 0 0 1px var(--best-green);}
-  .asp-badge.near{border-color:var(--dubious); box-shadow:0 0 0 1px var(--dubious);}
-  .asp-badge.bad{border-color:var(--bad); box-shadow:0 0 0 1px var(--bad);}
   .asp-pick{font-family:inherit; cursor:pointer;}
   .asp-picker .asp-badge{font-family:inherit; line-height:1.35; cursor:pointer;}
   .asp-pick.eq{border-color:var(--border);}
@@ -311,11 +308,18 @@
   .asp-badge.w{background:var(--white-fill); color:var(--black-fill);}
   .asp-badge.b{background:var(--black-fill); color:var(--white-fill); border-color:var(--text-mute);}
   .asp-badge.eq{background:var(--panel-2); color:var(--text-mute);}
+  /* Review borders come after the colour rules, so a black badge's own grey border doesn't show inside the red one. */
+  .asp-badge.ok{border-color:var(--best-green); box-shadow:0 0 0 1px var(--best-green);}
+  .asp-badge.near{border-color:var(--dubious); box-shadow:0 0 0 1px var(--dubious);}
+  .asp-badge.bad{border-color:var(--bad); box-shadow:0 0 0 1px var(--bad);}
+  .asp-picker .asp-badge.eq{border-color:var(--border);}
+  .asp-pick.editing{box-shadow:0 0 0 2px var(--dubious);}
   .score{display:flex; align-items:baseline; gap:8px; margin-bottom:6px;}
   .score-num{font-family:var(--font-display); font-size:1.7rem; line-height:1.15; font-variant-numeric:tabular-nums;}
   .score-label{color:var(--text-mute); font-size:0.86rem;}
 
   .prompt{margin:0; font-size:1rem; line-height:1.45;}
+  .prompt.top{margin-bottom:10px;}
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
   .actions-row.pending{visibility:hidden;}
   .fade-in{animation:fadeIn .35s ease-out both;}
@@ -1659,24 +1663,24 @@ function planFor(p, vals, info){
   const ring = (fav, owner)=>rings.some(c=>c.c===fav && m[c.sq] && m[c.sq].c===owner), them = other(me);
   const out = [];
   const add = (key, weight, situation, plan)=>out.push({ key, weight, situation, plan });
-  if(E >= 99) add('threats', 9, 'Mate is on', 'Check every forcing move');
+  if(E >= 99) add('threats', 9, 'Mate is on', 'Check forcing moves');
   if(E <= -99) add('threats', 9, 'Mate threat', 'Defend first');
   const mat = lv('material');
-  if(mat >= 1) add('material', 3 + mat, 'Up material', 'Trade pieces, not pawns');
-  if(mat <= -1) add('material', 3 - mat, 'Down material', 'Avoid trades, counterattack');
-  if(!mat && Math.abs(E) < 99 && E >= 2) add(null, 4, 'Clearly better', 'Trade down, cut counterplay');
-  if(!mat && Math.abs(E) < 99 && E <= -2) add(null, 4, 'Clearly worse', 'Avoid trades, complicate');
-  if(lv('king') >= 2) add('king', 3 + lv('king'), 'Their king is weak', 'Bring pieces, open lines');
-  if(lv('king') <= -2) add('king', 3 - lv('king'), 'Your king is weak', 'Defend it, trade attackers');
-  if(lv('threats') >= 1) add('threats', 2 + lv('threats'), 'You have threats', 'Forcing moves first');
-  if(lv('threats') <= -1) add('threats', 2 - lv('threats'), 'They have threats', 'Parry them first');
-  if(lv('pawns') >= 1) add('pawns', 1 + lv('pawns'), ...(ring(me, me) ? ['You have a passed pawn', 'Push it, with support'] : ['Their pawns are weak', 'Attack the weak pawns']));
-  if(lv('pawns') <= -1) add('pawns', 1 - lv('pawns'), ...(ring(them, them) ? ['They have a passed pawn', 'Blockade it, then win it'] : ['Your pawns are weak', 'Stay active, avoid endgames']));
-  if(lv('space') >= 1) add('space', 1 + lv('space'), 'More space', 'Avoid trades that free them');
-  if(lv('space') <= -1) add('space', 1 - lv('space'), 'Less space', 'Trade pieces to breathe');
+  if(mat >= 1) add('material', 3 + mat, 'Up material', 'Trade pieces');
+  if(mat <= -1) add('material', 3 - mat, 'Down material', 'Avoid trades, attack');
+  if(!mat && Math.abs(E) < 99 && E >= 2) add(null, 4, 'Clearly better', 'Simplify, stay safe');
+  if(!mat && Math.abs(E) < 99 && E <= -2) add(null, 4, 'Clearly worse', 'Complicate');
+  if(lv('king') >= 2) add('king', 3 + lv('king'), 'Weak enemy king', 'Open lines to it');
+  if(lv('king') <= -2) add('king', 3 - lv('king'), 'Weak king', 'Trade attackers');
+  if(lv('threats') >= 1) add('threats', 2 + lv('threats'), 'Your threats', 'Forcing moves first');
+  if(lv('threats') <= -1) add('threats', 2 - lv('threats'), 'Their threats', 'Parry them first');
+  if(lv('pawns') >= 1) add('pawns', 1 + lv('pawns'), ...(ring(me, me) ? ['Passed pawn', 'Push it'] : ['Weak enemy pawns', 'Attack them']));
+  if(lv('pawns') <= -1) add('pawns', 1 - lv('pawns'), ...(ring(them, them) ? ['Enemy passed pawn', 'Blockade it'] : ['Weak pawns', 'Keep pieces active']));
+  if(lv('space') >= 1) add('space', 1 + lv('space'), 'More space', 'Avoid freeing trades');
+  if(lv('space') <= -1) add('space', 1 - lv('space'), 'Less space', 'Trade to breathe');
   if(lv('activity') >= 1) add('activity', 1 + lv('activity'), 'Better pieces', 'Keep the initiative');
-  if(lv('activity') <= -1) add('activity', 1 - lv('activity'), 'Worse pieces', 'Improve your worst piece');
-  if(!out.length) add(null, 0, 'Balanced', 'Improve pieces, find a pawn break');
+  if(lv('activity') <= -1) add('activity', 1 - lv('activity'), 'Worse pieces', 'Improve the worst');
+  if(!out.length) add(null, 0, 'Balanced', 'Find a pawn break');
   return { who, lines: out.sort((a, b)=>b.weight - a.weight).slice(0, 3) };
 }
 const PLAN_ROWS = 3;
@@ -1759,8 +1763,7 @@ function startAspectsReveal(p, s, vals){
   };
   setTimeout(tick, ASP_START);
 }
-// The question: the same grid, every aspect "=" until you gauge it (a reminder about tactics sits
-// beside Check).
+// The question: the same grid, every aspect "=" until you gauge it.
 // Tap a badge: a scale from −− to ++ opens above it; tap a level, or slide along the scale and let go. Arrow keys on a badge
 // step it up or down.
 function aspectsInputHtml(s, hidden){
@@ -1773,11 +1776,18 @@ function aspectsInputHtml(s, hidden){
     </div>`;
 }
 let aspPicker = null;   // {key, el, sliding}: the scale open under a badge
-function closeAspPicker(){ if(aspPicker){ aspPicker.el.remove(); aspPicker = null; } }
+function closeAspPicker(){ if(aspPicker){ aspPicker.el.remove(); aspPicker.badge && aspPicker.badge.classList.remove('editing'); aspPicker = null; } }
+// The scale covers the row above it: once it closes on lift, the click that follows would land on
+// whatever was under it, so that one click is dropped.
+function swallowNextClick(){
+  const drop = e=>{ e.stopPropagation(); e.preventDefault(); };
+  document.addEventListener('click', drop, { capture:true, once:true });
+  setTimeout(()=>document.removeEventListener('click', drop, true), 50);
+}
 function setAspect(s, key, l){
   s.asp[key] = Math.max(-ASPECT_MAX, Math.min(ASPECT_MAX, l));
   const b = document.querySelector(`.asp-pick[data-asp="${key}"]`);
-  if(b){ b.className = `asp-badge ${levelCls(s.asp[key])} asp-pick`; b.textContent = SIGNS(s.asp[key]); b.setAttribute('aria-label', `${ASPECTS.find(x=>x.key===key).name}: ${SIGNS(s.asp[key])}`); }
+  if(b){ b.className = `asp-badge ${levelCls(s.asp[key])} asp-pick${aspPicker && aspPicker.key===key ? ' editing' : ''}`; b.textContent = SIGNS(s.asp[key]); b.setAttribute('aria-label', `${ASPECTS.find(x=>x.key===key).name}: ${SIGNS(s.asp[key])}`); }
   if(aspPicker && aspPicker.key===key) aspPicker.el.querySelectorAll('[data-l]').forEach(o=>o.classList.toggle('on', +o.dataset.l===s.asp[key]));
 }
 function openAspPicker(s, key){
@@ -1790,11 +1800,12 @@ function openAspPicker(s, key){
   box.appendChild(el);
   const item = badge.closest('.asp-item');
   el.style.top = (item.offsetTop - el.offsetHeight - 4) + 'px';   // above the badge, so the finger doesn't hide it
-  aspPicker = { key, el, sliding:false };
+  aspPicker = { key, el, sliding:false, badge };
+  badge.classList.add('editing');
   const levelAt = e=>{ const o = document.elementFromPoint(e.clientX, e.clientY); return o && o.dataset && o.dataset.l!=null && el.contains(o) ? +o.dataset.l : null; };
   el.addEventListener('pointerdown', e=>{ aspPicker.sliding = true; const l = levelAt(e); if(l!=null) setAspect(s, key, l); e.preventDefault(); });
   el.addEventListener('pointermove', e=>{ if(!aspPicker || !aspPicker.sliding) return; const l = levelAt(e); if(l!=null) setAspect(s, key, l); });
-  el.addEventListener('pointerup', e=>{ const l = levelAt(e); if(l!=null) setAspect(s, key, l); closeAspPicker(); });
+  el.addEventListener('pointerup', e=>{ const l = levelAt(e); if(l!=null) setAspect(s, key, l); closeAspPicker(); swallowNextClick(); });
   el.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeAspPicker(); badge.focus(); } });
 }
 function wireAspectsInput(s){
@@ -1997,11 +2008,11 @@ function stackedPanel(inner, ghosts, extra){
 }
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
-  `<p class="prompt">Drag the bar to show who's better, and by how much.</p><div class="actions-row"><p class="asp-note">Tactics can also shift the evaluation.</p><span class="btn">Check</span></div>`,
+  `<p class="prompt">Drag the bar to show who's better.</p><div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planHtml(null, null, false, true)}${GHOST_ACTIONS}`,
 ];
 const GHOST_IMBALANCES = [
-  `<p class="prompt">Gauge each imbalance: who has the edge, and how big?</p>${aspectsInputHtml(null, true)}<div class="actions-row"><span class="btn">Check</span></div>`,
+  `<p class="prompt">Gauge each positional imbalance.</p>${aspectsInputHtml(null, true)}<div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, 0, true)}${GHOST_ACTIONS}`,
 ];
 function ghostCandidates(){
@@ -2010,7 +2021,7 @@ function ghostCandidates(){
   const pick = `<div class="review-row pick-row"><div class="move-tag"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span></div><span class="del-btn">✕</span></div>`;
   return [
     `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="review-cols">${col}${col}</div>${GHOST_ACTIONS}`,
-    `<div>${pick.repeat(3)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
+    `<p class="prompt top">Tap a white piece, then its destination. Suggest at least one strong move for White.</p><div>${pick.repeat(3)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
   ];
 }
 function ghostFinal(){
@@ -2018,7 +2029,7 @@ function ghostFinal(){
   const rank = `<div class="rate-row"><div class="move-tag"><span class="num">1</span>${chip}</div><span class="drag-handle">⠿</span></div>`;
   const rev = tag=>`<div class="review-row"><div class="move-tag"><span class="num">1</span>${chip}${tag ? '<span class="badges"><span class="badge">Game move</span></span>' : ''}</div><div class="move-result"><span class="grade">Dubious</span><span class="move-eval">−1.6</span></div></div>`;
   return [
-    `<div>${rank.repeat(4)}</div><p class="hint rank-hint">Drag the moves into order, best at the top.</p><div class="actions-row"><span class="btn">Check</span></div>`,
+    `<p class="prompt top">Drag the moves into order, best at the top.</p><div>${rank.repeat(4)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
     `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="rev-list">${rev(true)}${rev(false).repeat(3)}</div>${GHOST_ACTIONS}`,
   ];
 }
@@ -3378,8 +3389,8 @@ function renderAnalysis(){
         ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, s.justDone) : planHtml(null, null, false, true)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
-        <p class="prompt" id="anaPrompt">Drag the bar to show who's better, and by how much.</p>
-        <div class="actions-row" id="anaCheckRow"><p class="asp-note">Tactics can also shift the evaluation.</p><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
+        <p class="prompt" id="anaPrompt">Drag the bar to show who's better.</p>
+        <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(aspVals) wireAspectView(p, s);
   if(!s.checked){
@@ -3411,7 +3422,7 @@ function renderImbalances(){
         ${aspectsGridHtml(vals, s.asp, s.aspShown || 0, false, s.aspView, done)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
-        <p class="prompt" id="imbPrompt">Gauge each imbalance: who has the edge, and how big?</p>
+        <p class="prompt" id="imbPrompt">Gauge each positional imbalance.</p>
         ${aspectsInputHtml(s)}
         <div class="actions-row" id="imbCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_IMBALANCES, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
@@ -3493,7 +3504,7 @@ function pickHint(count){
   if(count===0) return `Tap a ${who.toLowerCase()} piece, then its destination. Suggest at least one strong move for ${who}.`;
   if(count===1) return 'You can add up to three moves.';
   if(count===2) return 'Any last move worth considering?';
-  return '';
+  return 'Check when you\'re ready.';
 }
 function renderCandidates(){
   const app = document.getElementById('app');
@@ -3587,8 +3598,8 @@ function renderCandidates(){
     ${posBar()}
     ${boardHtml(false)}
     ${stackedPanel(`
+      <p class="prompt top" id="candHint">${pickHint(s.picks.length)}</p>
       <div id="moveList"></div>
-      ${pickHint(s.picks.length) ? `<p class="hint" id="candHint">${pickHint(s.picks.length)}</p>` : ''}
       <div class="actions-row" id="candCheckRow"><button class="btn" id="check" ${s.picks.length && sfState!=='error' ? '' : 'disabled'}>Check</button></div>`,
       ghostCandidates(), engineErrorBanner())}`;
   const canSelect = sq=>{
@@ -3810,8 +3821,8 @@ function renderFinal(){
     ${posBar()}
     ${boardHtml(false)}
     ${stackedPanel(`
+      <p class="prompt top" id="finalHint">Drag the moves into order, best at the top.</p>
       <div id="ranked"></div>
-      <p class="hint rank-hint" id="finalHint">Drag the moves into order, best at the top.</p>
       <div class="actions-row" id="finalCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), bs, p.last);
   drawArrows(document.getElementById('arrows'), ordered, 'ar_');
@@ -3835,9 +3846,9 @@ function renderFinal(){
     const wait = INTRO_START + i*INTRO_STEP - introEl;
     if(wait > 0) ln.style.animation = `hidden ${wait}ms linear`;
   });
-  // The instruction and the Check button fade in together, last.
+  // The instruction first, then the moves, then the Check button.
   const tLast = INTRO_START + ordered.length*INTRO_STEP + 100;
-  timedFade(document.getElementById('finalHint'), tLast, introEl, SLIDE_MS, 'fadeIn');
+  timedFade(document.getElementById('finalHint'), 0, introEl, SLIDE_MS, 'fadeIn');
   timedFade(document.getElementById('finalCheckRow'), tLast, introEl, SLIDE_MS, 'fadeIn');
   wireDragReorder(rankedEl, s.order, ()=>{ s.moved = true; render(); });
   document.getElementById('check').onclick = ()=>{ s.checked = true; s.revAt = null; s.revDone = false; render(); };

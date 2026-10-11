@@ -33,7 +33,7 @@ async def main():
         await pg.click('.card[data-go="imbalances"]'); await pg.wait_for_timeout(300)
         await pg.evaluate("""t=>{ engineAspects = fen=>Promise.resolve(t.split('\\n')); aspectsStore = {}; render(); }""", TABLE)
         prompt = await pg.text_content('#imbPrompt')
-        if prompt != 'Gauge each imbalance: who has the edge, and how big?': fails.append(f'prompt: {prompt}')
+        if prompt != 'Gauge each positional imbalance.': fails.append(f'prompt: {prompt}')
         if await pg.query_selector('#evalBar'): fails.append('Imbalance reading has no evaluation bar')
         start = await pg.evaluate("[...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' ')")
         if start != '= = = = = =': fails.append(f'imbalances should start at =: {start}')
@@ -48,9 +48,15 @@ async def main():
         await pg.mouse.move(*xy[0]); await pg.mouse.down(); await pg.mouse.move(xy[1][0], xy[1][1], steps=8); await pg.mouse.up(); await pg.wait_for_timeout(100)
         await pg.focus('.asp-pick[data-asp="space"]'); await pg.keyboard.press('ArrowUp'); await pg.keyboard.press('ArrowUp'); await pg.keyboard.press('ArrowDown')
         await pg.click('.asp-pick[data-asp="threats"]'); await pg.wait_for_timeout(100)
+        if not await pg.evaluate("document.querySelector('.asp-pick[data-asp=\"threats\"]').classList.contains('editing')"): fails.append('the badge being set should be highlighted')
         await pg.mouse.click(5, 5); await pg.wait_for_timeout(100)
         r = await pg.evaluate("({ asp: st('imbalances').asp, badges: [...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' '), open: !!document.querySelector('.asp-picker') })")
         print('gauged:', r)
+        if await pg.query_selector('.asp-pick.editing'): fails.append('highlight should go when the scale closes')
+        # A choice drawn over another row: picking it doesn't open that row's scale.
+        await pg.click('.asp-pick[data-asp="pawns"]'); await pg.wait_for_timeout(100)
+        await pg.click('.asp-picker [data-l="0"]'); await pg.wait_for_timeout(100)
+        if await pg.query_selector('.asp-picker'): fails.append('a choice should not click through to the badge under it')
         if r['asp'] != {'material': 2, 'king': -2, 'space': 1} or r['badges'] != '++ = + = −− =' or r['open']: fails.append(f'gauging: {r}')
         # 5. The review: your levels first; then one by one the engine's, the score climbing; the buttons last.
         await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000); await pg.wait_for_timeout(150)
@@ -110,8 +116,8 @@ async def main():
         await pg.click('#homeBtn'); await pg.wait_for_timeout(200)
         await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
         await pg.evaluate("""()=>{ const p = pos(); engineEval = fen=>new Promise(res=>setTimeout(()=>res({ lines:[{cp: p.side==='w' ? 250 : -250, mate:null, uci:null}], bestUci:null }), 20)); fenEvalStore = {}; render(); }""")
-        prompt = await pg.text_content('#anaPrompt'); note = await pg.text_content('#anaCheckRow .asp-note')
-        if prompt != "Drag the bar to show who's better, and by how much." or note != 'Tactics can also shift the evaluation.': fails.append(f'evaluation question: {prompt} / {note}')
+        prompt = await pg.text_content('#anaPrompt'); note = await pg.query_selector('#anaCheckRow .asp-note')
+        if prompt != "Drag the bar to show who's better." or note: fails.append(f'evaluation question: {prompt} / {note}')
         if await pg.query_selector('#aspInput'): fails.append('Position evaluation asks for no imbalances')
         e1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
         await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=8000); await pg.wait_for_timeout(300)
@@ -133,10 +139,10 @@ async def main():
                    ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:2.5 }, 200), cramped: P({ space:-0.5 }, -30),
                    blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400) }; })()""")
         print('plans:', plans)
-        if plans['ahead'][0] != 'Trade pieces, not pawns' or plans['behind'][0] != 'Avoid trades, counterattack' \
-           or plans['king'][0] != 'Bring pieces, open lines' or plans['cramped'] != ['Trade pieces to breathe'] \
-           or plans['blackAhead'][0] != 'Trade pieces, not pawns' or plans['even'] != ['Improve pieces, find a pawn break'] \
-           or plans['lost'][0] != 'Avoid trades, complicate' or plans['passed'] != ['You have a passed pawn: Push it, with support'] or plans['blockade'] != ['They have a passed pawn: Blockade it, then win it']: fails.append(f'plans: {plans}')
+        if plans['ahead'][0] != 'Trade pieces' or plans['behind'][0] != 'Avoid trades, attack' \
+           or plans['king'][0] != 'Open lines to it' or plans['cramped'] != ['Trade to breathe'] \
+           or plans['blackAhead'][0] != 'Trade pieces' or plans['even'] != ['Find a pawn break'] \
+           or plans['lost'][0] != 'Complicate' or plans['passed'] != ['Passed pawn: Push it'] or plans['blockade'] != ['Enemy passed pawn: Blockade it']: fails.append(f'plans: {plans}')
         # Imbalance reading in your games: only positions whose evaluation is near the imbalances' total
         q = await pg.evaluate("""async t=>{
           const lines = t.split('\\n');   // total ≈ +0.8 for this table's position
