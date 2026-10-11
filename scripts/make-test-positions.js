@@ -16,6 +16,8 @@ const T = [
   ['Stalemate trap (game move stalemates)', {fen:'7k/8/5K2/8/8/8/8/6Q1 w - - 0 60'}, 'Qg6'],
   // Material marks: an extra rook, bishop and two pawns (d5 passed first, then c3) for White; an extra queen and knight for Black; White's bishop pair labelled.
   ['Material marks', {fen:'3q1rk1/pp1b1ppp/5n2/3P4/2B5/2P1B3/PP3PPP/R3R1K1 w - - 0 20'}, 'Bd4'],
+  // Pawn marks: White a4 isolated, c3 doubled, d5 connected, e5 passed, f3 doubled but protected by e2; Black c7 backward, h5 passed.
+  ['Pawn marks', {fen:'2r3k1/2p3p1/1p6/3PP2p/P7/2P2P2/2P1PP2/3R2K1 w - - 0 30'}, 'Rd4'],
 ];
 const sf = spawn(SF); let buf = '', wait = null;
 sf.stdout.on('data', d=>{ buf += d; if(wait && buf.includes('bestmove')){ const o = buf; buf = ''; const w = wait; wait = null; w(o); } });

@@ -166,6 +166,9 @@ async def main():
         mm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Material marks').fen, 'material'); return [m.circles.map(c=>c.sq+c.c).sort().join(' '), m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' ')]; })()")
         print('material marks:', mm)
         if mm != ['a1w c3w c4w d5w d8b e3w f6b', 'c4w:Bishop pair e3w:Bishop pair']: fails.append(f'material marks: {mm}')
+        pm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Pawn marks').fen, 'pawns'); return [m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '), m.arrows.map(a=>a.from+a.to+a.c).join(' ')]; })()")
+        print('pawn marks:', pm)
+        if pm != ['a4b:Isolated c3b:Doubled c7w:Backward d5w:Connected e5w:Passed h5b:Passed', 'e2f3w']: fails.append(f'pawn marks: {pm}')
         both = await pg.evaluate("aspectMarks('2b1k1b1/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.length")
         if both: fails.append('no bishop pair label when both sides have the pair')
         # what each imbalance marks, on small positions
