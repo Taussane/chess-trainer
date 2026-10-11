@@ -433,7 +433,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces (and the bishop pair); <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour; <strong>Space</strong> the safe central squares behind each side's pawns, and the pawns that gain them; <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces (and the bishop pair); <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour; <strong>Space</strong> the safe central squares behind each side's pawns, and the pawns that gain them; <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -1941,6 +1941,34 @@ function aspectMarks(fen, key){
           out.arrows.push({ from: a, to: tsq, c });
       }
     }
+    // Threats for the next move (dashed), as Stockfish counts them too:
+    for(const c of ['w','b']){
+      const them = other(c), up = c==='w' ? 1 : -1;
+      const safe = sq=>!(A[them][sq] || []).length || (A[c][sq] || []).length >= (A[them][sq] || []).length;
+      // - a pawn push to a safe square that would attack one of their pieces;
+      for(const sq of pawnsOf(m, c)){
+        const f = FILES.indexOf(sq[0]), r = +sq[1], one = sqAt(f, r+up), two = relRank(sq, c)===2 ? sqAt(f, r+2*up) : null;
+        for(const to of [one, (one && !m[one]) ? two : null]){
+          if(!to || m[to] || !safe(to) || (A[them][to] || []).some(a=>m[a].t==='p')) continue;
+          const hits = [-1, 1].map(df=>sqAt(f+df, +to[1]+up)).filter(t=>t && m[t] && m[t].c===them && m[t].t!=='p' && m[t].t!=='k');
+          if(hits.length){ out.arrows.push({ from: sq, to, c, dash: true }); hits.forEach(t=>{ if(!out.circles.some(x=>x.sq===t && x.c===c)) out.circles.push({ sq: t, c }); }); }
+          if(!one || m[one]) break;
+        }
+      }
+      // - a knight, bishop or rook that can go to a safe square attacking their queen;
+      const q = pieces(them).find(sq=>m[sq].t==='q');
+      if(q) for(const sq of pieces(c).filter(x=>'nbr'.includes(m[x].t))){
+        if(attacksFrom(m, sq).includes(q)) continue;   // already attacking it (a plain arrow)
+        const to = attacksFrom(m, sq).find(t=>(!m[t] || m[t].c===them) && safe(t) && !(A[them][t] || []).some(a=>m[a].t==='p') && attacksFrom({ ...m, [t]: m[sq], [sq]: undefined }, t).includes(q));
+        if(to){ out.arrows.push({ from: sq, to, c, dash: true }); if(!out.circles.some(x=>x.sq===q && x.c===c)) out.circles.push({ sq: q, c }); }
+      }
+      // - with a rook or queen, their weak pawns that no pawn of yours blocks (isolated or backward, on a half-open file).
+      if(pieces(c).some(x=>m[x].t==='r' || m[x].t==='q')) for(const sq of pawnsOf(m, them)){
+        const f = FILES.indexOf(sq[0]), mineThere = pawnsOf(m, c).some(o=>o[0]===sq[0]);
+        const theirs = pawnsOf(m, them), isolated = !theirs.some(o=>Math.abs(FILES.indexOf(o[0]) - f)===1);
+        if(!mineThere && isolated && !out.circles.some(x=>x.sq===sq)) out.circles.push({ sq, c });
+      }
+    }
   }
   return out;
 }
@@ -1955,7 +1983,8 @@ function drawMarks(svg, marks){
   const arrows = marks.arrows.map(t=>{
     const a = squareCenter(t.from), b = squareCenter(t.to), dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx, dy) || 1;
     const ex = b.x - dx/len*18, ey = b.y - dy/len*18;
-    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].edge}" stroke-width="10" stroke-linecap="round" opacity=".5"/><line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="6" stroke-linecap="round" marker-end="url(#mk_${t.c})"/>`;
+    const dash = t.dash ? ' stroke-dasharray="9 7"' : '';   // dashed: a threat for the next move
+    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].edge}" stroke-width="10" stroke-linecap="round" opacity=".5"${dash}/><line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="6" stroke-linecap="round"${dash} marker-end="url(#mk_${t.c})"/>`;
   }).join('');
   svg.innerHTML = `<defs>${defs}</defs>${tints}${circles}${arrows}${nums}`;
 }
