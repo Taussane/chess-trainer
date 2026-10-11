@@ -27,6 +27,7 @@ CAND = {
   'Promotion with captures': [('b7','a8','r'), ('b7','b8','q')],
   'Mate in one': [('d1','d8',None)],
   'Stalemate trap (game move stalemates)': [('g1','g6',None)],
+  'Material marks': [('e3','d4',None)],
 }
 async def main():
     fails = []

@@ -162,6 +162,12 @@ async def main():
           const out = [quietOwn(near), quietOwn(far)]; myGames.pop(); return out; }""", TABLE)
         print('own quiet check:', q)
         if q != [True, False]: fails.append(f'own positions quiet check: {q}')
+        # Material, on the "Material marks" test position: per piece type, the extra ones; the bishop pair labelled.
+        mm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Material marks').fen, 'material'); return [m.circles.map(c=>c.sq+c.c).sort().join(' '), m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' ')]; })()")
+        print('material marks:', mm)
+        if mm != ['a1w c3w c4w d5w d8b e3w f6b', 'c4w:Bishop pair e3w:Bishop pair']: fails.append(f'material marks: {mm}')
+        both = await pg.evaluate("aspectMarks('2b1k1b1/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.length")
+        if both: fails.append('no bishop pair label when both sides have the pair')
         # what each imbalance marks, on small positions
         marks = await pg.evaluate("""(()=>{ const M = (fen, k)=>{ const m = aspectMarks(fen, k); return {
             c: m.circles.map(x=>x.sq+x.c).sort().join(' '), a: m.arrows.map(x=>x.from+x.to+x.c).sort().join(' '), t: m.tints.length, n: m.nums.map(x=>x.sq+x.n).sort().join(' ') }; };

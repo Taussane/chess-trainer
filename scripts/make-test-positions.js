@@ -14,6 +14,8 @@ const T = [
   ['Promotion with captures', {fen:'r5k1/1P3ppp/8/8/8/8/5PPP/6K1 w - - 0 30'}, 'bxa8=Q+'],
   ['Mate in one', {fen:'6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 30'}, 'Rd8#'],
   ['Stalemate trap (game move stalemates)', {fen:'7k/8/5K2/8/8/8/8/6Q1 w - - 0 60'}, 'Qg6'],
+  // Material marks: an extra rook, bishop and two pawns (d5 passed first, then c3) for White; an extra queen and knight for Black; White's bishop pair labelled.
+  ['Material marks', {fen:'3q1rk1/pp1b1ppp/5n2/3P4/2B5/2P1B3/PP3PPP/R3R1K1 w - - 0 20'}, 'Bd4'],
 ];
 const sf = spawn(SF); let buf = '', wait = null;
 sf.stdout.on('data', d=>{ buf += d; if(wait && buf.includes('bestmove')){ const o = buf; buf = ''; const w = wait; wait = null; w(o); } });
