@@ -60,6 +60,8 @@
   .panel-stack > .layer > .score + *{margin-top:0;}
   .panel-stack > .layer > .score ~ *:not(.actions-row){margin-bottom:0;}
   .panel-stack > .layer > .actions-row.split{padding-top:16px;}
+  /* Move lists end on their own line: half the space. */
+  .panel-stack > .layer > .review-cols + .actions-row.split, .panel-stack > .layer > .rev-list + .actions-row.split{padding-top:8px;}
   .panel-stack > .layer > .score + .rev-list{margin-top:-6px;}       /* its rows' text sits lower in the row */
   .panel-stack > .layer > .score + .review-cols{margin-top:-2px;}
   /* Move selection's ranking screen is the tallest panel in the app: keep its instruction and
