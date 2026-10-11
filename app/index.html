@@ -438,8 +438,8 @@ const HELP = {
   imbalances: {
     title:'Imbalance reading',
     what:"Read the position's imbalances, the lasting (static) ones and those that can change within a few moves (dynamic): for each, who has the edge, and how big? Tap a badge, then a level (= balanced, + or ++ for White, − or −− for Black), or slide along the scale.",
-    eval:"Each imbalance counts in proportion to how often it matters in master games (Activity, Material and King safety most, Space least): all of it at the engine's level, half one level off, nothing beyond.",
-    grades:"Each imbalance turns from your level to the engine's (+ from 0.3 pawns, ++ from 0.8). Green border: you matched it; yellow: one level off; red: further. Then tap an imbalance to see on the board what it's about, white marks favouring White and black ones Black: " + IMB_MARKS,
+    eval:"Each imbalance scores a sixth: all of it at the engine's level, a third one level off, nothing beyond.",
+    grades:"Each imbalance turns from your level to the engine's (levels set per imbalance so that in master games about 40% of positions are =, 40% + or −, 20% ++ or −−). Green border: you matched it; yellow: one level off; red: further. Then tap an imbalance to see on the board what it's about, white marks favouring White and black ones Black: " + IMB_MARKS,
   },
   analysis: {
     title:'Position evaluation',
@@ -1575,22 +1575,20 @@ function fmtBarScore(info){
 // Static (lasting) on the left, dynamic on the right. Measured on the 40 master games (quiet
 // positions, correlation of each aspect with itself 3 moves later): space 0.77, pawns 0.67,
 // material 0.66; activity 0.55, king safety 0.54, threats 0.22.
-// weight: Imbalance reading's score, in proportion to how often the imbalance isn't "=" in the
-// master positions (Space almost never matters there, Activity most often).
+// levels: where + and ++ start, in pawns, for each imbalance: set so that on the master positions
+// (Imbalance reading's 140) each comes out about 40% "=", 40% + or −, 20% ++ or −− (Space is "=" in
+// half of them: Stockfish counts no space once enough pieces are traded).
 const ASPECTS = [
-  { key:'material', name:'Material',    weight:0.63 },
-  { key:'pawns',    name:'Pawns',       weight:0.24 },
-  { key:'space',    name:'Space',       weight:0.08 },
-  { key:'activity', name:'Activity',    weight:0.73 },
-  { key:'king',     name:'King safety', weight:0.59 },
-  { key:'threats',  name:'Threats',     weight:0.53 },
+  { key:'material', name:'Material',    levels:[0.3, 1.3] },
+  { key:'pawns',    name:'Pawns',       levels:[0.15, 0.35] },
+  { key:'space',    name:'Space',       levels:[0.05, 0.2] },
+  { key:'activity', name:'Activity',    levels:[0.45, 1.0] },
+  { key:'king',     name:'King safety', levels:[0.3, 1.4] },
+  { key:'threats',  name:'Threats',     levels:[0.25, 0.65] },
 ];
-// Each aspect as signs, from its value in pawns: under 0.3 "=", then +, ++ from 0.8 (a third level, from 2,
-// was dropped for simplicity: it only told a piece up from a pawn up, and a mating attack from a weak king)
-// (− for Black). Fitted on the 468 master positions: counting the signs points to the wrong side in
-// 7% of the positions where one side is a pawn ahead.
-const ASPECT_LEVELS = [0.3, 0.8];
-const ASPECT_MAX = ASPECT_LEVELS.length;
+// Each aspect as signs, from its value in pawns and its own levels (above): "=", then + and ++ for White,
+// − and −− for Black.
+const ASPECT_MAX = 2;
 // Stockfish 10's piece values [middlegame, endgame], and its game-phase limits (non-pawn material).
 const SF_VALUES = { p:[136,208], n:[782,865], b:[830,918], r:[1289,1378], q:[2529,2687] };
 const SF_PAWN_EG = 208, SF_MG_LIMIT = 15258, SF_EG_LIMIT = 3915;
@@ -1636,15 +1634,15 @@ function aspectsEntry(fen){
 }
 // In the review panel, under the score: static aspects on the left, dynamic on the right, each as
 // signs on a badge (white for White, black for Black, grey "=" when balanced). `vals` null: placeholders (the panel's ghost, or while waiting).
-function aspectLevel(v){
-  const a = Math.abs(v), n = ASPECT_LEVELS.filter(t=>a>=t).length;
+function aspectLevel(v, key){
+  const a = Math.abs(v), n = ASPECTS.find(x=>x.key===key).levels.filter(t=>a>=t).length;
   return n * Math.sign(v);
 }
 const SIGNS = l=>!l ? '=' : (l>0 ? '+' : '−').repeat(Math.abs(l));
 const levelCls = l=>!l ? 'eq' : l>0 ? 'w' : 'b';
-function aspectBadge(v){
+function aspectBadge(v, key){
   if(v==null) return `<span class="asp-badge eq">…</span>`;
-  const l = aspectLevel(v);
+  const l = aspectLevel(v, key);
   return `<span class="asp-badge ${levelCls(l)}">${SIGNS(l)}</span>`;
 }
 // ---- Position evaluation's review: a plan for the side to play ----
@@ -1653,7 +1651,7 @@ function aspectBadge(v){
 // it to see that imbalance on the board).
 function planFor(p, vals, info){
   const me = p.side, sgn = me==='w' ? 1 : -1, who = me==='w' ? 'White' : 'Black';
-  const lv = k=>aspectLevel(vals[k]) * sgn;   // + good for the side to play
+  const lv = k=>aspectLevel(vals[k], k) * sgn;   // + good for the side to play
   const E = info.mate!=null ? (info.mate*sgn > 0 ? 99 : -99) : info.cp/100*sgn;
   // Pawn rings (aspectMarks): a ring in a side's colour favours that side — on its own pawn it's a
   // passed pawn, on the other side's pawn a weak one.
@@ -1698,10 +1696,10 @@ function planHtml(plan, view, fadeIn, hidden){
 // further. `vals`: the engine's values (null: not in yet); `guesses`: {key: -3..3} (missing = "="),
 // or null for the engine's levels alone (Position evaluation's review); `shown`: how many are revealed.
 function reviewBadge(vals, guesses, x, i, shown){
-  if(vals && guesses===null) return aspectBadge(vals[x.key]);
+  if(vals && guesses===null) return aspectBadge(vals[x.key], x.key);
   const g = (guesses && guesses[x.key]) || 0;
   if(!vals || i >= shown) return `<span class="asp-badge ${levelCls(g)}">${SIGNS(g)}</span>`;
-  const l = aspectLevel(vals[x.key]);
+  const l = aspectLevel(vals[x.key], x.key);
   const off = Math.abs(l - g);
   return `<span class="asp-badge ${levelCls(l)} ${off===0 ? 'ok' : off===1 ? 'near' : 'bad'}">${SIGNS(l)}</span>`;
 }
@@ -1723,14 +1721,12 @@ function wireAspectView(p, s){
   });
 }
 const ASP_START = 500, ASP_STEP = 800, ASP_CLIMB_MS = 600;   // ms: before the first aspect turns, between two, the score's climb
-// Imbalance reading's score: each imbalance counts in proportion to its weight: all of it at the
-// engine's level, half one level off, nothing beyond. Leaving all six at "=" averages 56% on the master
-// positions (equal sixths with partial credit gave 76%: Space and Pawns are nearly always "=").
-const aspectOff = (vals, guesses, x)=>Math.abs(aspectLevel(vals[x.key]) - ((guesses && guesses[x.key]) || 0));
+// Imbalance reading's score: a sixth for each imbalance: all of it at the engine's level, a third one
+// level off, nothing beyond. Leaving all six at "=" averages 55% on the master positions.
+const aspectOff = (vals, guesses, x)=>Math.abs(aspectLevel(vals[x.key], x.key) - ((guesses && guesses[x.key]) || 0));
 function imbalanceScore(vals, guesses, shown){
   if(!vals) return 0;
-  const total = ASPECTS.reduce((t, x)=>t + x.weight, 0);
-  return ASPECTS.slice(0, shown).reduce((t, x)=>t + 100 * x.weight / total * ([1, 0.5][aspectOff(vals, guesses, x)] || 0), 0);
+  return ASPECTS.slice(0, shown).reduce((t, x)=>t + 100 / ASPECTS.length * ([1, 1/3][aspectOff(vals, guesses, x)] || 0), 0);
 }
 function startAspectsReveal(p, s, vals){
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;

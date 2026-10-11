@@ -73,19 +73,19 @@ async def main():
         if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King safety', 'Threats']: fails.append(f'rows: {rows}')
         if heads != ['Static', 'Dynamic']: fails.append(f'column titles: {heads}')
         vals = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>a[x.key]); })()")
-        def badge(v):
-            n = sum(abs(v) >= t for t in (0.3, 0.8))
+        LEVELS = [[0.3, 1.3], [0.15, 0.35], [0.05, 0.2], [0.45, 1.0], [0.3, 1.4], [0.25, 0.65]]
+        def badge(v, t):
+            n = sum(abs(v) >= x for x in t)
             return 'eq =' if n == 0 else ('w ' + '+'*n if v > 0 else 'b ' + '−'*n)
-        if [r.split(': ')[1] for r in rows] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
+        if [r.split(': ')[1] for r in rows] != [badge(v, t) for v, t in zip(vals, LEVELS)]: fails.append(f'badges {rows} vs values {vals}')
         borders = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>['ok','near','far','bad'].find(c=>b.classList.contains(c)) || '?')")
-        lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key])); })()")
+        lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key], x.key)); })()")
         mine = [2, 0, 1, 0, -2, 0]
         want = ['ok' if m == l else 'near' if abs(m - l) == 1 else 'bad' for m, l in zip(mine, lv)]
         print('borders:', borders)
         if borders != want: fails.append(f'borders: {borders}, expected {want}')
         final = await pg.text_content('#revealAcc')
-        W = [0.63, 0.24, 0.08, 0.73, 0.59, 0.53]
-        pts = round(sum(100 * w / sum(W) * {0: 1, 1: 0.5}.get(abs(m - l), 0) for w, m, l in zip(W, mine, lv)))
+        pts = round(sum(100 / 6 * {0: 1, 1: 1/3}.get(abs(m - l), 0) for m, l in zip(mine, lv)))
         nums = [int(x[:-1]) for x in scores if x.endswith('%')]
         if final != f'{pts}%': fails.append(f'score {final}, expected {pts}%')
         if nums != sorted(nums) or not nums or nums[0] != 0: fails.append(f'the score should climb from 0: {scores}')
