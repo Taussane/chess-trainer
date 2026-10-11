@@ -28,7 +28,7 @@ async def main():
         if await pg.query_selector('#replayBtn'): fails.append('a position played today was offered for replay')
         rows = await pg.evaluate("[...document.querySelectorAll('.wk-table tbody tr')].map(r=>r.innerText.replace(/\\s+/g,' '))")
         print('week:', rows[:3])
-        if not rows[0].startswith('Today 5') : fails.append(f'today row: {rows[0]}')
+        if not rows[0].startswith('Today · 5') : fails.append(f'today row: {rows[0]}')
         await pg.screenshot(path=str(T.SHOTS/'profile.png'), full_page=True)
         # The chart's tip: stays open when the page redraws, and stays inside the chart at both ends.
         box = await pg.query_selector('#levelChart'); bb = await box.bounding_box()

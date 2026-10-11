@@ -29,8 +29,8 @@ async def main():
         await pg.click('#homeBtn'); await pg.click('[data-src="mine"]'); await pg.wait_for_timeout(100)
         cards = await pg.evaluate("[...document.querySelectorAll('.card')].map(c=>c.dataset.go+':'+(c.disabled?'off':'on')+':'+c.querySelector('.card-desc').innerText)")
         print('home:', cards)
-        if not cards[0].startswith('analysis:on') or not cards[1].startswith('candidates:on'): fails.append(f'Board analysis and Candidate moves should open at once: {cards}')
-        if ':off:Finding positions' not in cards[2]: fails.append(f'Move selection should wait: {cards}')
+        if not cards[0].startswith('imbalances:on') or not cards[1].startswith('analysis:on') or not cards[2].startswith('candidates:on'): fails.append(f'Board analysis and Candidate moves should open at once: {cards}')
+        if ':off:Finding positions' not in cards[3]: fails.append(f'Move selection should wait: {cards}')
         await pg.screenshot(path=str(T.SHOTS/'fast_1_home_waiting.png'))
         # Release the engine: all checks must come before the first quick scan.
         await pg.evaluate("__hold=false")

@@ -1,5 +1,5 @@
-# Key aspects (Position evaluation review): Stockfish 10's `eval` table, grouped into aspects, and
-# shown under the review with a Dynamics row (the search minus the aspects).
+# Imbalance reading, and the imbalances in Position evaluation's review: Stockfish 10's `eval` table,
+# grouped into six imbalances, gauged as signs (−−− to +++), revealed one by one, drawn on the board.
 import asyncio, sys, pathlib, json
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
@@ -29,19 +29,16 @@ async def main():
         if 'eval' not in r['sent'] or 'position fen '+FEN not in r['sent'] or not r['n'] or r['n'] < 15: fails.append(f'eval request: {r}')
         if r['none'] is not None or r['state'] != 'ready' or r['busy']: fails.append(f'an unanswered eval should give nothing and leave the engine working: {r}')
         await pg.evaluate("sfWorker = null")
-        # 3. The review: six aspects, a divider, Dynamics = search minus the aspects.
-        await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
-        await pg.evaluate("""t=>{ const p = pos(); engineAspects = fen=>Promise.resolve(t.split('\\n'));
-          engineEval = fen=>new Promise(res=>setTimeout(()=>res({ lines:[{cp: p.side==='w' ? 250 : -250, mate:null, uci:null}], bestUci:null }), 20));
-          fenEvalStore = {}; aspectsStore = {}; render(); }""", TABLE)
-        note = await pg.evaluate("(()=>{ const n = document.querySelectorAll('#anaCheckRow .asp-note'); return n.length + ' ' + (n[0] ? n[0].textContent + ' ' + getComputedStyle(n[0]).color : ''); })()")
-        grey = await pg.evaluate("getComputedStyle(document.querySelector('.hint, .score-label, .asp-head')).color")
-        if note != '1 Tactics can also shift the evaluation. ' + await pg.evaluate("getComputedStyle(document.querySelector('.asp-head')).color"): fails.append(f'tactics reminder: {note}')
-        prompt = await pg.text_content('#anaPrompt')
-        if prompt != 'Gauge each positional aspect, then drag the bar to your evaluation.': fails.append(f'prompt: {prompt}')
-        # 4. Gauging the aspects before Check: all "=" at first; tap a badge, then a level; slide; arrow keys.
+        # 3. Imbalance reading: no bar; the prompt; every imbalance "=" at first.
+        await pg.click('.card[data-go="imbalances"]'); await pg.wait_for_timeout(300)
+        await pg.evaluate("""t=>{ engineAspects = fen=>Promise.resolve(t.split('\\n')); aspectsStore = {}; render(); }""", TABLE)
+        prompt = await pg.text_content('#imbPrompt')
+        if prompt != 'Gauge each imbalance: who has the edge, and how big?': fails.append(f'prompt: {prompt}')
+        if await pg.query_selector('#evalBar'): fails.append('Imbalance reading has no evaluation bar')
         start = await pg.evaluate("[...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' ')")
-        if start != '= = = = = =': fails.append(f'aspects should start at =: {start}')
+        if start != '= = = = = =': fails.append(f'imbalances should start at =: {start}')
+        h1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
+        # 4. Gauging: tap a badge, then a level (the scale opens above it); slide; arrow keys; a tap elsewhere closes it.
         await pg.click('.asp-pick[data-asp="material"]'); await pg.wait_for_timeout(100)
         above = await pg.evaluate("document.querySelector('.asp-picker').getBoundingClientRect().bottom <= document.querySelector('.asp-pick[data-asp=\"material\"]').getBoundingClientRect().top")
         if not above: fails.append('the scale should open above the badge')
@@ -51,29 +48,25 @@ async def main():
         await pg.mouse.move(*xy[0]); await pg.mouse.down(); await pg.mouse.move(xy[1][0], xy[1][1], steps=8); await pg.mouse.up(); await pg.wait_for_timeout(100)
         await pg.focus('.asp-pick[data-asp="space"]'); await pg.keyboard.press('ArrowUp'); await pg.keyboard.press('ArrowUp'); await pg.keyboard.press('ArrowDown')
         await pg.click('.asp-pick[data-asp="threats"]'); await pg.wait_for_timeout(100)
-        await pg.mouse.click(5, 5); await pg.wait_for_timeout(100)   # a tap elsewhere closes the scale
-        r = await pg.evaluate("({ asp: st('analysis').asp, badges: [...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' '), open: !!document.querySelector('.asp-picker') })")
+        await pg.mouse.click(5, 5); await pg.wait_for_timeout(100)
+        r = await pg.evaluate("({ asp: st('imbalances').asp, badges: [...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' '), open: !!document.querySelector('.asp-picker') })")
         print('gauged:', r)
         if r['asp'] != {'material': 2, 'king': -3, 'space': 1} or r['badges'] != '++ = + = −−− =' or r['open']: fails.append(f'gauging: {r}')
-        await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000)
-        # 5. The review: your levels first, the score not shown yet; then the aspects turn one by one;
-        #    then the bar and the accuracy; the buttons last.
-        badges = "[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>b.textContent+(b.classList.contains('ok') ? ' ok' : b.classList.contains('bad') ? ' bad' : '')).join(' | ')"
-        await pg.wait_for_timeout(150)
-        first = await pg.evaluate(badges); acc0 = await pg.text_content('#revealAcc')
+        # 5. The review: your levels first; then one by one the engine's, the score climbing; the buttons last.
+        await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000); await pg.wait_for_timeout(150)
+        first = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>b.textContent).join(' | ')"); acc0 = await pg.text_content('#revealAcc')
         print('at first:', first, acc0)
-        if first != '++ | = | + | = | −−− | =' or acc0 not in ('—', '0%'): fails.append(f'the review should open on your levels, no score yet: {first} {acc0}')
+        if first != '++ | = | + | = | −−− | =' or acc0 not in ('—', '0%'): fails.append(f'the review should open on your levels: {first} {acc0}')
         seen = set(); scores = []
         for _ in range(120):
-            n = await pg.evaluate("st('analysis').aspShown || 0"); seen.add(n)
+            seen.add(await pg.evaluate("st('imbalances').aspShown || 0"))
             sc = await pg.text_content('#revealAcc')
             if not scores or scores[-1] != sc: scores.append(sc)
-            if await pg.evaluate("!!st('analysis').aspDone"): break
+            if await pg.evaluate("!!st('imbalances').aspDone"): break
             await pg.wait_for_timeout(100)
-        mid = await pg.evaluate("st('analysis').animT")
-        print('aspects revealed in steps:', sorted(seen))
-        if len(seen) < 4: fails.append(f'the aspects should turn one by one: {sorted(seen)}')
-        await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=10000); await pg.wait_for_timeout(300)
+        await pg.wait_for_timeout(500)
+        print('revealed in steps:', sorted(seen), 'score:', scores)
+        if len(seen) < 4: fails.append(f'the imbalances should turn one by one: {sorted(seen)}')
         rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+[...r.querySelector('.asp-badge').classList].filter(c=>['w','b','eq'].includes(c))[0]+' '+r.querySelector('.asp-badge').textContent)")
         heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.textContent)")
         print('rows:', rows, heads)
@@ -83,64 +76,67 @@ async def main():
         def badge(v):
             n = sum(abs(v) >= t for t in (0.3, 0.8, 2))
             return 'eq =' if n == 0 else ('w ' + '+'*n if v > 0 else 'b ' + '−'*n)
-        if rows and [r.split(': ')[1] for r in rows] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
-        marks = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>['ok','near','far','bad'].find(c=>b.classList.contains(c)) || '?')")
+        if [r.split(': ')[1] for r in rows] != [badge(v) for v in vals]: fails.append(f'badges {rows} vs values {vals}')
+        borders = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>['ok','near','far','bad'].find(c=>b.classList.contains(c)) || '?')")
         lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key])); })()")
         mine = [2, 0, 1, 0, -3, 0]
         want = ['ok' if m == l else 'near' if abs(m - l) == 1 else 'far' if abs(m - l) == 2 else 'bad' for m, l in zip(mine, lv)]
-        print('borders:', marks)
-        if marks != want: fails.append(f'green/red borders: {marks}, expected {want}')
-        if not await pg.evaluate("!document.querySelector('.actions-row.split').classList.contains('pending')"): fails.append('buttons should be in at the end')
-        # score: 10 points per matched aspect as they turn, then 40% of the bar's accuracy
+        print('borders:', borders)
+        if borders != want: fails.append(f'borders: {borders}, expected {want}')
         final = await pg.text_content('#revealAcc')
-        want_final = await pg.evaluate("(()=>{ const s = st('analysis'), p = pos(); return analysisScore(aspectsStore[p.fen].data, s.asp, s.guess, positionInfo(p, fenEval(p.fen)).pct).final; })()")
-        bar = await pg.evaluate("(()=>{ const s = st('analysis'), p = pos(); return evalAccuracyPct(s.guess, positionInfo(p, fenEval(p.fen)).pct); })()")
-        print('score while the aspects turn:', scores, '→', final, '(bar', bar, ')')
-        pts = sum(10 * max(0, 3 - abs(m - l)) / 3 for m, l in zip(mine, lv))
-        if final != f'{want_final}%' or want_final != round(pts + 0.4*bar): fails.append(f'final score {final}, expected {pts} + 40% of {bar}')
+        pts = round(sum(100 / 6 * max(0, 3 - abs(m - l)) / 3 for m, l in zip(mine, lv)))
         nums = [int(x[:-1]) for x in scores if x.endswith('%')]
-        if nums != sorted(nums) or not nums or nums[0] != 0 or max(nums) > want_final: fails.append(f'scores along the way should count up from 0: {scores}')
-        rec = await pg.evaluate("results[results.length-1].acc")
-        if rec != want_final: fails.append(f'recorded {rec}, shown {final}')
+        if final != f'{pts}%': fails.append(f'score {final}, expected {pts}%')
+        if nums != sorted(nums) or not nums or nums[0] != 0: fails.append(f'the score should climb from 0: {scores}')
+        rec = await pg.evaluate("[results[results.length-1].a, results[results.length-1].acc]")
+        if rec != ['imbalances', pts]: fails.append(f'recorded {rec}')
+        if await pg.evaluate("document.querySelector('.actions-row.split').classList.contains('pending')"): fails.append('buttons should be in at the end')
+        h2 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
+        if h1 != h2: fails.append(f'panel height changed: {h1} -> {h2}')
         await pg.set_viewport_size({'width': 360, 'height': 760}); await pg.wait_for_timeout(200)
-        cut = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-name')].filter(n=>n.scrollWidth>n.clientWidth).map(n=>n.textContent+' '+n.scrollWidth+'/'+n.clientWidth+' item '+n.parentNode.offsetWidth+' badges '+n.nextElementSibling.offsetWidth)")
+        cut = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-name')].filter(n=>n.scrollWidth>n.clientWidth).map(n=>n.textContent)")
         await pg.set_viewport_size({'width': 390, 'height': 760})
         if cut: fails.append(f'names cut at 360 px wide: {cut}')
-        # 6. Tap an aspect: its marks on the board; tap another: that one instead; tap again: none.
-        await pg.click('#aspects .asp-item[data-asp="activity"]'); await pg.wait_for_timeout(100)
-        r = await pg.evaluate("({ sel: [...document.querySelectorAll('#aspects .asp-item.sel')].map(e=>e.dataset.asp), nums: document.querySelectorAll('#arrows text').length })")
-        await pg.click('#aspects .asp-item[data-asp="space"]'); await pg.wait_for_timeout(100)
-        r2 = await pg.evaluate("({ sel: [...document.querySelectorAll('#aspects .asp-item.sel')].map(e=>e.dataset.asp), nums: document.querySelectorAll('#arrows text').length })")
-        await pg.click('#aspects .asp-item[data-asp="space"]'); await pg.wait_for_timeout(100)
-        r3 = await pg.evaluate("({ sel: document.querySelectorAll('#aspects .asp-item.sel').length, marks: document.getElementById('arrows').children.length })")
-        print('tap aspects:', r, r2, r3)
-        if r['sel'] != ['activity'] or r['nums'] < 1 or r2['sel'] != ['space'] or r2['nums'] != 0 or r3 != {'sel': 0, 'marks': 0}: fails.append(f'tapping aspects: {r} {r2} {r3}')
-        # what each aspect marks, on small positions
+        # 6. Tap an imbalance: its marks on the board; another: that one instead; again: none.
+        async def tapped(k):
+            await pg.click(f'#aspects .asp-item[data-asp="{k}"]'); await pg.wait_for_timeout(100)
+            return await pg.evaluate("({ sel: [...document.querySelectorAll('#aspects .asp-item.sel')].map(e=>e.dataset.asp).join(), nums: document.querySelectorAll('#arrows text').length, marks: document.getElementById('arrows').children.length })")
+        r1 = await tapped('activity'); r2 = await tapped('space'); r3 = await tapped('space')
+        print('tap:', r1, r2, r3)
+        if r1['sel'] != 'activity' or r1['nums'] < 1 or r2['sel'] != 'space' or r2['nums'] != 0 or r3['sel'] != '' or r3['marks'] != 0: fails.append(f'tapping: {r1} {r2} {r3}')
+        # 7. Position evaluation: the bar alone, the tactics reminder beside Check; its review shows the
+        #    engine's imbalances (no borders, not scored), tappable too.
+        await pg.click('#homeBtn'); await pg.wait_for_timeout(200)
+        await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
+        await pg.evaluate("""()=>{ const p = pos(); engineEval = fen=>new Promise(res=>setTimeout(()=>res({ lines:[{cp: p.side==='w' ? 250 : -250, mate:null, uci:null}], bestUci:null }), 20)); fenEvalStore = {}; render(); }""")
+        prompt = await pg.text_content('#anaPrompt'); note = await pg.text_content('#anaCheckRow .asp-note')
+        if prompt != "Drag the bar to show who's better, and by how much." or note != 'Tactics can also shift the evaluation.': fails.append(f'evaluation question: {prompt} / {note}')
+        if await pg.query_selector('#aspInput'): fails.append('Position evaluation asks for no imbalances')
+        await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=8000); await pg.wait_for_timeout(300)
+        r = await pg.evaluate("""(()=>{ const s = st('analysis'), p = pos(); return { acc: document.getElementById('revealAcc').textContent, want: evalAccuracyPct(s.guess, positionInfo(p, fenEval(p.fen)).pct),
+            badges: [...document.querySelectorAll('#aspects .asp-badge')].map(b=>b.textContent).length, borders: document.querySelectorAll('#aspects .ok, #aspects .near, #aspects .far, #aspects .bad').length,
+            pickable: document.querySelectorAll('#aspects .asp-item.pickable').length, rec: results[results.length-1].a }; })()""")
+        print('evaluation review:', r)
+        if r['acc'] != f"{r['want']}%" or r['badges'] != 6 or r['borders'] or r['pickable'] != 6 or r['rec'] != 'analysis': fails.append(f'evaluation review: {r}')
+        # what each imbalance marks, on small positions
         marks = await pg.evaluate("""(()=>{ const M = (fen, k)=>{ const m = aspectMarks(fen, k); return {
             c: m.circles.map(x=>x.sq+x.c).sort().join(' '), a: m.arrows.map(x=>x.from+x.to+x.c).sort().join(' '), t: m.tints.length, n: m.nums.map(x=>x.sq+x.n).sort().join(' ') }; };
           return {
-            material: M('4k3/8/8/8/8/8/3PP3/1R2K3 w - - 0 1', 'material').c,                 // White: a rook and 2 pawns more
-            pair: M('4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').c,                     // 2 bishops against none
-            pawns: M('4k3/8/8/3p4/8/8/P1P3PP/4K3 w - - 0 1', 'pawns').c,                     // a2 g2 h2 passed; c2 and d5 isolated
-            threats: M('4k3/8/2n5/3P4/8/8/8/4K3 w - - 0 1', 'threats').a,                  // d5 pawn attacks the c6 knight
-            hanging: M('4k3/8/8/3r4/8/8/3Q4/4K3 b - - 0 1', 'threats').a,                  // the rook attacks the queen (a lesser piece); the queen, the undefended rook
-            spaceFew: M('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 'space').t,                       // few pieces: no space
+            material: M('4k3/8/8/8/8/8/3PP3/1R2K3 w - - 0 1', 'material').c,
+            pair: M('4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').c,
+            pawns: M('4k3/8/8/3p4/8/8/P1P3PP/4K3 w - - 0 1', 'pawns').c,
+            threats: M('4k3/8/2n5/3P4/8/8/8/4K3 w - - 0 1', 'threats').a,
+            hanging: M('4k3/8/8/3r4/8/8/3Q4/4K3 b - - 0 1', 'threats').a,
+            spaceFew: M('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 'space').t,
             knight: M('4k3/8/8/8/8/8/8/1N2K3 w - - 0 1', 'activity').n,
           }; })()""")
-        print('marks:', marks)
-        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'spaceFew': 0, 'knight': 'b13'}
+        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2b d5w g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'spaceFew': 0, 'knight': 'b13'}
         for k, v in want.items():
             if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
-        if marks['pawns'] != 'a2w c2b d5w g2w h2w': fails.append(f'pawn marks: {marks["pawns"]}')
-        if await pg.query_selector('text=Dynamics') or await pg.query_selector('text=Aspects alone') or await pg.query_selector('text=Decisive move'): fails.append('Dynamics / Aspects alone / Decisive move should be gone')
-        if await pg.query_selector('#aspects .asp-note'): fails.append('the tactics reminder belongs to the question, not the review')
-        if await pg.query_selector('.recap'): fails.append('the recap sentence should be gone')
-        # the panel keeps its height from the question to the review
-        await pg.click('#nextPos'); await pg.wait_for_timeout(400)
-        h1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
-        await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=15000); await pg.wait_for_timeout(300)
-        h2 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
-        if h1 != h2: fails.append(f'panel height changed: {h1} -> {h2}')
+        # the pool: Position evaluation's positions less the tactical ones
+        n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, IMBALANCE_SKIP.length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key))]")
+        print('pools:', n)
+        if n[0] != n[1] - n[2] or n[3] or n[2] < 5: fails.append(f'Imbalance reading pool: {n}')
         await b.close()
     errs = [e for e in errs if 'importScripts' not in e]
     if errs: fails.append(f'page errors: {errs}')

@@ -134,7 +134,7 @@ async def main():
         # 7. Routine: Candidate moves has nothing left today -> the routine goes from Board
         # analysis straight to Final choice.
         b, pg, errs = await open_app(p); allerrs += errs
-        await pg.evaluate("(()=>{ POOLS.candidates.forEach(p=>markPlayed(p.key)); render(); })()")
+        await pg.evaluate("(()=>{ POOLS.candidates.forEach(p=>markPlayed(p.key)); setRoutineNext('analysis'); render(); })()")
         await pg.click('#routineBtn'); await pg.wait_for_timeout(200)
         await pg.evaluate("(()=>{ st('analysis').guess = 70; render(); })()")
         await pg.click('#check'); await pg.wait_for_timeout(2500)

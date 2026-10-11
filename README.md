@@ -1,6 +1,6 @@
 # Chess Strategy Trainer
 
-A mobile-first chess trainer with three exercises: **Position evaluation**, **Candidate moves** and **Move selection**. Free and open: positions from master games, and from your own Lichess and Chess.com games.
+A mobile-first chess trainer with four exercises, in the order a player thinks: **Imbalance reading** (who has the edge in material, pawns, space, activity, king safety and threats), **Position evaluation**, **Candidate moves** and **Move selection**. Free and open: positions from master games, and from your own Lichess and Chess.com games.
 
 The project has two parts:
 
@@ -53,6 +53,7 @@ npm run find                  # runs the finder on library/gm-classics.pgn into 
 npm run report                # prints the statistics
 node finder/baseline.js data/pools.json   # how a no-thinking player scores (50/50, random top-5 move, random order)
 npm run inject                # copies data/pools.json into app/index.html
+STOCKFISH_JS=/path/to/stockfish.js node scripts/imbalance-skip.js   # after new Position evaluation positions: lists the tactical ones Imbalance reading leaves out (needs Stockfish.js 10 for Node, the engine the app runs)
 npm run site                  # rebuilds index.html from the app
 npm run test:all              # every test
 ```
