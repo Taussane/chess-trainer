@@ -38,6 +38,7 @@ async def main():
         start = await pg.evaluate("[...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' ')")
         if start != '= = = = = =': fails.append(f'imbalances should start at =: {start}')
         h1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
+        n1 = await pg.evaluate("(()=>{ const p = document.querySelector('.panel').getBoundingClientRect().top; return [...document.querySelectorAll('.panel .layer:not(.ghost) .asp-name')].map(n=>Math.round(n.getBoundingClientRect().top - p)); })()")
         # 4. Gauging: tap a badge, then a level (the scale opens above it); slide; arrow keys; a tap elsewhere closes it.
         await pg.click('.asp-pick[data-asp="material"]'); await pg.wait_for_timeout(100)
         above = await pg.evaluate("document.querySelector('.asp-picker').getBoundingClientRect().bottom <= document.querySelector('.asp-pick[data-asp=\"material\"]').getBoundingClientRect().top")
@@ -100,6 +101,8 @@ async def main():
         if await pg.evaluate("document.querySelector('.actions-row.split').classList.contains('pending')"): fails.append('buttons should be in at the end')
         h2 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
         if h1 != h2: fails.append(f'panel height changed: {h1} -> {h2}')
+        n2 = await pg.evaluate("(()=>{ const p = document.querySelector('.panel').getBoundingClientRect().top; return [...document.querySelectorAll('.panel .layer:not(.ghost) .asp-name')].map(n=>Math.round(n.getBoundingClientRect().top - p)); })()")
+        if n1 != n2: fails.append(f'imbalances should stay in place: {n1} -> {n2}')
         await pg.set_viewport_size({'width': 360, 'height': 760}); await pg.wait_for_timeout(200)
         cut = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-name')].filter(n=>n.scrollWidth>n.clientWidth).map(n=>n.textContent)")
         await pg.set_viewport_size({'width': 390, 'height': 760})
@@ -121,7 +124,7 @@ async def main():
         await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
         await pg.evaluate("""()=>{ const p = pos(); engineEval = fen=>new Promise(res=>setTimeout(()=>res({ lines:[{cp: p.side==='w' ? 250 : -250, mate:null, uci:null}], bestUci:null }), 20)); fenEvalStore = {}; render(); }""")
         prompt = await pg.text_content('#anaPrompt'); note = await pg.query_selector('#anaCheckRow .asp-note')
-        if prompt != "Drag the bar to where you think the evaluation sits." or note: fails.append(f'evaluation question: {prompt} / {note}')
+        if prompt != "Drag the evaluation bar to where you think it sits." or note: fails.append(f'evaluation question: {prompt} / {note}')
         if await pg.query_selector('#aspInput'): fails.append('Position evaluation asks for no imbalances')
         e1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
         await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=8000); await pg.wait_for_timeout(300)
@@ -136,6 +139,7 @@ async def main():
         if row:
             k = await row.get_attribute('data-asp'); await row.click(); await pg.wait_for_timeout(100)
             if await pg.evaluate("st('analysis').aspView") != k: fails.append('tapping a plan line should show its imbalance')
+            if await pg.evaluate("getComputedStyle(document.querySelector('#aspects .plan-row.sel .plan-sit')).textDecorationLine") != 'none': fails.append('the selected plan line should not be underlined')
         # the plan, from made-up imbalances (White to play)
         plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side)=>planFor({ fen:'4k3/8/8/8/8/8/8/4K3 '+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.plan);
           const Q = (vals, side)=>planFor({ fen:'4k3/8/8/8/8/8/P7/4K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);

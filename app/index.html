@@ -281,21 +281,27 @@
   .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:10px; row-gap:10px;}
   .aspects:not(.plan){margin:6px 0 0;}
   .aspects:not(.plan) .asp-grid{row-gap:6px;}
+  /* In the review the score sits where the prompt was: pull the grid up so each imbalance stays put. */
+  .prompt + .aspects.asp-input{margin-top:10px;}
+  .score:has(+ .aspects:not(.plan)) .score-num{line-height:1;}
+  .score + .aspects:not(.plan){margin-top:0;}
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
   .aspects.asp-input{position:relative;}
   .asp-badge{line-height:1.35; transition:background-color .6s, color .6s, border-color .6s, box-shadow .6s;}
+  .aspects.plan{margin-top:4px;}
   .aspects.plan .asp-head{margin-bottom:6px;}
-  .plan-rows{display:grid; grid-template-columns:1fr; row-gap:4px;}
+  .plan-rows{display:grid; grid-template-columns:1fr; row-gap:8px;}
   /* Each row: the situation (grey) on the left, its plan beside it. */
-  .plan-row{display:grid; grid-template-columns:minmax(0,8.6rem) minmax(0,1fr); align-items:baseline; column-gap:10px; line-height:1.3; padding:3px 6px; margin:-3px -6px; border-radius:6px;}
+  .plan-row{display:grid; grid-template-columns:minmax(0,8.6rem) minmax(0,1fr); align-items:baseline; column-gap:10px; line-height:1.3; padding:4px 6px; margin:-4px -6px; border-radius:6px;}
   .plan-row.asp-item{display:grid; gap:0 10px;}
   .plan-sit{font-size:0.8rem; color:var(--text-mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .plan-text{font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
   .plan-row.asp-item.pickable .plan-sit{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
   .asp-item.pickable{cursor:pointer; border-radius:6px; margin:-3px -6px; padding:3px 6px; -webkit-tap-highlight-color:transparent;}
+  .plan-row.asp-item.pickable{margin:-4px -6px; padding:4px 6px;}
   .asp-item.pickable .asp-name{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
   .asp-item.sel{background:var(--panel-2); box-shadow:inset 0 0 0 1px var(--accent);}
-  .asp-item.sel .asp-name{text-decoration:none;}
+  .asp-item.sel .asp-name, .plan-row.asp-item.sel .plan-sit{text-decoration:none;}
   .asp-pick{font-family:inherit; cursor:pointer;}
   .asp-item, .asp-pick, .asp-picker, .asp-picker .asp-badge{-webkit-tap-highlight-color:transparent;}
   .asp-pick:focus:not(:focus-visible), .asp-picker .asp-badge:focus:not(:focus-visible), .asp-item:focus:not(:focus-visible){outline:none;}
@@ -1735,7 +1741,7 @@ function wireAspectView(p, s){
     el.onkeydown = e=>{ if(e.key==='Enter' || e.key===' '){ pick(); e.preventDefault(); } };
   });
 }
-const ASP_START = 500, ASP_STEP = 400, ASP_CLIMB_MS = 350;   // ms: before the first aspect turns, between two, the score's climb
+const ASP_START = 500, ASP_STEP = 600, ASP_CLIMB_MS = 450;   // ms: before the first aspect turns, between two, the score's climb
 // Imbalance reading's score: a sixth for each imbalance: all of it at the engine's level, a third one
 // level off, nothing beyond. Leaving all six at "=" averages 55% on the master positions.
 const aspectOff = (vals, guesses, x)=>Math.abs(aspectLevel(vals[x.key], x.key) - ((guesses && guesses[x.key]) || 0));
@@ -2020,7 +2026,7 @@ function stackedPanel(inner, ghosts, extra){
 }
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
-  `<p class="prompt">Drag the bar to where you think the evaluation sits.</p><div class="actions-row"><span class="btn">Check</span></div>`,
+  `<p class="prompt">Drag the evaluation bar to where you think it sits.</p><div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planHtml(null, null, false, true)}${GHOST_ACTIONS}`,
 ];
 const GHOST_IMBALANCES = [
@@ -3401,7 +3407,7 @@ function renderAnalysis(){
         ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, s.justDone, false, p.fen) : planHtml(null, null, false, true)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
-        <p class="prompt" id="anaPrompt">Drag the bar to where you think the evaluation sits.</p>
+        <p class="prompt" id="anaPrompt">Drag the evaluation bar to where you think it sits.</p>
         <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(aspVals) wireAspectView(p, s);
