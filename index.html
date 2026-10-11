@@ -236,7 +236,6 @@
   /* Position bar */
   .posbar{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 12px; margin:12px 0 12px;}
   .pos-title{font-size:0.86rem; color:var(--text-mute); min-width:0; line-height:1.4;}
-  .pos-title strong{color:var(--text); font-weight:700; font-size:0.95rem;}
 
   /* Board */
   .board-outer{width:100%; max-width:420px; margin:0 auto; position:relative; z-index:0;}
@@ -291,6 +290,8 @@
   /* Key aspects (Position evaluation): static and dynamic columns of name + badge */
   .aspects{margin:12px 0 6px;}
   .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:10px; row-gap:10px;}
+  .aspects:not(.plan){margin:6px 0 0;}
+  .aspects:not(.plan) .asp-grid{row-gap:6px;}
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
   .aspects.asp-input{position:relative;}
   .asp-badge{line-height:1.35; transition:background-color .6s, color .6s, border-color .6s, box-shadow .6s;}
@@ -301,12 +302,14 @@
   .plan-row.asp-item{display:grid; gap:0 10px;}
   .plan-sit{font-size:0.8rem; color:var(--text-mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .plan-text{font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
-  .plan-row.asp-item.pickable .plan-text{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
+  .plan-row.asp-item.pickable .plan-sit{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
   .asp-item.pickable{cursor:pointer; border-radius:6px; margin:-3px -6px; padding:3px 6px; -webkit-tap-highlight-color:transparent;}
   .asp-item.pickable .asp-name{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
   .asp-item.sel{background:var(--panel-2); box-shadow:inset 0 0 0 1px var(--accent);}
   .asp-item.sel .asp-name{text-decoration:none;}
   .asp-pick{font-family:inherit; cursor:pointer;}
+  .asp-item, .asp-pick, .asp-picker, .asp-picker .asp-badge{-webkit-tap-highlight-color:transparent;}
+  .asp-pick:focus:not(:focus-visible), .asp-picker .asp-badge:focus:not(:focus-visible), .asp-item:focus:not(:focus-visible){outline:none;}
   .asp-picker .asp-badge{font-family:inherit; line-height:1.35; cursor:pointer;}
   .asp-pick.eq{border-color:var(--border);}
   .asp-picker{position:absolute; left:0; right:0; z-index:5; display:flex; justify-content:space-between; gap:4px; padding:6px;
@@ -355,8 +358,8 @@
      including the last. */
   .rate-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 -8px; padding:2px 8px 2px 12px;
     border-bottom:1px solid var(--border); border-left:3px solid transparent; border-radius:6px;}
-  .rate-row, .review-row.pick-row{min-height:40px; padding-block:2px;}
-  .rev-list .review-row{min-height:34px; padding-block:2px;}
+  .review-row.pick-row{min-height:40px; padding-block:2px;}
+  .rate-row, .rev-list .review-row{min-height:34px; padding-block:2px;}
   .move-tag{display:flex;align-items:center;gap:8px; font-size:0.96rem; min-width:0; flex-wrap:wrap;}
   .move-tag .num{opacity:.6; min-width:1ch; font-variant-numeric:tabular-nums;}
   .del-btn{width:26px; height:26px; margin-block:-4px; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; padding:0;
@@ -1463,8 +1466,13 @@ function header(title){
 function posBar(){
   const p = pos();
   return `<div class="posbar">
-      <div class="pos-title"><strong>${p.side==='w' ? 'White' : 'Black'} to play</strong><br>${posSource(p)}</div>
+      <div class="pos-title">${posSource(p)}<br>${toPlay(p)}</div>
     </div>`;
+}
+// "11. White to play", "25... Black to play" (the move number from the FEN).
+function toPlay(p){
+  const n = +(p.fen.split(' ')[5]) || 1;
+  return p.side==='w' ? `${n}. White to play` : `${n}... Black to play`;
 }
 function fmtGameDate(d){   // "1981-05-12" | "1981-05" | "1981"
   const [y, m, dd] = String(d || '').split('-').map(Number);
@@ -1696,11 +1704,12 @@ function planFor(p, vals, info){
 }
 const PLAN_ROWS = 3;
 // `plan` null: placeholders (the panel's ghost). The rows hold their space even when fewer.
-function planHtml(plan, view, fadeIn, hidden){
+function planHtml(plan, view, fadeIn, hidden, fen){
   const rows = Array.from({ length: PLAN_ROWS }, (_, i)=>{
     const x = plan && plan.lines[i];
     if(!x) return `<div class="plan-row plan-blank" aria-hidden="true"><span class="plan-sit">&nbsp;</span><span class="plan-text">&nbsp;</span></div>`;
-    return `<div class="plan-row${x.key ? ' asp-item pickable' : ''}${x.key && view===x.key ? ' sel' : ''}"${x.key ? ` data-asp="${x.key}" role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}><span class="plan-sit">${x.situation}</span><span class="plan-text">${x.plan}</span></div>`;
+    const pk = x.key && fen && hasMarks(fen, x.key);
+    return `<div class="plan-row${pk ? ' asp-item pickable' : ''}${pk && view===x.key ? ' sel' : ''}"${pk ? ` data-asp="${x.key}" role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}><span class="plan-sit">${x.situation}</span><span class="plan-text">${x.plan}</span></div>`;
   }).join('');
   return `<div class="aspects plan${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
       <div class="asp-head">${plan ? 'Plan for ' + plan.who : 'Plan'}</div><div class="plan-rows">${rows}</div>
@@ -1720,8 +1729,10 @@ function reviewBadge(vals, guesses, x, i, shown){
 }
 // `view`: once revealed, every aspect can be tapped (one at a time, like radio buttons) to draw on the
 // board what it's about; `view` is the one shown (or null), `pickable` whether tapping works yet.
+// `pickable`: the position's FEN once tapping works (only aspects with something to draw are tappable).
 function aspectsGridHtml(vals, guesses, shown, hidden, view, pickable, fadeIn){   // hidden: holds the space, no id (ghost)
-  const item = (x, i)=>`<div class="asp-item${pickable ? ' pickable' : ''}${view===x.key ? ' sel' : ''}" data-asp="${x.key}"${pickable ? ` role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}><span class="asp-name">${x.name}</span>${reviewBadge(vals, guesses, x, i, shown)}</div>`;
+  const item = (x, i)=>{ const pk = !!pickable && hasMarks(pickable, x.key);
+    return `<div class="asp-item${pk ? ' pickable' : ''}${view===x.key ? ' sel' : ''}" data-asp="${x.key}"${pk ? ` role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}><span class="asp-name">${x.name}</span>${reviewBadge(vals, guesses, x, i, shown)}</div>`; };
   return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
     </div>`;
@@ -1735,7 +1746,7 @@ function wireAspectView(p, s){
     el.onkeydown = e=>{ if(e.key==='Enter' || e.key===' '){ pick(); e.preventDefault(); } };
   });
 }
-const ASP_START = 500, ASP_STEP = 800, ASP_CLIMB_MS = 600;   // ms: before the first aspect turns, between two, the score's climb
+const ASP_START = 500, ASP_STEP = 400, ASP_CLIMB_MS = 350;   // ms: before the first aspect turns, between two, the score's climb
 // Imbalance reading's score: a sixth for each imbalance: all of it at the engine's level, a third one
 // level off, nothing beyond. Leaving all six at "=" averages 55% on the master positions.
 const aspectOff = (vals, guesses, x)=>Math.abs(aspectLevel(vals[x.key], x.key) - ((guesses && guesses[x.key]) || 0));
@@ -1873,6 +1884,7 @@ function passedPawn(m, sq, c){
   const f = FILES.indexOf(sq[0]);
   return !pawnsOf(m, other(c)).some(e=>Math.abs(FILES.indexOf(e[0]) - f)<=1 && relRank(e, c) > relRank(sq, c));
 }
+function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.nums.length || m.arrows.length); }
 function aspectMarks(fen, key){
   const m = boardMap(fen), A = attackMaps(m), out = { circles:[], tints:[], nums:[], arrows:[] };
   const pieces = c=>Object.keys(m).filter(sq=>m[sq].c===c);
@@ -2019,7 +2031,7 @@ function stackedPanel(inner, ghosts, extra){
 }
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
-  `<p class="prompt">Drag the bar to show who's better.</p><div class="actions-row"><span class="btn">Check</span></div>`,
+  `<p class="prompt">Drag the bar to where you think the evaluation sits.</p><div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planHtml(null, null, false, true)}${GHOST_ACTIONS}`,
 ];
 const GHOST_IMBALANCES = [
@@ -2032,7 +2044,7 @@ function ghostCandidates(){
   const pick = `<div class="review-row pick-row"><div class="move-tag"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span></div><span class="del-btn">✕</span></div>`;
   return [
     `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="review-cols">${col}${col}</div>${GHOST_ACTIONS}`,
-    `<p class="prompt top">Tap a white piece, then its destination. Suggest at least one strong move for White.</p><div>${pick.repeat(3)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
+    `<p class="prompt top">Add up to three moves, but avoid bad ones.</p><div>${pick.repeat(3)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
   ];
 }
 function ghostFinal(){
@@ -3397,10 +3409,10 @@ function renderAnalysis(){
     ${stackedPanel(`
       ${s.checked ? `
         <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(score.base + (score.final - score.base)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
-        ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, s.justDone) : planHtml(null, null, false, true)}
+        ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, s.justDone, false, p.fen) : planHtml(null, null, false, true)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
-        <p class="prompt" id="anaPrompt">Drag the bar to show who's better.</p>
+        <p class="prompt" id="anaPrompt">Drag the bar to where you think the evaluation sits.</p>
         <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(aspVals) wireAspectView(p, s);
@@ -3430,7 +3442,7 @@ function renderImbalances(){
     ${stackedPanel(`
       ${s.checked ? `
         <div class="score"><span class="score-num" id="revealAcc">${vals && s.aspShown!=null ? Math.round(imbalanceScore(vals, s.asp, s.aspShown))+'%' : '—'}</span><span class="score-label">${vals ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
-        ${aspectsGridHtml(vals, s.asp, s.aspShown || 0, false, s.aspView, done)}
+        ${aspectsGridHtml(vals, s.asp, s.aspShown || 0, false, s.aspView, done && p.fen)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="imbPrompt">Gauge each positional imbalance.</p>
@@ -3512,10 +3524,10 @@ window.addEventListener('pointerup', ()=>{ gaugeDragging = false; });
 // ================= Candidate moves =================
 function pickHint(count){
   const who = side==='w' ? 'White' : 'Black';
-  if(count===0) return `Tap a ${who.toLowerCase()} piece, then its destination. Suggest at least one strong move for ${who}.`;
-  if(count===1) return 'You can add up to three moves.';
+  if(count===0) return `Suggest at least one strong move for ${who}.`;
+  if(count===1) return 'Add up to three moves, but avoid bad ones.';
   if(count===2) return 'Any last move worth considering?';
-  return 'Check when you\'re ready.';
+  return 'Check when you\'re happy with your selection.';
 }
 function renderCandidates(){
   const app = document.getElementById('app');
