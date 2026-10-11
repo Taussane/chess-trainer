@@ -2032,7 +2032,7 @@ const MARK = { w:{ fill:'rgba(255,255,255,', ink:'#F7F3EA', edge:'#1A1612' }, b:
 function drawMarks(svg, marks){
   const R = sq=>{ const c = squareCenter(sq); return { x:c.x-30, y:c.y-30, cx:c.x, cy:c.y }; };
   const tints = marks.tints.map(t=>{ const r = R(t.sq); return `<rect x="${r.x}" y="${r.y}" width="60" height="60" fill="${MARK[t.c].fill}${t.c==='w' ? (t.strong ? .55 : .32) : (t.strong ? .45 : .25)})"/>`; }).join('');
-  const circles = marks.circles.map(t=>{ const r = R(t.sq); return `<circle cx="${r.cx}" cy="${r.cy}" r="26" fill="none" stroke="${MARK[t.c].ink}" stroke-width="4"/>`; }).join('');
+  const circles = marks.circles.map(t=>{ const r = R(t.sq); return `<circle cx="${r.cx}" cy="${r.cy}" r="26" fill="none" stroke="${MARK[t.c].ink}" stroke-width="4" filter="url(#mkShadow)"/>`; }).join('');
   const nums = marks.nums.map(t=>{ const r = R(t.sq); return `<text x="${r.x+56}" y="${r.y+17}" text-anchor="end" font-size="17" font-weight="700" font-family="system-ui,sans-serif" fill="${MARK[t.c].ink}">${t.n}</text>`; }).join('');
   const defs = ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="4" markerHeight="4" refX="2.4" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 Z" fill="${MARK[c].ink}"/></marker>`).join('');
   const arrows = marks.arrows.map(t=>{
@@ -2041,11 +2041,12 @@ function drawMarks(svg, marks){
     const dash = t.dash ? ' stroke-dasharray="9 7"' : '';   // dashed: a threat for the next move
     return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="6" stroke-linecap="round"${dash} marker-end="url(#mk_${t.c})"/>`;
   }).join('');
-  // A small badge straddling the bottom edge of the square (kept inside the board).
+  // A small badge across the middle of the square (kept inside the board).
   const labels = (marks.labels||[]).map(t=>{ const r = R(t.sq), w = t.text.length*7.6 + 14, h = 19;
-    const x = Math.max(1, Math.min(480 - w - 1, r.cx - w/2)), y = Math.min(480 - h - 1, r.y + 60 - h/2 - 2);
-    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9.5" fill="${MARK[t.c].ink}"/><text x="${x + w/2}" y="${y + 13.5}" text-anchor="middle" font-size="13" font-weight="700" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.text}</text>`; }).join('');
-  svg.innerHTML = `<defs>${defs}</defs>${tints}${circles}${arrows}${nums}${labels}`;
+    const x = Math.max(1, Math.min(480 - w - 1, r.cx - w/2)), y = r.cy - h/2;
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9.5" fill="${MARK[t.c].ink}" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 13.5}" text-anchor="middle" font-size="13" font-weight="700" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.text}</text>`; }).join('');
+  const shadow = `<filter id="mkShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.8" flood-color="#000" flood-opacity=".6"/></filter>`;
+  svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}${circles}${arrows}${nums}${labels}`;
 }
 // A panel whose height never changes within an exercise: `inner` is what's shown, `ghosts` are
 // invisible stand-ins for the exercise's other states (no ids, not focusable), stacked in the
