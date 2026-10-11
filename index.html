@@ -444,7 +444,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces (and the bishop pair); <strong>Pawns</strong> passed pawns, and weak ones (isolated, doubled, backward) in the other side's colour; <strong>Space</strong> the safe central squares behind each side's pawns; <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> the squares around each king under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, or undefended.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces (and the bishop pair); <strong>Pawns</strong> passed pawns, and weak ones (isolated, doubled, backward) in the other side's colour; <strong>Space</strong> the safe central squares behind each side's pawns, and the pawns that gain them; <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> the squares around each king under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, or undefended.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -1592,7 +1592,7 @@ function fmtBarScore(info){
 const ASPECTS = [
   { key:'material', name:'Material',    levels:[0.3, 1.3] },
   { key:'pawns',    name:'Pawns',       levels:[0.15, 0.35] },
-  { key:'space',    name:'Space',       levels:[0.05, 0.2] },
+  { key:'space',    name:'Space',       levels:[0.08, 0.2] },   // from 0.08, + shows on the board (2+ squares more in most)
   { key:'activity', name:'Activity',    levels:[0.45, 1.0] },
   { key:'king',     name:'King safety', levels:[0.3, 1.4] },
   { key:'threats',  name:'Threats',     levels:[0.25, 0.65] },
@@ -1890,7 +1890,8 @@ function aspectMarks(fen, key){
         const doubled = mine.some(o=>o[0]===sq[0] && relRank(o, c) < relRank(sq, c));
         const stop = sqAt(f, r+up);
         const backward = !isolated && !adj.some(o=>relRank(o, c) <= relRank(sq, c)) && stop && (A[other(c)][stop] || []).some(a=>m[a].t==='p');
-        if(passedPawn(m, sq, c)) out.circles.push({ sq, c });                  // a passed pawn: good for its side
+        const connected = adj.some(o=>Math.abs(relRank(o, c) - relRank(sq, c))<=1);   // side by side, or protecting each other
+        if(passedPawn(m, sq, c) || (connected && relRank(sq, c)>=4)) out.circles.push({ sq, c });   // passed, or advanced and connected: good for its side
         else if(isolated || doubled || backward) out.circles.push({ sq, c: other(c) });   // a weak pawn: good for the other side
       }
     }
@@ -1904,8 +1905,9 @@ function aspectMarks(fen, key){
         const sq = fl + (c==='w' ? rr : 9-rr);
         if(m[sq] && m[sq].t==='p' && m[sq].c===c) continue;
         if((A[other(c)][sq] || []).some(a=>m[a].t==='p')) continue;
-        const behind = mine.some(o=>o[0]===fl && relRank(o, c) > relRank(sq, c) && relRank(o, c) - relRank(sq, c) <= 3);
-        out.tints.push({ sq, c, strong: behind });
+        const by = mine.find(o=>o[0]===fl && relRank(o, c) > relRank(sq, c) && relRank(o, c) - relRank(sq, c) <= 3);
+        out.tints.push({ sq, c, strong: !!by });
+        if(by && !out.circles.some(x=>x.sq===by)) out.circles.push({ sq: by, c });   // the pawn that gains that space
       }
     }
   }
@@ -1932,6 +1934,8 @@ function aspectMarks(fen, key){
       const attackers = new Set();
       for(const sq of ring){ const at = (A[other(c)][sq] || []).filter(a=>m[a].t!=='k'); if(at.length){ out.tints.push({ sq, c: other(c), strong: at.length>1 }); at.forEach(a=>attackers.add(a)); } }
       attackers.forEach(sq=>out.circles.push({ sq, c: other(c) }));
+      // the pawn shield: own pawns on the king's file and the two next to it, one or two ranks ahead
+      for(const df of [-1,0,1]) for(const dr of [1,2]){ const t = sqAt(f+df, r+dr*up); if(t && m[t] && m[t].t==='p' && m[t].c===c) out.circles.push({ sq: t, c }); }
     }
   }
   if(key==='threats'){
@@ -1941,7 +1945,10 @@ function aspectMarks(fen, key){
       for(const a of (A[c][tsq] || [])){
         const att = m[a];
         const lesser = VAL[att.t] < VAL[target.t] && att.t!=='k';
-        if((att.t==='p' && target.t!=='p') || lesser || (!defended && target.t!=='p') || (!defended && att.t!=='k' && target.t==='p' && att.t==='p'))
+        // as Stockfish: a minor or rook attacking a piece (or pawn) that no pawn protects counts too
+        const byPawn = (A[other(c)][tsq] || []).some(d=>m[d].t==='p');
+        const minorOrRook = 'nbr'.includes(att.t) && !byPawn;
+        if((att.t==='p' && target.t!=='p') || lesser || (!defended && target.t!=='p') || (!defended && att.t!=='k' && target.t==='p') || minorOrRook)
           out.arrows.push({ from: a, to: tsq, c });
       }
     }
