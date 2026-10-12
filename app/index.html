@@ -330,6 +330,8 @@
   .asp-badge.near{border-color:var(--dubious); box-shadow:0 0 0 1px var(--dubious);}
   .asp-badge.bad{border-color:var(--bad); box-shadow:0 0 0 1px var(--bad);}
   .asp-picker .asp-badge.eq{border-color:var(--border);}
+  .asp-badge.off{background:transparent; color:var(--text-mute); border-color:var(--border); border-style:dashed; opacity:.75;}
+  .asp-picker.note{justify-content:center; padding:9px 10px; font-size:0.84rem; color:var(--text-mute); text-align:center;}
   .asp-pick.editing{box-shadow:0 0 0 2px var(--dubious);}
   .score{display:flex; align-items:baseline; gap:8px; margin-bottom:12px;}
   .score-num{font-family:var(--font-display); font-size:1.7rem; line-height:1; font-variant-numeric:tabular-nums;}
@@ -459,7 +461,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe squares in each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); arrows: enemy pawns taking empty squares away; <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) the safe squares in each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); arrows: enemy pawns taking empty squares away; <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -1646,7 +1648,7 @@ function parseAspects(lines, fen){
   let mg = 0, eg = 0;
   for(const t of 'pnbrq'){ const d = (count.w[t]||0) - (count.b[t]||0); mg += d*SF_VALUES[t][0]; eg += d*SF_VALUES[t][1]; }
   const pieces = blend([mg/SF_PAWN_EG, eg/SF_PAWN_EG]);
-  return {
+  const out = {
     material: pieces + g('Imbalance'),
     activity: g('Material') - pieces + g('Mobility') + g('Knights') + g('Bishops') + g('Rooks') + g('Queens'),
     pawns:    g('Pawns') + g('Passed') + g('Initiative'),   // Initiative: an endgame correction, mostly from passed pawns and pawn spread
@@ -1654,6 +1656,8 @@ function parseAspects(lines, fen){
     space:    g('Space'),
     threats:  g('Threats'),
   };
+  Object.defineProperty(out, 'off', { value: ASPECTS.filter(x=>aspectOffIn(fen, x.key)).map(x=>x.key) });   // criteria left out here
+  return out;
 }
 let aspectsStore = {};
 function aspectsEntry(fen){
@@ -1728,7 +1732,9 @@ function planHtml(plan, view, fadeIn, hidden, fen){
 // engine's, its border turning green where you matched it, yellow one level off, orange two off, red
 // further. `vals`: the engine's values (null: not in yet); `guesses`: {key: -3..3} (missing = "="),
 // or null for the engine's levels alone (Position evaluation's review); `shown`: how many are revealed.
+const OFF_BADGE = ()=>`<span class="asp-badge off" title="${SPACE_OFF_NOTE}">–</span>`;
 function reviewBadge(vals, guesses, x, i, shown){
+  if(isOff(vals, x)) return OFF_BADGE();
   if(vals && guesses===null) return aspectBadge(vals[x.key], x.key);
   const g = (guesses && guesses[x.key]) || 0;
   if(!vals || i >= shown) return `<span class="asp-badge ${levelCls(g)}">${SIGNS(g)}</span>`;
@@ -1772,9 +1778,11 @@ const ASP_START = 500, ASP_STEP = 500, ASP_CLIMB_MS = 400;   // ms: before the f
 // Imbalance reading's score: a sixth for each imbalance: all of it at the engine's level, a third one
 // level off, nothing beyond. Leaving all six at "=" averages 55% on the master positions.
 const aspectOff = (vals, guesses, x)=>Math.abs(aspectLevel(vals[x.key], x.key) - ((guesses && guesses[x.key]) || 0));
+const isOff = (vals, x)=>!!(vals && vals.off && vals.off.includes(x.key));
 function imbalanceScore(vals, guesses, shown){
   if(!vals) return 0;
-  return ASPECTS.slice(0, shown).reduce((t, x)=>t + 100 / ASPECTS.length * ([1, 1/3][aspectOff(vals, guesses, x)] || 0), 0);
+  const n = ASPECTS.filter(x=>!isOff(vals, x)).length;   // the criteria that count share the 100%
+  return ASPECTS.slice(0, shown).reduce((t, x)=>t + (isOff(vals, x) ? 0 : 100 / n * ([1, 1/3][aspectOff(vals, guesses, x)] || 0)), 0);
 }
 function startAspectsReveal(p, s, vals){
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1790,7 +1798,7 @@ function startAspectsReveal(p, s, vals){
       if(el) el.querySelector('.asp-badge').outerHTML = reviewBadge(vals, s.asp, x, i, s.aspShown);
       // the new badge starts from your level's look, then fades to the engine's
       const nb = el && el.querySelector('.asp-badge'), g = s.asp[x.key] || 0;
-      if(nb){ const final = nb.className; nb.className = `asp-badge ${levelCls(g)}`; nb.offsetWidth; nb.className = final; }
+      if(nb && !isOff(vals, x)){ const final = nb.className; nb.className = `asp-badge ${levelCls(g)}`; nb.offsetWidth; nb.className = final; }
       // the score climbs to its new value while the badge fades
       const from = imbalanceScore(vals, s.asp, s.aspShown - 1), to = imbalanceScore(vals, s.asp, s.aspShown);
       let t0 = null;
@@ -1802,7 +1810,7 @@ function startAspectsReveal(p, s, vals){
         if(k < 1) requestAnimationFrame(climb);
       };
       if(to > from) requestAnimationFrame(climb);
-      setTimeout(tick, ASP_STEP);
+      setTimeout(tick, isOff(vals, x) ? 0 : ASP_STEP);   // a criterion left out here: straight on to the next
     } else { s.aspDone = true; s.justDone = true; render(); }
   };
   setTimeout(tick, ASP_START);
@@ -1811,9 +1819,12 @@ function startAspectsReveal(p, s, vals){
 // Tap a badge: a scale from −− to ++ opens above it; tap a level, or slide along the scale and let go. Arrow keys on a badge
 // step it up or down.
 function aspectsInputHtml(s, hidden){
+  const fen = !hidden && pos() ? pos().fen : null;
   const item = x=>{ const l = (s && s.asp[x.key]) || 0;
     return `<div class="asp-item"><span class="asp-name">${x.name}</span>${hidden
       ? `<span class="asp-badge eq asp-pick">=</span>`
+      : fen && aspectOffIn(fen, x.key)
+      ? `<button class="asp-badge off asp-pick" data-asp="${x.key}" data-off="1" aria-label="${x.name}: not counted here" aria-haspopup="true">–</button>`
       : `<button class="asp-badge ${levelCls(l)} asp-pick" data-asp="${x.key}" aria-label="${x.name}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
   return `<div class="aspects asp-input"${hidden ? '' : ' id="aspInput"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
@@ -1840,6 +1851,15 @@ function openAspPicker(s, key){
   if(!badge) return;
   const el = document.createElement('div');
   el.className = 'asp-picker'; el.setAttribute('role', 'listbox'); el.setAttribute('aria-label', ASPECTS.find(x=>x.key===key).name);
+  if(badge.dataset.off){   // a criterion left out here: a note instead of the levels
+    el.classList.add('note'); el.setAttribute('role', 'note');
+    el.innerHTML = `<span>${SPACE_OFF_NOTE}</span>`;
+    box.appendChild(el);
+    el.style.top = (badge.closest('.asp-item').offsetTop - el.offsetHeight - 4) + 'px';
+    aspPicker = { key, el, sliding:false, badge }; badge.classList.add('editing');
+    el.addEventListener('pointerup', ()=>{ closeAspPicker(); swallowNextClick(); });
+    return;
+  }
   el.innerHTML = Array.from({ length: 2*ASPECT_MAX + 1 }, (_, i)=>i - ASPECT_MAX).map(l=>`<button class="asp-badge ${levelCls(l)}${((s.asp[key]||0)===l) ? ' on' : ''}" data-l="${l}" role="option">${SIGNS(l)}</button>`).join('');
   box.appendChild(el);
   const item = badge.closest('.asp-item');
@@ -1857,6 +1877,7 @@ function wireAspectsInput(s){
   document.querySelectorAll('#aspInput .asp-pick').forEach(b=>{
     b.onclick = e=>{ e.stopPropagation(); if(aspPicker && aspPicker.key===b.dataset.asp) closeAspPicker(); else openAspPicker(s, b.dataset.asp); };
     b.onkeydown = e=>{
+      if(b.dataset.off) return;
       const step = (e.key==='ArrowUp' || e.key==='ArrowRight') ? 1 : (e.key==='ArrowDown' || e.key==='ArrowLeft') ? -1 : 0;
       if(step){ setAspect(s, b.dataset.asp, (s.asp[b.dataset.asp]||0) + step); e.preventDefault(); }
     };
@@ -1938,6 +1959,15 @@ function activityDetail(fen, sq){
   out.nums.push({ sq, n: hits.filter(area).length, c });
   return out;
 }
+// Stockfish counts Space only while most pieces are on the board (queens, rooks and minor pieces worth
+// 12222 or more in all, about a queen, both rooks and two minor pieces each); below that, the
+// criterion is left out of Imbalance reading.
+const SPACE_MIN_NPM = 12222, SPACE_OFF_NOTE = 'Space only counts with most pieces on the board.';
+function spaceCounts(fen){
+  let npm = 0; for(const ch of fen.split(' ')[0]){ const t = ch.toLowerCase(); if('nbrq'.includes(t)) npm += SF_VALUES[t][0]; }
+  return npm >= SPACE_MIN_NPM;
+}
+const aspectOffIn = (fen, key)=>key==='space' && !spaceCounts(fen);   // a criterion left out in this position
 function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.nums.length || m.arrows.length || m.labels.length); }
 function aspectMarks(fen, key){
   const m = boardMap(fen), A = attackMaps(m), out = { circles:[], tints:[], nums:[], arrows:[], labels:[], zones:[] };
@@ -1984,9 +2014,7 @@ function aspectMarks(fen, key){
     }
   }
   if(key==='space'){
-    // Stockfish counts space only while enough pieces are on the board
-    let npm = 0; for(const sq in m) if('nbrq'.includes(m[sq].t)) npm += SF_VALUES[m[sq].t][0];
-    if(npm >= 12222) for(const c of ['w','b']){
+    if(spaceCounts(fen)) for(const c of ['w','b']){
       const mine = pawnsOf(m, c);
       // Stockfish's area is c to f on each side's 2nd to 4th ranks; the 2nd ranks, nearly always
       // safe for both, aren't drawn: squares and arrows only in the 4x4 centre (3rd and 4th ranks).
