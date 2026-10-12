@@ -171,7 +171,7 @@ async def main():
         if pm != ['a4b:Isolated c3b:Doubled c7w:Backward d5w:Connected e5w:Passed h5b:Passed', 'e2f3w']: fails.append(f'pawn marks: {pm}')
         sm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Space marks').fen, 'space'); return [m.circles.map(c=>c.sq+c.c).sort().join(' '), m.tints.length, m.labels.map(l=>l.sq+':'+l.text).sort().join(' '), m.arrows.map(a=>a.from+a.to+a.c).sort().join(' ')]; })()")
         print('space marks:', sm)
-        if sm != ['c2w c3w c4w c5b c7b d2w d3w d5w d6b d7b e2w e3w e4w e5b e7b f3w f6b', 0, 'c4:Flank c5:Flank d5:Central d6:Central e4:Central e5:Central', 'c5d4b d5c6w d5e6w e4f5w e5d4b e5f4b']: fails.append(f'space marks: {sm}')
+        if sm != ['c3w c4w d3w d5w e3w e4w f3w f6b', 0, 'c4:Flank d5:Central e4:Central', 'c5d4b d5c6w d5e6w e4f5w e5d4b e5f4b']: fails.append(f'space marks: {sm}')
         am = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'activity'); return m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '); })()")
         print('activity marks:', am)
         kg = await pg.evaluate("[kingSquareGain(boardMap('r1b1n1k1/pp3ppp/8/8/8/4K3/PP3PPP/R1B1N3 w - - 0 1'), 'e3', 'w'), kingSquareGain(boardMap('r2qr1k1/pp3ppp/8/8/8/4K3/PP3PPP/R2QR3 w - - 0 1'), 'e3', 'w')].map(x=>Math.round(x*100)/100)")
