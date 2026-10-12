@@ -188,6 +188,11 @@ async def main():
           return [Math.round(imbalanceScore(v, { space:2 }, 6)), Math.round(imbalanceScore(v, { material:2 }, 6)), spaceCounts('r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'), spaceCounts(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen)]; })()""")
         print('space left out:', so)
         if so != [100, 80, True, False]: fails.append(f'space left out: {so}')
+        # an ending Stockfish rates on its own (all-zero table): only Material, the rest left out
+        sp = await pg.evaluate("""(()=>{ const z = ['Material','Imbalance','Initiative','Pawns','Knights','Bishops','Rooks','Queens','Mobility','King safety','Threats','Passed','Space'].map(k=>`  ${k} |  0.00  0.00 |  0.00  0.00 |  0.00  0.00`).concat(['Total evaluation: 61.20 (white side)']);
+          const v = parseAspects(z, '7k/8/5K2/8/8/8/8/6Q1 w - - 0 60'); return [Math.round(v.material), v.activity, v.off.join(' '), !!v.special]; })()""")
+        print('special ending:', sp)
+        if sp != [13, 0, 'pawns space activity king threats', True]: fails.append(f'special ending: {sp}')
         both = await pg.evaluate("aspectMarks('2b1k1b1/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.length")
         if both: fails.append('no bishop pair label when both sides have the pair')
         # what each imbalance marks, on small positions

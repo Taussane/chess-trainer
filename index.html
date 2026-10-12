@@ -1648,6 +1648,9 @@ function parseAspects(lines, fen){
     if(nums.length===2 && nums.every(n=>!isNaN(n))) terms[m[1].trim()] = nums;
   });
   if(!terms['Mobility']) return null;   // "none (in check)": no table
+  // Some endings (king and queen against king, queen against pawns, ...) Stockfish rates with a rule
+  // of their own: the table is all zeros. Only Material can be read then.
+  const special = !Object.values(terms).some(([a, b])=>a || b);
   const count = { w:{}, b:{} };
   for(const ch of fen.split(' ')[0]) if(/[pnbrqPNBRQ]/.test(ch)){ const c = ch===ch.toUpperCase() ? 'w' : 'b', t = ch.toLowerCase(); count[c][t] = (count[c][t]||0) + 1; }
   let npm = 0;
@@ -1660,6 +1663,12 @@ function parseAspects(lines, fen){
   let mg = 0, eg = 0;
   for(const t of 'pnbrq'){ const d = (count.w[t]||0) - (count.b[t]||0); mg += d*SF_VALUES[t][0]; eg += d*SF_VALUES[t][1]; }
   const pieces = blend([mg/SF_PAWN_EG, eg/SF_PAWN_EG]);
+  if(special){
+    const out = { material: pieces, pawns:0, space:0, activity:0, king:0, threats:0 };
+    Object.defineProperty(out, 'off', { value: ASPECTS.filter(x=>x.key!=='material').map(x=>x.key) });
+    Object.defineProperty(out, 'special', { value: true });
+    return out;
+  }
   const out = {
     material: pieces + g('Imbalance'),
     activity: g('Material') - pieces + g('Mobility') + g('Knights') + g('Bishops') + g('Rooks') + g('Queens'),
@@ -1744,9 +1753,9 @@ function planHtml(plan, view, fadeIn, hidden, fen){
 // engine's, its border turning green where you matched it, yellow one level off, orange two off, red
 // further. `vals`: the engine's values (null: not in yet); `guesses`: {key: -3..3} (missing = "="),
 // or null for the engine's levels alone (Position evaluation's review); `shown`: how many are revealed.
-const OFF_BADGE = ()=>`<span class="asp-badge off" title="${SPACE_OFF_NOTE}">–</span>`;
+const OFF_BADGE = vals=>`<span class="asp-badge off" title="${vals && vals.special ? SPECIAL_NOTE : SPACE_OFF_NOTE}">–</span>`;
 function reviewBadge(vals, guesses, x, i, shown){
-  if(isOff(vals, x)) return OFF_BADGE();
+  if(isOff(vals, x)) return OFF_BADGE(vals);
   if(vals && guesses===null) return aspectBadge(vals[x.key], x.key);
   const g = (guesses && guesses[x.key]) || 0;
   if(!vals || i >= shown) return `<span class="asp-badge ${levelCls(g)}">${SIGNS(g)}</span>`;
@@ -1758,7 +1767,7 @@ function reviewBadge(vals, guesses, x, i, shown){
 // board what it's about; `view` is the one shown (or null), `pickable` whether tapping works yet.
 // `pickable`: the position's FEN once tapping works (only aspects with something to draw are tappable).
 function aspectsGridHtml(vals, guesses, shown, hidden, view, pickable, fadeIn){   // hidden: holds the space, no id (ghost)
-  const item = (x, i)=>{ const pk = !!pickable && hasMarks(pickable, x.key);
+  const item = (x, i)=>{ const pk = !!pickable && !isOff(vals, x) && hasMarks(pickable, x.key);
     return `<div class="asp-item${pk ? ' pickable' : ''}${isOff(vals, x) ? ' off' : ''}${view===x.key ? ' sel' : ''}" data-asp="${x.key}"${pk ? ` role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}><span class="asp-name">${x.name}</span>${reviewBadge(vals, guesses, x, i, shown)}</div>`; };
   return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
@@ -1831,8 +1840,8 @@ function startAspectsReveal(p, s, vals){
 // Tap a badge: a scale from −− to ++ opens above it; tap a level, or slide along the scale and let go. Arrow keys on a badge
 // step it up or down.
 function aspectsInputHtml(s, hidden){
-  const fen = !hidden && pos() ? pos().fen : null;
-  const item = x=>{ const l = (s && s.asp[x.key]) || 0, off = !hidden && fen && aspectOffIn(fen, x.key);
+  const fen = !hidden && pos() ? pos().fen : null, offs = fen ? offKeys(fen) : [];
+  const item = x=>{ const l = (s && s.asp[x.key]) || 0, off = offs.includes(x.key);
     return `<div class="asp-item${off ? ' off' : ''}"><span class="asp-name">${x.name}</span>${hidden
       ? `<span class="asp-badge eq asp-pick">=</span>`
       : off
@@ -1865,7 +1874,7 @@ function openAspPicker(s, key){
   el.className = 'asp-picker'; el.setAttribute('role', 'listbox'); el.setAttribute('aria-label', ASPECTS.find(x=>x.key===key).name);
   if(badge.dataset.off){   // a criterion left out here: a note instead of the levels
     el.classList.add('note'); el.setAttribute('role', 'note');
-    el.innerHTML = `<span>${SPACE_OFF_NOTE}</span>`;
+    el.innerHTML = `<span>${offNote(pos().fen)}</span>`;
     box.appendChild(el);
     el.style.top = (badge.closest('.asp-item').offsetTop - el.offsetHeight - 4) + 'px';
     aspPicker = { key, el, sliding:false, badge }; badge.classList.add('editing');
@@ -1975,6 +1984,14 @@ function activityDetail(fen, sq){
 // 12222 or more in all, about a queen, both rooks and two minor pieces each); below that, the
 // criterion is left out of Imbalance reading.
 const SPACE_MIN_NPM = 12222, SPACE_OFF_NOTE = 'Space only counts with most pieces on the board.';
+const SPECIAL_NOTE = 'Stockfish rates this ending with a rule of its own: only Material is scored.';
+// The criteria left out for this position: Space with few pieces left, and all but Material in the
+// endings Stockfish rates on their own (known once its evaluation is in).
+function offKeys(fen){
+  const e = aspectsStore[fen], d = e && e.status==='done' && e.data;
+  return ASPECTS.map(x=>x.key).filter(k=>aspectOffIn(fen, k) || (d && d.off.includes(k)));
+}
+const offNote = fen=>{ const e = aspectsStore[fen]; return e && e.data && e.data.special ? SPECIAL_NOTE : SPACE_OFF_NOTE; };
 function spaceCounts(fen){
   let npm = 0; for(const ch of fen.split(' ')[0]){ const t = ch.toLowerCase(); if('nbrq'.includes(t)) npm += SF_VALUES[t][0]; }
   return npm >= SPACE_MIN_NPM;
@@ -2042,7 +2059,7 @@ function aspectMarks(fen, key){
           continue;
         }
         const by = mine.find(o=>o[0]===fl && relRank(o, c) > relRank(sq, c) && relRank(o, c) - relRank(sq, c) <= 3);
-        if(drawn) out.circles.push({ sq, c });   // a square that counts
+        if(drawn && !(m[sq] && m[sq].t==='p')) out.circles.push({ sq, c });   // a square that counts (Stockfish also counts one an enemy pawn stands on: not ringed, the pawn's own mark is there)
         if(by && !out.circles.some(x=>x.sq===by)){   // the pawn that gains that space: on the d or e file, or the c or f file
           out.circles.push({ sq: by, c });
           out.labels.push({ sq: by, c, text: 'de'.includes(by[0]) ? 'Central' : 'Flank' });
@@ -3581,9 +3598,9 @@ function renderAnalysis(){
 function renderImbalances(){
   const app = document.getElementById('app');
   const p = pos(), s = st('imbalances');
-  const asp = s.checked ? aspectsEntry(p.fen) : null;
-  const vals = asp && asp.status==='done' ? asp.data : null;
-  const failed = s.checked && asp.status==='done' && !vals;
+  const asp = aspectsEntry(p.fen);   // asked for at once (no search, near instant): left-out criteria show in the question
+  const vals = s.checked && asp.status==='done' ? asp.data : null;
+  const failed = s.checked && asp.status==='done' && !asp.data;
   if(vals && s.aspShown==null){ recordResult(s, 'imbalances', Math.round(imbalanceScore(vals, s.asp, ASPECTS.length))); startAspectsReveal(p, s, vals); prefetchNextAspects(); }
   const done = !!vals && !!s.aspDone;
   app.innerHTML = `
