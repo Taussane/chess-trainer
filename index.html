@@ -473,7 +473,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) the safe squares in each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); arrows: enemy pawns taking squares away (not onto a pawn); <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the pawns in front that gain safe squares behind them (Central on the d and e files, Flank on c and f), and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -1511,7 +1511,7 @@ function posSource(p){
     return [name, g && SPEED_NAMES[g.speed], when].filter(Boolean).join(' · ');
   }
   if(p.game){ const gi = GAME_INFO[p.game] || {}; return ['Masters', gi.event, fmtGameDate(gi.date) || p.year].filter(Boolean).map(escHtml).join(' · '); }
-  return testMode ? 'Test position' : ['Masters', p.year].filter(Boolean).join(' · ');
+  return testMode ? `Test · ${escHtml(p.title)}` : ['Masters', p.year].filter(Boolean).join(' · ');
 }
 // The players' names beside the board: the side to play at the bottom (the board is seen from it).
 function playerLine(where){
@@ -1998,7 +1998,7 @@ function spaceCounts(fen){
   return npm >= SPACE_MIN_NPM;
 }
 const aspectOffIn = (fen, key)=>key==='space' && !spaceCounts(fen);   // a criterion left out in this position
-function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.nums.length || m.arrows.length || m.labels.length); }
+function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.nums.length || m.arrows.length || m.labels.length || m.zones.length); }
 function aspectMarks(fen, key){
   const m = boardMap(fen), A = attackMaps(m), out = { circles:[], tints:[], nums:[], arrows:[], labels:[], zones:[] };
   const pieces = c=>Object.keys(m).filter(sq=>m[sq].c===c);
@@ -2035,7 +2035,7 @@ function aspectMarks(fen, key){
         const protector = mine.find(o=>Math.abs(FILES.indexOf(o[0]) - f)===1 && relRank(o, c)===relRank(sq, c) - 1);
         const mark = (fav, text)=>{ out.circles.push({ sq, c: fav }); out.labels.push({ sq, c: fav, text }); };
         if(passedPawn(m, sq, c)) mark(c, 'Passed');                                   // good for its side
-        else if(connected && relRank(sq, c)>=4) mark(c, 'Linked');
+        else if(connected && relRank(sq, c)>=5) mark(c, 'Linked');   // from its 5th rank: below, Stockfish's bonus barely moves the score
         else if(doubled && protector) out.arrows.push({ from: protector, to: sq, c });   // doubled but protected: Stockfish doesn't count it as weak
         else if(doubled) mark(other(c), 'Doubled');                                   // weak: good for the other side (a doubled isolated pair: Doubled in front, Isolated behind)
         else if(isolated) mark(other(c), 'Isolated');
@@ -2060,7 +2060,6 @@ function aspectMarks(fen, key){
           continue;
         }
         const by = mine.find(o=>o[0]===fl && relRank(o, c) > relRank(sq, c) && relRank(o, c) - relRank(sq, c) <= 3);
-        if(drawn && !(m[sq] && m[sq].t==='p')) out.circles.push({ sq, c });   // a square that counts (Stockfish also counts one an enemy pawn stands on: not ringed, the pawn's own mark is there)
         if(by && !out.circles.some(x=>x.sq===by)){   // the pawn that gains that space: on the d or e file, or the c or f file
           out.circles.push({ sq: by, c });
           out.labels.push({ sq: by, c, text: 'de'.includes(by[0]) ? 'Central' : 'Flank' });
@@ -2171,7 +2170,7 @@ function drawMarks(svg, marks){
   // read as one outline.
   const zones = (marks.zones||[]).map(t=>{ const p = squareCenter(t.a), q = squareCenter(t.b), dir = Math.sign(q.y - p.y) || 1;
     const xl = Math.min(p.x, q.x) - 27, xr = Math.max(p.x, q.x) + 27, yb = p.y - dir*27, yf = q.y + dir*30;
-    return `<path d="M${xl},${yf} L${xl},${yb} L${xr},${yb} L${xr},${yf}" fill="none" stroke="${MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7" stroke-linejoin="round" stroke-opacity=".7" filter="url(#mkShadow)"/>`; }).join('');
+    return `<path d="M${xl},${yf} L${xl},${yb} L${xr},${yb} L${xr},${yf}" fill="none" stroke="${MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7" stroke-linejoin="round" filter="url(#mkShadow)"/>`; }).join('');
   svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}${zones}${circles}${arrows}${nums}${labels}`;
   // Badges fit their text (4 units each side). Two badges side by side would overlap: the later
   // one moves to the bottom of its square, or else the top.
