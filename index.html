@@ -1967,18 +1967,20 @@ function aspectMarks(fen, key){
     if(npm >= 12222) for(const c of ['w','b']){
       const mine = pawnsOf(m, c);
       // Stockfish's area is c to f on each side's 2nd to 4th ranks; the 2nd ranks, nearly always
-      // safe for both, aren't drawn: only the 4x4 centre (3rd and 4th ranks).
+      // safe for both, aren't drawn: squares and arrows only in the 4x4 centre (3rd and 4th ranks).
+      // The pawns that gain space are judged on the whole area.
       out.zones.push({ a: c==='w' ? 'c3' : 'c6', b: c==='w' ? 'f4' : 'f5', c });
-      for(const fl of 'cdef') for(const rr of [3,4]){
+      for(const fl of 'cdef') for(const rr of [2,3,4]){
+        const drawn = rr >= 3;
         const sq = fl + (c==='w' ? rr : 9-rr);
         if(m[sq] && m[sq].t==='p' && m[sq].c===c) continue;
         const challengers = (A[other(c)][sq] || []).filter(a=>m[a].t==='p');
         if(challengers.length){   // taken away by an enemy pawn: an arrow says why an empty square isn't ringed
-          if(!m[sq]) challengers.forEach(a=>out.arrows.push({ from: a, to: sq, c: other(c) }));
+          if(!m[sq] && drawn) challengers.forEach(a=>out.arrows.push({ from: a, to: sq, c: other(c) }));
           continue;
         }
         const by = mine.find(o=>o[0]===fl && relRank(o, c) > relRank(sq, c) && relRank(o, c) - relRank(sq, c) <= 3);
-        out.circles.push({ sq, c });   // a square that counts
+        if(drawn) out.circles.push({ sq, c });   // a square that counts
         if(by && !out.circles.some(x=>x.sq===by)){   // the pawn that gains that space: on the d or e file, or the c or f file
           out.circles.push({ sq: by, c });
           out.labels.push({ sq: by, c, text: 'de'.includes(by[0]) ? 'Central' : 'Flank' });
