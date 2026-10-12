@@ -270,6 +270,7 @@
   .promo-piece:nth-child(even){background:var(--board-dark);}
   .promo-piece .piece-w{color:var(--piece-w); text-shadow:0 0 1px #000, 0 0 2px rgba(0,0,0,.5);}
   .promo-piece .piece-b{color:var(--piece-b); text-shadow:0 0 1px rgba(255,255,255,.3);}
+  .board.asp-tappable .sq:has(.piece-w, .piece-b){cursor:pointer;}
   svg.arrows{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:5;}
 
   .board-row{display:flex; gap:10px; align-items:stretch; justify-content:center; width:100%; max-width:420px; margin:0 auto;}
@@ -469,7 +470,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe squares in each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); arrows: enemy pawns taking empty squares away; <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls); labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe squares in each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); arrows: enemy pawns taking empty squares away; <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -902,6 +903,7 @@ function renderBoard(container, boardOverride, lastOverride, opts){
       const light = (f+rank)%2===0;
       const div = document.createElement('div');
       div.className = 'sq '+(light?'light':'dark');
+      div.dataset.sq = sq;
       const lmHit = lm && (lm.squares ? lm.squares.includes(sq) : (sq===lm.from || sq===lm.to));
       if(lmHit) div.className += ' last';
       if(opts.selectedSq===sq) div.className += ' selected';
@@ -1757,9 +1759,22 @@ function aspectsGridHtml(vals, guesses, shown, hidden, view, pickable, fadeIn){ 
 }
 // Tapping an aspect in a review draws its marks (aspectMarks) on the board; tapping it again clears them.
 function wireAspectView(p, s){
-  if(s.aspView) drawMarks(document.getElementById('arrows'), aspectMarks(p.fen, s.aspView));
+  const svg = document.getElementById('arrows'), board = document.getElementById('board');
+  if(s.aspView!=='activity') s.aspPiece = null;
+  const draw = ()=>{ if(s.aspView) drawMarks(svg, (s.aspPiece && activityDetail(p.fen, s.aspPiece)) || aspectMarks(p.fen, s.aspView)); };
+  draw();
+  // Activity: tap a piece to see which squares it counts (again, or elsewhere, to go back).
+  if(board){
+    board.classList.toggle('asp-tappable', s.aspView==='activity');
+    board.onclick = s.aspView!=='activity' ? null : e=>{
+      const el = e.target.closest && e.target.closest('.sq'); if(!el) return;
+      const sq = el.dataset.sq;
+      s.aspPiece = s.aspPiece!==sq && activityDetail(p.fen, sq) ? sq : null;
+      draw();
+    };
+  }
   document.querySelectorAll('#aspects .asp-item.pickable').forEach(el=>{
-    const pick = ()=>{ s.aspView = s.aspView===el.dataset.asp ? null : el.dataset.asp; render(); };
+    const pick = ()=>{ s.aspView = s.aspView===el.dataset.asp ? null : el.dataset.asp; s.aspPiece = null; render(); };
     el.onclick = pick;
     el.onkeydown = e=>{ if(e.key==='Enter' || e.key===' '){ pick(); e.preventDefault(); } };
   });
@@ -1916,6 +1931,24 @@ function kingSquareGain(m, sq, c){
   const v = s=>{ const f = FILES.indexOf(s[0]), e = SF_KING_PSQ[relRank(s, c) - 1][Math.min(f, 7 - f)]; return (e[0]*ph + e[1]*(128 - ph)) / 128; };
   return (v(sq) - v(c==='w' ? 'g1' : 'g8')) / SF_PAWN_EG;
 }
+// The squares a piece of side c counts for Activity: those it attacks or defends, except its own
+// pawns and king, and squares an enemy pawn controls.
+function mobilityArea(m, A, c){
+  const enemyPawnAtt = new Set(Object.keys(A[other(c)]).filter(sq=>A[other(c)][sq].some(a=>m[a].t==='p')));
+  return sq=>!enemyPawnAtt.has(sq) && !(m[sq] && m[sq].c===c && (m[sq].t==='k' || m[sq].t==='p'));
+}
+// One piece's count, on the board (Activity, a piece tapped): a ring on each square that counts, an
+// arrow from each enemy pawn to a square it takes away, and the piece's number.
+function activityDetail(fen, sq){
+  const m = boardMap(fen), A = attackMaps(m), pc = m[sq];
+  const out = { circles:[], tints:[], nums:[], arrows:[], labels:[], zones:[] };
+  if(!pc || !'nbrq'.includes(pc.t)) return null;
+  const c = pc.c, area = mobilityArea(m, A, c), hits = attacksFrom(m, sq);
+  hits.filter(area).forEach(t=>out.circles.push({ sq: t, c }));
+  hits.filter(t=>!area(t)).forEach(t=>(A[other(c)][t] || []).filter(a=>m[a].t==='p').forEach(a=>out.arrows.push({ from: a, to: t, c: other(c) })));
+  out.nums.push({ sq, n: hits.filter(area).length, c });
+  return out;
+}
 function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.nums.length || m.arrows.length || m.labels.length); }
 function aspectMarks(fen, key){
   const m = boardMap(fen), A = attackMaps(m), out = { circles:[], tints:[], nums:[], arrows:[], labels:[], zones:[] };
@@ -1990,9 +2023,7 @@ function aspectMarks(fen, key){
   }
   if(key==='activity'){
     for(const c of ['w','b']){
-      const enemyPawnAtt = new Set(Object.keys(A[other(c)]).filter(sq=>A[other(c)][sq].some(a=>m[a].t==='p')));
-      // the squares a piece attacks or defends, except its own pawns and king, and squares an enemy pawn controls
-      const area = sq=>!enemyPawnAtt.has(sq) && !(m[sq] && m[sq].c===c && (m[sq].t==='k' || m[sq].t==='p'));
+      const area = mobilityArea(m, A, c);
       const mark = (sq, fav, text)=>{ out.circles.push({ sq, c: fav }); out.labels.push({ sq, c: fav, text }); };
       const own = pawnsOf(m, c);
       for(const sq of pieces(c).filter(x=>'nbrq'.includes(m[x].t))){
