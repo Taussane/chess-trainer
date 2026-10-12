@@ -469,7 +469,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe central squares in each side's half, and the pawns in front that gain them (Central on the d and e files, Flank on c and f); <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe squares in each side's area (dashed: c to f files, its 2nd to 4th ranks), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -1906,7 +1906,7 @@ function passedPawn(m, sq, c){
 }
 function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.nums.length || m.arrows.length || m.labels.length); }
 function aspectMarks(fen, key){
-  const m = boardMap(fen), A = attackMaps(m), out = { circles:[], tints:[], nums:[], arrows:[], labels:[] };
+  const m = boardMap(fen), A = attackMaps(m), out = { circles:[], tints:[], nums:[], arrows:[], labels:[], zones:[] };
   const pieces = c=>Object.keys(m).filter(sq=>m[sq].c===c);
   if(key==='material'){
     for(const t of ['q','r','b','n','p']){
@@ -1954,6 +1954,7 @@ function aspectMarks(fen, key){
     let npm = 0; for(const sq in m) if('nbrq'.includes(m[sq].t)) npm += SF_VALUES[m[sq].t][0];
     if(npm >= 12222) for(const c of ['w','b']){
       const mine = pawnsOf(m, c);
+      out.zones.push({ a: c==='w' ? 'c2' : 'c7', b: c==='w' ? 'f4' : 'f5', c });   // the area Stockfish looks at
       for(const fl of 'cdef') for(const rr of [2,3,4]){
         const sq = fl + (c==='w' ? rr : 9-rr);
         if(m[sq] && m[sq].t==='p' && m[sq].c===c) continue;
@@ -2058,7 +2059,10 @@ function drawMarks(svg, marks){
     const x = Math.max(1, Math.min(480 - w - 1, r.cx - w/2)), y = r.cy - h/2;
     return `<rect class="mk-label" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="700" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.text}</text>`; }).join('');
   const shadow = `<filter id="mkShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.8" flood-color="#000" flood-opacity=".6"/></filter>`;
-  svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}${circles}${arrows}${nums}${labels}`;
+  // A dashed outline around a block of squares (corners a and b).
+  const zones = (marks.zones||[]).map(t=>{ const p = squareCenter(t.a), q = squareCenter(t.b), x = Math.min(p.x, q.x) - 27, y = Math.min(p.y, q.y) - 27, w = Math.abs(p.x - q.x) + 54, h = Math.abs(p.y - q.y) + 54;
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="none" stroke="${MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7" filter="url(#mkShadow)"/>`; }).join('');
+  svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}${zones}${circles}${arrows}${nums}${labels}`;
   // Badges fit their text (4 units each side). Two badges side by side would overlap: the later
   // one moves to the bottom of its square, or else the top.
   const placed = [];
