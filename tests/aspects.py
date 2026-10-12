@@ -169,6 +169,9 @@ async def main():
         pm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Pawn marks').fen, 'pawns'); return [m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '), m.arrows.map(a=>a.from+a.to+a.c).join(' ')]; })()")
         print('pawn marks:', pm)
         if pm != ['a4b:Isolated c3b:Doubled c7w:Backward d5w:Connected e5w:Passed h5b:Passed', 'e2f3w']: fails.append(f'pawn marks: {pm}')
+        sm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Space marks').fen, 'space'); return [m.dots.map(d=>d.sq+d.c+(d.full?'+':'')).sort().join(' '), m.circles.map(c=>c.sq+c.c).sort().join(' '), m.tints.length]; })()")
+        print('space marks:', sm)
+        if sm != ['c2w+ c3w+ c7b+ d2w+ d3w+ d7b+ e2w+ e3w+ e7b+ f3w f6b', 'c4w c5b d5w d6b e4w e5b', 0]: fails.append(f'space marks: {sm}')
         both = await pg.evaluate("aspectMarks('2b1k1b1/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.length")
         if both: fails.append('no bishop pair label when both sides have the pair')
         # what each imbalance marks, on small positions

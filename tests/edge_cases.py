@@ -29,6 +29,7 @@ CAND = {
   'Stalemate trap (game move stalemates)': [('g1','g6',None)],
   'Material marks': [('e3','d4',None)],
   'Pawn marks': [('d1','d4',None)],
+  'Space marks': [('f3','e1',None)],
 }
 async def main():
     fails = []
