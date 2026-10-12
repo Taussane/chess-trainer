@@ -295,7 +295,7 @@
   .prompt + .aspects.asp-input{margin-top:16px;}   /* the review's score is 4 px taller than the prompt: the imbalances stay put */
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
   .aspects.asp-input{position:relative;}
-  .asp-badge{line-height:1.35; transition:background-color .6s, color .6s, border-color .6s, box-shadow .6s;}
+  .asp-badge{line-height:1.35; transition:background-color .5s, color .5s, border-color .5s, box-shadow .5s;}
   .aspects.plan{margin-top:4px;}
   .aspects.plan .asp-head{margin-bottom:6px;}
   .plan-rows{display:grid; grid-template-columns:1fr; row-gap:8px;}
@@ -1768,7 +1768,7 @@ function wireAspectView(p, s){
     el.onkeydown = e=>{ if(e.key==='Enter' || e.key===' '){ pick(); e.preventDefault(); } };
   });
 }
-const ASP_START = 500, ASP_STEP = 600, ASP_CLIMB_MS = 450;   // ms: before the first aspect turns, between two, the score's climb
+const ASP_START = 500, ASP_STEP = 500, ASP_CLIMB_MS = 400;   // ms: before the first aspect turns, between two, the score's climb
 // Imbalance reading's score: a sixth for each imbalance: all of it at the engine's level, a third one
 // level off, nothing beyond. Leaving all six at "=" averages 55% on the master positions.
 const aspectOff = (vals, guesses, x)=>Math.abs(aspectLevel(vals[x.key], x.key) - ((guesses && guesses[x.key]) || 0));
