@@ -458,7 +458,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe squares in each side's area (dashed: c to f files, its 2nd to 4th ranks), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); arrows: enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe squares in each side's area (dashed: c to f files, its 2nd to 4th ranks), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); arrows: enemy pawns taking empty squares away; <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -1948,7 +1948,10 @@ function aspectMarks(fen, key){
         const sq = fl + (c==='w' ? rr : 9-rr);
         if(m[sq] && m[sq].t==='p' && m[sq].c===c) continue;
         const challengers = (A[other(c)][sq] || []).filter(a=>m[a].t==='p');
-        if(challengers.length){ challengers.forEach(a=>out.arrows.push({ from: a, to: sq, c: other(c) })); continue; }   // taken away by an enemy pawn
+        if(challengers.length){   // taken away by an enemy pawn: an arrow says why an empty square isn't ringed
+          if(!m[sq]) challengers.forEach(a=>out.arrows.push({ from: a, to: sq, c: other(c) }));
+          continue;
+        }
         const by = mine.find(o=>o[0]===fl && relRank(o, c) > relRank(sq, c) && relRank(o, c) - relRank(sq, c) <= 3);
         out.circles.push({ sq, c });   // a square that counts
         if(by && !out.circles.some(x=>x.sq===by)){   // the pawn that gains that space: on the d or e file, or the c or f file
