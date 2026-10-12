@@ -341,6 +341,7 @@
   .asp-badge.near{border-color:var(--dubious); box-shadow:0 0 0 1px var(--dubious);}
   .asp-badge.bad{border-color:var(--bad); box-shadow:0 0 0 1px var(--bad);}
   .asp-picker .asp-badge.eq{border-color:var(--border);}
+  .asp-item.off .asp-name{color:var(--text-mute);}
   .asp-badge.off{background:transparent; color:var(--text-mute); border-color:var(--border); border-style:dashed; opacity:.75;}
   .asp-picker.note{justify-content:center; padding:9px 10px; font-size:0.84rem; color:var(--text-mute); text-align:center;}
   .asp-pick.editing{box-shadow:0 0 0 2px var(--dubious);}
@@ -1758,7 +1759,7 @@ function reviewBadge(vals, guesses, x, i, shown){
 // `pickable`: the position's FEN once tapping works (only aspects with something to draw are tappable).
 function aspectsGridHtml(vals, guesses, shown, hidden, view, pickable, fadeIn){   // hidden: holds the space, no id (ghost)
   const item = (x, i)=>{ const pk = !!pickable && hasMarks(pickable, x.key);
-    return `<div class="asp-item${pk ? ' pickable' : ''}${view===x.key ? ' sel' : ''}" data-asp="${x.key}"${pk ? ` role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}><span class="asp-name">${x.name}</span>${reviewBadge(vals, guesses, x, i, shown)}</div>`; };
+    return `<div class="asp-item${pk ? ' pickable' : ''}${isOff(vals, x) ? ' off' : ''}${view===x.key ? ' sel' : ''}" data-asp="${x.key}"${pk ? ` role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}><span class="asp-name">${x.name}</span>${reviewBadge(vals, guesses, x, i, shown)}</div>`; };
   return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
     </div>`;
@@ -1831,10 +1832,10 @@ function startAspectsReveal(p, s, vals){
 // step it up or down.
 function aspectsInputHtml(s, hidden){
   const fen = !hidden && pos() ? pos().fen : null;
-  const item = x=>{ const l = (s && s.asp[x.key]) || 0;
-    return `<div class="asp-item"><span class="asp-name">${x.name}</span>${hidden
+  const item = x=>{ const l = (s && s.asp[x.key]) || 0, off = !hidden && fen && aspectOffIn(fen, x.key);
+    return `<div class="asp-item${off ? ' off' : ''}"><span class="asp-name">${x.name}</span>${hidden
       ? `<span class="asp-badge eq asp-pick">=</span>`
-      : fen && aspectOffIn(fen, x.key)
+      : off
       ? `<button class="asp-badge off asp-pick" data-asp="${x.key}" data-off="1" aria-label="${x.name}: not counted here" aria-haspopup="true">–</button>`
       : `<button class="asp-badge ${levelCls(l)} asp-pick" data-asp="${x.key}" aria-label="${x.name}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
   return `<div class="aspects asp-input"${hidden ? '' : ' id="aspInput"'}>
