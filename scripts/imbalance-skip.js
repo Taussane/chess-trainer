@@ -26,6 +26,7 @@ const until = re=>new Promise(res=>{ const c = ()=>{ const i = buf.findIndex(x=>
     sf.postMessage('position fen ' + p.fen); sf.postMessage('eval');
     const a = parseAspects(await until(/^Total evaluation/), p.fen);
     if(!a) continue;
+    if(a.special){ skip.push(p.key); continue; }   // one side far ahead: Stockfish gives no breakdown
     const sum = ASPECTS.reduce((t, x)=>t + a[x.key], 0) * 100;
     if(Math.abs(winPct(sum) - (Math.abs(score) >= 1e5 ? (score > 0 ? 99 : 1) : winPct(score))) >= FAR) skip.push(p.key);
     process.stderr.write('.');

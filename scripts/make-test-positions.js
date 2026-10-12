@@ -41,8 +41,10 @@ const run = cmd=>new Promise(r=>{ wait = r; sf.stdin.write(cmd); });
       L[k] = (x ? x.san : u)+' '+(sc[1]==='mate' ? '#'+sc[2] : sc[2]);
     });
     console.log(name.padEnd(32), g.moves().length+' legal', '| top:', Object.values(L).join(', '));
+    // noImbalances: one side so far ahead that Stockfish gives no breakdown (kept out of Imbalance reading)
+    const noImb = /knight fork|Stalemate/.test(name);
     out.push({ key:'test-'+out.length, fen, side:fen.split(' ')[1], moveNo:+fen.split(' ')[5], title:'Test · '+name, year:'', last,
-               hist:{ uci:mv.from+mv.to+(mv.promotion||''), san:mv.san, from:mv.from, to:mv.to } });
+               hist:{ uci:mv.from+mv.to+(mv.promotion||''), san:mv.san, from:mv.from, to:mv.to }, ...(noImb ? { noImbalances:true } : {}) });
   }
   require('fs').writeFileSync(process.argv[2], JSON.stringify(out));
   sf.kill();
