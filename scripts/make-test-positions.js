@@ -22,8 +22,8 @@ const T = [
   ['Space marks', {fen:'r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'}, 'Ne1'],
   // Activity marks: White Nd5 and Bd6 on outposts, Rf1 open file, Ke3 central (endgame); Black Re8 half-open.
   ['Activity marks', {fen:'4r1k1/3bb1p1/1p1B3p/2pNP3/2PP4/4K1P1/8/5R2 w - - 0 35'}, 'Rf2'],
-  // King safety marks: opposite castling. White Shelter b2 c2, Black Shelter f7 g7 h6; Storm g4 h4 (White) and c5 (Black); attacks Ng5, Be4 (on Black's zone) and Qa5 (on White's); a safe check on d8 (Rd8+); both queens.
-  ['King safety marks', {fen:'6k1/pb3pp1/1pr2n1p/q1p3N1/4B1PP/4Q3/PPP2P2/2KR3R w - - 0 20'}, 'Rd8+'],
+  // King safety marks: opposite castling. White Shelter b2 c2, Black Shelter f7 g7 h6; Storm g6 and c3 (blocked, still counted heavily); attacks from Ng5, Be4, g6 (on Black's zone) and Qa5, Rc6, c3 (on White's); a safe check on d8 (Rd8+); both queens.
+  ['King safety marks', {fen:'6k1/pb3pp1/1pr2nPp/q5N1/4B2P/2p1Q3/PPP2P2/2KR3R w - - 0 20'}, 'Rd8+'],
 ];
 const sf = spawn(SF); let buf = '', wait = null;
 sf.stdout.on('data', d=>{ buf += d; if(wait && buf.includes('bestmove')){ const o = buf; buf = ''; const w = wait; wait = null; w(o); } });
