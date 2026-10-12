@@ -174,7 +174,10 @@ async def main():
         if sm != ['c2w c3w c4w c5b c7b d2w d3w d5w d6b d7b e2w e3w e4w e5b e7b f3w f6b', 0, 'c4:Flank c5:Flank d5:Central d6:Central e4:Central e5:Central', 'c5d4b d5c6w d5e6w e4f5w e5d4b e5f4b']: fails.append(f'space marks: {sm}')
         am = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'activity'); return m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '); })()")
         print('activity marks:', am)
-        if am != 'c7w:Active d4w:Central d5w:Outpost d7b:Good e3w:Central e5w:Central e7w:Bad e8b:Half-open f1w:Open': fails.append(f'activity marks: {am}')
+        kg = await pg.evaluate("[kingSquareGain(boardMap('r1b1n1k1/pp3ppp/8/8/8/4K3/PP3PPP/R1B1N3 w - - 0 1'), 'e3', 'w'), kingSquareGain(boardMap('r2qr1k1/pp3ppp/8/8/8/4K3/PP3PPP/R2QR3 w - - 0 1'), 'e3', 'w')].map(x=>Math.round(x*100)/100)")
+        print('king square gain (Stockfish: +0.38 with R+B+N each, -0.27 with Q+R+R each):', kg)
+        if not (0.33 <= kg[0] <= 0.43 and -0.32 <= kg[1] <= -0.22): fails.append(f'king square gain: {kg}')
+        if am != 'd5w:Outpost d6b:Bad d6w:Outpost e3w:Central e7w:Bad e8b:Half-open f1w:Open': fails.append(f'activity marks: {am}')
         both = await pg.evaluate("aspectMarks('2b1k1b1/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.length")
         if both: fails.append('no bishop pair label when both sides have the pair')
         # what each imbalance marks, on small positions
