@@ -458,7 +458,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe squares in each side's area (dashed: c to f files, its 2nd to 4th ranks), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); arrows: enemy pawns taking empty squares away; <strong>Activity</strong> how many squares each piece reaches; labelled: outposts, bad bishops (Stockfish's count of its own pawns on its colour, more with blocked central pawns), rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe squares in each side's area (dashed: c to f files, its 2nd to 4th ranks), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); arrows: enemy pawns taking empty squares away; <strong>Activity</strong> how many squares each piece reaches; labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -1979,20 +1979,13 @@ function aspectMarks(fen, key){
       const blocked = sq=>{ const pc = m[sq]; if(!pc || pc.t!=='p' || pc.c!==c) return false; const f = FILES.indexOf(sq[0]); return relRank(sq, c)<=3 || !!m[sqAt(f, +sq[1] + (c==='w' ? 1 : -1))]; };
       const area = sq=>!enemyPawnAtt.has(sq) && !(m[sq] && m[sq].c===c && (m[sq].t==='k' || m[sq].t==='q' || blocked(sq)));
       const mark = (sq, fav, text)=>{ out.circles.push({ sq, c: fav }); out.labels.push({ sq, c: fav, text }); };
-      const own = pawnsOf(m, c), dark = sq=>(FILES.indexOf(sq[0]) + 1 + +sq[1]) % 2===0;
+      const own = pawnsOf(m, c);
       for(const sq of pieces(c).filter(x=>'nbrq'.includes(m[x].t))){
         out.nums.push({ sq, n: attacksFrom(m, sq).filter(area).length, c });
         const f = FILES.indexOf(sq[0]), t = m[sq].t;
         const outpost = (t==='n' || t==='b') && relRank(sq, c)>=4 && relRank(sq, c)<=6
            && !pawnsOf(m, other(c)).some(e=>Math.abs(FILES.indexOf(e[0]) - f)===1 && relRank(e, c) > relRank(sq, c));   // no enemy pawn can ever attack it
         if(outpost) mark(sq, c, 'Outpost');
-        if(t==='b'){
-          // Stockfish's penalty: its own pawns on its colour, times 1 + its own blocked pawns on the
-          // c to f files. Labelled from 6 (e.g. 3 pawns on its colour with one blocked central pawn).
-          const same = own.filter(p=>dark(p)===dark(sq)).length;
-          const blocked = own.filter(p=>'cdef'.includes(p[0]) && m[sqAt(FILES.indexOf(p[0]), +p[1] + (c==='w' ? 1 : -1))]).length;
-          if(same * (1 + blocked) >= 6){ if(outpost) out.labels.push({ sq, c: other(c), text:'Bad' }); else mark(sq, other(c), 'Bad'); }
-        }
         if(t==='r' && !own.some(o=>o[0]===sq[0])) mark(sq, c, pawnsOf(m, other(c)).some(o=>o[0]===sq[0]) ? 'Half-open' : 'Open');
       }
       // A king in the centre (c to f files, 3rd to 6th ranks) that Stockfish's square table, at this
