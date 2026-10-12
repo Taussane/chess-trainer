@@ -80,7 +80,7 @@ async def main():
         if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King safety', 'Threats']: fails.append(f'rows: {rows}')
         if heads != ['Static', 'Dynamic']: fails.append(f'column titles: {heads}')
         vals = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>a[x.key]); })()")
-        LEVELS = [[0.3, 1.3], [0.15, 0.35], [0.05, 0.2], [0.45, 1.0], [0.3, 1.4], [0.25, 0.65]]
+        LEVELS = await pg.evaluate("ASPECTS.map(x=>x.levels)")   # the app's own thresholds
         def badge(v, t):
             n = sum(abs(v) >= x for x in t)
             return 'eq =' if n == 0 else ('w ' + '+'*n if v > 0 else 'b ' + '−'*n)
