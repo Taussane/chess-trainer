@@ -469,7 +469,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe squares in each side's area (dashed: c to f files, its 2nd to 4th ranks), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); arrows: enemy pawns taking empty squares away; <strong>Activity</strong> how many squares each piece reaches; labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe squares in each side's area (dashed: c to f files, its 2nd to 4th ranks), and the pawns in front that gain them (Central on the d and e files, Flank on c and f); arrows: enemy pawns taking empty squares away; <strong>Activity</strong> how many squares each piece reaches; labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -1934,7 +1934,7 @@ function aspectMarks(fen, key){
       const bs = pieces(c).filter(sq=>m[sq].t==='b');
       if(bs.length>=2 && pieces(other(c)).filter(sq=>m[sq].t==='b').length<2) bs.forEach(sq=>{
         if(!out.circles.some(x=>x.sq===sq)) out.circles.push({ sq, c });
-        out.labels.push({ sq, c, text:'Bishop pair' });   // says why a bishop is ringed when the other side has one too
+        out.labels.push({ sq, c, text:'Pair' });   // says why a bishop is ringed when the other side has one too
       });
     }
   }
