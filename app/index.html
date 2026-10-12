@@ -2050,14 +2050,14 @@ function drawMarks(svg, marks){
   // A small badge across the middle of the square (kept inside the board).
   const labels = (marks.labels||[]).map(t=>{ const r = R(t.sq), w = t.text.length*7 + 8, h = 16;
     const x = Math.max(1, Math.min(480 - w - 1, r.cx - w/2)), y = r.cy - h/2;
-    return `<rect class="mk-label" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="700" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.text}</text>`; }).join('');
+    return `<rect class="mk-label" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="700" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.text}</text>`; }).join('');
   const shadow = `<filter id="mkShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.8" flood-color="#000" flood-opacity=".6"/></filter>`;
   // A dashed outline around a block of squares (a: a back corner, b: the opposite front corner):
   // the back and the two sides only, running up to the front edge, so two areas facing each other
   // read as one outline.
   const zones = (marks.zones||[]).map(t=>{ const p = squareCenter(t.a), q = squareCenter(t.b), dir = Math.sign(q.y - p.y) || 1;
     const xl = Math.min(p.x, q.x) - 27, xr = Math.max(p.x, q.x) + 27, yb = p.y - dir*27, yf = q.y + dir*30;
-    return `<path d="M${xl},${yf} L${xl},${yb} L${xr},${yb} L${xr},${yf}" fill="none" stroke="${MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7" stroke-linejoin="round" filter="url(#mkShadow)"/>`; }).join('');
+    return `<path d="M${xl},${yf} L${xl},${yb} L${xr},${yb} L${xr},${yf}" fill="none" stroke="${MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7" stroke-linejoin="round" opacity=".55"/>`; }).join('');
   svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}${zones}${circles}${arrows}${nums}${labels}`;
   // Badges fit their text (4 units each side). Two badges side by side would overlap: the later
   // one moves to the bottom of its square, or else the top.
