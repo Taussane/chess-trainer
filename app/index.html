@@ -458,7 +458,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe central squares in each side's half (small circles; filled when behind its own pawn, which counts double), and the pawns that gain them; <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled) against a side without it; <strong>Pawns</strong> passed pawns and advanced connected ones, and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> the safe central squares in each side's half, and the pawns in front that gain them; <strong>Activity</strong> how many squares each piece reaches, outposts and rooks on open files; <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -1893,9 +1893,9 @@ function passedPawn(m, sq, c){
   return !pawnsOf(m, other(c)).some(e=>Math.abs(FILES.indexOf(e[0]) - f)<=1 && relRank(e, c) > relRank(sq, c))
       && !pawnsOf(m, c).some(o=>o[0]===sq[0] && relRank(o, c) > relRank(sq, c));
 }
-function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.dots.length || m.nums.length || m.arrows.length || m.labels.length); }
+function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.nums.length || m.arrows.length || m.labels.length); }
 function aspectMarks(fen, key){
-  const m = boardMap(fen), A = attackMaps(m), out = { circles:[], tints:[], dots:[], nums:[], arrows:[], labels:[] };
+  const m = boardMap(fen), A = attackMaps(m), out = { circles:[], tints:[], nums:[], arrows:[], labels:[] };
   const pieces = c=>Object.keys(m).filter(sq=>m[sq].c===c);
   if(key==='material'){
     for(const t of ['q','r','b','n','p']){
@@ -1948,7 +1948,7 @@ function aspectMarks(fen, key){
         if(m[sq] && m[sq].t==='p' && m[sq].c===c) continue;
         if((A[other(c)][sq] || []).some(a=>m[a].t==='p')) continue;
         const by = mine.find(o=>o[0]===fl && relRank(o, c) > relRank(sq, c) && relRank(o, c) - relRank(sq, c) <= 3);
-        out.dots.push({ sq, c, full: !!by, occ: !!m[sq] });   // a safe square; filled: behind one of its pawns (counted twice)
+        out.circles.push({ sq, c });   // a square that counts
         if(by && !out.circles.some(x=>x.sq===by)) out.circles.push({ sq: by, c });   // the pawn that gains that space
       }
     }
@@ -2044,10 +2044,7 @@ function drawMarks(svg, marks){
     const x = Math.max(1, Math.min(480 - w - 1, r.cx - w/2)), y = r.cy - h/2;
     return `<rect class="mk-label" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="700" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.text}</text>`; }).join('');
   const shadow = `<filter id="mkShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.8" flood-color="#000" flood-opacity=".6"/></filter>`;
-  // Small circles on squares (not pieces): hollow, or filled for squares that count more.
-  // On a square with a piece, a smaller one in the corner so the piece stays visible.
-  const dots = (marks.dots||[]).map(t=>{ const r = R(t.sq), cx = t.occ ? r.x + 49 : r.cx, cy = t.occ ? r.y + 49 : r.cy; return `<circle cx="${cx}" cy="${cy}" r="${t.occ ? 6.5 : 10}" fill="${t.full ? MARK[t.c].ink : 'none'}" stroke="${MARK[t.c].ink}" stroke-width="3.5" filter="url(#mkShadow)"/>`; }).join('');
-  svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}${dots}${circles}${arrows}${nums}${labels}`;
+  svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}${circles}${arrows}${nums}${labels}`;
   // Badges fit their text (4 units each side). Two badges side by side would overlap: the later
   // one moves to the bottom of its square, or else the top.
   const placed = [];

@@ -18,7 +18,7 @@ const T = [
   ['Material marks', {fen:'3q1rk1/pp1b1ppp/5n2/3P4/2B5/2P1B3/PP3PPP/R3R1K1 w - - 0 20'}, 'Bd4'],
   // Pawn marks: White a4 isolated, c3 doubled, d5 connected, e5 passed, f3 doubled but protected by e2; Black c7 backward, h5 passed.
   ['Pawn marks', {fen:'2r3k1/2p3p1/1p6/3PP2p/P7/2P2P2/2P1PP2/3R2K1 w - - 0 30'}, 'Rd4'],
-  // Space marks (King's Indian): White's safe squares c2 c3 d2 d3 e2 e3 (behind c4 d5 e4) and f3; Black's c7 d7 e7 (behind c5 d6 e5) and f6.
+  // Space marks (King's Indian): White's squares c2 c3 d2 d3 e2 e3 f3 and pawns c4 d5 e4; Black's c7 d7 e7 f6 and pawns c5 d6 e5.
   ['Space marks', {fen:'r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'}, 'Ne1'],
 ];
 const sf = spawn(SF); let buf = '', wait = null;
