@@ -462,7 +462,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the pawns in front that gain safe squares behind them (Central on the d and e files, Flank on c and f), and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the central pawns (d and e files) that gain safe squares behind them, and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's pawn shield, the squares around it under attack, and the attackers; <strong>Threats</strong> pieces attacked by a lesser piece, undefended, or attacked by a knight, bishop or rook with no pawn protecting them; dashed: threats for the next move (a pawn push that would attack a piece, or a piece that can come and attack the queen, the target ringed); with a rook or queen, the other side's isolated pawns on a half-open file.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -2049,9 +2049,9 @@ function aspectMarks(fen, key){
           continue;
         }
         const by = mine.find(o=>o[0]===fl && relRank(o, c) > relRank(sq, c) && relRank(o, c) - relRank(sq, c) <= 3);
-        if(by && !out.circles.some(x=>x.sq===by)){   // the pawn that gains that space: on the d or e file, or the c or f file
+        if(by && 'de'.includes(by[0]) && !out.circles.some(x=>x.sq===by)){   // a central pawn (d or e file) that gains that space; c and f pawns only show through their arrows
           out.circles.push({ sq: by, c });
-          out.labels.push({ sq: by, c, text: 'de'.includes(by[0]) ? 'Central' : 'Flank' });
+          out.labels.push({ sq: by, c, text: 'Central' });
         }
       }
     }
