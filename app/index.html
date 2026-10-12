@@ -1976,9 +1976,9 @@ function aspectMarks(fen, key){
         const mark = (fav, text)=>{ out.circles.push({ sq, c: fav }); out.labels.push({ sq, c: fav, text }); };
         if(passedPawn(m, sq, c)) mark(c, 'Passed');                                   // good for its side
         else if(connected && relRank(sq, c)>=4) mark(c, 'Linked');
-        else if(isolated) mark(other(c), 'Isolated');                                 // weak: good for the other side
         else if(doubled && protector) out.arrows.push({ from: protector, to: sq, c });   // doubled but protected: Stockfish doesn't count it as weak
-        else if(doubled) mark(other(c), 'Doubled');
+        else if(doubled) mark(other(c), 'Doubled');                                   // weak: good for the other side (a doubled isolated pair: Doubled in front, Isolated behind)
+        else if(isolated) mark(other(c), 'Isolated');
         else if(backward) mark(other(c), 'Backward');
       }
     }

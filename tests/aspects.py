@@ -181,6 +181,8 @@ async def main():
         ad = await pg.evaluate("(()=>{ const d = activityDetail(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'd5'); return [d.circles.map(c=>c.sq).sort().join(' '), d.arrows.map(a=>a.from+a.to).sort().join(' '), d.nums[0].n]; })()")
         print('activity detail, knight d5:', ad)
         if ad != ['b6 c3 c7 e7 f4', 'c5b4 g7f6', 5]: fails.append(f'activity detail: {ad}')
+        di = await pg.evaluate("aspectMarks('4k3/p7/3p4/8/8/2P5/2P5/4K3 w - - 0 1', 'pawns').labels.map(l=>l.sq+':'+l.text).sort().join(' ')")
+        if di != 'a7:Passed c2:Isolated c3:Doubled d6:Isolated': fails.append(f'doubled isolated pair: {di}')
         both = await pg.evaluate("aspectMarks('2b1k1b1/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.length")
         if both: fails.append('no bishop pair label when both sides have the pair')
         # what each imbalance marks, on small positions
