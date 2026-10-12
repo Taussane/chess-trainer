@@ -31,7 +31,8 @@ async def main():
         await pg.evaluate("sfWorker = null")
         # 3. Imbalance reading: no bar; the prompt; every imbalance "=" at first.
         await pg.click('.card[data-go="imbalances"]'); await pg.wait_for_timeout(300)
-        await pg.evaluate("""t=>{ engineAspects = fen=>Promise.resolve(t.split('\\n')); aspectsStore = {}; render(); }""", TABLE)
+        # (all six criteria in play, whatever position comes up: Space counted)
+        await pg.evaluate("""t=>{ window._spaceCounts = spaceCounts; spaceCounts = ()=>true; engineAspects = fen=>Promise.resolve(t.split('\\n')); aspectsStore = {}; render(); }""", TABLE)
         prompt = await pg.text_content('#imbPrompt')
         if prompt != 'Gauge each positional imbalance.': fails.append(f'prompt: {prompt}')
         if await pg.query_selector('#evalBar'): fails.append('Imbalance reading has no evaluation bar')
@@ -184,6 +185,7 @@ async def main():
         di = await pg.evaluate("aspectMarks('4k3/p7/3p4/8/8/2P5/2P5/4K3 w - - 0 1', 'pawns').labels.map(l=>l.sq+':'+l.text).sort().join(' ')")
         if di != 'a7:Passed c2:Isolated c3:Doubled d6:Isolated': fails.append(f'doubled isolated pair: {di}')
         # Space left out when few pieces remain: scored over the other five, greyed in the question
+        await pg.evaluate("void (spaceCounts = window._spaceCounts)")
         so = await pg.evaluate("""(()=>{ const v = { material:0, pawns:0, space:0.5, activity:0, king:0, threats:0 }; Object.defineProperty(v, 'off', { value:['space'] });
           return [Math.round(imbalanceScore(v, { space:2 }, 6)), Math.round(imbalanceScore(v, { material:2 }, 6)), spaceCounts('r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'), spaceCounts(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen)]; })()""")
         print('space left out:', so)
