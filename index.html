@@ -120,6 +120,7 @@
   }
   .card:hover{border-color:var(--accent);}
   .card-glyph{font-size:1.9rem; line-height:1; width:36px; text-align:center; color:var(--accent);}
+  .act-icon{width:1em; height:1em; vertical-align:-0.15em;}
   .card-title{display:block; font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
   .card-desc{display:block; margin-top:4px; color:var(--text-mute); font-size:0.88rem; line-height:1.4;}
   .card-level{display:flex; flex-direction:column; align-items:flex-end; min-width:44px; line-height:1.1;}
@@ -262,6 +263,22 @@
   .sq.check{background-image:radial-gradient(circle at center, rgba(255,40,40,1) 0%, rgba(230,0,0,.85) 28%, rgba(200,0,0,.35) 58%, rgba(170,0,0,0) 80%);}
   .sq.dest::after{content:""; position:absolute; width:26%; height:26%; border-radius:50%; background:var(--dest-dot); top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; pointer-events:none;}
   .sq.dest-capture::after{content:""; position:absolute; inset:8%; border:3px solid var(--dest-dot); border-radius:50%; z-index:1; pointer-events:none;}
+  /* Pieces: the Cburnett set (Wikimedia Commons; see THIRD_PARTY.md), as images; the glyph stays in the text, hidden. */
+  .pc{display:block; width:100%; height:100%; font-size:0; color:transparent; background-position:center; background-size:100% 100%; background-repeat:no-repeat;}
+  /*PIECE_CSS*/
+  .pc-wK{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgdmlld0JveD0iMCAwIDQ1IDQ1Ij48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjEuNSI+PHBhdGggc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgZD0iTTIyLjUgMTEuNjNWNk0yMCA4aDUiLz48cGF0aCBmaWxsPSIjZmZmIiBzdHJva2UtbGluZWNhcD0iYnV0dCIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgZD0iTTIyLjUgMjVzNC41LTcuNSAzLTEwLjVjMCAwLTEtMi41LTMtMi41cy0zIDIuNS0zIDIuNWMtMS41IDMgMyAxMC41IDMgMTAuNSIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0xMS41IDM3YzUuNSAzLjUgMTUuNSAzLjUgMjEgMHYtN3M5LTQuNSA2LTEwLjVjLTQtNi41LTEzLjUtMy41LTE2IDRWMjd2LTMuNWMtMy41LTcuNS0xMy0xMC41LTE2LTQtMyA2IDUgMTAgNSAxMHoiLz48cGF0aCBkPSJNMTEuNSAzMGM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwbS0yMSAzLjVjNS41LTMgMTUuNS0zIDIxIDAiLz48L2c+PC9zdmc+")}
+  .pc-wQ{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxnIGZpbGw9IiNmZmYiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48cGF0aCBkPSJNOCAxMmEyIDIgMCAxIDEtNCAwIDIgMiAwIDEgMSA0IDBtMTYuNS00LjVhMiAyIDAgMSAxLTQgMCAyIDIgMCAxIDEgNCAwTTQxIDEyYTIgMiAwIDEgMS00IDAgMiAyIDAgMSAxIDQgME0xNiA4LjVhMiAyIDAgMSAxLTQgMCAyIDIgMCAxIDEgNCAwTTMzIDlhMiAyIDAgMSAxLTQgMCAyIDIgMCAxIDEgNCAwIi8+PHBhdGggc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIGQ9Ik05IDI2YzguNS0xLjUgMjEtMS41IDI3IDBsMi0xMi03IDExVjExbC01LjUgMTMuNS0zLTE1LTMgMTUtNS41LTE0VjI1TDcgMTR6Ii8+PHBhdGggc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIGQ9Ik05IDI2YzAgMiAxLjUgMiAyLjUgNCAxIDEuNSAxIDEgLjUgMy41LTEuNSAxLTEuNSAyLjUtMS41IDIuNS0xLjUgMS41LjUgMi41LjUgMi41IDYuNSAxIDE2LjUgMSAyMyAwIDAgMCAxLjUtMSAwLTIuNSAwIDAgLjUtMS41LTEtMi41LS41LTIuNS0uNS0yIC41LTMuNSAxLTIgMi41LTIgMi41LTQtOC41LTEuNS0xOC41LTEuNS0yNyAweiIvPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0xMS41IDMwYzMuNS0xIDE4LjUtMSAyMiAwTTEyIDMzLjVjNi0xIDE1LTEgMjEgMCIvPjwvZz48L3N2Zz4=")}
+  .pc-wR{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxnIGZpbGw9IiNmZmYiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48cGF0aCBzdHJva2UtbGluZWNhcD0iYnV0dCIgZD0iTTkgMzloMjd2LTNIOXptMy0zdi00aDIxdjR6bS0xLTIyVjloNHYyaDVWOWg1djJoNVY5aDR2NSIvPjxwYXRoIGQ9Im0zNCAxNC0zIDNIMTRsLTMtMyIvPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJidXR0IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBkPSJNMzEgMTd2MTIuNUgxNFYxNyIvPjxwYXRoIGQ9Im0zMSAyOS41IDEuNSAyLjVoLTIwbDEuNS0yLjUiLz48cGF0aCBmaWxsPSJub25lIiBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBkPSJNMTEgMTRoMjMiLz48L2c+PC9zdmc+")}
+  .pc-wB{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxnIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48ZyBmaWxsPSIjZmZmIiBzdHJva2UtbGluZWNhcD0iYnV0dCI+PHBhdGggZD0iTTkgMzZjMy4zOS0uOTcgMTAuMTEuNDMgMTMuNS0yIDMuMzkgMi40MyAxMC4xMSAxLjAzIDEzLjUgMiAwIDAgMS42NS41NCAzIDItLjY4Ljk3LTEuNjUuOTktMyAuNS0zLjM5LS45Ny0xMC4xMS40Ni0xMy41LTEtMy4zOSAxLjQ2LTEwLjExLjAzLTEzLjUgMS0xLjM1LjQ5LTIuMzIuNDctMy0uNSAxLjM1LTEuOTQgMy0yIDMtMnoiLz48cGF0aCBkPSJNMTUgMzJjMi41IDIuNSAxMi41IDIuNSAxNSAwIC41LTEuNSAwLTIgMC0yIDAtMi41LTIuNS00LTIuNS00IDUuNS0xLjUgNi0xMS41LTUtMTUuNS0xMSA0LTEwLjUgMTQtNSAxNS41IDAgMC0yLjUgMS41LTIuNSA0IDAgMC0uNS41IDAgMnoiLz48cGF0aCBkPSJNMjUgOGEyLjUgMi41IDAgMSAxLTUgMCAyLjUgMi41IDAgMSAxIDUgMHoiLz48L2c+PHBhdGggc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgZD0iTTE3LjUgMjZoMTBNMTUgMzBoMTVtLTcuNS0xNC41djVNMjAgMThoNSIvPjwvZz48L3N2Zz4=")}
+  .pc-wN{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxnIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMjIgMTBjMTAuNSAxIDE2LjUgOCAxNiAyOUgxNWMwLTkgMTAtNi41IDgtMjEiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMjQgMThjLjM4IDIuOTEtNS41NSA3LjM3LTggOS0zIDItMi44MiA0LjM0LTUgNC0xLjA0Mi0uOTQgMS40MS0zLjA0IDAtMy0xIDAgLjE5IDEuMjMtMSAyLTEgMC00LjAwMyAxLTQtNCAwLTIgNi0xMiA2LTEyczEuODktMS45IDItMy41Yy0uNzMtLjk5NC0uNS0yLS41LTMgMS0xIDMgMi41IDMgMi41aDJzLjc4LTEuOTkyIDIuNS0zYzEgMCAxIDMgMSAzIi8+PHBhdGggZmlsbD0iIzAwMCIgZD0iTTkuNSAyNS41YS41LjUgMCAxIDEtMSAwIC41LjUgMCAxIDEgMSAwbTUuNDMzLTkuNzVhLjUgMS41IDMwIDEgMS0uODY2LS41LjUgMS41IDMwIDEgMSAuODY2LjUiLz48L2c+PC9zdmc+")}
+  .pc-wP{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxwYXRoIGZpbGw9IiNmZmYiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utd2lkdGg9IjEuNSIgZD0iTTIyLjUgOWMtMi4yMSAwLTQgMS43OS00IDQgMCAuODkuMjkgMS43MS43OCAyLjM4QzE3LjMzIDE2LjUgMTYgMTguNTkgMTYgMjFjMCAyLjAzLjk0IDMuODQgMi40MSA1LjAzLTMgMS4wNi03LjQxIDUuNTUtNy40MSAxMy40N2gyM2MwLTcuOTItNC40MS0xMi40MS03LjQxLTEzLjQ3IDEuNDctMS4xOSAyLjQxLTMgMi40MS01LjAzIDAtMi40MS0xLjMzLTQuNS0zLjI4LTUuNjIuNDktLjY3Ljc4LTEuNDkuNzgtMi4zOCAwLTIuMjEtMS43OS00LTQtNHoiLz48L3N2Zz4=")}
+  .pc-bK{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgdmlld0JveD0iMCAwIDQ1IDQ1Ij48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjEuNSI+PHBhdGggc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgZD0iTTIyLjUgMTEuNlY2Ii8+PHBhdGggZmlsbD0iIzAwMCIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiIGQ9Ik0yMi41IDI1czQuNS03LjUgMy0xMC41YzAgMC0xLTIuNS0zLTIuNXMtMyAyLjUtMyAyLjVjLTEuNSAzIDMgMTAuNSAzIDEwLjUiLz48cGF0aCBmaWxsPSIjMDAwIiBkPSJNMTEuNSAzN2EyMi4zIDIyLjMgMCAwIDAgMjEgMHYtN3M5LTQuNSA2LTEwLjVjLTQtNi41LTEzLjUtMy41LTE2IDRWMjd2LTMuNWMtMy41LTcuNS0xMy0xMC41LTE2LTQtMyA2IDUgMTAgNSAxMHoiLz48cGF0aCBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBkPSJNMjAgOGg1Ii8+PHBhdGggc3Ryb2tlPSIjZWNlY2VjIiBkPSJNMzIgMjkuNXM4LjUtNCA2LTkuN0MzNC4xIDE0IDI1IDE4IDIyLjUgMjQuNnYyLjEtMi4xQzIwIDE4IDkuOSAxNCA3IDE5LjljLTIuNSA1LjYgNC44IDkgNC44IDkiLz48cGF0aCBzdHJva2U9IiNlY2VjZWMiIGQ9Ik0xMS41IDMwYzUuNS0zIDE1LjUtMyAyMSAwbS0yMSAzLjVjNS41LTMgMTUuNS0zIDIxIDBtLTIxIDMuNWM1LjUtMyAxNS41LTMgMjEgMCIvPjwvZz48L3N2Zz4=")}
+  .pc-bQ{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxnIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48ZyBzdHJva2U9Im5vbmUiPjxjaXJjbGUgY3g9IjYiIGN5PSIxMiIgcj0iMi43NSIvPjxjaXJjbGUgY3g9IjE0IiBjeT0iOSIgcj0iMi43NSIvPjxjaXJjbGUgY3g9IjIyLjUiIGN5PSI4IiByPSIyLjc1Ii8+PGNpcmNsZSBjeD0iMzEiIGN5PSI5IiByPSIyLjc1Ii8+PGNpcmNsZSBjeD0iMzkiIGN5PSIxMiIgcj0iMi43NSIvPjwvZz48cGF0aCBzdHJva2UtbGluZWNhcD0iYnV0dCIgZD0iTTkgMjZjOC41LTEuNSAyMS0xLjUgMjcgMGwyLjUtMTIuNUwzMSAyNWwtLjMtMTQuMS01LjIgMTMuNi0zLTE0LjUtMyAxNC41LTUuMi0xMy42TDE0IDI1IDYuNSAxMy41eiIvPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJidXR0IiBkPSJNOSAyNmMwIDIgMS41IDIgMi41IDQgMSAxLjUgMSAxIC41IDMuNS0xLjUgMS0xLjUgMi41LTEuNSAyLjUtMS41IDEuNS41IDIuNS41IDIuNSA2LjUgMSAxNi41IDEgMjMgMCAwIDAgMS41LTEgMC0yLjUgMCAwIC41LTEuNS0xLTIuNS0uNS0yLjUtLjUtMiAuNS0zLjUgMS0yIDIuNS0yIDIuNS00LTguNS0xLjUtMTguNS0xLjUtMjcgMHoiLz48cGF0aCBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0iYnV0dCIgZD0iTTExIDM4LjVhMzUgMzUgMSAwIDAgMjMgMCIvPjxwYXRoIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2VjZWNlYyIgZD0iTTExIDI5YTM1IDM1IDEgMCAxIDIzIDBtLTIxLjUgMi41aDIwbS0yMSAzYTM1IDM1IDEgMCAwIDIyIDBtLTIzIDNhMzUgMzUgMSAwIDAgMjQgMCIvPjwvZz48L3N2Zz4=")}
+  .pc-bR{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxnIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48cGF0aCBzdHJva2UtbGluZWNhcD0iYnV0dCIgZD0iTTkgMzloMjd2LTNIOXptMy41LTcgMS41LTIuNWgxN2wxLjUgMi41em0tLjUgNHYtNGgyMXY0eiIvPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJidXR0IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBkPSJNMTQgMjkuNXYtMTNoMTd2MTN6Ii8+PHBhdGggc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIGQ9Ik0xNCAxNi41IDExIDE0aDIzbC0zIDIuNXpNMTEgMTRWOWg0djJoNVY5aDV2Mmg1VjloNHY1eiIvPjxwYXRoIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2VjZWNlYyIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgc3Ryb2tlLXdpZHRoPSIxIiBkPSJNMTIgMzUuNWgyMW0tMjAtNGgxOW0tMTgtMmgxN20tMTctMTNoMTdNMTEgMTRoMjMiLz48L2c+PC9zdmc+")}
+  .pc-bB{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxnIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48ZyBmaWxsPSIjMDAwIiBzdHJva2UtbGluZWNhcD0iYnV0dCI+PHBhdGggZD0iTTkgMzZjMy40LTEgMTAuMS40IDEzLjUtMiAzLjQgMi40IDEwLjEgMSAxMy41IDIgMCAwIDEuNi41IDMgMi0uNyAxLTEuNiAxLTMgLjUtMy40LTEtMTAuMS41LTEzLjUtMS0zLjQgMS41LTEwLjEgMC0xMy41IDEtMS40LjUtMi4zLjUtMy0uNSAxLjQtMiAzLTIgMy0yeiIvPjxwYXRoIGQ9Ik0xNSAzMmMyLjUgMi41IDEyLjUgMi41IDE1IDAgLjUtMS41IDAtMiAwLTIgMC0yLjUtMi41LTQtMi41LTQgNS41LTEuNSA2LTExLjUtNS0xNS41LTExIDQtMTAuNSAxNC01IDE1LjUgMCAwLTIuNSAxLjUtMi41IDQgMCAwLS41LjUgMCAyeiIvPjxwYXRoIGQ9Ik0yNSA4YTIuNSAyLjUgMCAxIDEtNSAwIDIuNSAyLjUgMCAxIDEgNSAweiIvPjwvZz48cGF0aCBzdHJva2U9IiNlY2VjZWMiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiIGQ9Ik0xNy41IDI2aDEwTTE1IDMwaDE1bS03LjUtMTQuNXY1TTIwIDE4aDUiLz48L2c+PC9zdmc+")}
+  .pc-bN{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxnIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48cGF0aCBmaWxsPSIjMDAwIiBkPSJNMjIgMTBjMTAuNSAxIDE2LjUgOCAxNiAyOUgxNWMwLTkgMTAtNi41IDgtMjEiLz48cGF0aCBmaWxsPSIjMDAwIiBkPSJNMjQgMThjLjM4IDIuOTEtNS41NSA3LjM3LTggOS0zIDItMi44MiA0LjM0LTUgNC0xLjA0LS45NCAxLjQxLTMuMDQgMC0zLTEgMCAuMTkgMS4yMy0xIDItMSAwLTQgMS00LTQgMC0yIDYtMTIgNi0xMnMxLjg5LTEuOSAyLTMuNWMtLjczLTEtLjUtMi0uNS0zIDEtMSAzIDIuNSAzIDIuNWgycy43OC0yIDIuNS0zYzEgMCAxIDMgMSAzIi8+PHBhdGggZmlsbD0iI2VjZWNlYyIgc3Ryb2tlPSIjZWNlY2VjIiBkPSJNOS41IDI1LjVhLjUuNSAwIDEgMS0xIDAgLjUuNSAwIDEgMSAxIDBtNS40My05Ljc1YS41IDEuNSAzMCAxIDEtLjg2LS41LjUgMS41IDMwIDEgMSAuODYuNSIvPjxwYXRoIGZpbGw9IiNlY2VjZWMiIHN0cm9rZT0ibm9uZSIgZD0ibTI0LjU1IDEwLjQtLjQ1IDEuNDUuNS4xNWMzLjE1IDEgNS42NSAyLjQ5IDcuOSA2Ljc1UzM1Ljc1IDI5LjA2IDM1LjI1IDM5bC0uMDUuNWgyLjI1bC4wNS0uNWMuNS0xMC4wNi0uODgtMTYuODUtMy4yNS0yMS4zNHMtNS43OS02LjY0LTkuMTktNy4xNnoiLz48L2c+PC9zdmc+")}
+  .pc-bP{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxwYXRoIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utd2lkdGg9IjEuNSIgZD0iTTIyLjUgOWE0IDQgMCAwIDAtMy4yMiA2LjM4IDYuNDggNi40OCAwIDAgMC0uODcgMTAuNjVjLTMgMS4wNi03LjQxIDUuNTUtNy40MSAxMy40N2gyM2MwLTcuOTItNC40MS0xMi40MS03LjQxLTEzLjQ3YTYuNDYgNi40NiAwIDAgMC0uODctMTAuNjVBNC4wMSA0LjAxIDAgMCAwIDIyLjUgOXoiLz48L3N2Zz4=")}
+  /*END PIECE_CSS*/
   .sq .piece-w{color:var(--piece-w); text-shadow:0 0 1px #000, 0 0 2px rgba(0,0,0,.5); z-index:1;}
   .sq .piece-b{color:var(--piece-b); text-shadow:0 0 1px rgba(255,255,255,.3); z-index:1;}
   .promo-overlay{position:absolute; inset:0; z-index:8; background:var(--scrim); container-type:inline-size; cursor:pointer;}
@@ -915,7 +932,7 @@ function renderBoard(container, boardOverride, lastOverride, opts){
       const p = bs[sq];
       if(p){
         const span = document.createElement('span');
-        span.className = p === p.toUpperCase() ? 'piece-w' : 'piece-b';
+        span.className = (p === p.toUpperCase() ? 'piece-w' : 'piece-b') + ` pc pc-${p === p.toUpperCase() ? 'w' : 'b'}${p.toUpperCase()}`;
         span.textContent = PIECES[p];
         div.appendChild(span);
       }
@@ -940,7 +957,7 @@ function showPromotionPicker(chess, addPick){
   const ov = document.createElement('div');
   ov.className = 'promo-overlay';
   ov.innerHTML = `<div class="promo-col" style="left:${col*12.5}%">${['q','n','r','b'].map(k=>
-    `<button class="promo-piece" data-p="${k}" aria-label="Promote to ${PROMO_NAMES[k]}"><span class="${w?'piece-w':'piece-b'}">${PIECES[w?k.toUpperCase():k]}</span></button>`).join('')}</div>`;
+    `<button class="promo-piece" data-p="${k}" aria-label="Promote to ${PROMO_NAMES[k]}"><span class="${w?'piece-w':'piece-b'} pc pc-${w?'w':'b'}${k.toUpperCase()}">${PIECES[w?k.toUpperCase():k]}</span></button>`).join('')}</div>`;
   ov.onclick = e=>{
     const b = e.target.closest('.promo-piece');
     if(b){ const mv = chess.moves({square:from, verbose:true}).find(m=>m.to===to && m.promotion===b.dataset.p); if(mv) addPick(mv); }
@@ -1754,7 +1771,7 @@ function planHtml(plan, view, fadeIn, hidden, fen){
 // engine's, its border turning green where you matched it, yellow one level off, orange two off, red
 // further. `vals`: the engine's values (null: not in yet); `guesses`: {key: -3..3} (missing = "="),
 // or null for the engine's levels alone (Position evaluation's review); `shown`: how many are revealed.
-const OFF_BADGE = vals=>`<span class="asp-badge off" title="${vals && vals.special ? SPECIAL_NOTE : SPACE_OFF_NOTE}">–</span>`;
+const OFF_BADGE = vals=>`<span class="asp-badge off" title="${vals && vals.special ? SPECIAL_NOTE : SPACE_OFF_NOTE}">·</span>`;
 function reviewBadge(vals, guesses, x, i, shown){
   if(isOff(vals, x)) return OFF_BADGE(vals);
   if(vals && guesses===null) return aspectBadge(vals[x.key], x.key);
@@ -1846,7 +1863,7 @@ function aspectsInputHtml(s, hidden){
     return `<div class="asp-item${off ? ' off' : ''}"><span class="asp-name">${x.name}</span>${hidden
       ? `<span class="asp-badge eq asp-pick">=</span>`
       : off
-      ? `<button class="asp-badge off asp-pick" data-asp="${x.key}" data-off="1" aria-label="${x.name}: not counted here" aria-haspopup="true">–</button>`
+      ? `<button class="asp-badge off asp-pick" data-asp="${x.key}" data-off="1" aria-label="${x.name}: not counted here" aria-haspopup="true">·</button>`
       : `<button class="asp-badge ${levelCls(l)} asp-pick" data-asp="${x.key}" aria-label="${x.name}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
   return `<div class="aspects asp-input"${hidden ? '' : ' id="aspInput"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
@@ -2015,14 +2032,14 @@ function aspectMarks(fen, key){
       let list = d>0 ? w : b;
       // the extra pawns: passed ones first, then the most advanced
       if(t==='p') list = list.slice().sort((x, y)=>(passedPawn(m, y, more) - passedPawn(m, x, more)) || (relRank(y, more) - relRank(x, more)));
+      // the extra bishop: the one on the colour the other side's bishop doesn't cover
+      if(t==='b'){ const dk = sq=>(FILES.indexOf(sq[0]) + +sq[1]) % 2, theirs = (d>0 ? b : w).map(dk); list = list.slice().sort((x, y)=>theirs.includes(dk(x)) - theirs.includes(dk(y))); }
       list.slice(0, Math.abs(d)).forEach(sq=>out.circles.push({ sq, c: more }));
     }
-    for(const c of ['w','b']){   // the bishop pair against a side without it
+    for(const c of ['w','b']){   // the bishop pair against a side without it: the extra bishop(s) ringed above say Pair
       const bs = pieces(c).filter(sq=>m[sq].t==='b');
-      if(bs.length>=2 && pieces(other(c)).filter(sq=>m[sq].t==='b').length<2) bs.forEach(sq=>{
-        if(!out.circles.some(x=>x.sq===sq)) out.circles.push({ sq, c });
-        out.labels.push({ sq, c, text:'Pair' });   // says why a bishop is ringed when the other side has one too
-      });
+      if(bs.length>=2 && pieces(other(c)).filter(sq=>m[sq].t==='b').length<2)
+        bs.filter(sq=>out.circles.some(x=>x.sq===sq && x.c===c)).forEach(sq=>out.labels.push({ sq, c, text:'Pair' }));
     }
   }
   if(key==='pawns'){
@@ -2114,10 +2131,13 @@ function aspectMarks(fen, key){
         const pen = blocked ? SF_BLOCKED_STORM[tr - 1] : SF_UNBLOCKED_STORM[d][tr - 1];
         if(pen >= 62){ storm.add(theirs); out.circles.push({ sq: theirs, c: them }); out.labels.push({ sq: theirs, c: them, text:'Storm' }); }
       }
-      // each enemy piece attacking the zone (storm pawns aside): an arrow to the attacked square nearest the king
+      // each enemy piece attacking the zone (storm pawns aside): one arrow, ending where its attack
+      // enters the zone (Stockfish counts the attacking piece, and how many squares next to the king it hits)
       const dist = t=>Math.max(Math.abs(FILES.indexOf(t[0]) - f), Math.abs(+t[1] - r));
+      const reach = (a, t)=>Math.max(Math.abs(FILES.indexOf(t[0]) - FILES.indexOf(a[0])), Math.abs(+t[1] - +a[1]));
       const best = {};
-      for(const t of zone) for(const a of (A[them][t] || [])){ if(m[a].t==='k' || storm.has(a)) continue; if(!best[a] || dist(t) < dist(best[a])) best[a] = t; }
+      for(const t of zone) for(const a of (A[them][t] || [])){ if(m[a].t==='k' || storm.has(a)) continue;
+        if(!best[a] || reach(a, t) < reach(a, best[a]) || (reach(a, t)===reach(a, best[a]) && dist(t) < dist(best[a]))) best[a] = t; }
       Object.entries(best).forEach(([a, t])=>out.arrows.push({ from: a, to: t, c: them }));
       // squares from which an enemy piece could check the king safely (no defender covers them): red boxes
       const lines = (dirs, slide)=>{ const res = []; for(const [df, dr] of dirs){ for(let i=1; i<8; i++){ const t = sqAt(f+df*i, r+dr*i); if(!t) break; res.push(t); if(m[t] || !slide) break; } } return res; };
@@ -2195,7 +2215,7 @@ function drawMarks(svg, marks){
   // A number in the top corner of the square, on a small badge like the labels'.
   const nums = marks.nums.map(t=>{ const r = R(t.sq), w = String(t.n).length*7 + 8, h = 16, x = r.x + 59 - w, y = r.y + 1;
     return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.n}</text>`; }).join('');
-  const defs = `<marker id="mk_r" markerWidth="4" markerHeight="4" refX="2.15" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 Z" fill="#D9473F"/></marker>` + ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="4" markerHeight="4" refX="2.4" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 Z" fill="${MARK[c].ink}"/></marker>`).join('');
+  const defs = `<marker id="mk_r" markerWidth="2.6" markerHeight="2.6" refX="1.5" refY="1.3" orient="auto"><path d="M0,0 L2.6,1.3 L0,2.6 Z" fill="#D9473F"/></marker>` + ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="4" markerHeight="4" refX="2.4" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 Z" fill="${MARK[c].ink}"/></marker>`).join('');
   const arrows = marks.arrows.map(t=>{
     const a = squareCenter(t.from), b = squareCenter(t.to), dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx, dy) || 1;
     const ex = b.x - dx/len*18, ey = b.y - dy/len*18;
@@ -2314,7 +2334,14 @@ function miniRowHtml(m, highlight, fadeIn){
 // close you were — and no opponent rating, since every position is scored on the same scale.
 const ACTS = ['imbalances', 'analysis', 'candidates', 'final'];
 const zeroCounts = ()=>Object.fromEntries(ACTS.map(a=>[a, 0]));
-const ACT_GLYPHS = { imbalances:'♙', analysis:'⚖', candidates:'♘', final:'♔' };
+// The exercises' icons (line drawings in the text colour): a balance, a gauge, a light bulb, a target.
+const actIcon = d=>`<svg class="act-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ACT_GLYPHS = {
+  imbalances: actIcon('<path d="M12 4v16M8 20h8M5 7h14M12 4.5l-.01 0"/><path d="M5 7l-3 6a3 3 0 0 0 6 0z"/><path d="M19 7l-3 6a3 3 0 0 0 6 0z"/>'),
+  analysis:   actIcon('<path d="M3.5 17a8.5 8.5 0 1 1 17 0"/><path d="M12 17l4.5-5"/><circle cx="12" cy="17" r="1.3"/><path d="M6 13.5l1 .6M12 8.5v1.2M18 13.5l-1 .6"/>'),
+  candidates: actIcon('<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2h5c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>'),
+  final:      actIcon('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3"/>'),
+};
 const ACT_NAMES = { imbalances:'Imbalance reading', analysis:'Position evaluation', candidates:'Candidate moves', final:'Move selection' };
 const BACK_ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ACT_SHORT = { imbalances:'Imbalances', analysis:'Evaluation', candidates:'Candidates', final:'Selection' };   // where space is short (profile)
@@ -2683,10 +2710,10 @@ function renderHome(){
         return `<button class="seg-btn${k===source?' active':''}" role="radio" aria-checked="${k===source}" data-src="${k}" ${off ? 'disabled title="No positions from your games yet"' : ''}>${v}</button>`; }).join('')}</div>
     </div>
     <div class="cards">
-      ${[['imbalances','♙','Who has the edge, aspect by aspect?'],
-         ['analysis','⚖',"Who's better, and by how much?"],
-         ['candidates','♘','Find the strongest moves.'],
-         ['final','♔','Rank four moves, best to worst.']].map(([a, glyph, desc])=>{
+      ${[['imbalances',ACT_GLYPHS.imbalances,'Who has the edge, aspect by aspect?'],
+         ['analysis',ACT_GLYPHS.analysis,"Who's better, and by how much?"],
+         ['candidates',ACT_GLYPHS.candidates,'Find the strongest moves.'],
+         ['final',ACT_GLYPHS.final,'Rank four moves, best to worst.']].map(([a, glyph, desc])=>{
         const L = levelNow(a), open = canOpen(a, false);
         if(!open) desc = waitText(a, false);
         return `<button class="card" data-go="${a}" ${open ? '' : 'disabled'}>

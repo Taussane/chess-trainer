@@ -10,6 +10,10 @@ Move generation and validation. Loaded by the app from a CDN; a copy is in `vend
 
 The chess engine. The app loads Stockfish 10 (JavaScript build) from a CDN; the position finder uses Stockfish 16.1, built from source by `scripts/setup-stockfish.sh` and not stored here. Stockfish is licensed under the GNU General Public License v3.0: https://github.com/official-stockfish/Stockfish
 
+## Chess pieces: Cburnett set
+
+The board's pieces (`vendor/pieces/cburnett/`, embedded in the app by `scripts/piece-css.py`) are the standard set drawn by Colin M.L. Burnett (https://en.wikipedia.org/wiki/User:Cburnett) for Wikimedia Commons, where it is available under the GFDL, BSD and GPL licences. The files come from Lichess (https://github.com/lichess-org/lila, `public/piece/cburnett/`), which distributes them under the GNU General Public License v2 or later (https://www.gnu.org/licenses/gpl-2.0.txt), compatible with this project's AGPL v3.
+
 ## scalachess: game phases (Divider)
 
 The game-phase detection (middlegame and endgame starts) in `finder/lib.js` and `app/index.html` is a port of `Divider.scala` from scalachess (https://github.com/lichess-org/scalachess), under this licence:

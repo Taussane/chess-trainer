@@ -166,7 +166,7 @@ async def main():
         # Material, on the "Material marks" test position: per piece type, the extra ones; the bishop pair labelled.
         mm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Material marks').fen, 'material'); return [m.circles.map(c=>c.sq+c.c).sort().join(' '), m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' ')]; })()")
         print('material marks:', mm)
-        if mm != ['a1w c3w c4w d5w d8b e3w f6b', 'c4w:Pair e3w:Pair']: fails.append(f'material marks: {mm}')
+        if mm != ['a1w c3w d5w d8b e3w f6b', 'e3w:Pair']: fails.append(f'material marks: {mm}')
         pm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Pawn marks').fen, 'pawns'); return [m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '), m.arrows.map(a=>a.from+a.to+a.c).join(' ')]; })()")
         print('pawn marks:', pm)
         if pm != ['a4b:Isolated c3b:Doubled c7w:Backward d5w:Linked e5w:Passed h5b:Passed', 'e2f3w']: fails.append(f'pawn marks: {pm}')
@@ -200,6 +200,8 @@ async def main():
         if km != ['b2:Shelter c2:Shelter c3:Storm f7:Shelter g6:Storm g7:Shelter h6:Shelter', 'a5c3b c6c3b e4g6w g5f7w', 'd1d8', 'b1d3 f8h6', 0]: fails.append(f'king marks: {km}')
         cs = await pg.evaluate("aspectMarks(TEST_POSITIONS.find(p=>p.title==='Castling').fen, 'king').arrows.filter(a=>a.from==='e1'||a.from==='e8').map(a=>a.from+a.to+(a.dash?'-':'')).sort().join(' ')")
         if cs != 'e1g1': fails.append(f'castling arrows (only O-O is possible now): {cs}')
+        np = await pg.evaluate("aspectMarks('4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.map(l=>l.sq+':'+l.text).sort().join(' ')")
+        if np != 'c1:Pair f1:Pair': fails.append(f'bishop pair against no bishop: {np}')
         both = await pg.evaluate("aspectMarks('2b1k1b1/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.length")
         if both: fails.append('no bishop pair label when both sides have the pair')
         # what each imbalance marks, on small positions
