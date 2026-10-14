@@ -178,7 +178,7 @@ async def main():
         kg = await pg.evaluate("[kingSquareGain(boardMap('r1b1n1k1/pp3ppp/8/8/8/4K3/PP3PPP/R1B1N3 w - - 0 1'), 'e3', 'w'), kingSquareGain(boardMap('r2qr1k1/pp3ppp/8/8/8/4K3/PP3PPP/R2QR3 w - - 0 1'), 'e3', 'w')].map(x=>Math.round(x*100)/100)")
         print('king square gain (Stockfish: +0.38 with R+B+N each, -0.27 with Q+R+R each):', kg)
         if not (0.33 <= kg[0] <= 0.43 and -0.32 <= kg[1] <= -0.22): fails.append(f'king square gain: {kg}')
-        if am != 'd5w:Outpost d6w:Outpost e3w:Central e8b:Half-open f1w:Open': fails.append(f'activity marks: {am}')
+        if am != 'd5w:Outpost d6b:Bad d6w:Outpost e3w:Central e3w:Total 21 e7w:Bad e8b:Half-open f1w:Open g8b:Total 17': fails.append(f'activity marks: {am}')
         ad = await pg.evaluate("(()=>{ const d = activityDetail(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'd5'); return [d.circles.map(c=>c.sq).sort().join(' '), d.arrows.map(a=>a.from+a.to).sort().join(' '), d.nums[0].n]; })()")
         print('activity detail, knight d5:', ad)
         if ad != ['b6 c3 c7 e7 f4', 'c5b4 g7f6', 5]: fails.append(f'activity detail: {ad}')
@@ -231,7 +231,7 @@ async def main():
         for k, v in want.items():
             if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
         # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (the move's arrow, no rings)
-        for k, a, c in [('fork', 'c6d4b d4d5w e6c4b', 'c4b d4b'), ('pin', 'e4e5w', ''), ('queenFork', 'c3d5w c7c3b', 'c3b')]:
+        for k, a, c in [('fork', 'c6d4b d4d5w e6c4b', 'c4b d4b'), ('pin', 'e4e5w', 'f6w'), ('queenFork', 'c3d5w c7c3b', 'c3b')]:
             if marks[k]['a'] != a or marks[k]['c'] != c: fails.append(f'{k} threats: {marks[k]}')
         # the pool: Position evaluation's positions less the tactical ones
         n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, IMBALANCE_SKIP.length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key))]")
