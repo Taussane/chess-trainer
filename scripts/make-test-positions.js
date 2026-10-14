@@ -24,7 +24,7 @@ const T = [
   ['Activity marks', {fen:'4r1k1/3bb1p1/1p1B3p/2pNP3/2PP4/4K1P1/8/5R2 w - - 0 35'}, 'Rf2'],
   // King safety marks: opposite castling. White Shelter b2 c2, Black Shelter f7 g7 h6; Storm g6 and c3 (blocked, still counted heavily); attacks from Ng5, Be4, g6 (on Black's zone) and Qa5, Rc6, c3 (on White's); a safe check on d8 (Rd8+); both queens.
   ['King safety marks', {fen:'6k1/pb3pp1/1pr2nPp/q5N1/4B2P/2p1Q3/PPP2P2/2KR3R w - - 0 20'}, 'Rd8+'],
-  // Threats marks: White Nf3 on the hanging Bh4 (ringed), d4-d5 forking Nc6 and Ne6 (dashed, both ringed); Black a6 on Bb5 (a lesser piece); Bb5 on the guarded Nc6 not shown.
+  // Threats marks: White Nf3 on the hanging Bh4 (ringed, Hanging), d4-d5 forking Nc6 and Ne6 (the move's arrow); Black a6 on Bb5 (a lesser piece); Bb5 on the guarded Nc6 not shown.
   ['Threats marks', {fen:'r4rk1/1ppq1ppp/p1npn3/1B6/2PP3b/2N1PN2/PP3PPP/R2QK2R w KQ - 0 10'}, 'Bxc6'],
 ];
 const sf = spawn(SF); let buf = '', wait = null;

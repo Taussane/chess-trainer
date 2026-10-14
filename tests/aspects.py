@@ -223,8 +223,8 @@ async def main():
         want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2b d5w g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b13'}
         for k, v in want.items():
             if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
-        # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (dashed, targets ringed)
-        for k, a, c in [('fork', 'c6d4b d4d5w- e6c4b', 'c4b c6w d4b e6w'), ('pin', 'e4e5w-', 'f6w'), ('queenFork', 'c3d5w- c7c3b', 'c3b c7w')]:
+        # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (the move's arrow, no rings)
+        for k, a, c in [('fork', 'c6d4b d4d5w e6c4b', 'c4b d4b'), ('pin', 'e4e5w', ''), ('queenFork', 'c3d5w c7c3b', 'c3b')]:
             if marks[k]['a'] != a or marks[k]['c'] != c: fails.append(f'{k} threats: {marks[k]}')
         # the pool: Position evaluation's positions less the tactical ones
         n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, IMBALANCE_SKIP.length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key))]")
