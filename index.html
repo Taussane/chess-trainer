@@ -2211,7 +2211,7 @@ function aspectMarks(fen, key){
   return out;
 }
 // Squares, rings, numbers and arrows on the board's overlay (the arrows svg, 480×480).
-const MARK = { w:{ fill:'rgba(255,255,255,', ink:'#F7F3EA', edge:'#1A1612' }, b:{ fill:'rgba(0,0,0,', ink:'#15110D', edge:'#F2ECDF' } };
+const MARK = { w:{ fill:'rgba(255,255,255,', ink:'#F7F3EA', edge:'#1A1612' }, b:{ fill:'rgba(0,0,0,', ink:'#46413B', edge:'#F2ECDF' } };
 function drawMarks(svg, marks){
   const R = sq=>{ const c = squareCenter(sq); return { x:c.x-30, y:c.y-30, cx:c.x, cy:c.y }; };
   const tints = marks.tints.map(t=>{ const r = R(t.sq); return `<rect x="${r.x}" y="${r.y}" width="60" height="60" fill="${MARK[t.c].fill}${t.c==='w' ? (t.strong ? .55 : .32) : (t.strong ? .45 : .25)})"/>`; }).join('');
