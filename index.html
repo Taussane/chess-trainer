@@ -994,11 +994,11 @@ function drawArrows(svg, list, keyPrefix){
     const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
     const same = list.filter(o=>o.from===m.from && o.to===m.to), k = same.indexOf(m);
     const shift = (k - (same.length-1)/2) * SPREAD, nx = -dy/len*shift, ny = dx/len*shift;
-    // starts a quarter of a square from the piece (it stays visible); the head's tip on the target's centre
-    a.x += nx + dx/len*15; a.y += ny + dy/len*15;
+    // starts about a third of a square from the piece (it stays visible); the head's tip on the target's centre
+    a.x += nx + dx/len*22; a.y += ny + dy/len*22;
     // like the board marks' arrows (a little thicker), with the same soft shadow
     const ex = b.x + nx - dx/len*20, ey = b.y + ny - dy/len*20;
-    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="8" stroke-linecap="round" marker-end="url(#${keyPrefix}${i})" filter="url(#${keyPrefix}sh)"/>`;
+    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="8" stroke-linecap="round" marker-end="url(#${keyPrefix}${i})" filter="url(#${keyPrefix}sh)" opacity=".8"/>`;
   }).join('');
   svg.innerHTML = `<defs>${defs}</defs>${lines}`;
 }
@@ -2222,12 +2222,12 @@ function drawMarks(svg, marks){
   const defs = `<marker id="mk_r" markerWidth="2.6" markerHeight="2.6" refX="1.5" refY="1.3" orient="auto"><path d="M0,0 L2.6,1.3 L0,2.6 Z" fill="#D9473F"/></marker>` + ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="4" markerHeight="4" refX="2.4" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 Z" fill="${MARK[c].ink}"/></marker>`).join('');
   const arrows = marks.arrows.map(t=>{
     const a0 = squareCenter(t.from), b = squareCenter(t.to), dx = b.x-a0.x, dy = b.y-a0.y, len = Math.hypot(dx, dy) || 1;
-    const a = { x: a0.x + dx/len*15, y: a0.y + dy/len*15 };   // a quarter of a square from the piece
+    const a = { x: a0.x + dx/len*22, y: a0.y + dy/len*22 };   // about a third of a square from the piece
     const ex = b.x - dx/len*18, ey = b.y - dy/len*18;
     const dash = t.dash ? ' stroke-dasharray="9 7"' : '';   // dashed: a threat for the next move
     // a check: the move, outlined in red (a wider red line underneath, its head scaling with it)
     const red = t.check ? `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="#D9473F" stroke-width="11" stroke-linecap="round" marker-end="url(#mk_r)" filter="url(#mkShadow)"/>` : '';
-    return red + `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="6" stroke-linecap="round"${dash} marker-end="url(#mk_${t.c})"${t.check ? '' : ' filter="url(#mkShadow)"'}/>`;
+    return `<g opacity=".8">` + red + `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="6" stroke-linecap="round"${dash} marker-end="url(#mk_${t.c})"${t.check ? '' : ' filter="url(#mkShadow)"'}/></g>`;
   }).join('');
   // A small badge across the middle of the square (kept inside the board).
   const labels = (marks.labels||[]).map(t=>{ const r = R(t.sq), w = t.text.length*7 + 8, h = 16;
