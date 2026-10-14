@@ -481,7 +481,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and connected ones when Stockfish's bonus for them is 0.1 pawn or more (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the central pawns (d and e files) that gain safe squares behind them, and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); each side's total on its king; labelled: outposts, rooks on open and half-open files, a central king when Stockfish rates it (endgames), and bishops hemmed in by their own pawns (Bad, in the other side's colour); <strong>King safety</strong> each king's zone (dashed), arrows from the enemy pieces attacking it, arrows outlined in red for safe checks (an enemy piece moving to a square no defender covers), its pawn shelter (Shelter), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), and castling possible right now (an arrow from the king); <strong>Threats</strong> attacks that would win material (on an unguarded piece, or by a lesser piece): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece, or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow. A mate the engine finds counts as ++ for the side that mates: in King safety for a mate in one, in Threats for a longer one, the mating move outlined in red.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the central pawns (d and e files) that gain safe squares behind them, and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); each side's total on its king; labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's zone (dashed), arrows from the enemy pieces attacking it, arrows outlined in red for safe checks (an enemy piece moving to a square no defender covers), its pawn shelter (Shelter), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), and castling possible right now (an arrow from the king); <strong>Threats</strong> attacks that would win material (on an unguarded piece, or by a lesser piece): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece, or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow. A mate the engine finds counts as ++ for the side that mates: in King safety for a mate in one, in Threats for a longer one, the mating move outlined in red.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -2015,25 +2015,6 @@ function kingSquareGain(m, sq, c){
   const v = s=>{ const f = FILES.indexOf(s[0]), e = SF_KING_PSQ[relRank(s, c) - 1][Math.min(f, 7 - f)]; return (e[0]*ph + e[1]*(128 - ph)) / 128; };
   return (v(sq) - v(c==='w' ? 'g1' : 'g8')) / SF_PAWN_EG;
 }
-// Stockfish's game phase (128: all pieces on, 0: an ending) and a [middlegame, endgame] score
-// blended at it, in pawns.
-function sfPhase(m){
-  let npm = 0; for(const x in m) if('nbrq'.includes(m[x].t)) npm += SF_VALUES[m[x].t][0];
-  return (Math.max(SF_EG_LIMIT, Math.min(SF_MG_LIMIT, npm)) - SF_EG_LIMIT) * 128 / (SF_MG_LIMIT - SF_EG_LIMIT);
-}
-const sfPawns = (m, mg, eg)=>{ const ph = sfPhase(m); return (mg*ph + eg*(128 - ph)) / 128 / SF_PAWN_EG; };
-// Stockfish 10's bonus for a connected pawn (protected by a pawn, or with one beside it), in pawns.
-const SF_CONNECTED_SEED = [0, 13, 24, 18, 65, 100, 175, 330];
-const LINKED_MIN = 0.1;
-function connectedBonus(m, sq, c){
-  const f = FILES.indexOf(sq[0]), rr = relRank(sq, c), r = rr - 1, mine = pawnsOf(m, c);
-  const support = mine.filter(o=>Math.abs(FILES.indexOf(o[0]) - f)===1 && relRank(o, c)===rr - 1).length;
-  const phalanx = mine.some(o=>Math.abs(FILES.indexOf(o[0]) - f)===1 && relRank(o, c)===rr);
-  if(!support && !phalanx) return 0;
-  const opposed = pawnsOf(m, other(c)).some(o=>o[0]===sq[0] && relRank(o, c) > rr);
-  const v = 17*support + ((SF_CONNECTED_SEED[r] + (phalanx ? Math.trunc((SF_CONNECTED_SEED[r+1] - SF_CONNECTED_SEED[r]) / 2) : 0)) >> (opposed ? 1 : 0));
-  return sfPawns(m, v, Math.trunc(v * (r - 2) / 4));
-}
 // The squares a piece of side c counts for Activity: those it attacks or defends, except its own
 // pawns and king, and squares an enemy pawn controls.
 function mobilityArea(m, A, c){
@@ -2101,11 +2082,12 @@ function aspectMarks(fen, key){
         const doubled = mine.some(o=>o[0]===sq[0] && relRank(o, c) < relRank(sq, c));
         const stop = sqAt(f, r+up);
         const backward = !isolated && !adj.some(o=>relRank(o, c) <= relRank(sq, c)) && stop && (A[other(c)][stop] || []).some(a=>m[a].t==='p');
+        const connected = adj.some(o=>Math.abs(relRank(o, c) - relRank(sq, c))<=1);   // side by side, or protecting each other
         // a pawn of its own side protecting it (diagonally behind)
         const protector = mine.find(o=>Math.abs(FILES.indexOf(o[0]) - f)===1 && relRank(o, c)===relRank(sq, c) - 1);
         const mark = (fav, text)=>{ out.circles.push({ sq, c: fav }); out.labels.push({ sq, c: fav, text }); };
         if(passedPawn(m, sq, c)) mark(c, 'Passed');                                   // good for its side
-        else if(connectedBonus(m, sq, c) >= LINKED_MIN) mark(c, 'Linked');   // when Stockfish's bonus for it is 0.1 pawn or more
+        else if(connected && relRank(sq, c)>=5) mark(c, 'Linked');   // from its 5th rank: below, Stockfish's bonus barely moves the score
         else if(doubled && protector) out.arrows.push({ from: protector, to: sq, c });   // doubled but protected: Stockfish doesn't count it as weak
         else if(doubled) mark(other(c), 'Doubled');                                   // weak: good for the other side (a doubled isolated pair: Doubled in front, Isolated behind)
         else if(isolated) mark(other(c), 'Isolated');
@@ -2149,17 +2131,10 @@ function aspectMarks(fen, key){
            && !pawnsOf(m, other(c)).some(e=>Math.abs(FILES.indexOf(e[0]) - f)===1 && relRank(e, c) > relRank(sq, c));   // no enemy pawn can ever attack it
         if(outpost) mark(sq, c, 'Outpost');
         if(t==='r' && !own.some(o=>o[0]===sq[0])) mark(sq, c, pawnsOf(m, other(c)).some(o=>o[0]===sq[0]) ? 'Half-open' : 'Open');
-        // a bishop hemmed in by its own pawns on its colour (more so with blocked centre pawns), when
-        // Stockfish's penalty is 0.15 pawn or more: good for the other side
-        if(t==='b'){
-          const dk = x=>(FILES.indexOf(x[0]) + +x[1]) % 2, up = c==='w' ? 1 : -1;
-          const same = own.filter(o=>dk(o)===dk(sq)).length, blocked = own.filter(o=>'cdef'.includes(o[0]) && m[sqAt(FILES.indexOf(o[0]), +o[1] + up)]).length;
-          if(sfPawns(m, 3*same*(1 + blocked), 8*same*(1 + blocked)) >= 0.15) mark(sq, other(c), 'Bad');
-        }
       }
-      // the side's total, on its king
+      // the side's total, on its king (in the corner, like the pieces' numbers)
       const k0 = pieces(c).find(x=>m[x].t==='k');
-      if(k0) out.labels.push({ sq: k0, c, text: 'Total ' + pieces(c).filter(x=>'nbrq'.includes(m[x].t)).reduce((n, x)=>n + attacksFrom(m, x).filter(area).length, 0) });
+      if(k0) out.nums.push({ sq: k0, c, n: 'Total ' + pieces(c).filter(x=>'nbrq'.includes(m[x].t)).reduce((n, x)=>n + attacksFrom(m, x).filter(area).length, 0) });
       // A king in the centre (c to f files, 3rd to 6th ranks) that Stockfish's square table, at this
       // game phase, scores at least 0.2 pawn better than a castled king (g1 / g8).
       const k = pieces(c).find(x=>m[x].t==='k');
@@ -2314,7 +2289,7 @@ function drawMarks(svg, marks){
   const circles = marks.circles.map(t=>{ const r = R(t.sq); return `<circle cx="${r.cx}" cy="${r.cy}" r="26" fill="none" stroke="${MARK[t.c].ink}" stroke-width="4" filter="url(#mkShadow)"/>`; }).join('');
   // A number in the top corner of the square, on a small badge like the labels'.
   const nums = marks.nums.map(t=>{ const r = R(t.sq), w = String(t.n).length*7 + 8, h = 16, x = r.x + 59 - w, y = r.y + 1;
-    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.n}</text>`; }).join('');
+    return `<rect class="mk-num" data-right="${x + w}" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.n}</text>`; }).join('');
   const defs = ['r','y'].map(k=>`<marker id="mk_${k}" markerWidth="2.1" markerHeight="2.1" refX="1.2" refY="1.05" orient="auto"><path d="M0,0 L2.1,1.05 L0,2.1 Z" fill="${OUTLINE[k]}"/></marker>`).join('') + ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="3" markerHeight="3" refX="1.8" refY="1.5" orient="auto"><path d="M0,0 L3,1.5 L0,3 Z" fill="${MARK[c].ink}"/></marker>`).join('');
   // longer arrows first, so shorter ones are drawn on top and never hidden under them
   const arrowLen = t=>{ const a = squareCenter(t.from), b = squareCenter(t.to); return Math.hypot(b.x-a.x, b.y-a.y); };
@@ -2344,6 +2319,14 @@ function drawMarks(svg, marks){
   // a red outline on a square (a safe check for the other side)
   const boxes = (marks.boxes||[]).map(t=>{ const r = R(t.sq); return `<rect x="${r.x+3}" y="${r.y+3}" width="54" height="54" rx="4" fill="none" stroke="#D9473F" stroke-width="4" filter="url(#mkShadow)"/>`; }).join('');
   svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}<g opacity=".8">${zones}</g>${boxes}<g opacity=".8">${circles}</g>${nums}${labels}${arrows}`;   // areas, rings, badges, then arrows on top
+  // Corner numbers fit their text too, kept to the square's right edge.
+  svg.querySelectorAll('rect.mk-num').forEach(rc=>{
+    const tx = rc.nextElementSibling; let tw = 0;
+    try{ tw = tx.getComputedTextLength(); }catch(e){}
+    if(!tw) return;
+    const w = Math.max(16, tw + 8), x = +rc.dataset.right - w;
+    rc.setAttribute('x', x); rc.setAttribute('width', w); tx.setAttribute('x', x + w/2);
+  });
   // Badges fit their text (4 units each side). Two badges side by side would overlap: the later
   // one moves to the bottom of its square, or else the top.
   const placed = [];
