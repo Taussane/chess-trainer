@@ -987,7 +987,7 @@ function drawArrows(svg, list, keyPrefix){
     a.x += nx + dx/len*22; a.y += ny + dy/len*22;
     // like the board marks' arrows (a little thicker), with the same soft shadow
     const ex = b.x + nx - dx/len*12, ey = b.y + ny - dy/len*12;
-    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="8" stroke-linecap="round" marker-end="url(#${keyPrefix}${i})" filter="url(#${keyPrefix}sh)" opacity=".8"/>`;
+    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="8" stroke-linecap="butt" marker-end="url(#${keyPrefix}${i})" filter="url(#${keyPrefix}sh)" opacity=".8"/>`;
   }).join('');
   svg.innerHTML = `<defs>${defs}</defs>${lines}`;
 }
@@ -2215,8 +2215,8 @@ function drawMarks(svg, marks){
     const ex = b.x - dx/len*14, ey = b.y - dy/len*14;
     const dash = t.dash ? ' stroke-dasharray="9 7"' : '';   // dashed: a threat for the next move
     // a check: the move, outlined in red (a wider red line underneath, its head scaling with it)
-    const red = t.check ? `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="#D9473F" stroke-width="11" stroke-linecap="round" marker-end="url(#mk_r)" filter="url(#mkShadow)"/>` : '';
-    return `<g opacity=".8">` + red + `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="6" stroke-linecap="round"${dash} marker-end="url(#mk_${t.c})"${t.check ? '' : ' filter="url(#mkShadow)"'}/></g>`;
+    const red = t.check ? `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="#D9473F" stroke-width="11" stroke-linecap="butt" marker-end="url(#mk_r)" filter="url(#mkShadow)"/>` : '';
+    return `<g opacity=".8">` + red + `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="6" stroke-linecap="butt"${dash} marker-end="url(#mk_${t.c})"${t.check ? '' : ' filter="url(#mkShadow)"'}/></g>`;
   }).join('');
   // A small badge across the middle of the square (kept inside the board).
   const labels = (marks.labels||[]).map(t=>{ const r = R(t.sq), w = t.text.length*7 + 8, h = 16;
