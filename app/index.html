@@ -481,7 +481,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the central pawns (d and e files) that gain safe squares behind them, and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's zone (dashed), arrows from the enemy pieces attacking it, arrows outlined in red for safe checks (an enemy piece moving to a square no defender covers), its pawn shelter (Shelter), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), and castling possible right now (an arrow from the king); <strong>Threats</strong> attacks that would win material (on an unguarded piece, or by a lesser piece): the hanging targets ringed and labelled Hanging, the others labelled Attacked; and moves that would win material next: a pawn push forking two pieces or hitting a pinned one, or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the central pawns (d and e files) that gain safe squares behind them, and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (not counting its own pawns and king, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's zone (dashed), the enemy pieces attacking it (Attacker), arrows outlined in red for safe checks (an enemy piece moving to a square no defender covers), its pawn shelter (Shelter), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), and castling possible right now (an arrow from the king); <strong>Threats</strong> attacks that would win material (on an unguarded piece, or by a lesser piece): the hanging targets ringed and labelled Hanging, the others labelled Attacked; and threats for the next move: a pawn push to a safe square that would attack a piece, or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow. A mate the engine finds counts as ++ for the side that mates: in King safety for a mate in one, in Threats for a longer one, the mating move outlined in red.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -1699,9 +1699,32 @@ function aspectsEntry(fen){
   let entry = aspectsStore[fen];
   if(!entry){
     entry = aspectsStore[fen] = { status:'pending', data:null };
-    engineAspects(fen).then(lines=>{ entry.status = 'done'; entry.data = parseAspects(lines, fen); render(); });
+    engineAspects(fen).then(async lines=>{
+      const data = parseAspects(lines, fen);
+      entry.data = data ? applyMate(data, await mateSearch(fen), fen) : data;
+      entry.status = 'done'; render();
+    });
   }
   return entry;
+}
+// A short search alongside the table, for mates (Stockfish's evaluation can't see them): a mate in
+// one counts as ++ in King safety, a longer mate as ++ in Threats, for the side that mates.
+function mateSearch(fen){
+  return new Promise(resolve=>{
+    if(sfState==='error' || !sfWorker){ resolve(null); return; }
+    sfQueue.push({ fen, multipv: 1, movetime: 400, resolve });
+    pumpEngineQueue();
+  });
+}
+function applyMate(data, res, fen){
+  const l = res && !res.failed && res.lines && res.lines[0];
+  if(!l || !l.mate) return data;
+  const stm = fen.split(' ')[1], side = l.mate > 0 ? stm : other(stm), key = l.mate===1 ? 'king' : 'threats';
+  data[key] = (side==='w' ? 1 : -1) * 9;
+  const i = data.off.indexOf(key); if(i >= 0) data.off.splice(i, 1);
+  // the mating move (when it's the mating side's turn), drawn outlined in red under that criterion
+  Object.defineProperty(data, 'mate', { value: { side, key, n: Math.abs(l.mate), uci: l.mate > 0 ? l.uci : null } });
+  return data;
 }
 // In the review panel, under the score: static aspects on the left, dynamic on the right, each as
 // signs on a badge (white for White, black for Black, grey "=" when balanced). `vals` null: placeholders (the panel's ghost, or while waiting).
@@ -2138,14 +2161,11 @@ function aspectMarks(fen, key){
         const pen = blocked ? SF_BLOCKED_STORM[tr - 1] : SF_UNBLOCKED_STORM[d][tr - 1];
         if(pen >= 62){ storm.add(theirs); out.circles.push({ sq: theirs, c: them }); out.labels.push({ sq: theirs, c: them, text:'Storm' }); }
       }
-      // each enemy piece attacking the zone (storm pawns aside): one arrow, ending where its attack
-      // enters the zone (Stockfish counts the attacking piece, and how many squares next to the king it hits)
-      const dist = t=>Math.max(Math.abs(FILES.indexOf(t[0]) - f), Math.abs(+t[1] - r));
-      const reach = (a, t)=>Math.max(Math.abs(FILES.indexOf(t[0]) - FILES.indexOf(a[0])), Math.abs(+t[1] - +a[1]));
-      const best = {};
-      for(const t of zone) for(const a of (A[them][t] || [])){ if(m[a].t==='k' || storm.has(a)) continue;
-        if(!best[a] || reach(a, t) < reach(a, best[a]) || (reach(a, t)===reach(a, best[a]) && dist(t) < dist(best[a]))) best[a] = t; }
-      Object.entries(best).forEach(([a, t])=>out.arrows.push({ from: a, to: t, c: them }));
+      // each enemy piece attacking the zone (storm pawns aside), ringed and labelled Attacker
+      // (Stockfish counts the attacking pieces, by kind, and how many squares next to the king they hit)
+      const attackers = new Set();
+      for(const t of zone) for(const a of (A[them][t] || [])) if(m[a].t!=='k' && !storm.has(a)) attackers.add(a);
+      attackers.forEach(a=>{ out.circles.push({ sq: a, c: them }); out.labels.push({ sq: a, c: them, text:'Attacker' }); });
       // squares from which an enemy piece could check the king safely (no defender covers them): red boxes
       const lines = (dirs, slide)=>{ const res = []; for(const [df, dr] of dirs){ for(let i=1; i<8; i++){ const t = sqAt(f+df*i, r+dr*i); if(!t) break; res.push(t); if(m[t] || !slide) break; } } return res; };
       const KN = [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]], DI = [[1,1],[1,-1],[-1,1],[-1,-1]], OR = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -2167,6 +2187,13 @@ function aspectMarks(fen, key){
         mv.filter(x=>x.flags.includes('k') || x.flags.includes('q')).forEach(x=>out.arrows.push({ from: x.from, to: x.to, c }));
       }
     }
+  }
+  // a mate found by the search: the mating move, outlined in red (King safety: mate in one; Threats: longer)
+  const mt = aspectsStore[fen] && aspectsStore[fen].data && aspectsStore[fen].data.mate;
+  if(mt && mt.key===key && mt.uci){
+    const from = mt.uci.slice(0, 2), to = mt.uci.slice(2, 4);
+    out.arrows = out.arrows.filter(a=>!(a.from===from && a.to===to));
+    out.arrows.push({ from, to, c: mt.side, check: true });
   }
   if(key==='threats'){
     const ring = (sq, c)=>{ if(!out.circles.some(x=>x.sq===sq && x.c===c)) out.circles.push({ sq, c }); };
@@ -2201,17 +2228,20 @@ function aspectMarks(fen, key){
       // it, we guard it too (besides the piece moving there)
       const safeFor = (v, to, from)=>!def(to).some(d=>SEE_VAL[m[d].t] <= v) && (!def(to).length || att(to).some(x=>x!==from));
       const after = mv=>{ const g = new Chess(game.fen()); g.move({ from: mv.from, to: mv.to, promotion: 'q' }); return g; };
+      // - a pawn push to a safe square that would attack a piece (as Stockfish counts them, whoever's
+      //   turn it is, so also while in check);
+      for(const sq of pawnsOf(m, c)){
+        const f = FILES.indexOf(sq[0]), up = c==='w' ? 1 : -1, one = sqAt(f, +sq[1] + up);
+        const two = one && !m[one] && relRank(sq, c)===2 ? sqAt(f, +sq[1] + 2*up) : null;
+        for(const to of [one, two]){
+          if(!to || m[to] || relRank(to, c)===8 || !safeFor(1, to, sq)) continue;
+          const m2 = { ...m, [to]: m[sq] }; delete m2[sq];
+          const pieceHits = attacksFrom(m2, to).filter(t=>m2[t] && m2[t].c===them && m2[t].t!=='p' && m2[t].t!=='k');
+          if(pieceHits.length) out.arrows.push({ from: sq, to, c, queen: pieceHits.some(t=>m2[t].t==='q') });
+        }
+      }
       for(const mv of game.moves({ verbose: true })){
         const pc = m[mv.from];
-        // - a pawn push that forks two pieces (or a piece and the king), or hits a piece pinned to its king;
-        if(pc.t==='p' && !mv.captured && !mv.promotion){
-          if(!safeFor(1, mv.to, mv.from)) continue;
-          const m2 = { ...m, [mv.to]: pc }; delete m2[mv.from];
-          const hits = attacksFrom(m2, mv.to).filter(t=>m2[t] && m2[t].c===them && m2[t].t!=='p');
-          const pieceHits = hits.filter(t=>m2[t].t!=='k');
-          const pinned = pieceHits.length===1 && hits.length===1 && after(mv).moves({ square: pieceHits[0] }).length===0;
-          if(hits.length >= 2 || pinned) out.arrows.push({ from: mv.from, to: mv.to, c, queen: pieceHits.some(t=>m2[t].t==='q') });
-        }
         // - a knight, bishop or rook coming to attack the queen, with a fork or no safe square left for it.
         if('nbr'.includes(pc.t)){
           const qs = pieces(them).filter(sq=>m[sq].t==='q');
