@@ -263,8 +263,8 @@
   .sq.last::before{content:""; position:absolute; inset:0; background:var(--cyan);}
   .sq.selected::before{content:""; position:absolute; inset:0; background:var(--cyan);}
   .sq.check{background-image:radial-gradient(circle at center, rgba(255,40,40,1) 0%, rgba(230,0,0,.85) 28%, rgba(200,0,0,.35) 58%, rgba(170,0,0,0) 80%);}
-  .sq.dest::after{content:""; position:absolute; width:52%; height:52%; border-radius:50%; background:var(--dest-dot); top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; pointer-events:none;}
-  .sq.dest-capture::after{content:""; position:absolute; inset:3%; border:max(3px, 0.9cqw) solid var(--dest-dot); border-radius:50%; z-index:1; pointer-events:none;}
+  .sq.dest::after{content:""; position:absolute; width:38%; height:38%; border-radius:50%; background:var(--dest-dot); top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; pointer-events:none;}
+  .sq.dest-capture::after{content:""; position:absolute; inset:3%; border:max(3px, 0.9cqw) solid var(--dest-dot); border-radius:50%; filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.6)); z-index:1; pointer-events:none;}
   /* Pieces: the Cburnett set (Wikimedia Commons; see THIRD_PARTY.md), as images; the glyph stays in the text, hidden. */
   .pc{display:block; width:100%; height:100%; font-size:0; color:transparent; background-position:center; background-size:100% 100%; background-repeat:no-repeat;}
   /*PIECE_CSS*/
@@ -304,7 +304,7 @@
   .evalbar-v.interactive{border-color:var(--accent);}
   .evalbar-wrap:has(.interactive){cursor:ns-resize; touch-action:none;}
   /* Drag handle: a gold line with small triangles above and below, inviting an up/down drag. */
-  .evalbar-cursor.handle{height:4px; left:-3px; right:-3px; border-radius:2px; box-shadow:0 0 0 1px var(--bg);}
+  /* (the same line as in the review: only the triangles are added) */
   .evalbar-cursor.handle::before,.evalbar-cursor.handle::after{
     content:""; position:absolute; left:50%; transform:translateX(-50%);
     border-left:6px solid transparent; border-right:6px solid transparent;
@@ -984,8 +984,8 @@ function sanForUci(fen, uci){
 }
 function drawArrows(svg, list, keyPrefix){
   const defs = list.map((m,i)=>
-    `<marker id="${keyPrefix}${i}" markerWidth="1.5" markerHeight="1.5" refX="0.75" refY="0.75" orient="auto"><path d="M0,0 L1.5,0.75 L0,1.5 Z" fill="${m.color}"/></marker>`
-  ).join('');
+    `<marker id="${keyPrefix}${i}" markerWidth="4" markerHeight="4" refX="2.4" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 Z" fill="${m.color}"/></marker>`
+  ).join('') + `<filter id="${keyPrefix}sh" filterUnits="userSpaceOnUse" x="-20" y="-20" width="520" height="520"><feDropShadow dx="0" dy="1.5" stdDeviation="1.8" flood-color="#000" flood-opacity=".6"/></filter>`;
   // Arrows sharing the same squares (promotions to different pieces) are spread sideways, a few
   // units apart, so a strip of each colour stays visible.
   const SPREAD = 5;
@@ -996,8 +996,9 @@ function drawArrows(svg, list, keyPrefix){
     const shift = (k - (same.length-1)/2) * SPREAD, nx = -dy/len*shift, ny = dx/len*shift;
     // starts a quarter of a square from the piece (it stays visible); the head's tip on the target's centre
     a.x += nx + dx/len*15; a.y += ny + dy/len*15;
-    const ex = b.x + nx - dx/len*10.5, ey = b.y + ny - dy/len*10.5;
-    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="14" stroke-linecap="butt" marker-end="url(#${keyPrefix}${i})" opacity="0.9"/>`;
+    // like the board marks' arrows (a little thicker), with the same soft shadow
+    const ex = b.x + nx - dx/len*20, ey = b.y + ny - dy/len*20;
+    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="8" stroke-linecap="round" marker-end="url(#${keyPrefix}${i})" filter="url(#${keyPrefix}sh)"/>`;
   }).join('');
   svg.innerHTML = `<defs>${defs}</defs>${lines}`;
 }
