@@ -206,19 +206,26 @@ async def main():
         if both: fails.append('no bishop pair label when both sides have the pair')
         # what each imbalance marks, on small positions
         marks = await pg.evaluate("""(()=>{ const M = (fen, k)=>{ const m = aspectMarks(fen, k); return {
-            c: m.circles.map(x=>x.sq+x.c).sort().join(' '), a: m.arrows.map(x=>x.from+x.to+x.c).sort().join(' '), t: m.tints.length, n: m.nums.map(x=>x.sq+x.n).sort().join(' ') }; };
+            c: m.circles.map(x=>x.sq+x.c).sort().join(' '), a: m.arrows.map(x=>x.from+x.to+x.c+(x.dash ? '-' : '')).sort().join(' '), t: m.tints.length, n: m.nums.map(x=>x.sq+x.n).sort().join(' ') }; };
           return {
             material: M('4k3/8/8/8/8/8/3PP3/1R2K3 w - - 0 1', 'material').c,
             pair: M('4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').c,
             pawns: M('4k3/8/8/3p4/8/8/P1P3PP/4K3 w - - 0 1', 'pawns').c,
             threats: M('4k3/8/2n5/3P4/8/8/8/4K3 w - - 0 1', 'threats').a,
             hanging: M('4k3/8/8/3r4/8/8/3Q4/4K3 b - - 0 1', 'threats').a,
+            fork: M('4k3/8/2n1b3/8/2PP4/8/8/4K3 w - - 0 1', 'threats'),
+            pin: M('8/4k3/5n2/6B1/4P3/8/8/4K3 w - - 0 1', 'threats'),
+            queenFork: M('8/2q1k3/8/8/8/2N5/8/4K3 w - - 0 1', 'threats'),
+            guarded: M('4k3/1p6/2n5/1B6/8/8/8/4K3 w - - 0 1', 'threats').a,
             spaceFew: M('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 'space').t,
             knight: M('4k3/8/8/8/8/8/8/1N2K3 w - - 0 1', 'activity').n,
           }; })()""")
-        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2b d5w g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'spaceFew': 0, 'knight': 'b13'}
+        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2b d5w g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b13'}
         for k, v in want.items():
             if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
+        # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (dashed, targets ringed)
+        for k, a, c in [('fork', 'c6d4b d4d5w- e6c4b', 'c4b c6w d4b e6w'), ('pin', 'e4e5w-', 'f6w'), ('queenFork', 'c3d5w- c7c3b', 'c3b c7w')]:
+            if marks[k]['a'] != a or marks[k]['c'] != c: fails.append(f'{k} threats: {marks[k]}')
         # the pool: Position evaluation's positions less the tactical ones
         n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, IMBALANCE_SKIP.length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key))]")
         print('pools:', n)
