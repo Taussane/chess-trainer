@@ -195,7 +195,7 @@ async def main():
           const v = parseAspects(z, '7k/8/5K2/8/8/8/8/6Q1 w - - 0 60'); return [Math.round(v.material), v.activity, v.off.join(' '), !!v.special]; })()""")
         print('special ending:', sp)
         if sp != [13, 0, 'pawns space activity king threats', True]: fails.append(f'special ending: {sp}')
-        km = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='King safety marks').fen, 'king'); return [m.labels.map(l=>l.sq+':'+l.text).sort().join(' '), m.arrows.filter(a=>!a.check).map(a=>a.from+a.to+a.c).sort().join(' '), m.arrows.filter(a=>a.check).map(a=>a.from+a.to).join(' '), m.zones.map(z=>z.a+z.b).join(' '), m.circles.filter(c=>c.sq==='e3').length]; })()")
+        km = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='King safety marks').fen, 'king'); return [m.labels.map(l=>l.sq+':'+l.text).sort().join(' '), m.arrows.filter(a=>!a.check).map(a=>a.from+a.to+a.c).sort().join(' '), m.arrows.filter(a=>a.check).map(a=>a.from+a.to).join(' '), m.zones.map(z=>z.a+z.b).join(' '), m.circles.filter(c=>c.sq==='e3'||c.sq==='a5').length]; })()")
         print('king marks:', km)
         # mates found by the short search: mate in one in King safety, longer ones in Threats (++)
         mt = await pg.evaluate("""(()=>{ const V = ()=>{ const v = { material:0, pawns:0, space:0, activity:0, king:0, threats:0 }; Object.defineProperty(v, 'off', { value:[] }); return v; };
@@ -204,7 +204,7 @@ async def main():
         if mt != [9, 0, 'd1d8', -9, -9, None]: fails.append(f'mates: {mt}')
         push = await pg.evaluate("aspectMarks(TEST_POSITIONS.find(p=>p.title==='White in check').fen, 'threats').arrows.map(a=>a.from+a.to+a.c).join(' ')")
         if 'a2a3w' not in push: fails.append(f'a pawn push attacking a piece: {push}')
-        if km != ['a5:Attacker b2:Shelter c2:Shelter c3:Storm c6:Attacker e4:Attacker f7:Shelter g5:Attacker g6:Storm g7:Shelter h6:Shelter', '', 'd1d8', 'b1d3 f8h6', 0]: fails.append(f'king marks: {km}')
+        if km != ['b2:Shelter c2:Shelter c3:Storm f7:Shelter g6:Storm g7:Shelter h6:Shelter', 'a5c3b c6c3b e4g6w g5f7w', 'd1d8', 'b1d3 f8h6', 0]: fails.append(f'king marks: {km}')
         cs = await pg.evaluate("aspectMarks(TEST_POSITIONS.find(p=>p.title==='Castling').fen, 'king').arrows.filter(a=>a.from==='e1'||a.from==='e8').map(a=>a.from+a.to+(a.dash?'-':'')).sort().join(' ')")
         if cs != 'e1g1': fails.append(f'castling arrows (only O-O is possible now): {cs}')
         np = await pg.evaluate("aspectMarks('4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.map(l=>l.sq+':'+l.text).sort().join(' ')")
