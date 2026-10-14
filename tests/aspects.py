@@ -197,7 +197,7 @@ async def main():
           const v = parseAspects(z, '7k/8/5K2/8/8/8/8/6Q1 w - - 0 60'); return [Math.round(v.material), v.activity, v.off.join(' '), !!v.special]; })()""")
         print('special ending:', sp)
         if sp != [13, 0, 'pawns space activity king threats', True]: fails.append(f'special ending: {sp}')
-        km = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='King safety marks').fen, 'king'); return [m.labels.map(l=>l.sq+':'+l.text).sort().join(' '), m.arrows.filter(a=>!a.check).map(a=>a.from+a.to+a.c).sort().join(' '), m.arrows.filter(a=>a.check).map(a=>a.from+a.to).join(' '), m.zones.map(z=>z.a+z.b).join(' '), m.circles.filter(c=>c.sq==='e3'||c.sq==='a5').length]; })()")
+        km = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='King safety marks').fen, 'king'); return [m.labels.map(l=>l.sq+':'+l.text).sort().join(' '), m.arrows.filter(a=>!a.outline).map(a=>a.from+a.to+a.c).sort().join(' '), m.arrows.filter(a=>a.outline).map(a=>a.from+a.to).join(' '), m.zones.map(z=>z.a+z.b).join(' '), m.circles.filter(c=>c.sq==='e3'||c.sq==='a5').length]; })()")
         print('king marks:', km)
         # mates found by the short search: mate in one in King safety, longer ones in Threats (++)
         mt = await pg.evaluate("""(()=>{ const V = ()=>{ const v = { material:0, pawns:0, space:0, activity:0, king:0, threats:0 }; Object.defineProperty(v, 'off', { value:[] }); return v; };
