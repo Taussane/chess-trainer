@@ -135,7 +135,7 @@ async def main():
             head: document.querySelector('#aspects .asp-head').textContent, lines: [...document.querySelectorAll('#aspects .plan-row:not(.plan-blank)')].map(r=>r.textContent),
             badges: document.querySelectorAll('#aspects .asp-badge').length, rec: results[results.length-1].a, who: p.side==='w' ? 'White' : 'Black' }; })()""")
         print('evaluation review:', r)
-        if r['acc'] != f"{r['want']}%" or r['head'] != 'Plan for ' + r['who'] or not 1 <= len(r['lines']) <= 3 or r['badges'] or r['rec'] != 'analysis': fails.append(f'evaluation review: {r}')
+        if r['acc'] != f"{r['want']}%" or r['head'] != 'Possible plans for ' + r['who'] or not 1 <= len(r['lines']) <= 3 or r['badges'] or r['rec'] != 'analysis': fails.append(f'evaluation review: {r}')
         row = await pg.query_selector('#aspects .plan-row.pickable')
         if row:
             k = await row.get_attribute('data-asp'); await row.click(); await pg.wait_for_timeout(100)

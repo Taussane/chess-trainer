@@ -166,6 +166,8 @@
   .btn.lichess-btn{background:#fff; color:#161512; display:flex; align-items:center; gap:8px; justify-content:center;}
   .lichess-btn .li-logo{width:20px; height:20px;}
   .ac-site .li-logo{width:15px; height:15px;}
+  .lichess-open .li-logo{width:17px; height:17px; flex:none;}
+  .lichess-open{display:inline-flex; align-items:center; gap:7px;}
   .ac-site .cc-logo{width:15px; height:17px;}
   .chart-avg{margin-left:auto; color:var(--text-mute);}
   .chart-avg{color:var(--text); font-weight:700; font-size:0.95rem; font-variant-numeric:tabular-nums; line-height:1;}
@@ -250,8 +252,8 @@
   .sq.last::before{content:""; position:absolute; inset:0; background:var(--cyan);}
   .sq.selected::before{content:""; position:absolute; inset:0; background:var(--cyan);}
   .sq.check{background-image:radial-gradient(circle at center, rgba(255,40,40,1) 0%, rgba(230,0,0,.85) 28%, rgba(200,0,0,.35) 58%, rgba(170,0,0,0) 80%);}
-  .sq.dest::after{content:""; position:absolute; width:26%; height:26%; border-radius:50%; background:var(--dest-dot); top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; pointer-events:none;}
-  .sq.dest-capture::after{content:""; position:absolute; inset:8%; border:3px solid var(--dest-dot); border-radius:50%; z-index:1; pointer-events:none;}
+  .sq.dest::after{content:""; position:absolute; width:52%; height:52%; border-radius:50%; background:var(--dest-dot); top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; pointer-events:none;}
+  .sq.dest-capture::after{content:""; position:absolute; inset:3%; border:max(3px, 0.9cqw) solid var(--dest-dot); border-radius:50%; z-index:1; pointer-events:none;}
   /* Pieces: the Cburnett set (Wikimedia Commons; see THIRD_PARTY.md), as images; the glyph stays in the text, hidden. */
   .pc{display:block; width:100%; height:100%; font-size:0; color:transparent; background-position:center; background-size:100% 100%; background-repeat:no-repeat;}
   /*PIECE_CSS*/
@@ -971,7 +973,7 @@ function sanForUci(fen, uci){
 }
 function drawArrows(svg, list, keyPrefix){
   const defs = list.map((m,i)=>
-    `<marker id="${keyPrefix}${i}" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="${m.color}"/></marker>`
+    `<marker id="${keyPrefix}${i}" markerWidth="1.5" markerHeight="1.5" refX="0.75" refY="0.75" orient="auto"><path d="M0,0 L1.5,0.75 L0,1.5 Z" fill="${m.color}"/></marker>`
   ).join('');
   // Arrows sharing the same squares (promotions to different pieces) are spread sideways, a few
   // units apart, so a strip of each colour stays visible.
@@ -981,9 +983,10 @@ function drawArrows(svg, list, keyPrefix){
     const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
     const same = list.filter(o=>o.from===m.from && o.to===m.to), k = same.indexOf(m);
     const shift = (k - (same.length-1)/2) * SPREAD, nx = -dy/len*shift, ny = dx/len*shift;
-    a.x += nx; a.y += ny;
-    const ex = b.x + nx - dx/len*14, ey = b.y + ny - dy/len*14;
-    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="7" stroke-linecap="round" marker-end="url(#${keyPrefix}${i})" opacity="0.9"/>`;
+    // starts a quarter of a square from the piece (it stays visible); the head's tip on the target's centre
+    a.x += nx + dx/len*15; a.y += ny + dy/len*15;
+    const ex = b.x + nx - dx/len*10.5, ey = b.y + ny - dy/len*10.5;
+    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="14" stroke-linecap="butt" marker-end="url(#${keyPrefix}${i})" opacity="0.9"/>`;
   }).join('');
   svg.innerHTML = `<defs>${defs}</defs>${lines}`;
 }
@@ -1576,7 +1579,7 @@ function lichessUrl(p){
 }
 function lichessLink(p){
   const url = lichessUrl(p);
-  return `<a class="btn secondary" href="${url}" target="_blank" rel="noopener">Open in Lichess ↗</a>`;
+  return `<a class="btn secondary lichess-open" href="${url}" target="_blank" rel="noopener">${LICHESS_LOGO} Open in Lichess</a>`;
 }
 // Vertical bar beside the board, full board height, oriented like the board: White's share at
 // the bottom when White is at the bottom, at the top when the board is flipped. `pct` = White's
@@ -1753,7 +1756,7 @@ function planHtml(plan, view, fadeIn, hidden, fen){
     return `<div class="plan-row${pk ? ' asp-item pickable' : ''}${pk && view===x.key ? ' sel' : ''}"${pk ? ` data-asp="${x.key}" role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}><span class="plan-sit">${x.situation}</span><span class="plan-text">${x.plan}</span></div>`;
   }).join('');
   return `<div class="aspects plan${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
-      <div class="asp-head">${plan ? 'Plan for ' + plan.who : 'Plan'}</div><div class="plan-rows">${rows}</div>
+      <div class="asp-head">${plan ? 'Possible plans for ' + plan.who : 'Possible plans'}</div><div class="plan-rows">${rows}</div>
     </div>`;
 }
 // Imbalance reading's review: your level for each aspect, then, one by one (startAspectsReveal), the
@@ -2206,7 +2209,8 @@ function drawMarks(svg, marks){
     return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.n}</text>`; }).join('');
   const defs = `<marker id="mk_r" markerWidth="2.6" markerHeight="2.6" refX="1.5" refY="1.3" orient="auto"><path d="M0,0 L2.6,1.3 L0,2.6 Z" fill="#D9473F"/></marker>` + ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="4" markerHeight="4" refX="2.4" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 Z" fill="${MARK[c].ink}"/></marker>`).join('');
   const arrows = marks.arrows.map(t=>{
-    const a = squareCenter(t.from), b = squareCenter(t.to), dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx, dy) || 1;
+    const a0 = squareCenter(t.from), b = squareCenter(t.to), dx = b.x-a0.x, dy = b.y-a0.y, len = Math.hypot(dx, dy) || 1;
+    const a = { x: a0.x + dx/len*15, y: a0.y + dy/len*15 };   // a quarter of a square from the piece
     const ex = b.x - dx/len*18, ey = b.y - dy/len*18;
     const dash = t.dash ? ' stroke-dasharray="9 7"' : '';   // dashed: a threat for the next move
     // a check: the move, outlined in red (a wider red line underneath, its head scaling with it)
@@ -2251,7 +2255,7 @@ function stackedPanel(inner, ghosts, extra){
   return `<div class="panel"><div class="panel-stack"><div class="layer">${inner}</div>${
     ghosts.map(g=>`<div class="layer ghost" aria-hidden="true" inert>${g}</div>`).join('')}</div></div>${extra||''}`;
 }
-const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary">Open in Lichess ↗</span><span class="btn">Next position</span></div>`;
+const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary lichess-open"><svg class="li-logo" viewBox="0 0 50 50"></svg> Open in Lichess</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
   `<p class="prompt">Drag the evaluation bar to where you think it sits.</p><div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planHtml(null, null, false, true)}${GHOST_ACTIONS}`,
