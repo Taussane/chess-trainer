@@ -989,7 +989,10 @@ function drawArrows(svg, list, keyPrefix){
   // Arrows sharing the same squares (promotions to different pieces) are spread sideways, a few
   // units apart, so a strip of each colour stays visible.
   const SPREAD = 5;
-  const lines = list.map((m,i)=>{
+  // longer arrows first, so shorter ones are drawn on top and never hidden under them
+  const arrowLen = m=>{ const a = squareCenter(m.from), b = squareCenter(m.to); return Math.hypot(b.x-a.x, b.y-a.y); };
+  const order = list.map((m,i)=>i).sort((i,j)=>arrowLen(list[j]) - arrowLen(list[i]));
+  const lines = order.map(i=>{ const m = list[i];
     const a = squareCenter(m.from), b = squareCenter(m.to);
     const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
     const same = list.filter(o=>o.from===m.from && o.to===m.to), k = same.indexOf(m);
@@ -2220,7 +2223,9 @@ function drawMarks(svg, marks){
   const nums = marks.nums.map(t=>{ const r = R(t.sq), w = String(t.n).length*7 + 8, h = 16, x = r.x + 59 - w, y = r.y + 1;
     return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.n}</text>`; }).join('');
   const defs = `<marker id="mk_r" markerWidth="2.1" markerHeight="2.1" refX="1.2" refY="1.05" orient="auto"><path d="M0,0 L2.1,1.05 L0,2.1 Z" fill="#D9473F"/></marker>` + ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="3" markerHeight="3" refX="1.8" refY="1.5" orient="auto"><path d="M0,0 L3,1.5 L0,3 Z" fill="${MARK[c].ink}"/></marker>`).join('');
-  const arrows = marks.arrows.map(t=>{
+  // longer arrows first, so shorter ones are drawn on top and never hidden under them
+  const arrowLen = t=>{ const a = squareCenter(t.from), b = squareCenter(t.to); return Math.hypot(b.x-a.x, b.y-a.y); };
+  const arrows = marks.arrows.slice().sort((p, q)=>arrowLen(q) - arrowLen(p)).map(t=>{
     const a0 = squareCenter(t.from), b = squareCenter(t.to), dx = b.x-a0.x, dy = b.y-a0.y, len = Math.hypot(dx, dy) || 1;
     const a = { x: a0.x + dx/len*22, y: a0.y + dy/len*22 };   // about a third of a square from the piece
     const ex = b.x - dx/len*14, ey = b.y - dy/len*14;
