@@ -223,10 +223,10 @@ async def main():
           return [Math.round(imbalanceScore(v, { space:2 }, 6)), Math.round(imbalanceScore(v, { material:2 }, 6)), spaceCounts('r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'), spaceCounts(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen)]; })()""")
         print('space left out:', so)
         if so != [100, 80, True, False]: fails.append(f'space left out: {so}')
-        # a level off near a threshold: King safety, + from 0.47: all of it at the line, fading to a third
-        # at half the threshold away; two levels off: nothing
-        ac = await pg.evaluate("[[0.47,1],[0.40,1],[0.30,1],[0.10,1],[0.50,0],[0.60,0],[0.80,0],[0.46,2],[0.47,0]].map(([v,g])=>+aspectCredit(v, g, 'king').toFixed(2))")
-        if ac != [1, 0.8, 0.52, 0.33, 0.91, 0.63, 0.33, 0, 1]: fails.append(f'credit near a threshold: {ac}')
+        # a level off near a threshold (King safety, t where + starts): all of it at the line, fading to a third
+        # at half t away; two levels off: nothing
+        ac = await pg.evaluate("(()=>{ const t = ASPECTS.find(x=>x.key==='king').levels[0]; return [[1,1],[0.85,1],[0.6,1],[0.2,1],[1.1,0],[1.3,0],[1.8,0],[0.98,2],[1,0]].map(([v,g])=>+aspectCredit(v*t, g, 'king').toFixed(2)); })()")
+        if ac != [1, 0.8, 0.47, 0.33, 0.87, 0.6, 0.33, 0, 1]: fails.append(f'credit near a threshold: {ac}')
         # an ending Stockfish rates on its own (all-zero table): only Material, the rest left out
         sp = await pg.evaluate("""(()=>{ const z = ['Material','Imbalance','Initiative','Pawns','Knights','Bishops','Rooks','Queens','Mobility','King safety','Threats','Passed','Space'].map(k=>`  ${k} |  0.00  0.00 |  0.00  0.00 |  0.00  0.00`).concat(['Total evaluation: 61.20 (white side)']);
           const v = parseAspects(z, '7k/8/5K2/8/8/8/8/6Q1 w - - 0 60'); return [Math.round(v.material), v.activity, v.off.join(' '), !!v.special]; })()""")
