@@ -182,7 +182,8 @@ async def main():
           const sh = c=>{ const x = ev.features.find(x=>x.term==='king' && x.kind==='shelter' && x.c===c);
             return x.own.safety - x.v[0] + x.own.files.filter(fl=>fl.ourRank >= 3).reduce((t, fl)=>t + fl.empty - fl.shelter, 0); };
           const ks = pw([ev.trace.kingSquares[0], 0]), far = sum(x=>x.kind==='kingProtector'), trop = sum(x=>x.kind==='tropism'), trapped = sum(x=>['trappedRook','bishopPawns','minorBehindPawn','longDiagonal'].includes(x.kind)) + sum(x=>x.kind==='weakQueen' && queenExposedBy(f, sqName(x.sq)));
-          const T = ev.trace.threats.map(x=>x.slice()); ev.features.filter(x=>x.kind==='weakUnopposed' || x.kind==='byRank').forEach(x=>{ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; });
+          const T = ev.trace.threats.map(x=>x.slice()); const bm = boardMap(f), am = attackMaps(bm), trades = x=>(x.kind==='byMinor' || x.kind==='byRook') && !(am[x.c ? 'b' : 'w'][sqName(x.sq)] || []).some(a=>(x.kind==='byRook' ? 'r' : 'nb').includes(bm[a].t) && see(bm, am, a, sqName(x.sq)) > 0);
+          ev.features.filter(x=>['weakUnopposed', 'byRank', 'restricted'].includes(x.kind) || trades(x)).forEach(x=>{ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; });
           return [+(a.activity - (raw.activity - ks - far - trapped)).toFixed(4), +(a.king - (raw.king + ks + pw([sh(0) - sh(1), 0]) + far - trop - sum(x=>x.kind==='pawnDistance'))).toFixed(4),
                   +(a.threats - (pw(T[0]) - 0.5*pw(T[1]))).toFixed(4), +ks.toFixed(2), +far.toFixed(3), +trop.toFixed(3)]; })()""")
         print('adaptations:', ad)
