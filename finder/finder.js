@@ -15,7 +15,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
 
 (async()=>{
   const [pgnFile, outDir, filter] = process.argv.slice(2);
-  await L.start();
+  const engineName = await L.start();
 
   let games = L.splitGames(fs.readFileSync(pgnFile,'utf8'));
   if(filter) games = games.filter(g=>new RegExp(filter).test(header(g,'White')+' - '+header(g,'Black')));
@@ -145,7 +145,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
   }
   Object.values(pools).forEach(list=>list.sort((a,b)=>a.game.localeCompare(b.game, undefined, {numeric:true}) || a.ply-b.ply));
   stats.multi = items.filter(it=>it.options.size>1).length;
-  const out = { version:R.VERSION, engine:'Stockfish 16.1, depth '+R.ENGINE.depth, generated:new Date().toISOString(), pools };
+  const out = { version:R.VERSION, engine:engineName+', depth '+R.ENGINE.depth, generated:new Date().toISOString(), pools };
   fs.mkdirSync(outDir, {recursive:true});
   fs.writeFileSync(path.join(outDir,'pools.json'), JSON.stringify(out, null, 1));
   fs.writeFileSync(path.join(outDir,'stats.json'), JSON.stringify(stats, null, 1));
