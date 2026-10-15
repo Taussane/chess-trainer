@@ -18,6 +18,10 @@ for(const { fen, rows } of lines){
     if(i >= 0){ fails.push(`${fen}: ${k} ${want.join(' ')} vs ${got.join(' ')}`); break; }
   }
 }
+// the app carries the same code (scripts/inline-sf-eval.py)
+const fsm = require('fs'), pth = require('path');
+const app = fsm.readFileSync(pth.join(__dirname, '../app/index.html'), 'utf8');
+if(!app.includes('/*SF_EVAL*/\n' + fsm.readFileSync(pth.join(__dirname, '../app/sf-eval.js'), 'utf8') + '/*END SF_EVAL*/')) fails.push('app/index.html is out of date: run python3 scripts/inline-sf-eval.py');
 console.log(`${lines.length - fails.length}/${lines.length} positions match`);
 if(fails.length){ console.log(fails.slice(0, 10).join('\n')); console.log('FAIL'); process.exit(1); }
 console.log('ok');

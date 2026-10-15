@@ -17,17 +17,10 @@ async def main():
         if r and not 0.6 < r['a']['material'] < 1.2: fails.append('White is a pawn up: material should be about +0.9')
         n = await pg.evaluate("parseAspects(['Total evaluation: none (in check)'], 'k7/8/8/8/8/8/8/K7 w - - 0 1')")
         if n is not None: fails.append('in check should give no aspects')
-        # 2. The engine path: an `eval` request answered in one message, and one never answered.
-        r = await pg.evaluate("""async ([t, fen])=>{
-          const sent = []; sfWorker = { postMessage: m=>sent.push(m) }; sfBusy = false; sfState = 'ready';
-          const pr = engineAspects(fen);
-          onEngineMessage({ data: t + '\\n\\nTotal evaluation: 0.88 (white side)' });
-          const lines = await pr;
-          const pr2 = engineAspects(fen); const t0 = Date.now(); const none = await pr2;
-          return { sent, n: lines && lines.length, none, waited: Date.now()-t0, state: sfState, busy: sfBusy }; }""", [TABLE, FEN])
-        print('engine path:', {k: v for k, v in r.items() if k != 'sent'}, r['sent'][:2])
-        if 'eval' not in r['sent'] or 'position fen '+FEN not in r['sent'] or not r['n'] or r['n'] < 15: fails.append(f'eval request: {r}')
-        if r['none'] is not None or r['state'] != 'ready' or r['busy']: fails.append(f'an unanswered eval should give nothing and leave the engine working: {r}')
+        # 2. The table now comes from the JavaScript port of Stockfish's evaluation: the same as the engine's.
+        r = await pg.evaluate("""([t, fen])=>{ const a = parseAspects(t.split('\\n'), fen), b = parseAspects(sfTableLines(fen), fen);
+          return ASPECTS.map(x=>[x.key, +a[x.key].toFixed(3), +b[x.key].toFixed(3)]); }""", [TABLE, FEN])
+        if any(abs(x[1] - x[2]) > 0.006 for x in r): fails.append(f'port table differs from the engine: {r}')
         await pg.evaluate("sfWorker = null")
         # 3. Imbalance reading: no bar; the prompt; every imbalance "=" at first.
         await pg.click('.card[data-go="imbalances"]'); await pg.wait_for_timeout(300)
