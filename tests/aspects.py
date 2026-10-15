@@ -169,8 +169,8 @@ async def main():
         if sm != ['d5w d6b e4w e5b', 0, 'd5:Central d6:Central e4:Central e5:Central', 'c5d4b d5c6w d5e6w e4f5w e5d4b e5f4b']: fails.append(f'space marks: {sm}')
         am = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'activity'); return m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '); })()")
         print('activity marks:', am)
-        un = await pg.evaluate("['r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w - - 1 14'].map(f=>aspectMarks(f, 'king').labels.filter(l=>l.text==='Uncastled').map(l=>l.sq+l.c).join(' '))")
-        if un != ['', 'e8w']: fails.append(f'uncastled king (King safety; not while it can castle): {un}')
+        un = await pg.evaluate("['r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w - - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2QK2R w - - 1 14'].map(f=>aspectMarks(f, 'king').labels.filter(l=>l.text==='Uncastled').map(l=>l.sq+l.c).join(' '))")
+        if un != ['', 'e8w', '']: fails.append(f'uncastled king (King safety; not while it can castle, nor when both kings are): {un}')
         # our adaptations: the middlegame part of the kings' squares moves from Activity to King safety; the
         # side to move's threats count in full, the other side's at half
         ad = await pg.evaluate("""(()=>{ const f = 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14';
