@@ -2997,7 +2997,7 @@ function drawMarks(svg, marks){
   // A small badge across the middle of the square (kept inside the board).
   const labels = (marks.labels||[]).map(t=>{ const r = R(t.sq), w = t.text.length*7 + 8, h = 16;
     const x = Math.max(1, Math.min(480 - w - 1, r.cx - w/2)), y = r.cy - h/2;
-    return `<rect class="mk-label" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.text}</text>`; }).join('');
+    return `<rect class="mk-label" data-cx="${r.cx}" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.text}</text>`; }).join('');
   const shadow = `<filter id="mkShadow" filterUnits="userSpaceOnUse" x="-20" y="-20" width="520" height="520"><feDropShadow dx="0" dy="1.5" stdDeviation="1.8" flood-color="#000" flood-opacity=".6"/></filter>`;
   // A dashed outline around a block of squares (a: a back corner, b: the opposite front corner):
   // the back and the two sides only, running up to the front edge, so two areas facing each other
@@ -3018,19 +3018,13 @@ function drawMarks(svg, marks){
     const w = Math.max(16, tw + 8), x = +rc.dataset.right - w;
     rc.setAttribute('x', x); rc.setAttribute('width', w); tx.setAttribute('x', x + w/2);
   });
-  // Badges fit their text (4 units each side). Two badges side by side would overlap: the later
-  // one moves to the bottom of its square, or else the top.
-  const placed = [];
+  // Badges fit their text (4 units each side) and stay centred on their square (only kept inside the board).
   svg.querySelectorAll('rect.mk-label').forEach(rc=>{
     const tx = rc.nextElementSibling; let tw = 0;
     try{ tw = tx.getComputedTextLength(); }catch(e){}
     if(!tw) return;
-    const cx = +tx.getAttribute('x'), w = tw + 8, x = Math.max(1, Math.min(480 - w - 1, cx - w/2)), h = +rc.getAttribute('height'), y0 = +rc.getAttribute('y');
-    const hits = y=>placed.some(p=>x < p.x + p.w + 2 && p.x < x + w + 2 && y < p.y + h + 1 && p.y < y + h + 1);
-    const y = [y0, y0 + 20, y0 - 20].find(v=>v >= 1 && v + h <= 479 && !hits(v)) ?? y0;
-    placed.push({ x, y, w });
-    rc.setAttribute('x', x); rc.setAttribute('width', w); rc.setAttribute('y', y);
-    tx.setAttribute('x', x + w/2); tx.setAttribute('y', y + 12);
+    const cx = +rc.dataset.cx, w = tw + 8, x = Math.max(1, Math.min(480 - w - 1, cx - w/2));
+    rc.setAttribute('x', x); rc.setAttribute('width', w); tx.setAttribute('x', x + w/2);
   });
 }
 // A panel whose height never changes within an exercise: `inner` is what's shown, `ghosts` are
