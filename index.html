@@ -730,7 +730,7 @@ function evaluateShelter(P, Us, ksq){
     const shelter = ShelterStrength[d][ourRank];
     const storm = (ourRank && ourRank===theirRank - 1) ? 66 * (theirRank===2 ? 1 : 0) : UnblockedStorm[d][theirRank];
     safety += shelter - storm;
-    files.push({ f, ourRank, theirRank, shelter, storm, blocked: !!(ourRank && ourRank===theirRank - 1) });
+    files.push({ f, ourRank, theirRank, shelter, empty: ShelterStrength[d][0], storm, blocked: !!(ourRank && ourRank===theirRank - 1) });
   }
   return { safety, files };
 }
@@ -742,7 +742,8 @@ function kingSafetyPawns(P, Us, F){
   let best = evaluateShelter(P, Us, ksq), from = ksq;
   if(P.canCastleSide(Us, true)){ const o = evaluateShelter(P, Us, Us===WHITE ? 6 : 62); if(o.safety > best.safety){ best = o; from = Us===WHITE ? 6 : 62; } }
   if(P.canCastleSide(Us, false)){ const o = evaluateShelter(P, Us, Us===WHITE ? 2 : 58); if(o.safety > best.safety){ best = o; from = Us===WHITE ? 2 : 58; } }
-  F.push({ term:'king', c:Us, kind:'shelter', sq:from, v:[best.safety, 0], files: best.files });
+  const own = from===ksq ? best : evaluateShelter(P, Us, ksq);   // (not in Stockfish) the shelter at the king's own square
+  F.push({ term:'king', c:Us, kind:'shelter', sq:from, v:[best.safety, 0], files: best.files, own: { sq: ksq, safety: own.safety, files: own.files } });
   F.push({ term:'king', c:Us, kind:'pawnDistance', sq:ksq, v:[0, -16 * minKingPawnDistance], n: minKingPawnDistance });
   return [best.safety, -16 * minKingPawnDistance];
 }
@@ -1083,7 +1084,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the central pawns (d and e files) that gain safe squares behind them, and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); each side's total on its king; labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's zone (dashed), arrows from the enemy pieces attacking it, arrows outlined in yellow for safe checks (an enemy piece moving to a square no defender covers; counted once at least two pieces attack the zone, or one with its queen), its pawn shelter (Shelter), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), castling possible right now (an arrow from the king), and a king left in the centre, unable to castle right now, when Stockfish's square table rates it 0.3 pawn or more worse than a castled one (Uncastled, in the other side's colour: in the middlegame, the king's square counts for King safety here, not Activity); <strong>Threats</strong> attacks that would win material (on an unguarded piece, or by a lesser piece): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece, or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ for the side that mates: in King safety for a mate in one, in Threats for a longer one, the mating move outlined in red.";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the central pawns (d and e files) that gain safe squares behind them, and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); each side's total on its king; labelled: outposts, rooks on open and half-open files, and a central king when Stockfish rates it (endgames); <strong>King safety</strong> each king's zone (dashed), arrows from the enemy pieces attacking it, arrows outlined in yellow for safe checks (an enemy piece moving to a square no defender covers; counted once at least two pieces attack the zone, or one with its queen), its pawn shelter where it stands (Shelter: the pawns in front of it on its file and the next two that shelter it better than no pawn would), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), castling possible right now (an arrow from the king), and a king left in the centre, unable to castle right now, when Stockfish's square table rates it 0.3 pawn or more worse than a castled one (Uncastled, in the other side's colour: in the middlegame, the king's square counts for King safety here, not Activity); <strong>Threats</strong> attacks that would win material (on an unguarded piece, or by a lesser piece): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece, or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ for the side that mates: in King safety for a mate in one, in Threats for a longer one, the mating move outlined in red.";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -2218,7 +2219,7 @@ const ASPECTS = [
   { key:'pawns',    name:'Pawns',       levels:[0.15, 0.35] },
   { key:'space',    name:'Space',       levels:[0.08, 0.2] },   // from 0.08, + shows on the board (2+ squares more in most)
   { key:'activity', name:'Activity',    levels:[0.35, 0.9] },
-  { key:'king',     name:'King safety', levels:[0.35, 1.4] },
+  { key:'king',     name:'King safety', levels:[0.4, 1.45] },
   { key:'threats',  name:'Threats',     levels:[0.25, 0.5] },
 ];
 // Each aspect as signs, from its value in pawns and its own levels (above): "=", then + and ++ for White,
@@ -2286,6 +2287,7 @@ function aspectsEntry(fen){
 // Our adaptations of Stockfish's evaluation (the port, SFEval, stays one-to-one with the engine):
 // - the kings' squares in the middlegame (castled or not) count for King safety, not Activity (the
 //   endgame part, a central king, stays in Activity);
+// - the pawn shelter is judged where the king stands, not where it could castle to;
 // - threats by the side to move count in full, the other side's at THREATS_WAITING (they can be met);
 // - a mate the short search finds (applyMate, below).
 // - the side to move's pawn-push threats count only when the push is legal now (Stockfish counts them
@@ -2303,6 +2305,11 @@ function adaptAspects(data, fen){
   const ph = ev.phase, pawns = ([mg, eg])=>(mg*ph + eg*(128 - ph)) / 128 / SF_PAWN_EG;
   const k = pawns([ev.trace.kingSquares[0], 0]);
   data.king += k; data.activity -= k;
+  // the pawn shelter judged where the king stands (Stockfish takes the best of that and the squares it
+  // can still castle to)
+  const sh = c=>ev.features.find(x=>x.term==='king' && x.kind==='shelter' && x.c===c);
+  const shift = c=>sh(c) ? sh(c).own.safety - sh(c).v[0] : 0;
+  data.king += pawns([shift(0) - shift(1), 0]);
   const T = ev.trace.threats.map(x=>x.slice());
   for(const x of illegalPushThreats(fen, ev)){ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; }
   const w = pawns(T[0]), b = pawns(T[1]);
@@ -2762,12 +2769,12 @@ function aspectMarks(fen, key){
         const fs = ring.map(t=>FILES.indexOf(t[0])), rs = ring.map(t=>+t[1]);
         out.zones.push({ a: FILES[Math.min(...fs)] + Math.min(...rs), b: FILES[Math.max(...fs)] + Math.max(...rs), c, full: true });
       }
-      // shelter and storm, on the king's file and the two next to it (for the square Stockfish rates
-      // best: the king's, or where it can still castle): its own pawn when that pawn counts as a
-      // shelter, the enemy pawn when its storm penalty is 0.3 pawn or more
+      // shelter and storm, on the king's file and the two next to it (judged where the king stands): its
+      // own pawn when it shelters the king better than no pawn there would, the enemy pawn when its storm
+      // penalty is 0.3 pawn or more
       const sh = F.find(x=>x.term==='king' && x.kind==='shelter' && x.c===ci), storm = new Set();
-      if(sh) for(const fl of sh.files){
-        if(fl.ourRank && fl.shelter > 0){ const t = FILES[fl.f] + rel(fl.ourRank); out.circles.push({ sq: t, c }); out.labels.push({ sq: t, c, text:'Shelter' }); }
+      if(sh) for(const fl of sh.own.files){
+        if(fl.ourRank && fl.shelter > fl.empty){ const t = FILES[fl.f] + rel(fl.ourRank); out.circles.push({ sq: t, c }); out.labels.push({ sq: t, c, text:'Shelter' }); }
         if(fl.theirRank && fl.storm >= 62){ const t = FILES[fl.f] + rel(fl.theirRank); storm.add(t); out.circles.push({ sq: t, c: them }); out.labels.push({ sq: t, c: them, text:'Storm' }); }
       }
       // each enemy piece attacking the zone (storm pawns aside): one arrow, ending where its attack

@@ -271,7 +271,7 @@ function evaluateShelter(P, Us, ksq){
     const shelter = ShelterStrength[d][ourRank];
     const storm = (ourRank && ourRank===theirRank - 1) ? 66 * (theirRank===2 ? 1 : 0) : UnblockedStorm[d][theirRank];
     safety += shelter - storm;
-    files.push({ f, ourRank, theirRank, shelter, storm, blocked: !!(ourRank && ourRank===theirRank - 1) });
+    files.push({ f, ourRank, theirRank, shelter, empty: ShelterStrength[d][0], storm, blocked: !!(ourRank && ourRank===theirRank - 1) });
   }
   return { safety, files };
 }
@@ -283,7 +283,8 @@ function kingSafetyPawns(P, Us, F){
   let best = evaluateShelter(P, Us, ksq), from = ksq;
   if(P.canCastleSide(Us, true)){ const o = evaluateShelter(P, Us, Us===WHITE ? 6 : 62); if(o.safety > best.safety){ best = o; from = Us===WHITE ? 6 : 62; } }
   if(P.canCastleSide(Us, false)){ const o = evaluateShelter(P, Us, Us===WHITE ? 2 : 58); if(o.safety > best.safety){ best = o; from = Us===WHITE ? 2 : 58; } }
-  F.push({ term:'king', c:Us, kind:'shelter', sq:from, v:[best.safety, 0], files: best.files });
+  const own = from===ksq ? best : evaluateShelter(P, Us, ksq);   // (not in Stockfish) the shelter at the king's own square
+  F.push({ term:'king', c:Us, kind:'shelter', sq:from, v:[best.safety, 0], files: best.files, own: { sq: ksq, safety: own.safety, files: own.files } });
   F.push({ term:'king', c:Us, kind:'pawnDistance', sq:ksq, v:[0, -16 * minKingPawnDistance], n: minKingPawnDistance });
   return [best.safety, -16 * minKingPawnDistance];
 }

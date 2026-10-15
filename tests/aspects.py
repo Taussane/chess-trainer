@@ -176,7 +176,8 @@ async def main():
         ad = await pg.evaluate("""(()=>{ const f = 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14';
           const raw = parseAspects(sfTableLines(f), f), a = adaptAspects(parseAspects(sfTableLines(f), f), f), ev = sfEvalOf(f);
           const pw = ([mg, eg])=>(mg*ev.phase + eg*(128 - ev.phase)) / 128 / SF_PAWN_EG;
-          return [+(a.king - raw.king).toFixed(3), +(raw.activity - a.activity).toFixed(3), +pw([ev.trace.kingSquares[0], 0]).toFixed(3),
+          const sh = c=>{ const x = ev.features.find(x=>x.term==='king' && x.kind==='shelter' && x.c===c); return x.own.safety - x.v[0]; };
+          return [+(a.king - raw.king - pw([sh(0) - sh(1), 0])).toFixed(3), +(raw.activity - a.activity).toFixed(3), +pw([ev.trace.kingSquares[0], 0]).toFixed(3),
                   +(a.threats - (pw(ev.trace.threats[0]) - 0.5*pw(ev.trace.threats[1]))).toFixed(3)]; })()""")
         if ad[0] != ad[2] or ad[1] != ad[2] or ad[0] <= 0.3 or ad[3] != 0: fails.append(f'adaptations: {ad}')
         kg = await pg.evaluate("[kingSquareGain(boardMap('r1b1n1k1/pp3ppp/8/8/8/4K3/PP3PPP/R1B1N3 w - - 0 1'), 'e3', 'w'), kingSquareGain(boardMap('r2qr1k1/pp3ppp/8/8/8/4K3/PP3PPP/R2QR3 w - - 0 1'), 'e3', 'w')].map(x=>Math.round(x*100)/100)")
