@@ -2846,9 +2846,12 @@ function aspectMarks(fen, key){
       const after = mv=>{ const g = new Chess(game.fen()); g.move({ from: mv.from, to: mv.to, promotion: 'q' }); return g; };
       // - a pawn push to a safe square that would attack a piece (Stockfish's push threats, on pieces):
       //   an arrow from the pawn to where it goes
-      const illegal = ev && !ev.special ? illegalPushThreats(fen, ev) : [];
-      for(const x of F.filter(x=>x.kind==='pawnPush' && x.target!==1 && x.target!==6 && !illegal.includes(x))){
-        for(const to of bbSquares(x.from)){
+      // (for the side to move, only the pushes it can legally play now)
+      const toMove = fen.split(' ')[1]===c;
+      let legalTo = null;
+      if(toMove){ try{ legalTo = new Set(new Chess(fen).moves({ verbose: true }).filter(x=>x.piece==='p' && !x.captured).map(x=>x.to)); }catch(e){} }
+      for(const x of F.filter(x=>x.kind==='pawnPush' && x.target!==1 && x.target!==6)){
+        for(const to of bbSquares(x.from).filter(t=>!legalTo || legalTo.has(t))){
           const up = c==='w' ? 1 : -1, f = FILES.indexOf(to[0]), one = sqAt(f, +to[1] - up), two = sqAt(f, +to[1] - 2*up);
           const sq = (m[one] && m[one].t==='p' && m[one].c===c) ? one : two;
           if(!out.arrows.some(a=>a.from===sq && a.to===to)) out.arrows.push({ from: sq, to, c, outline: '' });

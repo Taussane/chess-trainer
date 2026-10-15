@@ -210,8 +210,9 @@ async def main():
         # a pawn push attacking a piece; not while the push is illegal (the side to move in check): not counted then
         push = await pg.evaluate("""(()=>{ const chk = TEST_POSITIONS.find(p=>p.title==='White in check').fen, free = 'rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 3 5';
           const A = f=>aspectMarks(f, 'threats').arrows.map(a=>a.from+a.to+a.c).join(' '), L = f=>aspectLevel(adaptAspects(parseAspects(sfTableLines(f), f), f).threats, 'threats');
-          return [A(free).includes('a2a3w'), A(chk).includes('a2a3w'), L(chk)]; })()""")
-        if push != [True, False, 0]: fails.append(f'pawn push threats (legal only for the side to move): {push}')
+          const bc = TEST_POSITIONS.find(p=>p.title==='Black in check').fen;   // c6 blocks the check (and hits Bb5), a6 can't be played
+          return [A(free).includes('a2a3w'), A(chk).includes('a2a3w'), L(chk), A(bc).includes('c7c6b'), A(bc).includes('a7a6b')]; })()""")
+        if push != [True, False, 0, True, False]: fails.append(f'pawn push threats (legal only for the side to move): {push}')
         if km != ['b2:Shelter c2:Shelter c3:Storm f7:Shelter g6:Storm g7:Shelter h6:Shelter', 'a5c3b c6c3b e4g6w g5f7w', 'd1d8', 'b1d3 f6h8', 0]: fails.append(f'king marks: {km}')
         cs = await pg.evaluate("aspectMarks(TEST_POSITIONS.find(p=>p.title==='Castling').fen, 'king').arrows.filter(a=>a.from==='e1'||a.from==='e8').map(a=>a.from+a.to+(a.dash?'-':'')).sort().join(' ')")
         if cs != 'e1g1': fails.append(f'castling arrows (only O-O is possible now): {cs}')
