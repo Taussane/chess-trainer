@@ -206,8 +206,11 @@ async def main():
           const a = applyMate(V(), { lines:[{ mate:1, uci:'d1d8' }] }, '6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 30'), b = applyMate(V(), { lines:[{ mate:3, uci:'d1d8' }] }, '8/8/8/8/8/8/8/8 b - - 0 1'), c = applyMate(V(), { lines:[{ mate:-2, uci:'a1a2' }] }, '8/8/8/8/8/8/8/8 w - - 0 1');
           return [a.king, a.threats, a.mate.uci, b.threats, c.threats, c.mate.uci]; })()""")
         if mt != [9, 0, 'd1d8', -9, -9, None]: fails.append(f'mates: {mt}')
-        push = await pg.evaluate("aspectMarks(TEST_POSITIONS.find(p=>p.title==='White in check').fen, 'threats').arrows.map(a=>a.from+a.to+a.c).join(' ')")
-        if 'a2a3w' not in push: fails.append(f'a pawn push attacking a piece: {push}')
+        # a pawn push attacking a piece; not while the push is illegal (the side to move in check): not counted then
+        push = await pg.evaluate("""(()=>{ const chk = TEST_POSITIONS.find(p=>p.title==='White in check').fen, free = 'rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 3 5';
+          const A = f=>aspectMarks(f, 'threats').arrows.map(a=>a.from+a.to+a.c).join(' '), L = f=>aspectLevel(adaptAspects(parseAspects(sfTableLines(f), f), f).threats, 'threats');
+          return [A(free).includes('a2a3w'), A(chk).includes('a2a3w'), L(chk)]; })()""")
+        if push != [True, False, 0]: fails.append(f'pawn push threats (legal only for the side to move): {push}')
         if km != ['b2:Shelter c2:Shelter c3:Storm f7:Shelter g6:Storm g7:Shelter h6:Shelter', 'a5c3b c6c3b e4g6w g5f7w', 'd1d8', 'b1d3 f6h8', 0]: fails.append(f'king marks: {km}')
         cs = await pg.evaluate("aspectMarks(TEST_POSITIONS.find(p=>p.title==='Castling').fen, 'king').arrows.filter(a=>a.from==='e1'||a.from==='e8').map(a=>a.from+a.to+(a.dash?'-':'')).sort().join(' ')")
         if cs != 'e1g1': fails.append(f'castling arrows (only O-O is possible now): {cs}')

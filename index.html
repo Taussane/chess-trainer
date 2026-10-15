@@ -2288,14 +2288,24 @@ function aspectsEntry(fen){
 //   endgame part, a central king, stays in Activity);
 // - threats by the side to move count in full, the other side's at THREATS_WAITING (they can be met);
 // - a mate the short search finds (applyMate, below).
+// - the side to move's pawn-push threats count only when the push is legal now (Stockfish counts them
+//   even with its king in check, or the pawn pinned).
 const THREATS_WAITING = 0.5;
+function illegalPushThreats(fen, ev){
+  const stm = fen.split(' ')[1]==='w' ? 0 : 1;
+  let legal;
+  try{ legal = new Set(new Chess(fen).moves({ verbose: true }).filter(x=>x.piece==='p' && !x.captured).map(x=>x.to)); }catch(e){ return []; }
+  return ev.features.filter(x=>x.term==='threats' && x.kind==='pawnPush' && x.c===stm && !bbSquares(x.from).some(t=>legal.has(t)));
+}
 function adaptAspects(data, fen){
   const ev = sfEvalOf(fen);
   if(!data || !ev || ev.special) return data;
   const ph = ev.phase, pawns = ([mg, eg])=>(mg*ph + eg*(128 - ph)) / 128 / SF_PAWN_EG;
   const k = pawns([ev.trace.kingSquares[0], 0]);
   data.king += k; data.activity -= k;
-  const w = pawns(ev.trace.threats[0]), b = pawns(ev.trace.threats[1]);
+  const T = ev.trace.threats.map(x=>x.slice());
+  for(const x of illegalPushThreats(fen, ev)){ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; }
+  const w = pawns(T[0]), b = pawns(T[1]);
   data.threats = fen.split(' ')[1]==='w' ? w - THREATS_WAITING*b : THREATS_WAITING*w - b;
   return data;
 }
@@ -2844,7 +2854,8 @@ function aspectMarks(fen, key){
       const after = mv=>{ const g = new Chess(game.fen()); g.move({ from: mv.from, to: mv.to, promotion: 'q' }); return g; };
       // - a pawn push to a safe square that would attack a piece (Stockfish's push threats, on pieces):
       //   an arrow from the pawn to where it goes
-      for(const x of F.filter(x=>x.kind==='pawnPush' && x.target!==1 && x.target!==6)){
+      const illegal = ev && !ev.special ? illegalPushThreats(fen, ev) : [];
+      for(const x of F.filter(x=>x.kind==='pawnPush' && x.target!==1 && x.target!==6 && !illegal.includes(x))){
         for(const to of bbSquares(x.from)){
           const up = c==='w' ? 1 : -1, f = FILES.indexOf(to[0]), one = sqAt(f, +to[1] - up), two = sqAt(f, +to[1] - 2*up);
           const sq = (m[one] && m[one].t==='p' && m[one].c===c) ? one : two;
