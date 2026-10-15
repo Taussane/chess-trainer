@@ -255,10 +255,11 @@ async def main():
         # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (the move's arrow, no rings)
         for k, a, c in [('fork', 'c6d4b d4d5w e6c4b', 'c4b d4b'), ('pin', 'e4e5w', 'f6w'), ('queenFork', 'c3d5w', '')]:
             if marks[k]['a'] != a or marks[k]['c'] != c: fails.append(f'{k} threats: {marks[k]}')
-        # the pool: Position evaluation's positions less the tactical ones
-        n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, IMBALANCE_SKIP.length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key))]")
+        # the pool: Position evaluation's positions less the tactical ones; neither has a castling right
+        # lost with king and rook still on their first squares
+        n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, POOLS.analysis.filter(p=>IMBALANCE_SKIP.includes(p.key)).length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key)), POOLS.analysis.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss)]")
         print('pools:', n)
-        if n[0] != n[1] - n[2] or n[3] or n[2] < 5: fails.append(f'Imbalance reading pool: {n}')
+        if n[0] != n[1] - n[2] or n[3] or n[2] < 5 or n[4] or n[5] != [True, False, False]: fails.append(f'Imbalance reading pool: {n}')
         await b.close()
     errs = [e for e in errs if 'importScripts' not in e]
     if errs: fails.append(f'page errors: {errs}')

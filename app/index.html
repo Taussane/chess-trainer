@@ -1063,6 +1063,14 @@ const GAME_MOVES = /*GAME_MOVES*/{"g0":"d4 Nf6 c4 e6 Nf3 b6 a3 Bb7 Nc3 Ne4 Nxe4 
 // is a concrete move, not a reading. A position played in one of the two isn't offered in the other
 // the same day (see markPlayed).
 const IMBALANCE_SKIP = /*IMBALANCE_SKIP*/["3qk2r/r3bn2/2p2pQB/1p1p3P/1P4R1/P5P1/5P2/4R1K1 w - -","r4qk1/p4ppr/np2pB2/1nppP1Qp/3P3P/P2P2RN/5PP1/R3K3 w Q -","2r3r1/ppkb4/4p3/q2PPnn1/3B1N2/P7/2P1QPPP/R2R3K b - -","1k3rr1/pp1b4/4p3/2PPPnn1/5N1q/7P/4QPP1/R1BR3K b - -","2k2rr1/pp6/2b1P3/2Pp1n2/5B1q/7N/4QPP1/R2R3K w - -","1r2r3/5pkp/p2p2p1/q2P4/4nQ2/1P3R1P/5PP1/2R2BK1 b - -","r1bq1rk1/pp3pbp/n3p3/3n4/6p1/PNNQB2P/1PP3B1/2KR3R b - -","2r2r2/ppQqkp1p/5n2/1p6/8/2P5/P4PPP/5RK1 w - -","r3qrk1/pp3pbp/2pn1R2/7Q/3pP3/2NB3P/PPP3P1/R5K1 w - -","3r2k1/4Rp1p/p2Pqp2/8/2pQ4/7P/P1B2PPK/4r3 b - -","r3k2r/1pq1b1pp/p2pNn2/6B1/bP2P3/P7/2PQ1PPP/3RR1K1 b kq -","4r1k1/pq6/2R1P3/3P1pp1/5N2/BP4P1/P5K1/8 w - g6","3r2k1/2q4p/p7/P1pb2p1/5p2/2P5/2PQNRPP/6K1 b - -","8/p1Q3bk/1p3pb1/2p4p/2P3pP/1q1N4/4r1P1/2B2RK1 b - -","Qn2r1k1/p1pq2pp/bp2p3/5p2/2PP4/B1PB4/P4PPP/R3K2R b KQ -","4r1k1/pp3p1p/2p5/5p2/5P2/2P3KP/P2B2P1/1B6 b - -","3rr1k1/6pp/1p1q1p2/p4bN1/2P5/PP1p2P1/1B1Q2BP/5R1K b - -","1n2kbr1/4rp1p/p1qp4/8/Np3B2/8/PPP3PP/R2Q1RK1 w - -","1B2kbr1/4rp1p/pq6/8/1p6/5Q2/PPP3PP/R4R1K b - -","4k2r/Rb3p2/2p1p2p/1q6/2p5/2P2P2/2Q2P1P/5RK1 b k -","4r2k/5Qpp/p2p4/1p6/8/2Pn4/PP4PP/4rR1K w - -"]/*END IMBALANCE_SKIP*/;
+// A castling right lost with no trace on the board (king and a rook still on their first squares,
+// the right gone) would mislead: those positions are left out of both.
+function hiddenCastlingLoss(fen){
+  const [board, , rights] = fen.split(' '), rows = board.split('/').map(r=>r.replace(/\d/g, d=>'.'.repeat(+d)));
+  return [['w', rows[7], 'K', 'Q', 'R'], ['b', rows[0], 'k', 'q', 'r']].some(([, row, k, q, r])=>
+    row[4]===(k==='K' ? 'K' : 'k') && ((row[7]===r && !rights.includes(k)) || (row[0]===r && !rights.includes(q))));
+}
+POOLS.analysis = POOLS.analysis.filter(p=>!hiddenCastlingLoss(p.fen));
 POOLS.imbalances = POOLS.analysis.filter(p=>!IMBALANCE_SKIP.includes(p.key));
 
 function labelColor(label){
