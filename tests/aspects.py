@@ -139,11 +139,12 @@ async def main():
           const Q = (vals, side)=>planFor({ fen:'4k2r/8/8/8/8/8/P7/R3K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);
           return { passed: Q({ pawns:0.5 }, 'w'), blockade: Q({ pawns:0.5 }, 'b'),
                    ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:2.5 }, 200), cramped: P({ space:-0.5 }, -30),
-                   blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400) }; })()""")
+                   blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400), conflict: P({ material:1.5, space:0.5 }, 150) }; })()""")
         print('plans:', plans)
         if plans['ahead'][0] != 'Trade pieces' or plans['behind'][0] != 'Avoid trades, attack' \
            or plans['king'][0] != 'Open lines to it' or plans['cramped'] != ['Trade to breathe'] \
            or plans['blackAhead'][0] != 'Trade pieces' or plans['even'] != ['Find a pawn break'] \
+           or 'Simplify, stay safe' in plans['king'] or plans['conflict'] != ['Trade pieces'] \
            or plans['lost'][0] != 'Complicate' or plans['passed'] != ['Passed pawn: Push it'] or plans['blockade'] != ['Enemy passed pawn: Blockade it']: fails.append(f'plans: {plans}')
         # Imbalance reading in your games: only positions whose evaluation is near the imbalances' total
         q = await pg.evaluate("""async t=>{

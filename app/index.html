@@ -1077,7 +1077,7 @@ const HELP = {
   imbalances: {
     title:'Imbalance reading',
     what:"Read the position's imbalances, the lasting (static) ones and those that can change within a few moves (dynamic): for each, who has the edge, and how big? Tap a badge, then a level (= balanced, + or ++ for White, − or −− for Black), or slide along the scale.",
-    eval:"Each imbalance scores a sixth: all of it at the engine's level, a third one level off, nothing beyond.",
+    eval:"Based on Stockfish 10's evaluation. Each imbalance scores a sixth: all of it at the engine's level, a third one level off, nothing beyond.",
     grades:"Each imbalance turns from your level to the engine's (levels set per imbalance so that in master games about 40% of positions are =, 40% + or −, 20% ++ or −−). Green border: you matched it; yellow: one level off; red: further. Then tap an imbalance to see on the board what it's about, white marks favouring White and black ones Black: " + IMB_MARKS,
   },
   analysis: {
@@ -2324,6 +2324,9 @@ function aspectBadge(v, key){
 // General principles read from the imbalances and the evaluation (not calculated by the engine):
 // up to three lines, the strongest imbalances first, each tied to the imbalance it comes from (tap
 // it to see that imbalance on the board).
+// Each plan's stance on trading pieces: 1 trade, -1 keep them on.
+const PLAN_TRADES = { 'Trade pieces': 1, 'Simplify, stay safe': 1, 'Trade attackers': 1, 'Trade to breathe': 1,
+  'Avoid trades, attack': -1, 'Complicate': -1, 'Avoid freeing trades': -1, 'Open lines to it': -1 };
 function planFor(p, vals, info){
   const me = p.side, sgn = me==='w' ? 1 : -1, who = me==='w' ? 'White' : 'Black';
   const lv = k=>aspectLevel(vals[k], k) * sgn;   // + good for the side to play
@@ -2352,7 +2355,15 @@ function planFor(p, vals, info){
   if(lv('activity') >= 1) add('activity', 1 + lv('activity'), 'Better pieces', 'Keep the initiative');
   if(lv('activity') <= -1) add('activity', 1 - lv('activity'), 'Worse pieces', 'Improve the worst');
   if(!out.length) add(null, 0, 'Balanced', 'Find a pawn break');
-  return { who, lines: out.sort((a, b)=>b.weight - a.weight).slice(0, 3) };
+  // No contradicting advice: a plan that trades pieces and one that keeps them never show together;
+  // the one from the stronger imbalance (listed first) wins.
+  const kept = [];
+  for(const x of out.sort((a, b)=>b.weight - a.weight)){
+    const st = PLAN_TRADES[x.plan] || 0;
+    if(st && kept.some(k=>(PLAN_TRADES[k.plan] || 0)===-st)) continue;
+    kept.push(x);
+  }
+  return { who, lines: kept.slice(0, 3) };
 }
 const PLAN_ROWS = 3;
 // `plan` null: placeholders (the panel's ghost). The rows hold their space even when fewer.
