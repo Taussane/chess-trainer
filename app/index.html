@@ -2205,11 +2205,11 @@ function fmtBarScore(info){
 // half of them: Stockfish counts no space once enough pieces are traded).
 const ASPECTS = [
   { key:'material', name:'Material',    levels:[0.3, 1.3] },
-  { key:'pawns',    name:'Pawns',       levels:[0.13, 0.32] },
+  { key:'pawns',    name:'Pawns',       levels:[0.05, 0.24] },
   { key:'space',    name:'Space',       levels:[0.08, 0.2] },   // from 0.08, + shows on the board (2+ squares more in most)
   { key:'activity', name:'Activity',    levels:[0.32, 0.78] },
-  { key:'king',     name:'King safety', levels:[0.45, 1.4] },
-  { key:'threats',  name:'Threats',     levels:[0.12, 0.38] },
+  { key:'king',     name:'King safety', levels:[0.47, 1.48] },
+  { key:'threats',  name:'Threats',     levels:[0.11, 0.36] },
 ];
 // Each aspect as signs, from its value in pawns and its own levels (above): "=", then + and ++ for White,
 // − and −− for Black.
@@ -2282,13 +2282,14 @@ function aspectsEntry(fen){
 // - a mate the short search finds (applyMate, below).
 // - the side to move's pawn-push threats count only when the push is legal now (Stockfish counts them
 //   even with its king in check, or the pawn pinned);
-// - knights, bishops and queens far from their own king count for King safety, not Activity;
 // - dropped, too small or too abstract to see, or already in the mobility numbers: enemy attacks on the
 //   king's wing, weak pawns exposed on their file (Threats; they're in Pawns already), trapped rooks,
 //   bishops hemmed in by their own pawns, a queen exposed to a discovered attack, the king's distance to
 //   its pawns, a minor piece behind a pawn, a bishop on a long diagonal, the endgame "initiative", the
 //   extra bonus for attacking an advanced piece, pawns not yet passed (one an enemy pawn can still meet),
-//   restricted squares, attacks by a knight, bishop or rook that would only trade.
+//   restricted squares, attacks by a knight, bishop or rook that would only trade, a piece able to come
+//   and attack the queen (a tempo), knights, bishops and queens far from their own king, connected
+//   pawns below their 5th rank.
 const THREATS_WAITING = 0.5;
 function illegalPushThreats(fen, ev){
   const stm = fen.split(' ')[1]==='w' ? 0 : 1;
@@ -2324,8 +2325,9 @@ function adaptAspects(data, fen){
   data.king += pawns([shift(0) - shift(1), 0]);
   // items moved or dropped (value in pawns, White's side)
   const sum = pred=>ev.features.filter(pred).reduce((t, x)=>t + pawns(x.v) * (x.c===0 ? 1 : -1), 0);
-  const far = sum(x=>x.kind==='kingProtector');                                   // pieces far from their king: King safety
-  data.activity -= far; data.king += far;
+  data.activity -= sum(x=>x.kind==='kingProtector');                              // pieces far from their king: dropped
+  const rel = x=>x.c===0 ? x.sq >> 3 : 7 - (x.sq >> 3);
+  data.pawns -= sum(x=>x.kind==='connected' && rel(x) < 4);                         // connected pawns below their 5th rank (not labelled): dropped
   data.activity -= sum(x=>x.kind==='trappedRook' || x.kind==='bishopPawns');        // trapped rooks, bishops hemmed in by their pawns: dropped (the mobility numbers show it)
   data.activity -= sum(x=>x.kind==='weakQueen' && queenExposedBy(fen, sqName(x.sq)));  // a queen exposed to a discovered attack: dropped (pinned pieces stay)
   data.king -= sum(x=>x.term==='king' && x.kind==='tropism');                      // enemy attacks on the king's wing: dropped
@@ -2340,7 +2342,7 @@ function adaptAspects(data, fen){
   const onlyTrades = x=>{ if(x.kind!=='byMinor' && x.kind!=='byRook') return false;
     const t = sqName(x.sq), kinds = x.kind==='byRook' ? 'r' : 'nb';
     return !(am[x.c===0 ? 'w' : 'b'][t] || []).some(a=>kinds.includes(bm[a].t) && see(bm, am, a, t) > 0); };
-  for(const x of illegalPushThreats(fen, ev).concat(ev.features.filter(x=>['weakUnopposed', 'byRank', 'restricted'].includes(x.kind) || onlyTrades(x)))){ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; }   // (weak pawns exposed on their file: dropped)
+  for(const x of illegalPushThreats(fen, ev).concat(ev.features.filter(x=>['weakUnopposed', 'byRank', 'restricted', 'knightOnQueen', 'sliderOnQueen'].includes(x.kind) || onlyTrades(x)))){ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; }   // (weak pawns exposed on their file: dropped)
   const w = pawns(T[0]), b = pawns(T[1]);
   data.threats = fen.split(' ')[1]==='w' ? w - THREATS_WAITING*b : THREATS_WAITING*w - b;
   return data;
