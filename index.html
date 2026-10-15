@@ -2298,7 +2298,7 @@ function aspectsEntry(fen){
 //   bishops hemmed in by their own pawns, a queen exposed to a discovered attack, the king's distance to
 //   its pawns, a minor piece behind a pawn, a bishop on a long diagonal, the endgame "initiative", the
 //   extra bonus for attacking an advanced piece, pawns not yet passed (one an enemy pawn can still meet),
-//   restricted squares, attacks by a knight, bishop or rook that would only trade, a piece able to come
+//   restricted squares, attacks that can't legally win material (only a trade, or a pinned attacker), a piece able to come
 //   and attack the queen (a tempo), knights, bishops and queens far from their own king, connected
 //   pawns below their 5th rank.
 const THREATS_WAITING = 0.5;
@@ -2346,13 +2346,18 @@ function adaptAspects(data, fen){
   data.activity -= sum(x=>x.kind==='minorBehindPawn' || x.kind==='longDiagonal');  // a minor piece behind a pawn, a bishop on a long diagonal: dropped
   data.pawns -= pawns(ev.trace.initiative);                                        // the endgame "initiative" correction: dropped
   data.pawns -= sum(x=>x.term==='passed' && !x.strict);                           // pawns not yet passed (an enemy pawn can still meet them): dropped
+  data.pawns -= sum(x=>x.term==='passed' && x.strict && pawns(x.v) < 0);            // a passed pawn never counts against its side (Stockfish's d/e-file correction can make a slow one negative)
   const T = ev.trace.threats.map(x=>x.slice());
-  // attacks by a knight, bishop or rook that would only trade (none of those attackers wins material
-  // in the exchange): dropped, like restricted squares
-  const bm = boardMap(fen), am = attackMaps(bm);
-  const onlyTrades = x=>{ if(x.kind!=='byMinor' && x.kind!=='byRook') return false;
-    const t = sqName(x.sq), kinds = x.kind==='byRook' ? 'r' : 'nb';
-    return !(am[x.c===0 ? 'w' : 'b'][t] || []).some(a=>kinds.includes(bm[a].t) && see(bm, am, a, t) > 0); };
+  // attacks on a piece (by a pawn, knight, bishop, rook or the king, or on a hanging one) that no
+  // attacker of that kind can legally turn into a material gain: dropped (an exchange, a pinned
+  // attacker), like restricted squares
+  const bm = boardMap(fen), am = attackMaps(bm), legalCaps = {};
+  for(const c of ['w','b']){ let ms = []; try{ const pz = fen.split(' '); pz[1] = c; pz[3] = '-'; ms = new Chess(pz.join(' ')).moves({ verbose: true }); }catch(e){}
+    legalCaps[c] = new Set(ms.filter(x=>x.captured).map(x=>x.from + x.to)); }
+  const KINDS = { byMinor:'nb', byRook:'r', safePawn:'p', byKing:'k', hanging:'pnbrqk' };
+  const onlyTrades = x=>{ if(!KINDS[x.kind]) return false;
+    const c = x.c===0 ? 'w' : 'b', targets = x.kind==='byKing' ? bbSquares(x.squares) : [sqName(x.sq)];
+    return !targets.some(t=>(am[c][t] || []).some(a=>KINDS[x.kind].includes(bm[a].t) && legalCaps[c].has(a + t) && see(bm, am, a, t) > 0)); };
   for(const x of illegalPushThreats(fen, ev).concat(ev.features.filter(x=>['weakUnopposed', 'byRank', 'restricted', 'knightOnQueen', 'sliderOnQueen'].includes(x.kind) || onlyTrades(x)))){ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; }   // (weak pawns exposed on their file: dropped)
   const w = pawns(T[0]), b = pawns(T[1]);
   data.threats = fen.split(' ')[1]==='w' ? w - THREATS_WAITING*b : THREATS_WAITING*w - b;

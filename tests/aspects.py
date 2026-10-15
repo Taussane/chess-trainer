@@ -182,7 +182,9 @@ async def main():
           const sh = c=>{ const x = ev.features.find(x=>x.term==='king' && x.kind==='shelter' && x.c===c);
             return x.own.safety - x.v[0] + x.own.files.filter(fl=>fl.ourRank >= 3).reduce((t, fl)=>t + fl.empty - fl.shelter, 0); };
           const ks = pw([ev.trace.kingSquares[0], 0]), far = sum(x=>x.kind==='kingProtector'), trop = sum(x=>x.kind==='tropism'), trapped = sum(x=>['trappedRook','bishopPawns','minorBehindPawn','longDiagonal','kingProtector'].includes(x.kind)) + sum(x=>x.kind==='weakQueen' && queenExposedBy(f, sqName(x.sq)));
-          const T = ev.trace.threats.map(x=>x.slice()); const bm = boardMap(f), am = attackMaps(bm), trades = x=>(x.kind==='byMinor' || x.kind==='byRook') && !(am[x.c ? 'b' : 'w'][sqName(x.sq)] || []).some(a=>(x.kind==='byRook' ? 'r' : 'nb').includes(bm[a].t) && see(bm, am, a, sqName(x.sq)) > 0);
+          const T = ev.trace.threats.map(x=>x.slice()); const bm = boardMap(f), am = attackMaps(bm), K = { byMinor:'nb', byRook:'r', safePawn:'p', byKing:'k', hanging:'pnbrqk' }, lc = c=>{ const pz = f.split(' '); pz[1] = c; pz[3] = '-'; return new Set(new Chess(pz.join(' ')).moves({ verbose: true }).filter(x=>x.captured).map(x=>x.from + x.to)); };
+          const trades = x=>{ if(!K[x.kind]) return false; const c = x.c ? 'b' : 'w', L = lc(c), ts = x.kind==='byKing' ? bbSquares(x.squares) : [sqName(x.sq)];
+            return !ts.some(t=>(am[c][t] || []).some(a=>K[x.kind].includes(bm[a].t) && L.has(a + t) && see(bm, am, a, t) > 0)); };
           ev.features.filter(x=>['weakUnopposed', 'byRank', 'restricted', 'knightOnQueen', 'sliderOnQueen'].includes(x.kind) || trades(x)).forEach(x=>{ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; });
           return [+(a.activity - (raw.activity - ks - trapped)).toFixed(4), +(a.king - (raw.king + ks + pw([sh(0) - sh(1), 0]) - trop - sum(x=>x.kind==='pawnDistance'))).toFixed(4),
                   +(a.threats - (pw(T[0]) - 0.5*pw(T[1]))).toFixed(4), +ks.toFixed(2), +far.toFixed(3), +trop.toFixed(3)]; })()""")
