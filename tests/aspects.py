@@ -88,9 +88,9 @@ async def main():
             if abs(g - lv) > 1: return 0
             e = [float('-inf'), -t[1], -t[0], t[0], t[1], float('inf')]; lo, hi = e[g + 2], e[g + 3]
             d, th = (lo - v, abs(lo)) if v < lo else (v - hi, abs(hi))
-            return max({0: 1, 1: 1/3}.get(abs(g - lv), 0), 1 - (2/3) * d / (0.5 * th))
+            return max(0, 1 - d / (0.5 * th))
         cr = [credit(v, m, t) for v, m, t in zip(vals, mine, LEVELS)]
-        want = ['ok' if c >= 0.8 else 'near' if c >= 1/3 - 1e-9 else 'bad' for c in cr]
+        want = ['ok' if c >= 0.8 else 'near' if c > 0 else 'bad' for c in cr]
         print('borders:', borders)
         if borders != want: fails.append(f'borders: {borders}, expected {want}')
         final = await pg.text_content('#revealAcc')
@@ -223,10 +223,10 @@ async def main():
           return [Math.round(imbalanceScore(v, { space:2 }, 6)), Math.round(imbalanceScore(v, { material:2 }, 6)), spaceCounts('r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'), spaceCounts(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen)]; })()""")
         print('space left out:', so)
         if so != [100, 80, True, False]: fails.append(f'space left out: {so}')
-        # a level off near a threshold (King safety, t where + starts): all of it at the line, fading to a third
+        # a level off near a threshold (King safety, t where + starts): all of it at the line, fading to nothing
         # at half t away; two levels off: nothing
         ac = await pg.evaluate("(()=>{ const t = ASPECTS.find(x=>x.key==='king').levels[0]; return [[1,1],[0.85,1],[0.6,1],[0.2,1],[1.1,0],[1.3,0],[1.8,0],[0.98,2],[1,0]].map(([v,g])=>+aspectCredit(v*t, g, 'king').toFixed(2)); })()")
-        if ac != [1, 0.8, 0.47, 0.33, 0.87, 0.6, 0.33, 0, 1]: fails.append(f'credit near a threshold: {ac}')
+        if ac != [1, 0.7, 0.2, 0, 0.8, 0.4, 0, 0, 1]: fails.append(f'credit near a threshold: {ac}')
         # an ending Stockfish rates on its own (all-zero table): only Material, the rest left out
         sp = await pg.evaluate("""(()=>{ const z = ['Material','Imbalance','Initiative','Pawns','Knights','Bishops','Rooks','Queens','Mobility','King safety','Threats','Passed','Space'].map(k=>`  ${k} |  0.00  0.00 |  0.00  0.00 |  0.00  0.00`).concat(['Total evaluation: 61.20 (white side)']);
           const v = parseAspects(z, '7k/8/5K2/8/8/8/8/6Q1 w - - 0 60'); return [Math.round(v.material), v.activity, v.off.join(' '), !!v.special]; })()""")

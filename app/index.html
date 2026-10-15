@@ -1091,7 +1091,7 @@ const HELP = {
     title:'Imbalance reading',
     what:"Read the position's imbalances, the lasting (static) ones and those that can change within a few moves (dynamic): for each, who has the edge, and how big? Tap a badge, then a level (= balanced, + or ++ for White, − or −− for Black), or slide along the scale.",
     eval:"Based on Stockfish 10's evaluation. Each imbalance scores a sixth: all of it at the engine's level, a third one level off, nothing beyond.",
-    grades:"Each imbalance turns from your level to the engine's (levels set per imbalance so that in master games about 40% of positions are =, 40% + or −, 20% ++ or −−). Green border: you matched it, or were one level off right by the line between the two; yellow: one level off; red: further. Near a line (within half its value either side), the level across it scores more the closer the engine's value is to it: all of it at the line, a third at the band's edge, as any level off. Then tap an imbalance to see on the board what it's about, white marks favouring White and black ones Black: " + IMB_MARKS,
+    grades:"Each imbalance turns from your level to the engine's (levels set per imbalance so that in master games about 40% of positions are =, 40% + or −, 20% ++ or −−). A level off scores nothing, except near the line between the two levels (within half its value either side): there it scores more the closer the engine's value is to the line, all of it at the line, nothing at the band's edge. Green border: you matched it, or nearly (80% or more); yellow: some of it; red: none. Then tap an imbalance to see on the board what it's about, white marks favouring White and black ones Black: " + IMB_MARKS,
   },
   analysis: {
     title:'Position evaluation',
@@ -2481,8 +2481,8 @@ function reviewBadge(vals, guesses, x, i, shown){
   const g = (guesses && guesses[x.key]) || 0;
   if(!vals || i >= shown) return `<span class="asp-badge ${levelCls(g)}">${SIGNS(g)}</span>`;
   const l = aspectLevel(vals[x.key], x.key);
-  const cr = aspectCredit(vals[x.key], g, x.key);   // green from 80% of the share, yellow from a third
-  return `<span class="asp-badge ${levelCls(l)} ${cr >= 0.8 ? 'ok' : cr >= 1/3 - 1e-9 ? 'near' : 'bad'}">${SIGNS(l)}</span>`;
+  const cr = aspectCredit(vals[x.key], g, x.key);   // green from 80% of the share, yellow for some of it
+  return `<span class="asp-badge ${levelCls(l)} ${cr >= 0.8 ? 'ok' : cr > 0 ? 'near' : 'bad'}">${SIGNS(l)}</span>`;
 }
 // `view`: once revealed, every aspect can be tapped (one at a time, like radio buttons) to draw on the
 // board what it's about; `view` is the one shown (or null), `pickable` whether tapping works yet.
@@ -2518,10 +2518,9 @@ function wireAspectView(p, s){
 }
 const ASP_START = 500, ASP_STEP = 500, ASP_CLIMB_MS = 400;   // ms: before the first aspect turns, between two, the score's climb
 // Imbalance reading's score: a share for each imbalance (the ones that count split the 100%). The
-// engine's level gets all of it, a level further away a third, two levels nothing; but near a
-// threshold (within half of it, either side) the level across it gets more, fading in a straight line
-// from all of it at the threshold to a third at the band's edge. Leaving all six at "=" averages
-// 58% on the master positions.
+// engine's level gets all of it, another level nothing; but near a threshold (within half of it,
+// either side) the level across it still gets some, fading in a straight line from all of it at the
+// threshold to nothing at the band's edge.
 const ASPECT_BAND = 0.5;
 function aspectCredit(v, g, key){
   const L = ASPECTS.find(x=>x.key===key).levels, lv = aspectLevel(v, key);
@@ -2529,7 +2528,7 @@ function aspectCredit(v, g, key){
   if(Math.abs(g - lv) > 1) return 0;
   const e = [-Infinity, -L[1], -L[0], L[0], L[1], Infinity], lo = e[g + 2], hi = e[g + 3];   // the values level g covers
   const d = v < lo ? lo - v : v - hi, t = Math.abs(v < lo ? lo : hi);                        // how far v is from them, past which threshold
-  return Math.max([1, 1/3][Math.abs(g - lv)] || 0, 1 - (2/3) * d / (ASPECT_BAND * t));
+  return Math.max(0, 1 - d / (ASPECT_BAND * t));
 }
 const isOff = (vals, x)=>!!(vals && vals.off && vals.off.includes(x.key));
 function imbalanceScore(vals, guesses, shown){
