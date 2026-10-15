@@ -312,6 +312,10 @@ function evaluate(fen){
   T.material = psqScore; T.imbalance = [imb, imb]; T.pawns = pawnScore;
   // (not in Stockfish's table) the kings' square-table part of Material, White's less Black's
   T.kingSquares = add2(psq(WHITE, KING, P.ksq(WHITE)), psq(BLACK, KING, P.ksq(BLACK)));
+  // (not in Stockfish's table) the other pieces' square-table part of Material (values left out), White's less Black's
+  let values = ZERO;
+  for(let s=0; s<64; s++){ const p = P.board[s]; if(p) values = add2(values, mul2([VALUE_MG[p.t], VALUE_EG[p.t]], p.c===WHITE ? 1 : -1)); }
+  T.pieceSquares = sub2(sub2(psqScore, values), T.kingSquares);
   const lazy = Math.trunc((score[0] + score[1]) / 2);
   if(Math.abs(lazy) > LazyThreshold){ out.special = 'lazy'; out.lazy = lazy; return out; }
 

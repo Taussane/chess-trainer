@@ -186,7 +186,7 @@ async def main():
           const trades = x=>{ if(!K[x.kind]) return false; const c = x.c ? 'b' : 'w', L = lc(c), ts = x.kind==='byKing' ? bbSquares(x.squares) : [sqName(x.sq)];
             return !ts.some(t=>(am[c][t] || []).some(a=>K[x.kind].includes(bm[a].t) && L.has(a + t) && see(bm, am, a, t) > 0)); };
           ev.features.filter(x=>['weakUnopposed', 'byRank', 'restricted', 'knightOnQueen', 'sliderOnQueen'].includes(x.kind) || trades(x)).forEach(x=>{ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; });
-          return [+(a.activity - (raw.activity - ks - trapped)).toFixed(4), +(a.king - (raw.king + ks + pw([sh(0) - sh(1), 0]) - trop - sum(x=>x.kind==='pawnDistance'))).toFixed(4),
+          return [+(a.activity - (raw.activity - ks - trapped - pw(ev.trace.pieceSquares))).toFixed(4), +(a.king - (raw.king + ks + pw([sh(0) - sh(1), 0]) - trop - sum(x=>x.kind==='pawnDistance'))).toFixed(4),
                   +(a.threats - (pw(T[0]) - 0.5*pw(T[1]))).toFixed(4), +ks.toFixed(2), +far.toFixed(3), +trop.toFixed(3)]; })()""")
         print('adaptations:', ad)
         if ad[0] != 0 or ad[1] != 0 or ad[2] != 0 or ad[3] <= 0.3 or ad[5] == 0: fails.append(f'adaptations: {ad}')

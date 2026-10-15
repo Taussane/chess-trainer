@@ -760,6 +760,10 @@ function evaluate(fen){
   T.material = psqScore; T.imbalance = [imb, imb]; T.pawns = pawnScore;
   // (not in Stockfish's table) the kings' square-table part of Material, White's less Black's
   T.kingSquares = add2(psq(WHITE, KING, P.ksq(WHITE)), psq(BLACK, KING, P.ksq(BLACK)));
+  // (not in Stockfish's table) the other pieces' square-table part of Material (values left out), White's less Black's
+  let values = ZERO;
+  for(let s=0; s<64; s++){ const p = P.board[s]; if(p) values = add2(values, mul2([VALUE_MG[p.t], VALUE_EG[p.t]], p.c===WHITE ? 1 : -1)); }
+  T.pieceSquares = sub2(sub2(psqScore, values), T.kingSquares);
   const lazy = Math.trunc((score[0] + score[1]) / 2);
   if(Math.abs(lazy) > LazyThreshold){ out.special = 'lazy'; out.lazy = lazy; return out; }
 
@@ -2207,7 +2211,7 @@ const ASPECTS = [
   { key:'material', name:'Material',    levels:[0.3, 1.3] },
   { key:'pawns',    name:'Pawns',       levels:[0.05, 0.24] },
   { key:'space',    name:'Space',       levels:[0.08, 0.2] },   // from 0.08, + shows on the board (2+ squares more in most)
-  { key:'activity', name:'Activity',    levels:[0.32, 0.78] },
+  { key:'activity', name:'Activity',    levels:[0.28, 0.57] },
   { key:'king',     name:'King safety', levels:[0.47, 1.48] },
   { key:'threats',  name:'Threats',     levels:[0.11, 0.36] },
 ];
@@ -2289,7 +2293,7 @@ function aspectsEntry(fen){
 //   extra bonus for attacking an advanced piece, pawns not yet passed (one an enemy pawn can still meet),
 //   restricted squares, attacks that can't legally win material (only a trade, or a pinned attacker), a piece able to come
 //   and attack the queen (a tempo), knights, bishops and queens far from their own king, connected
-//   pawns below their 5th rank.
+//   pawns below their 5th rank, the square tables of pieces and pawns (the king's stays).
 const THREATS_WAITING = 0.5;
 function illegalPushThreats(fen, ev){
   const stm = fen.split(' ')[1]==='w' ? 0 : 1;
@@ -2326,6 +2330,7 @@ function adaptAspects(data, fen){
   // items moved or dropped (value in pawns, White's side)
   const sum = pred=>ev.features.filter(pred).reduce((t, x)=>t + pawns(x.v) * (x.c===0 ? 1 : -1), 0);
   data.activity -= sum(x=>x.kind==='kingProtector');                              // pieces far from their king: dropped
+  data.activity -= pawns(ev.trace.pieceSquares);                                   // where the other pieces and pawns stand (square tables): dropped
   const rel = x=>x.c===0 ? x.sq >> 3 : 7 - (x.sq >> 3);
   data.pawns -= sum(x=>x.kind==='connected' && rel(x) < 4);                         // connected pawns below their 5th rank (not labelled): dropped
   data.activity -= sum(x=>x.kind==='trappedRook' || x.kind==='bishopPawns');        // trapped rooks, bishops hemmed in by their pawns: dropped (the mobility numbers show it)
