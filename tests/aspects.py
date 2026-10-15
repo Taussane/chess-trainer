@@ -82,11 +82,19 @@ async def main():
         borders = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>['ok','near','far','bad'].find(c=>b.classList.contains(c)) || '?')")
         lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key], x.key)); })()")
         mine = [2, 0, 1, 0, -2, 0]
-        want = ['ok' if m == l else 'near' if abs(m - l) == 1 else 'bad' for m, l in zip(mine, lv)]
+        def credit(v, g, t):   # the app's aspectCredit: a level off scores more near the line between the two
+            n = sum(abs(v) >= x for x in t); lv = n if v >= 0 else -n
+            if g == lv: return 1
+            if abs(g - lv) > 1: return 0
+            e = [float('-inf'), -t[1], -t[0], t[0], t[1], float('inf')]; lo, hi = e[g + 2], e[g + 3]
+            d, th = (lo - v, abs(lo)) if v < lo else (v - hi, abs(hi))
+            return max({0: 1, 1: 1/3}.get(abs(g - lv), 0), 1 - (2/3) * d / (0.5 * th))
+        cr = [credit(v, m, t) for v, m, t in zip(vals, mine, LEVELS)]
+        want = ['ok' if c >= 0.8 else 'near' if c >= 1/3 - 1e-9 else 'bad' for c in cr]
         print('borders:', borders)
         if borders != want: fails.append(f'borders: {borders}, expected {want}')
         final = await pg.text_content('#revealAcc')
-        pts = round(sum(100 / 6 * {0: 1, 1: 1/3}.get(abs(m - l), 0) for m, l in zip(mine, lv)))
+        pts = round(sum(100 / 6 * c for c in cr))
         nums = [int(x[:-1]) for x in scores if x.endswith('%')]
         if final != f'{pts}%': fails.append(f'score {final}, expected {pts}%')
         if nums != sorted(nums) or not nums or nums[0] != 0: fails.append(f'the score should climb from 0: {scores}')
@@ -215,6 +223,10 @@ async def main():
           return [Math.round(imbalanceScore(v, { space:2 }, 6)), Math.round(imbalanceScore(v, { material:2 }, 6)), spaceCounts('r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'), spaceCounts(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen)]; })()""")
         print('space left out:', so)
         if so != [100, 80, True, False]: fails.append(f'space left out: {so}')
+        # a level off near a threshold: King safety, + from 0.47: all of it at the line, fading to a third
+        # at half the threshold away; two levels off: nothing
+        ac = await pg.evaluate("[[0.47,1],[0.40,1],[0.30,1],[0.10,1],[0.50,0],[0.60,0],[0.80,0],[0.46,2],[0.47,0]].map(([v,g])=>+aspectCredit(v, g, 'king').toFixed(2))")
+        if ac != [1, 0.8, 0.52, 0.33, 0.91, 0.63, 0.33, 0, 1]: fails.append(f'credit near a threshold: {ac}')
         # an ending Stockfish rates on its own (all-zero table): only Material, the rest left out
         sp = await pg.evaluate("""(()=>{ const z = ['Material','Imbalance','Initiative','Pawns','Knights','Bishops','Rooks','Queens','Mobility','King safety','Threats','Passed','Space'].map(k=>`  ${k} |  0.00  0.00 |  0.00  0.00 |  0.00  0.00`).concat(['Total evaluation: 61.20 (white side)']);
           const v = parseAspects(z, '7k/8/5K2/8/8/8/8/6Q1 w - - 0 60'); return [Math.round(v.material), v.activity, v.off.join(' '), !!v.special]; })()""")
