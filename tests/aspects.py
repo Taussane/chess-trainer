@@ -181,7 +181,7 @@ async def main():
           const sum = pred=>ev.features.filter(pred).reduce((t, x)=>t + pw(x.v) * (x.c===0 ? 1 : -1), 0);
           const sh = c=>{ const x = ev.features.find(x=>x.term==='king' && x.kind==='shelter' && x.c===c);
             return x.own.safety - x.v[0] + x.own.files.filter(fl=>fl.ourRank >= 3).reduce((t, fl)=>t + fl.empty - fl.shelter, 0); };
-          const ks = pw([ev.trace.kingSquares[0], 0]), far = sum(x=>x.kind==='kingProtector'), trop = sum(x=>x.kind==='tropism'), trapped = sum(x=>x.kind==='trappedRook');
+          const ks = pw([ev.trace.kingSquares[0], 0]), far = sum(x=>x.kind==='kingProtector'), trop = sum(x=>x.kind==='tropism'), trapped = sum(x=>x.kind==='trappedRook' || x.kind==='bishopPawns') + sum(x=>x.kind==='weakQueen' && queenExposedBy(f, sqName(x.sq)));
           const T = ev.trace.threats.map(x=>x.slice()); ev.features.filter(x=>x.kind==='weakUnopposed').forEach(x=>{ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; });
           return [+(a.activity - (raw.activity - ks - far - trapped)).toFixed(4), +(a.king - (raw.king + ks + pw([sh(0) - sh(1), 0]) + far - trop)).toFixed(4),
                   +(a.threats - (pw(T[0]) - 0.5*pw(T[1]))).toFixed(4), +ks.toFixed(2), +far.toFixed(3), +trop.toFixed(3)]; })()""")
@@ -190,7 +190,7 @@ async def main():
         kg = await pg.evaluate("[kingSquareGain(boardMap('r1b1n1k1/pp3ppp/8/8/8/4K3/PP3PPP/R1B1N3 w - - 0 1'), 'e3', 'w'), kingSquareGain(boardMap('r2qr1k1/pp3ppp/8/8/8/4K3/PP3PPP/R2QR3 w - - 0 1'), 'e3', 'w')].map(x=>Math.round(x*100)/100)")
         print('king square gain (Stockfish: +0.38 with R+B+N each, -0.27 with Q+R+R each):', kg)
         if not (0.33 <= kg[0] <= 0.43 and -0.32 <= kg[1] <= -0.22): fails.append(f'king square gain: {kg}')
-        if am != 'd5w:Outpost d6w:Outpost e3w:Central e7w:Bad e8b:Half-open f1w:Open g4b:Outpost g5b:Outpost': fails.append(f'activity marks: {am}')
+        if am != 'd5w:Outpost d6w:Outpost e3w:Central e8b:Half-open f1w:Open g4b:Outpost g5b:Outpost': fails.append(f'activity marks: {am}')
         ad = await pg.evaluate("(()=>{ const d = activityDetail(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'd5'); return [d.circles.map(c=>c.sq).sort().join(' '), d.arrows.map(a=>a.from+a.to).sort().join(' '), d.nums[0].n]; })()")
         print('activity detail, knight d5:', ad)
         if ad != ['b6 c3 c7 e7 f4', 'c5b4 g7f6', 5]: fails.append(f'activity detail: {ad}')
