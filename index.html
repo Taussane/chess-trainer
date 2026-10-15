@@ -989,7 +989,7 @@ function evaluate(fen){
       if(candidate) bonus = div2(bonus, 2);
       const v = add2(bonus, PassedFile[fileOf(s)]);
       score = add2(score, v);
-      F.push({ term:'passed', c:Us, kind: candidate ? 'candidate' : 'passed', sq:s, v });
+      F.push({ term:'passed', c:Us, kind: candidate ? 'candidate' : 'passed', sq:s, v, strict: !(P.pieces(Them, PAWN) & PassedPawnMask[Us][s]) });   // strict: no enemy pawn can ever stop it
     }
     passedScore[Us] = score;
   }
@@ -2298,7 +2298,7 @@ function aspectsEntry(fen){
 //   king's wing, weak pawns exposed on their file (Threats; they're in Pawns already), trapped rooks,
 //   bishops hemmed in by their own pawns, a queen exposed to a discovered attack, the king's distance to
 //   its pawns, a minor piece behind a pawn, a bishop on a long diagonal, the endgame "initiative", the
-//   extra bonus for attacking an advanced piece.
+//   extra bonus for attacking an advanced piece, pawns not yet passed (one an enemy pawn can still meet).
 const THREATS_WAITING = 0.5;
 function illegalPushThreats(fen, ev){
   const stm = fen.split(' ')[1]==='w' ? 0 : 1;
@@ -2342,6 +2342,7 @@ function adaptAspects(data, fen){
   data.king -= sum(x=>x.kind==='pawnDistance');                                    // the king's distance to its pawns (endgame): dropped
   data.activity -= sum(x=>x.kind==='minorBehindPawn' || x.kind==='longDiagonal');  // a minor piece behind a pawn, a bishop on a long diagonal: dropped
   data.pawns -= pawns(ev.trace.initiative);                                        // the endgame "initiative" correction: dropped
+  data.pawns -= sum(x=>x.term==='passed' && !x.strict);                           // pawns not yet passed (an enemy pawn can still meet them): dropped
   const T = ev.trace.threats.map(x=>x.slice());
   for(const x of illegalPushThreats(fen, ev).concat(ev.features.filter(x=>x.kind==='weakUnopposed' || x.kind==='byRank'))){ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; }   // (weak pawns exposed on their file: dropped)
   const w = pawns(T[0]), b = pawns(T[1]);
@@ -2734,7 +2735,7 @@ function aspectMarks(fen, key){
         const protector = mine.find(o=>Math.abs(FILES.indexOf(o[0]) - f)===1 && relRank(o, c)===relRank(sq, c) - 1);
         const doubledProtected = behind && m[behind] && m[behind].t==='p' && m[behind].c===c && protector;
         const mark = (fav, text)=>{ out.circles.push({ sq, c: fav }); out.labels.push({ sq, c: fav, text }); };
-        if(has(sq, 'passed', 'passed')) mark(c, 'Passed');                            // good for its side
+        if(F.some(f=>f.term==='passed' && f.kind==='passed' && f.strict && sqName(f.sq)===sq)) mark(c, 'Passed');   // good for its side (no enemy pawn can stop it)
         else if(has(sq, 'connected') && relRank(sq, c)>=5) mark(c, 'Linked');          // from its 5th rank: below, the bonus barely moves the score
         else if(doubledProtected) out.arrows.push({ from: protector, to: sq, c });     // doubled but protected: not penalised
         else if(has(sq, 'doubled')) mark(other(c), 'Doubled');                         // weak: good for the other side (a doubled isolated pair: Doubled in front, Isolated behind)
@@ -2776,9 +2777,9 @@ function aspectMarks(fen, key){
       const mark = (sq, fav, text)=>{ out.circles.push({ sq, c: fav }); out.labels.push({ sq, c: fav, text }); };
       for(const x of F.filter(f=>f.c===ci && f.term==='mobility')) out.nums.push({ sq: sqName(x.sq), n: x.n, c });
       for(const x of F.filter(f=>f.c===ci && f.kind==='outpost')) mark(sqName(x.sq), c, 'Outpost');
-      for(const x of F.filter(f=>f.c===ci && (f.kind==='openFile' || f.kind==='semiOpenFile'))) mark(sqName(x.sq), c, x.kind==='openFile' ? 'Open' : 'Half-open');
-      // a rook on its 5th rank or beyond, facing enemy pawns on its rank or file
-      for(const x of F.filter(f=>f.c===ci && f.kind==='rookOnPawn')){ const t = sqName(x.sq); if(!out.labels.some(l=>l.sq===t)) mark(t, c, 'Advanced'); }
+      // a rook on its 5th rank or beyond, facing enemy pawns on its rank or file (rather than Open / Half-open)
+      for(const x of F.filter(f=>f.c===ci && f.kind==='rookOnPawn')) mark(sqName(x.sq), c, 'Advanced');
+      for(const x of F.filter(f=>f.c===ci && (f.kind==='openFile' || f.kind==='semiOpenFile'))){ const t = sqName(x.sq); if(!out.labels.some(l=>l.sq===t)) mark(t, c, x.kind==='openFile' ? 'Open' : 'Half-open'); }
       const them = other(c);
       // an empty outpost square a knight or bishop can go to next move, guarded by one of our pawns:
       // labelled (no ring)

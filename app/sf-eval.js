@@ -530,7 +530,7 @@ function evaluate(fen){
       if(candidate) bonus = div2(bonus, 2);
       const v = add2(bonus, PassedFile[fileOf(s)]);
       score = add2(score, v);
-      F.push({ term:'passed', c:Us, kind: candidate ? 'candidate' : 'passed', sq:s, v });
+      F.push({ term:'passed', c:Us, kind: candidate ? 'candidate' : 'passed', sq:s, v, strict: !(P.pieces(Them, PAWN) & PassedPawnMask[Us][s]) });   // strict: no enemy pawn can ever stop it
     }
     passedScore[Us] = score;
   }
