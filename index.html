@@ -2963,6 +2963,12 @@ function aspectMarks(fen, key){
       }
     }
   }
+  // One label per piece: Hanging / Losing over Pinned, Pinned over the rest (e.g. Outpost). A dropped
+  // label's ring goes with it when its colour differs from the kept one's.
+  const RANK = { Hanging: 3, Losing: 3, Pinned: 2 }, best = {};
+  for(const l of out.labels) if(!best[l.sq] || (RANK[l.text]||0) > (RANK[best[l.sq].text]||0)) best[l.sq] = l;
+  for(const l of out.labels) if(best[l.sq]!==l && l.c!==best[l.sq].c){ const i = out.circles.findIndex(x=>x.sq===l.sq && x.c===l.c); if(i>=0) out.circles.splice(i, 1); }
+  out.labels = out.labels.filter(l=>best[l.sq]===l);
   return out;
 }
 // Squares, rings, numbers and arrows on the board's overlay (the arrows svg, 480×480).

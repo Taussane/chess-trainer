@@ -171,6 +171,9 @@ async def main():
         print('activity marks:', am)
         un = await pg.evaluate("['r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w - - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2QK2R w - - 1 14'].map(f=>aspectMarks(f, 'king').labels.filter(l=>l.text==='Uncastled').map(l=>l.sq+l.c).join(' '))")
         if un != ['', 'e8w', '']: fails.append(f'uncastled king (King safety; not while it can castle, nor when both kings are): {un}')
+        # one label per piece: Hanging over Pinned (Threats), Pinned over Outpost (Activity)
+        one = await pg.evaluate("[['r3r2k/pp3pbp/n5q1/8/5Bb1/PN2N1R1/1PPQ4/2K4R b - - 4 26','threats'], ['6k1/2p5/8/p2PP2p/2PR2bq/6p1/PP4P1/5KQ1 w - - 5 38','activity']].map(([f,k])=>aspectMarks(f, k).labels.filter(l=>l.sq==='g4').map(l=>l.text).join(' '))")
+        if one != ['Hanging', 'Pinned']: fails.append(f'one label per piece: {one}')
         # our adaptations, on one position: Activity loses the kings' middlegame squares and the pieces' distance
         # to their king (both to King safety) and the trapped rook while castling is possible; King safety also
         # takes the shelter where the king stands and drops the attacks on the king's wing; threats by the side
