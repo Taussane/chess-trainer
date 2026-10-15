@@ -136,7 +136,7 @@ async def main():
             if await pg.evaluate("getComputedStyle(document.querySelector('#aspects .plan-row.sel .plan-sit')).textDecorationLine") != 'none': fails.append('the selected plan line should not be underlined')
         # the plan, from made-up imbalances (White to play)
         plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side)=>planFor({ fen:'4k3/8/8/8/8/8/8/4K3 '+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.plan);
-          const Q = (vals, side)=>planFor({ fen:'4k3/8/8/8/8/8/P7/4K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);
+          const Q = (vals, side)=>planFor({ fen:'4k2r/8/8/8/8/8/P7/R3K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);
           return { passed: Q({ pawns:0.5 }, 'w'), blockade: Q({ pawns:0.5 }, 'b'),
                    ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:2.5 }, 200), cramped: P({ space:-0.5 }, -30),
                    blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400) }; })()""")
@@ -199,7 +199,7 @@ async def main():
         if mt != [9, 0, 'd1d8', -9, -9, None]: fails.append(f'mates: {mt}')
         push = await pg.evaluate("aspectMarks(TEST_POSITIONS.find(p=>p.title==='White in check').fen, 'threats').arrows.map(a=>a.from+a.to+a.c).join(' ')")
         if 'a2a3w' not in push: fails.append(f'a pawn push attacking a piece: {push}')
-        if km != ['b2:Shelter c2:Shelter c3:Storm f7:Shelter g6:Storm g7:Shelter h6:Shelter', 'a5c3b c6c3b e4g6w g5f7w', 'd1d8', 'b1d3 f8h6', 0]: fails.append(f'king marks: {km}')
+        if km != ['b2:Shelter c2:Shelter c3:Storm f7:Shelter g6:Storm g7:Shelter h6:Shelter', 'a5c3b c6c3b e4g6w g5f7w', 'd1d8', 'b1d3 f6h8', 0]: fails.append(f'king marks: {km}')
         cs = await pg.evaluate("aspectMarks(TEST_POSITIONS.find(p=>p.title==='Castling').fen, 'king').arrows.filter(a=>a.from==='e1'||a.from==='e8').map(a=>a.from+a.to+(a.dash?'-':'')).sort().join(' ')")
         if cs != 'e1g1': fails.append(f'castling arrows (only O-O is possible now): {cs}')
         np = await pg.evaluate("aspectMarks('4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.map(l=>l.sq+':'+l.text).sort().join(' ')")
@@ -214,10 +214,10 @@ async def main():
             pair: M('4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').c,
             pawns: M('4k3/8/8/3p4/8/8/P1P3PP/4K3 w - - 0 1', 'pawns').c,
             threats: M('4k3/8/2n5/3P4/8/8/8/4K3 w - - 0 1', 'threats').a,
-            hanging: M('4k3/8/8/3r4/8/8/3Q4/4K3 b - - 0 1', 'threats').a,
+            hanging: M('4k3/7q/8/3r4/8/8/3Q4/4K1R1 b - - 0 1', 'threats').a,
             fork: M('4k3/8/2n1b3/8/2PP4/8/8/4K3 w - - 0 1', 'threats'),
             pin: M('8/4k3/5n2/6B1/4P3/8/8/4K3 w - - 0 1', 'threats'),
-            queenFork: M('8/2q1k3/8/8/8/2N5/8/4K3 w - - 0 1', 'threats'),
+            queenFork: M('8/2q1k3/8/8/8/2N5/1Q6/4K3 w - - 0 1', 'threats'),
             guarded: M('4k3/1p6/2n5/1B6/8/8/8/4K3 w - - 0 1', 'threats').a,
             spaceFew: M('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 'space').t,
             knight: M('4k3/8/8/8/8/8/8/1N2K3 w - - 0 1', 'activity').n,
@@ -226,7 +226,7 @@ async def main():
         for k, v in want.items():
             if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
         # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (the move's arrow, no rings)
-        for k, a, c in [('fork', 'c6d4b d4d5w e6c4b', 'c4b d4b'), ('pin', 'e4e5w', 'f6w'), ('queenFork', 'c3d5w c7c3b', 'c3b')]:
+        for k, a, c in [('fork', 'c6d4b d4d5w e6c4b', 'c4b d4b'), ('pin', 'e4e5w', 'f6w'), ('queenFork', 'c3d5w', '')]:
             if marks[k]['a'] != a or marks[k]['c'] != c: fails.append(f'{k} threats: {marks[k]}')
         # the pool: Position evaluation's positions less the tactical ones
         n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, IMBALANCE_SKIP.length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key))]")
