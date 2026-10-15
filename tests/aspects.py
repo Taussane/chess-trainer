@@ -175,12 +175,12 @@ async def main():
         one = await pg.evaluate("[['r3r2k/pp3pbp/n5q1/8/5Bb1/PN2N1R1/1PPQ4/2K4R b - - 4 26','threats'], ['6k1/2p5/8/p2PP2p/2PR2bq/6p1/PP4P1/5KQ1 w - - 5 38','activity']].map(([f,k])=>aspectMarks(f, k).labels.filter(l=>l.sq==='g4').map(l=>l.text).join(' '))")
         if one != ['Hanging', 'Pinned']: fails.append(f'one label per piece: {one}')
         # pawn islands: White 2 (a-b, f-h), Black 3 (a, d, f-h): Black pays one island, the letters show them;
-        # none shown when both sides have as many
+        # shown in any case
         isl = await pg.evaluate("""(()=>{ const f = 'r4rk1/4bppp/p3bn2/3p4/N7/3BB3/PP3PPP/R3R1K1 w - - 3 16', g = '2r3k1/2p3p1/1p6/3PP2p/P7/2P2P2/2P1PP2/3R2K1 w - - 0 30';
           const v = ()=>adaptAspects(parseAspects(sfTableLines(f), f), f).pawns, a = v(); PAWN_ISLAND[0] = PAWN_ISLAND[1] = 0; const b = v(); PAWN_ISLAND[0] = 5; PAWN_ISLAND[1] = 15;
           const ph = sfEvalOf(f).phase, want = (5*ph + 15*(128 - ph))/128/SF_PAWN_EG;
           return [Math.abs(a - b - want) < 1e-9, aspectMarks(f, 'pawns').nums.map(n=>n.sq+n.c+n.n).sort().join(' '), aspectMarks(g, 'pawns').nums.length]; })()""")
-        if isl != [True, 'a2wa a6ba b2wa d5bb f2wb f7bc g2wb g7bc h2wb h7bc', 0]: fails.append(f'pawn islands: {isl}')
+        if isl != [True, 'a2wa a6ba b2wa d5bb f2wb f7bc g2wb g7bc h2wb h7bc', 12]: fails.append(f'pawn islands: {isl}')
         # our adaptations, on one position: Activity loses the kings' middlegame squares and the pieces' distance
         # to their king (both to King safety) and the trapped rook while castling is possible; King safety also
         # takes the shelter where the king stands and drops the attacks on the king's wing; threats by the side
