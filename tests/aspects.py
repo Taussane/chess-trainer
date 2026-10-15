@@ -171,19 +171,26 @@ async def main():
         print('activity marks:', am)
         un = await pg.evaluate("['r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w - - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2QK2R w - - 1 14'].map(f=>aspectMarks(f, 'king').labels.filter(l=>l.text==='Uncastled').map(l=>l.sq+l.c).join(' '))")
         if un != ['', 'e8w', '']: fails.append(f'uncastled king (King safety; not while it can castle, nor when both kings are): {un}')
-        # our adaptations: the middlegame part of the kings' squares moves from Activity to King safety; the
-        # side to move's threats count in full, the other side's at half
+        # our adaptations, on one position: Activity loses the kings' middlegame squares and the pieces' distance
+        # to their king (both to King safety) and the trapped rook while castling is possible; King safety also
+        # takes the shelter where the king stands and drops the attacks on the king's wing; threats by the side
+        # to move count in full, the other side's at half, without weak pawns exposed on their file
         ad = await pg.evaluate("""(()=>{ const f = 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14';
           const raw = parseAspects(sfTableLines(f), f), a = adaptAspects(parseAspects(sfTableLines(f), f), f), ev = sfEvalOf(f);
           const pw = ([mg, eg])=>(mg*ev.phase + eg*(128 - ev.phase)) / 128 / SF_PAWN_EG;
-          const sh = c=>{ const x = ev.features.find(x=>x.term==='king' && x.kind==='shelter' && x.c===c); return x.own.safety - x.v[0]; };
-          return [+(a.king - raw.king - pw([sh(0) - sh(1), 0])).toFixed(3), +(raw.activity - a.activity).toFixed(3), +pw([ev.trace.kingSquares[0], 0]).toFixed(3),
-                  +(a.threats - (pw(ev.trace.threats[0]) - 0.5*pw(ev.trace.threats[1]))).toFixed(3)]; })()""")
-        if ad[0] != ad[2] or ad[1] != ad[2] or ad[0] <= 0.3 or ad[3] != 0: fails.append(f'adaptations: {ad}')
+          const sum = pred=>ev.features.filter(pred).reduce((t, x)=>t + pw(x.v) * (x.c===0 ? 1 : -1), 0);
+          const sh = c=>{ const x = ev.features.find(x=>x.term==='king' && x.kind==='shelter' && x.c===c);
+            return x.own.safety - x.v[0] + x.own.files.filter(fl=>fl.ourRank >= 3).reduce((t, fl)=>t + fl.empty - fl.shelter, 0); };
+          const ks = pw([ev.trace.kingSquares[0], 0]), far = sum(x=>x.kind==='kingProtector'), trop = sum(x=>x.kind==='tropism'), trapped = sum(x=>x.kind==='trappedRook');
+          const T = ev.trace.threats.map(x=>x.slice()); ev.features.filter(x=>x.kind==='weakUnopposed').forEach(x=>{ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; });
+          return [+(a.activity - (raw.activity - ks - far - trapped)).toFixed(4), +(a.king - (raw.king + ks + pw([sh(0) - sh(1), 0]) + far - trop)).toFixed(4),
+                  +(a.threats - (pw(T[0]) - 0.5*pw(T[1]))).toFixed(4), +ks.toFixed(2), +far.toFixed(3), +trop.toFixed(3)]; })()""")
+        print('adaptations:', ad)
+        if ad[0] != 0 or ad[1] != 0 or ad[2] != 0 or ad[3] <= 0.3 or ad[5] == 0: fails.append(f'adaptations: {ad}')
         kg = await pg.evaluate("[kingSquareGain(boardMap('r1b1n1k1/pp3ppp/8/8/8/4K3/PP3PPP/R1B1N3 w - - 0 1'), 'e3', 'w'), kingSquareGain(boardMap('r2qr1k1/pp3ppp/8/8/8/4K3/PP3PPP/R2QR3 w - - 0 1'), 'e3', 'w')].map(x=>Math.round(x*100)/100)")
         print('king square gain (Stockfish: +0.38 with R+B+N each, -0.27 with Q+R+R each):', kg)
         if not (0.33 <= kg[0] <= 0.43 and -0.32 <= kg[1] <= -0.22): fails.append(f'king square gain: {kg}')
-        if am != 'd5w:Outpost d6w:Outpost e3w:Central e8b:Half-open f1w:Open': fails.append(f'activity marks: {am}')
+        if am != 'd5w:Outpost d6w:Outpost e3w:Central e7w:Bad e8b:Half-open f1w:Open g4b:Outpost g5b:Outpost': fails.append(f'activity marks: {am}')
         ad = await pg.evaluate("(()=>{ const d = activityDetail(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'd5'); return [d.circles.map(c=>c.sq).sort().join(' '), d.arrows.map(a=>a.from+a.to).sort().join(' '), d.nums[0].n]; })()")
         print('activity detail, knight d5:', ad)
         if ad != ['b6 c3 c7 e7 f4', 'c5b4 g7f6', 5]: fails.append(f'activity detail: {ad}')
