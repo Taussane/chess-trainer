@@ -309,6 +309,8 @@ function evaluate(fen){
   e.asymmetry = popcount((e.passedPawns[WHITE] | e.passedPawns[BLACK]) | BigInt(e.semiopenFiles[WHITE] ^ e.semiopenFiles[BLACK]));
   score = add2(score, sub2(pawnScore[WHITE], pawnScore[BLACK]));
   T.material = psqScore; T.imbalance = [imb, imb]; T.pawns = pawnScore;
+  // (not in Stockfish's table) the kings' square-table part of Material, White's less Black's
+  T.kingSquares = add2(psq(WHITE, KING, P.ksq(WHITE)), psq(BLACK, KING, P.ksq(BLACK)));
   const lazy = Math.trunc((score[0] + score[1]) / 2);
   if(Math.abs(lazy) > LazyThreshold){ out.special = 'lazy'; out.lazy = lazy; return out; }
 

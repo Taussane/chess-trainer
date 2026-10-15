@@ -168,8 +168,16 @@ async def main():
         if sm != ['d5w d6b e4w e5b', 0, 'd5:Central d6:Central e4:Central e5:Central', 'c5d4b d5c6w d5e6w e4f5w e5d4b e5f4b']: fails.append(f'space marks: {sm}')
         am = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'activity'); return m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '); })()")
         print('activity marks:', am)
-        un = await pg.evaluate("aspectMarks('r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14', 'activity').labels.map(l=>l.sq+l.c+':'+l.text).join(' ')")
-        if un != 'e8w:Uncastled': fails.append(f'uncastled king: {un}')
+        un = await pg.evaluate("aspectMarks('r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14', 'king').labels.filter(l=>l.text==='Uncastled').map(l=>l.sq+l.c).join(' ')")
+        if un != 'e8w': fails.append(f'uncastled king (King safety): {un}')
+        # our adaptations: the middlegame part of the kings' squares moves from Activity to King safety; the
+        # side to move's threats count in full, the other side's at half
+        ad = await pg.evaluate("""(()=>{ const f = 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14';
+          const raw = parseAspects(sfTableLines(f), f), a = adaptAspects(parseAspects(sfTableLines(f), f), f), ev = sfEvalOf(f);
+          const pw = ([mg, eg])=>(mg*ev.phase + eg*(128 - ev.phase)) / 128 / SF_PAWN_EG;
+          return [+(a.king - raw.king).toFixed(3), +(raw.activity - a.activity).toFixed(3), +pw([ev.trace.kingSquares[0], 0]).toFixed(3),
+                  +(a.threats - (pw(ev.trace.threats[0]) - 0.5*pw(ev.trace.threats[1]))).toFixed(3)]; })()""")
+        if ad[0] != ad[2] or ad[1] != ad[2] or ad[0] <= 0.3 or ad[3] != 0: fails.append(f'adaptations: {ad}')
         kg = await pg.evaluate("[kingSquareGain(boardMap('r1b1n1k1/pp3ppp/8/8/8/4K3/PP3PPP/R1B1N3 w - - 0 1'), 'e3', 'w'), kingSquareGain(boardMap('r2qr1k1/pp3ppp/8/8/8/4K3/PP3PPP/R2QR3 w - - 0 1'), 'e3', 'w')].map(x=>Math.round(x*100)/100)")
         print('king square gain (Stockfish: +0.38 with R+B+N each, -0.27 with Q+R+R each):', kg)
         if not (0.33 <= kg[0] <= 0.43 and -0.32 <= kg[1] <= -0.22): fails.append(f'king square gain: {kg}')
