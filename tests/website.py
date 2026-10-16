@@ -17,7 +17,7 @@ async def main():
         async def route(r):
             u = r.request.url
             if 'chess.js' in u: await r.fulfill(body=T.CHESS, content_type='application/javascript')
-            elif u.startswith('https://site.test/'): await r.fulfill(body=SITE, content_type='text/html')
+            elif u.startswith('https://site.test/') and '/vendor/' not in u: await r.fulfill(body=SITE, content_type='text/html')
             elif u.startswith('https://lichess.org/api/games/user/'):
                 asked.append((u, r.request.headers.get('accept')))
                 if '/TestPlayer?' in u: await r.fulfill(body=pathlib.Path(T.SAMPLE).read_text(), content_type='application/x-chess-pgn', headers={'access-control-allow-origin':'*'})

@@ -48,7 +48,7 @@ The rules are explained in plain words in the **Position finder rules** document
 ## Rebuilding the positions
 
 ```sh
-npm run setup:engine          # once: builds engine/stockfish
+npm run setup:engine          # once: downloads engine/stockfish
 npm run find                  # runs the finder on library/gm-classics.pgn into data/ (about 3 minutes per new game at depth 18)
 npm run report                # prints the statistics
 node finder/baseline.js data/pools.json   # how a no-thinking player scores (50/50, random top-5 move, random order)

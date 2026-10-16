@@ -20,7 +20,7 @@ async def main():
             u, m = r.request.url, r.request.method
             if m == 'OPTIONS': return await r.fulfill(status=204, headers=CORS)
             if 'chess.js' in u: return await r.fulfill(body=T.CHESS, content_type='application/javascript')
-            if u.startswith('https://site.test/'): return await r.fulfill(body=SITE, content_type='text/html')
+            if u.startswith('https://site.test/') and '/vendor/' not in u: return await r.fulfill(body=SITE, content_type='text/html')
             if u.startswith('https://lichess.org/oauth?'):
                 q = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(u).query)); L['auth'] = q
                 # Lichess's approval page, already approved (or cancelled): back to the site.

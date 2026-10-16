@@ -13,7 +13,7 @@ async def main():
         async def route(r):
             u = r.request.url
             if 'chess.js' in u: return await r.fulfill(body=T.CHESS, content_type='application/javascript')
-            if u.startswith('https://site.test/'): return await r.fulfill(body=SITE, content_type='text/html')
+            if u.startswith('https://site.test/') and '/vendor/' not in u: return await r.fulfill(body=SITE, content_type='text/html')
             await r.abort()
         await pg.route('http*://**/*', lambda r: asyncio.ensure_future(route(r)))
         await pg.goto('https://site.test/')

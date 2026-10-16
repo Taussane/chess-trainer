@@ -1136,11 +1136,15 @@ function boardObjFromGame(g){
 }
 
 // --- Real evaluation, via Stockfish running in a Web Worker over the UCI protocol ---
-// Loaded from a single-file build (older Stockfish, asm.js/WASM hybrid with the engine
-// binary embedded) so there's no separate .wasm fetch to wire up — good enough strength
-// for this app's purposes, per the "doesn't need to be state of the art" brief.
-// Two CDN copies of the exact same file: cdnjs first (the sandbox's preferred allowlisted
-// host), jsdelivr as a fallback if that fetch fails for any reason.
+// Stockfish 19, the "lite, single-threaded" WebAssembly build of stockfish.js (Nathan Rugg): a
+// small network (about 1.9 MB with the engine), and no special server headers needed.
+// The website serves its own copy (vendor/stockfish/, next to the page); elsewhere (the app
+// published inside Claude) the same files come from jsDelivr's mirror of this repository.
+// The .js file finds its .wasm next to itself, or at the address given after "#" in the
+// worker's address (used when it runs inside a blob: worker).
+// Stockfish 10 (single-file JavaScript build, no .wasm) stays as the last resort.
+const SF19_JS = 'stockfish-19-lite-single.js', SF19_WASM = 'stockfish-19-lite-single.wasm';
+const SF19_CDN = 'https://cdn.jsdelivr.net/gh/Taussane/chess-trainer@main/vendor/stockfish/';
 const SF_URLS = [
   "https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js",
   "https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js"
@@ -1171,6 +1175,8 @@ let sfCurrentLines = {}; // rank (1..N) -> {cp, mate, uci} for the search curren
 // Try both transports against both CDNs before giving up.
 function initEngine(){ attemptEngineLoad(0); }
 const ENGINE_ATTEMPTS = [
+  {url: 'vendor/stockfish/'+SF19_JS, mode:'direct', wait:15000},
+  {url: SF19_CDN+SF19_JS, wasm: SF19_CDN+SF19_WASM, mode:'bootstrap', wait:15000},
   {url: SF_URLS[0], mode:'bootstrap'},
   {url: SF_URLS[1], mode:'bootstrap'},
   {url: SF_URLS[0], mode:'direct'},
@@ -1181,12 +1187,12 @@ function attemptEngineLoad(i){
     failEngine('the engine could not be loaded from any source (fetch, importScripts and direct Worker construction were all blocked)');
     return;
   }
-  const {url, mode} = ENGINE_ATTEMPTS[i];
+  const {url, mode, wasm, wait} = ENGINE_ATTEMPTS[i];
   let worker;
   try{
     if(mode==='bootstrap'){
       const blob = new Blob(['importScripts('+JSON.stringify(url)+');'], {type:'application/javascript'});
-      worker = new Worker(URL.createObjectURL(blob));
+      worker = new Worker(URL.createObjectURL(blob) + (wasm ? '#'+encodeURIComponent(wasm) : ''));
     } else {
       worker = new Worker(url);
     }
@@ -1200,7 +1206,7 @@ function attemptEngineLoad(i){
     settled = true;
     try{ worker.terminate(); }catch(err){}
     attemptEngineLoad(i+1);
-  }, 6000);
+  }, wait || 6000);
   // Handshake-only handler: watches for uciok/readyok, then hands off to the persistent
   // onEngineMessage handler for real queries once this transport is proven to work.
   worker.onmessage = (e)=>{

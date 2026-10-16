@@ -18,7 +18,7 @@ async def main():
             b = await p.chromium.launch(); ctx = await b.new_context(viewport={'width':390,'height':760}); pg = await ctx.new_page()
             async def route(r):
                 if 'chess.js' in r.request.url: await r.fulfill(body=T.CHESS, content_type='application/javascript')
-                elif r.request.url.startswith('https://app.test/'): await r.fulfill(body='<!doctype html><html><head><meta charset="utf-8"></head><body>'+T.SRC+'</body></html>', content_type='text/html')
+                elif r.request.url.startswith('https://app.test/') and '/vendor/' not in r.request.url: await r.fulfill(body='<!doctype html><html><head><meta charset="utf-8"></head><body>'+T.SRC+'</body></html>', content_type='text/html')
                 else: await r.abort()
             await pg.route('http*://**/*', lambda r: asyncio.ensure_future(route(r)))
             await pg.add_init_script("window.claude = { use: async()=>null }; window.__longest=0; new PerformanceObserver(l=>l.getEntries().forEach(e=>{ window.__longest=Math.max(window.__longest, Math.round(e.duration)); })).observe({type:'longtask', buffered:true});")

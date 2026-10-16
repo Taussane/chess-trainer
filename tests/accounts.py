@@ -29,7 +29,7 @@ async def new_browser(p, SITE, login_as):
     async def route(r):
         u, m = r.request.url, r.request.method
         if 'chess.js' in u: return await r.fulfill(body=T.CHESS, content_type='application/javascript')
-        if u.startswith('https://site.test/'): return await r.fulfill(body=SITE, content_type='text/html')
+        if u.startswith('https://site.test/') and '/vendor/' not in u: return await r.fulfill(body=SITE, content_type='text/html')
         if u.startswith('https://api.test/'):   # to the account server, as the browser sent it
             if API_DELAY[0]: await asyncio.sleep(API_DELAY[0])
             req = urllib.request.Request(API + u[len('https://api.test'):], method=m, data=r.request.post_data_buffer,

@@ -8,7 +8,7 @@ Move generation and validation. Loaded by the app from a CDN; a copy is in `vend
 
 ## Stockfish
 
-The chess engine. The app loads Stockfish 10 (JavaScript build) from a CDN, and `app/sf-eval.js` is a JavaScript port of that build's evaluation (the multi-variant fork by Niklas Fiekas), under the same licence; the position finder uses Stockfish 16.1, built from source by `scripts/setup-stockfish.sh` and not stored here. Stockfish is licensed under the GNU General Public License v3.0: https://github.com/official-stockfish/Stockfish
+The chess engine. The app searches with Stockfish 19 (the "lite, single-threaded" WebAssembly build of stockfish.js by Nathan Rugg, copied in `vendor/stockfish/`; source: https://github.com/nmrugg/stockfish.js/tree/v19.0.1), with Stockfish 10 (JavaScript build, from a CDN) as a fallback. `app/sf-eval.js` is a JavaScript port of Stockfish 10's evaluation (the multi-variant fork by Niklas Fiekas), under the same licence. The position finder uses the official Stockfish 19 build, downloaded by `scripts/setup-stockfish.sh` and not stored here. Stockfish is licensed under the GNU General Public License v3.0: https://github.com/official-stockfish/Stockfish
 
 ## Chess pieces: Cburnett set
 

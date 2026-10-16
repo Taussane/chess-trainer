@@ -41,7 +41,7 @@ async def open_app(p, results=None, games=None, meta=None, local=None, fake_engi
     pg = await ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
     async def route(r):
         if 'chess.js' in r.request.url: await r.fulfill(body=T.CHESS, content_type='application/javascript')
-        elif r.request.url.startswith('https://app.test/'): await r.fulfill(body='<!doctype html><html><head><meta charset="utf-8"></head><body>'+T.SRC+'</body></html>', content_type='text/html')
+        elif r.request.url.startswith('https://app.test/') and '/vendor/' not in r.request.url: await r.fulfill(body='<!doctype html><html><head><meta charset="utf-8"></head><body>'+T.SRC+'</body></html>', content_type='text/html')
         else: await r.abort()
     await pg.route('http*://**/*', lambda r: asyncio.ensure_future(route(r)))
     await pg.add_init_script(FAKEDB % (json.dumps(results or []), json.dumps(games or []), json.dumps(meta or {})))

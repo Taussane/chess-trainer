@@ -31,7 +31,7 @@ async def page_with_app(p, storage=None, in_claude=True):
     pg = await ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
     async def route(r):
         if 'chess.js' in r.request.url: await r.fulfill(body=CHESS, content_type='application/javascript')
-        elif r.request.url.startswith('https://app.test/'): await r.fulfill(body='<!doctype html><html><head><meta charset="utf-8"></head><body>'+SRC+'</body></html>', content_type='text/html')
+        elif r.request.url.startswith('https://app.test/') and '/vendor/' not in r.request.url: await r.fulfill(body='<!doctype html><html><head><meta charset="utf-8"></head><body>'+SRC+'</body></html>', content_type='text/html')
         else: await r.abort()
     await pg.route('http*://**/*', lambda r: asyncio.ensure_future(route(r)))
     if in_claude: await pg.add_init_script("window.claude = { use: async()=>null };")
