@@ -2683,13 +2683,21 @@ document.addEventListener('pointerdown', e=>{
 // arrows:[{from,to,c}]}, c = 'w' | 'b'.
 const VAL = { p:1, n:3, b:3, r:5, q:9, k:0 };
 // What an exchange on t started by the piece on a wins for its side (in pawns; captures on t only,
-// each side using its cheapest piece first, free to stop when it pays).
+// each side using its cheapest piece first, free to stop when it pays). Played out on a copy of the
+// board, so a piece behind another on the same line (a queen behind a bishop) joins in once the one
+// in front has taken. (`A` is unused: the attackers are found again after each capture.)
 const SEE_VAL = { p:1, n:3, b:3, r:5, q:9, k:100 };
 function see(m, A, a, t){
-  const c = m[a].c, list = s=>s.map(x=>SEE_VAL[m[x].t]).sort((x, y)=>x - y);
-  const atk = { [c]: list((A[c][t] || []).filter(x=>x!==a)), [other(c)]: list(A[other(c)][t] || []) };
-  const gain = [SEE_VAL[m[t].t]]; let onSq = SEE_VAL[m[a].t], side = other(c);
-  while(atk[side].length){ gain.push(onSq - gain[gain.length - 1]); onSq = atk[side].shift(); side = other(side); }
+  const b = { ...m }, gain = [SEE_VAL[b[t].t]];
+  let onSq = SEE_VAL[b[a].t], side = other(b[a].c);
+  b[t] = b[a]; delete b[a];
+  for(;;){
+    let best = null;
+    for(const sq in b) if(sq!==t && b[sq].c===side && (best===null || SEE_VAL[b[sq].t] < SEE_VAL[b[best].t]) && attacksFrom(b, sq).includes(t)) best = sq;
+    if(best===null) break;
+    gain.push(onSq - gain[gain.length - 1]); onSq = SEE_VAL[b[best].t];
+    b[t] = b[best]; delete b[best]; side = other(side);
+  }
   for(let i = gain.length - 1; i > 0; i--) gain[i - 1] = -Math.max(-gain[i - 1], gain[i]);
   return gain[0];
 }
