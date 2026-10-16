@@ -1,4 +1,4 @@
-# Writes each master game's date ("1981-05-12", or "1981" when only the year is known) and short event
+# Writes each master game's players ("Botvinnik – Tal"), the day it joined the library (Added), its date ("1981-05-12", or "1981" when only the year is known) and short event
 # name (the library's EventShort header, written by hand: "USSR Championship", "Leipzig Olympiad"…)
 # into the app (the /*GAME_INFO*/ ... /*END GAME_INFO*/ block of app/index.html), shown above the board.
 # Game ids are the finder's: g0, g1, … in the order of library/gm-classics.pgn (checked against data/stats.json).
@@ -17,6 +17,11 @@ for i, (g, s) in enumerate(zip(games, stats)):
     info = {}
     if y.isdigit(): info['date'] = y + ('-' + m + ('-' + d if d.isdigit() else '') if m.isdigit() else '')
     if h.get('EventShort'): info['event'] = h['EventShort']
+    info['title'] = h.get('White', '').split(',')[0].strip() + ' – ' + h.get('Black', '').split(',')[0].strip()
+    ad = re.match(r'^(\d{4})\.(\d{2})\.(\d{2})$', h.get('Added', ''))
+    if ad:
+        import calendar
+        info['added'] = calendar.timegm((int(ad[1]), int(ad[2]), int(ad[3]), 0, 0, 0)) * 1000
     dates[s['id']] = info
 app = root/'app'/'index.html'; s = app.read_text(encoding='utf-8')
 assert '/*GAME_INFO*/' in s

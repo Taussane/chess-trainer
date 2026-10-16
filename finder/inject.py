@@ -1,4 +1,4 @@
-# Copies the pools from a finder run (positions only; the app picks and evaluates moves itself) into the app (the /*POOLS*/ ... /*END POOLS*/ block of app/index.html),
+# Copies the pools from a finder run (positions only, as references into the games; the app picks and evaluates moves itself) into the app (the /*POOLS*/ ... /*END POOLS*/ block of app/index.html),
 # with the number of games (/*POOLS_GAMES*/) and their moves (/*GAME_MOVES*/), then runs scripts/master-info.py (dates and events).
 # Usage: python3 finder/inject.py data/pools.json
 import json, re, sys, pathlib
@@ -6,9 +6,10 @@ src = sys.argv[1]
 app = pathlib.Path(__file__).resolve().parent.parent / 'app' / 'index.html'
 d = json.load(open(src, encoding='utf-8'))
 assert 'player' not in d, 'this is a player\'s own games (finder/own.js output); only master pools go into POOLS'
+# Each position as [game number, half-moves played]: the app replays the game's moves (/*GAME_MOVES*/)
+# to rebuild the board, the last move and the game move; players and dates come from /*GAME_INFO*/.
 def slim(e):
-    o = {k: e[k] for k in ('key','fen','side','moveNo','title','year','last','hist','game','ply','added')}
-    return o
+    return [int(e['game'][1:]), e['ply']]
 pools = {k: [slim(e) for e in v] for k, v in d['pools'].items()}
 s = app.read_text(encoding='utf-8')
 assert '/*POOLS*/' in s and '/*END POOLS*/' in s, 'POOLS markers not found in app/index.html'

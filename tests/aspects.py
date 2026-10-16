@@ -71,7 +71,7 @@ async def main():
         rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+[...r.querySelector('.asp-badge').classList].filter(c=>['w','b','eq'].includes(c))[0]+' '+r.querySelector('.asp-badge').textContent)")
         heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.textContent)")
         print('rows:', rows, heads)
-        if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King safety', 'Threats']: fails.append(f'rows: {rows}')
+        if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King safety', 'Other threats']: fails.append(f'rows: {rows}')
         if heads != ['Static', 'Dynamic']: fails.append(f'column titles: {heads}')
         vals = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>a[x.key]); })()")
         LEVELS = await pg.evaluate("ASPECTS.map(x=>x.levels)")   # the app's own thresholds
@@ -238,11 +238,11 @@ async def main():
         if sp != [13, 0, 'pawns space activity king threats', True]: fails.append(f'special ending: {sp}')
         km = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='King safety marks').fen, 'king'); return [m.labels.map(l=>l.sq+':'+l.text).sort().join(' '), m.arrows.filter(a=>!a.outline).map(a=>a.from+a.to+a.c).sort().join(' '), m.arrows.filter(a=>a.outline).map(a=>a.from+a.to).join(' '), m.zones.map(z=>z.a+z.b).join(' '), m.circles.filter(c=>c.sq==='e3'||c.sq==='a5').length]; })()")
         print('king marks:', km)
-        # mates found by the short search: mate in one in King safety, longer ones in Threats (++)
+        # mates found by the short search: any mate in King safety (++), Other threats untouched
         mt = await pg.evaluate("""(()=>{ const V = ()=>{ const v = { material:0, pawns:0, space:0, activity:0, king:0, threats:0 }; Object.defineProperty(v, 'off', { value:[] }); return v; };
           const a = applyMate(V(), { lines:[{ mate:1, uci:'d1d8' }] }, '6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 30'), b = applyMate(V(), { lines:[{ mate:3, uci:'d1d8' }] }, '8/8/8/8/8/8/8/8 b - - 0 1'), c = applyMate(V(), { lines:[{ mate:-2, uci:'a1a2' }] }, '8/8/8/8/8/8/8/8 w - - 0 1');
-          return [a.king, a.threats, a.mate.uci, b.threats, c.threats, c.mate.uci]; })()""")
-        if mt != [9, 0, 'd1d8', -9, -9, None]: fails.append(f'mates: {mt}')
+          return [a.king, a.threats, a.mate.uci, b.king, b.threats, c.king, c.threats, c.mate.uci]; })()""")
+        if mt != [9, 0, 'd1d8', -9, 0, -9, 0, None]: fails.append(f'mates: {mt}')
         # a pawn push attacking a piece; not while the push is illegal (the side to move in check): not counted then
         push = await pg.evaluate("""(()=>{ const chk = TEST_POSITIONS.find(p=>p.title==='White in check').fen, free = 'rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 3 5';
           const A = f=>aspectMarks(f, 'threats').arrows.map(a=>a.from+a.to+a.c).join(' '), L = f=>aspectLevel(adaptAspects(parseAspects(sfTableLines(f), f), f).threats, 'threats');
