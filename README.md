@@ -53,7 +53,7 @@ npm run find                  # runs the finder on library/gm-classics.pgn into 
 npm run report                # prints the statistics
 node finder/baseline.js data/pools.json   # how a no-thinking player scores (50/50, random top-5 move, random order)
 npm run inject                # copies data/pools.json into app/index.html
-STOCKFISH_JS=/path/to/stockfish.js node scripts/imbalance-skip.js   # after new Position evaluation positions: lists the tactical ones Imbalance reading leaves out (needs Stockfish.js 10 for Node, the engine the app runs)
+python3 scripts/imbalance-skip.py   # after new Position evaluation positions: lists the tactical ones Imbalance reading leaves out (the app's own engine, in the page) and prints the 40/40/20 levels
 npm run site                  # rebuilds index.html from the app
 npm run test:all              # every test
 ```
