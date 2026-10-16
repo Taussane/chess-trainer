@@ -3042,7 +3042,7 @@ function drawMarks(svg, marks){
   // A number in the top corner of the square, on a small badge like the labels'.
   const nums = marks.nums.map(t=>{ const r = R(t.sq), w = String(t.n).length*7 + 8, h = 16, x = r.x + 59 - w, y = r.y + 1;
     return `<rect class="mk-num" data-right="${x + w}" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.n}</text>`; }).join('');
-  const defs = ['r','y'].map(k=>`<marker id="mk_${k}" markerWidth="2.1" markerHeight="2.1" refX="1.2" refY="1.05" orient="auto"><path d="M0,0 L2.1,1.05 L0,2.1 Z" fill="${OUTLINE[k]}"/></marker>`).join('') + ['w','b'].map(c=>`<marker id="mk_e${c}" markerWidth="2.6" markerHeight="2.6" refX="1.5" refY="1.3" orient="auto"><path d="M0,0 L2.6,1.3 L0,2.6 Z" fill="${MARK[c].edge}" fill-opacity=".55"/></marker>`).join('') + ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="3" markerHeight="3" refX="1.8" refY="1.5" orient="auto"><path d="M0,0 L3,1.5 L0,3 Z" fill="${MARK[c].ink}"/></marker>`).join('');
+  const defs = ['r','y'].map(k=>`<marker id="mk_${k}" markerWidth="2.1" markerHeight="2.1" refX="1.2" refY="1.05" orient="auto"><path d="M0,0 L2.1,1.05 L0,2.1 Z" fill="${OUTLINE[k]}"/></marker>`).join('') + ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="3" markerHeight="3" refX="1.8" refY="1.5" orient="auto"><path d="M0,0 L3,1.5 L0,3 Z" fill="${MARK[c].ink}"/></marker>`).join('');
   // longer arrows first, so shorter ones are drawn on top and never hidden under them
   const arrowLen = t=>{ const a = squareCenter(t.from), b = squareCenter(t.to); return Math.hypot(b.x-a.x, b.y-a.y); };
   const arrows = marks.arrows.slice().sort((p, q)=>arrowLen(q) - arrowLen(p)).map(t=>{
@@ -3053,10 +3053,7 @@ function drawMarks(svg, marks){
     // (it starts 2.5 units before the arrow, so the outline also closes its flat start)
     const oc = t.outline || '';   // outlined: red for a mate, yellow for a check or a threat to the queen
     const red = oc ? `<line x1="${a.x - dx/len*2.5}" y1="${a.y - dy/len*2.5}" x2="${ex}" y2="${ey}" stroke="${OUTLINE[oc]}" stroke-width="13" stroke-linecap="butt" marker-end="url(#mk_${oc})" filter="url(#mkShadow)"/>` : '';
-    // not outlined: a thin edge in the other colour (as on the labels), so a dark arrow still reads on a dark
-    // piece, ring or label, and a light one on a light square
-    const edge = oc ? '' : `<line x1="${a.x - dx/len*1}" y1="${a.y - dy/len*1}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].edge}" stroke-opacity=".55" stroke-width="10" stroke-linecap="butt" marker-end="url(#mk_e${t.c})" filter="url(#mkShadow)"/>`;
-    return `<g opacity=".8">` + red + edge + `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="8" stroke-linecap="butt" marker-end="url(#mk_${t.c})"/></g>`;
+    return `<g opacity=".8">` + red + `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="8" stroke-linecap="butt" marker-end="url(#mk_${t.c})"${oc ? '' : ' filter="url(#mkShadow)"'}/></g>`;
   }).join('');
   // A small badge across the middle of the square (kept inside the board).
   const labels = (marks.labels||[]).map(t=>{ const r = R(t.sq), w = t.text.length*7 + 8, h = 16;
