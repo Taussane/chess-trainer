@@ -749,7 +749,10 @@ function kingSafetyPawns(P, Us, F){
 }
 
 // ---------------------------------------------------------------- the evaluation
-function evaluate(fen){
+// opts.fullRing (not in Stockfish, for the app's own layer): a piece attacking any square of the king's
+// zone counts as an attacker, including squares two enemy pawns protect (Stockfish leaves those out).
+function evaluate(fen, opts){
+  const fullRing = !!(opts && opts.fullRing);
   const P = parseFen(fen);
   const F = [];   // every item scored: { term, c, kind, sq, v:[mg,eg], ... }
   const T = {};   // trace: term -> [white [mg,eg], black [mg,eg]] or total
@@ -824,7 +827,7 @@ function evaluate(fen){
       attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
       attackedBy[Us][Pt] |= b;
       attackedBy[Us][ALL_PIECES] |= b;
-      if(b & kingRing[Them] & ~doublePawnAttacksBB(Them, P.pieces(Them, PAWN))){
+      if(b & kingRing[Them] & (fullRing ? ~0n : ~doublePawnAttacksBB(Them, P.pieces(Them, PAWN)))){
         kingAttackersCount[Us]++;
         kingAttackersWeight[Us] += KingAttackWeights[Pt];
         kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
@@ -1096,7 +1099,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns (no enemy pawn left to stop them) and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; pawn islands (groups of pawns on adjacent files: each one beyond the first is a weakness, as much as an isolated pawn; not in Stockfish): each pawn shows its island's letter (a, b, c… from the a-file) in its corner, when at least one file is half-open; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the central pawns (d and e files) that gain safe squares behind them, and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts (and an empty one a knight or bishop can go to next move, guarded by a pawn), rooks on open and half-open files, rooks on their 5th rank or beyond facing enemy pawns (Advanced), a central king when Stockfish rates it (endgames); in the other side's colour: a piece Pinned to its queen by an enemy rook or bishop; <strong>King safety</strong> each king's zone (dashed), arrows from the enemy pieces attacking it, arrows outlined in yellow for safe checks (an enemy piece moving to a square no defender covers; counted once at least two pieces attack the zone, or one with its queen), its pawn shelter where it stands (Shelter: the pawns in front of it, on its file and the next two, still on their 2nd or 3rd rank, that shelter it better than no pawn would), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), castling possible right now (an arrow from the king), and a king left in the centre, unable to castle right now (only when the other king isn't too), when Stockfish's square table rates it 0.3 pawn or more worse than a castled one (Uncastled, in the other side's colour: in the middlegame, the king's square counts for King safety here, not Activity); <strong>Threats</strong> attacks that would win material (on an unguarded piece, by a lesser piece, or on a pawn that can be taken with a gain: not in Stockfish): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece (for the side to move, one it can play now), or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ for the side that mates: in King safety for a mate in one, in Threats for a longer one, the mating move outlined in red (in every criterion that shows it).";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns (no enemy pawn left to stop them) and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; pawn islands (groups of pawns on adjacent files: each one beyond the first is a weakness, as much as an isolated pawn; not in Stockfish): each pawn shows its island's letter (a, b, c… from the a-file) in its corner, when at least one file is half-open; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the pawns that gain safe squares behind them (Central on the d and e files, Flank on c and f), and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts (and an empty one a knight or bishop can go to next move, guarded by a pawn), rooks on open and half-open files, rooks on their 5th rank or beyond facing enemy pawns (Advanced), a central king when Stockfish rates it (endgames); in the other side's colour: a piece Pinned to its queen by an enemy rook or bishop; <strong>King safety</strong> each king's zone (dashed), arrows from the enemy pieces attacking it (every piece touching the zone; Stockfish leaves out squares two pawns protect), arrows outlined in yellow for safe checks (an enemy piece moving to a square no defender covers; counted once at least two pieces attack the zone, or one with its queen), its pawn shelter where it stands (Shelter: the pawns in front of it, on its file and the next two, still on their 2nd or 3rd rank, that shelter it better than no pawn would), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), castling possible right now (an arrow from the king), and a king left in the centre, unable to castle right now (only when the other king isn't too), when Stockfish's square table rates it 0.3 pawn or more worse than a castled one (Uncastled, in the other side's colour: in the middlegame, the king's square counts for King safety here, not Activity); <strong>Threats</strong> attacks that would win material (on an unguarded piece, by a lesser piece, or on a pawn that can be taken with a gain: not in Stockfish): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece (for the side to move, one it can play now), or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ for the side that mates: in King safety for a mate in one, in Threats for a longer one, the mating move outlined in red (in every criterion that shows it).";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -1338,6 +1341,13 @@ function engineEval(fen, searchmoves){
 // JavaScript port of its evaluation (SFEval, above): no engine needed, and it also lists every item
 // it scored (sfEvalOf), which the board marks are drawn from.
 const sfEvalStore = new Map();
+// The same with every piece touching the king's zone counted as an attacker (SFEval's fullRing: ours,
+// Stockfish leaves out squares two enemy pawns protect): King safety and its marks use it.
+const sfEvalFullStore = new Map();
+function sfEvalFullOf(fen){
+  if(!sfEvalFullStore.has(fen)){ let r = null; try{ r = SFEval.evaluate(fen, { fullRing: true }); }catch(e){} sfEvalFullStore.set(fen, r); }
+  return sfEvalFullStore.get(fen);
+}
 function sfEvalOf(fen){
   if(!sfEvalStore.has(fen)){ let r = null; try{ r = SFEval.evaluate(fen); }catch(e){} sfEvalStore.set(fen, r); }
   return sfEvalStore.get(fen);
@@ -2380,6 +2390,10 @@ function adaptAspects(data, fen){
   const shift = c=>{ const x = sh(c); if(!x) return 0;
     return x.own.safety - x.v[0] + x.own.files.filter(fl=>fl.ourRank >= 3).reduce((t, fl)=>t + fl.empty - fl.shelter, 0); };
   data.king += pawns([shift(0) - shift(1), 0]);
+  // every piece touching the king's zone is an attacker (ours: Stockfish leaves out the squares two
+  // enemy pawns protect)
+  const full = sfEvalFullOf(fen);
+  if(full && !full.special){ const kd = t=>[t[0][0] - t[1][0], t[0][1] - t[1][1]]; const a = kd(full.trace.king), z = kd(ev.trace.king); data.king += pawns([a[0] - z[0], a[1] - z[1]]); }
   // items moved or dropped (value in pawns, White's side)
   const sum = pred=>ev.features.filter(pred).reduce((t, x)=>t + pawns(x.v) * (x.c===0 ? 1 : -1), 0);
   data.activity -= sum(x=>x.kind==='kingProtector');                              // pieces far from their king: dropped
@@ -2843,9 +2857,9 @@ function aspectMarks(fen, key){
           continue;
         }
         const by = mine.find(o=>o[0]===fl && relRank(o, c) > relRank(sq, c) && relRank(o, c) - relRank(sq, c) <= 3);
-        if(by && 'de'.includes(by[0]) && !out.circles.some(x=>x.sq===by)){   // a central pawn (d or e file) that gains that space; c and f pawns only show through their arrows
+        if(by && !out.circles.some(x=>x.sq===by)){   // the pawn that gains that space: Central on the d or e file, Flank on c or f
           out.circles.push({ sq: by, c });
-          out.labels.push({ sq: by, c, text: 'Central' });
+          out.labels.push({ sq: by, c, text: 'de'.includes(by[0]) ? 'Central' : 'Flank' });
         }
       }
     }
@@ -2891,7 +2905,8 @@ function aspectMarks(fen, key){
   if(key==='king'){
     // Stockfish's own items (sfEvalOf): the king zone, the pieces attacking it, the safe checks it
     // counts, the pawn shelter and the storming pawns it penalises.
-    const castling = (fen.split(' ')[2] || '-'), ev = sfEvalOf(fen), F = ev && !ev.special ? ev.features : [];
+    // (the attackers and checks from the full-ring evaluation: every piece touching the zone, sfEvalFullOf)
+    const castling = (fen.split(' ')[2] || '-'), ev = sfEvalFullOf(fen), F = ev && !ev.special ? ev.features : [];
     const uncastled = [];   // kings left in the centre: marked only when one side's is (both: nothing to tell apart)
     for(const c of ['w','b']){
       const k = pieces(c).find(sq=>m[sq].t==='k'); if(!k || !F.length) continue;

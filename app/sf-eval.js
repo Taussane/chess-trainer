@@ -290,7 +290,10 @@ function kingSafetyPawns(P, Us, F){
 }
 
 // ---------------------------------------------------------------- the evaluation
-function evaluate(fen){
+// opts.fullRing (not in Stockfish, for the app's own layer): a piece attacking any square of the king's
+// zone counts as an attacker, including squares two enemy pawns protect (Stockfish leaves those out).
+function evaluate(fen, opts){
+  const fullRing = !!(opts && opts.fullRing);
   const P = parseFen(fen);
   const F = [];   // every item scored: { term, c, kind, sq, v:[mg,eg], ... }
   const T = {};   // trace: term -> [white [mg,eg], black [mg,eg]] or total
@@ -365,7 +368,7 @@ function evaluate(fen){
       attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
       attackedBy[Us][Pt] |= b;
       attackedBy[Us][ALL_PIECES] |= b;
-      if(b & kingRing[Them] & ~doublePawnAttacksBB(Them, P.pieces(Them, PAWN))){
+      if(b & kingRing[Them] & (fullRing ? ~0n : ~doublePawnAttacksBB(Them, P.pieces(Them, PAWN)))){
         kingAttackersCount[Us]++;
         kingAttackersWeight[Us] += KingAttackWeights[Pt];
         kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
