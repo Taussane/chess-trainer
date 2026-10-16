@@ -78,7 +78,11 @@ async def main():
         def badge(v, t):
             n = sum(abs(v) >= x for x in t)
             return 'eq =' if n == 0 else ('w ' + '+'*n if v > 0 else 'b ' + '−'*n)
-        if [r.split(': ')[1] for r in rows] != [badge(v, t) for v, t in zip(vals, LEVELS)]: fails.append(f'badges {rows} vs values {vals}')
+        # the engine's level, or your own where it earns the green (80% or more of the share)
+        kept = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data, g = st('imbalances').asp; return ASPECTS.map(x=>aspectCredit(a[x.key], g[x.key]||0, x.key) >= 0.8 ? (g[x.key]||0) : null); })()")
+        def mine(n): return 'eq =' if n == 0 else ('w ' + '+'*n if n > 0 else 'b ' + '−'*-n)
+        want = [badge(v, t) if k is None else mine(k) for v, t, k in zip(vals, LEVELS, kept)]
+        if [r.split(': ')[1] for r in rows] != want: fails.append(f'badges {rows} vs values {vals}')
         borders = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>['ok','near','far','bad'].find(c=>b.classList.contains(c)) || '?')")
         lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key], x.key)); })()")
         mine = [2, 0, 1, 0, -2, 0]
