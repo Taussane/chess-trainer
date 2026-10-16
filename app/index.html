@@ -1071,7 +1071,7 @@ TEST_POSITIONS.forEach(p=>{ p.last = p.last ? { squares:p.last } : null; });   /
 // evaluation far from the imbalances (scripts/imbalance-skip.js lists them): there the right answer
 // is a concrete move, not a reading. A position played in one of the two isn't offered in the other
 // the same day (see markPlayed).
-const IMBALANCE_SKIP = /*IMBALANCE_SKIP*/["r3k3/p1bq1pp1/2p2nr1/2Pp1b1p/P2Pp3/2N1P2P/1B1NBQ2/R4KR1 b q -", "2rr4/pp4pk/3qp1Rp/5p2/2PPb3/1Q2N3/P2R1PPP/6K1 w - -", "3r4/pp4pk/4R2p/5p2/3Pbq2/8/PQ1R1PPP/2rN2K1 b - -", "1r4k1/1q3p2/2p4p/3npPpP/p1Q1B1P1/P4P2/2R2B2/2K5 b - -", "5rk1/pp4pp/3r2n1/4p2R/6P1/1PB1P3/1P3P2/2R1K3 w - -", "r1b2k2/pp1p1p2/1bpPn3/4P1Nr/5P2/1B4N1/P6P/3R1R1K b - -", "rr6/3b1kp1/q1pP3p/p1b1BB2/5nQN/P7/5PPP/3R2K1 b - -", "r1bnk2r/2ppnppp/pp6/1N1Pp1B1/Qq2P3/1Bb2N2/P4PPP/2R2RK1 b kq -", "4r1k1/p4ppp/2p3r1/3pP1q1/1QnP4/5P2/PP2RBPP/4RK2 w - -", "r1bnk2r/p2pn1pp/2pq1p2/1pbPp3/Q3P3/NBP2N2/P4PPP/R1BR2K1 w kq b6", "r1b1k2r/pn1pn1pp/Q1pq1p2/1pbPp3/4P3/NBP2N2/P4PPP/R1BR2K1 b kq -", "r3k2r/pnqbn1pp/5p2/1Qb1p3/4P3/1BP2N2/P4PPP/R1BR2K1 w kq -", "1r3rk1/pp3pp1/3b4/2pP1P1p/3pPn1q/5Q2/PP1B1P1P/1K1R1BR1 w - c6", "1r3rk1/p5p1/3q2n1/1pp2pQp/3p1P2/8/PP1B2BP/K2R2R1 w - f6", "rqb2k1r/p2p2pp/3Pnp2/1Nb1P3/Q7/2P2N2/P4PPP/3R1RK1 w - -", "rqb2r2/p2p2kp/3Pnp2/7Q/3N4/2PR4/P4PPP/5RK1 b - -", "3rr3/p5kp/1q1P1pb1/3Q4/2P5/7R/P4PPP/3R2K1 b - -", "r1b2k2/4bnpp/1p3n2/1Np1qp2/5N2/4BP2/PPQ3PP/4RBK1 w - -", "4rrk1/ppp3pp/3p2n1/3Ppqb1/nPP5/6P1/P1NBQP1P/2R1NRK1 b - -", "r1bk3r/pp1p1ppp/2nb4/3N4/5P2/3BBQ2/PPP4q/R3K1R1 b Q -", "3rbrk1/p1q1n1b1/2p2p2/1pn1pPPp/7P/2PP1Q2/PPB2N2/R1B1K2R w KQ -", "3r1r2/p1q3bk/2p2pb1/1pn4p/4P2P/2P2Q2/PPB2N2/R1B1K1R1 w Q -", "r6r/5bk1/pq4n1/1p1pR1Q1/8/3p2NP/PP4P1/1B1R3K w - -", "r3r1k1/1ppnqpbp/p2p1n2/5N2/4PP2/1P3Q2/PBP3PP/3RR1K1 b - -", "r1b1nrk1/1p2qppp/3pp3/p1n5/2PNP3/P1Q1BP2/1P4PP/3RKB1R w K -", "1k4rr/1bq2p2/pp4P1/2bPp2n/2p1P1Qp/2P5/P1B2NPP/2B1RRK1 b - -", "1kb4r/2q2p2/pp4r1/2bPp3/2p1P3/2P2QpN/P1B3P1/2B1RR1K b - -", "1r4k1/7p/Rp6/1Pp1N1p1/4np2/3r3P/1PR2PP1/6K1 b - -", "r1rb2k1/6pp/2q1N3/p2p1PP1/1p1P1B2/n1P2Q1P/8/R4RK1 w - -", "r6k/pQ1bN2p/Pn2q3/2Bp4/3P1p2/2r5/5PPP/R4RK1 w - -", "2r1r1k1/p4ppp/1pn1pn2/4N3/2PP2Pq/P6P/4QP2/2BRR1K1 w - -", "5r1k/p1p2qpp/1p2R3/3p1rP1/1nP2P1P/2NQ1R2/PP2P1K1/8 w - -", "5r1k/p1p2qpp/1p6/3P1rP1/5P1P/2N2R2/PPQ1P1K1/8 b - -", "3r1k1r/pp2np2/2p2b2/8/3PBBQp/P1P4P/qP6/2KRR3 w - -", "7r/pQ1rkp2/2p2b2/3n4/3PB2p/P1P4P/qP1B4/2KR1R2 w - -", "r3r1k1/pp3ppp/5n2/q1bp1bB1/2Pnp3/P1NBP3/1P1N1PPP/1Q1RK2R w K -", "6k1/6p1/2n1r1b1/1pPq4/7p/pP1pB2P/P2Q1PP1/1R3NK1 b - -", "8/p1p1q1k1/1p5p/n1Pr2p1/P2P1pN1/2Q3P1/5P1P/1R4K1 w - -", "r3n1r1/2pnqk2/4pp1R/pRPpB3/P3PQp1/2P5/3N1PP1/4K3 w - -", "6r1/r2q1knR/4p3/PR3p2/1B1Qp1p1/2P5/5PP1/4K3 b - -", "8/1b2kp1p/4pn2/1B6/PP1R1pQ1/2r5/5PPP/6K1 b - -", "b2r2k1/p1r3p1/7p/2p2P2/2N1q3/R5PK/PP3R1P/2Q5 b - -", "b5k1/p1r5/6q1/2p4p/3r2PK/R3N3/PP3R1P/2Q5 w - -", "3r2k1/2pqnpp1/1p5p/p2P4/P4PP1/2P1p3/1PQ2P2/3RR1K1 b - -"]/*END IMBALANCE_SKIP*/;
+const IMBALANCE_SKIP = /*IMBALANCE_SKIP*/["r3k3/p1bq1pp1/2p2nr1/2Pp1b1p/P2Pp3/2N1P2P/1B1NBQ2/R4KR1 b q -", "3r4/pp4pk/4R2p/5p2/3Pbq2/8/PQ1R1PPP/2rN2K1 b - -", "1r4k1/1q3p2/2p4p/3npPpP/p1Q1B1P1/P4P2/2R2B2/2K5 b - -", "5rk1/pp4pp/3r2n1/4p2R/6P1/1PB1P3/1P3P2/2R1K3 w - -", "r1b2k2/pp1p1p2/1bpPn3/4P1Nr/5P2/1B4N1/P6P/3R1R1K b - -", "rr6/3b1kp1/q1pP3p/p1b1BB2/5nQN/P7/5PPP/3R2K1 b - -", "r1bnk2r/2ppnppp/pp6/1N1Pp1B1/Qq2P3/1Bb2N2/P4PPP/2R2RK1 b kq -", "4r1k1/p4ppp/2p3r1/3pP1q1/1QnP4/5P2/PP2RBPP/4RK2 w - -", "r1bnk2r/p2pn1pp/2pq1p2/1pbPp3/Q3P3/NBP2N2/P4PPP/R1BR2K1 w kq b6", "r1b1k2r/pn1pn1pp/Q1pq1p2/1pbPp3/4P3/NBP2N2/P4PPP/R1BR2K1 b kq -", "r3k2r/pnqbn1pp/5p2/1Qb1p3/4P3/1BP2N2/P4PPP/R1BR2K1 w kq -", "rqb2k1r/p2p2pp/3Pnp2/1Nb1P3/Q7/2P2N2/P4PPP/3R1RK1 w - -", "rqb4r/p2p1k1p/3Pnp2/1Nb5/6Q1/2P2N2/P4PPP/3R1RK1 w - -", "rqb2r2/p2p2kp/3Pnp2/7Q/3N4/2PR4/P4PPP/5RK1 b - -", "3rr3/p5kp/1q1P1pb1/3Q4/2P5/7R/P4PPP/3R2K1 b - -", "r1b2k2/4bnpp/1p3n2/1Np1qp2/5N2/4BP2/PPQ3PP/4RBK1 w - -", "4rrk1/ppp3pp/3p2n1/3Ppqb1/nPP5/6P1/P1NBQP1P/2R1NRK1 b - -", "r1bk3r/pp1p1ppp/2nb4/3N4/5P2/3BBQ2/PPP4q/R3K1R1 b Q -", "3rbrk1/p1q1n1b1/2p2p2/1pn1pPPp/7P/2PP1Q2/PPB2N2/R1B1K2R w KQ -", "3r1r2/p1q3bk/2p2pb1/1pn4p/4P2P/2P2Q2/PPB2N2/R1B1K1R1 w Q -", "r1bqk2r/2p1n2p/p2b1pp1/1p5Q/2p1P3/2N1B3/PPPN1PPP/R3K2R w KQkq -", "r6r/5bk1/pq4n1/1p1pR1Q1/8/3p2NP/PP4P1/1B1R3K w - -", "r3r1k1/1ppnqpbp/p2p1n2/5N2/4PP2/1P3Q2/PBP3PP/3RR1K1 b - -", "1k4rr/1bq2p2/pp4P1/2bPp2n/2p1P1Qp/2P5/P1B2NPP/2B1RRK1 b - -", "1kb4r/2q2p2/pp4r1/2bPp3/2p1P3/2P2QpN/P1B3P1/2B1RR1K b - -", "r1rb2k1/6pp/2q1N3/p2p1PP1/1p1P1B2/n1P2Q1P/8/R4RK1 w - -", "r6k/pQ1bN2p/Pn2q3/2Bp4/3P1p2/2r5/5PPP/R4RK1 w - -", "2r1r1k1/p4ppp/1pn1pn2/4N3/2PP2Pq/P6P/4QP2/2BRR1K1 w - -", "5r1k/p1p2qpp/1p2R3/3p1rP1/1nP2P1P/2NQ1R2/PP2P1K1/8 w - -", "3r1k1r/pp2np2/2p2b2/8/3PBBQp/P1P4P/qP6/2KRR3 w - -", "7r/pQ1rkp2/2p2b2/3n4/3PB2p/P1P4P/qP1B4/2KR1R2 w - -", "1nr3k1/4bp2/rppq2p1/3pN2p/P2P1N1P/1QR1P1P1/5PK1/2R5 b - -", "r3r1k1/pp3ppp/5n2/q1bp1bB1/2Pnp3/P1NBP3/1P1N1PPP/1Q1RK2R w K -", "r3r1k1/pp3ppp/5q2/2bp1b2/2P1p3/PNN1P3/1PQ2PPP/3RK2R b K -", "6k1/6p1/2n1r1b1/1pPq4/7p/pP1pB2P/P2Q1PP1/1R3NK1 b - -", "8/p1p1q1k1/1p5p/n1Pr2p1/P2P1pN1/2Q3P1/5P1P/1R4K1 w - -", "r3n1r1/2pnqk2/4pp1R/pRPpB3/P3PQp1/2P5/3N1PP1/4K3 w - -", "6r1/r2q1knR/4p3/PR3p2/1B1Qp1p1/2P5/5PP1/4K3 b - -", "8/1b2kp1p/4pn2/1B6/PP1R1pQ1/2r5/5PPP/6K1 b - -", "b5k1/p1r5/6q1/2p4p/3r2PK/R3N3/PP3R1P/2Q5 w - -", "3r2k1/2pqnpp1/1p5p/p2P4/P4PP1/2P1p3/1PQ2P2/3RR1K1 b - -"]/*END IMBALANCE_SKIP*/;
 // A castling right lost with no trace on the board (king and a rook still on their first squares,
 // the right gone) would mislead: those positions are left out of both.
 function hiddenCastlingLoss(fen){
@@ -1185,13 +1185,13 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns (no enemy pawn left to stop them) and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; pawn islands (groups of pawns on adjacent files: each one beyond the first is a weakness, as much as an isolated pawn; not in Stockfish): each pawn shows its island's letter (a, b, c… from the a-file) in its corner, when at least one file is half-open; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the pawns that gain safe squares behind them (Central on the d and e files, Flank on c and f), and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts (and an empty one a knight or bishop can go to next move, guarded by a pawn), rooks on open and half-open files, rooks on their 5th rank or beyond facing enemy pawns (Advanced), a central king when Stockfish rates it (endgames); in the other side's colour: a piece Pinned to its queen by an enemy rook or bishop; <strong>King safety</strong> each king's zone (dashed; attacks on it count only when the other side has at least a rook and a knight's worth of pieces, else it frames the shelter), arrows from the enemy pieces attacking it (every piece touching the zone; Stockfish leaves out squares two pawns protect), arrows outlined in yellow for safe checks (an enemy piece moving to a square no defender covers; counted once at least two pieces attack the zone, or one with its queen), its pawn shelter where it stands (Shelter: the pawns in front of it, on its file and the next two, still on their 2nd or 3rd rank, that shelter it better than no pawn would), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), castling possible right now (an arrow from the king), and a king left in the centre, unable to castle right now (only when the other king isn't too), when Stockfish's square table rates it 0.3 pawn or more worse than a castled one (Uncastled, in the other side's colour: in the middlegame, the king's square counts for King safety here, not Activity); <strong>Other threats</strong> (about pieces; mates go to King safety) attacks that would win material (on an unguarded piece, by a lesser piece, or on a pawn that can be taken with a gain: not in Stockfish): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece (for the side to move, one it can play now), or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ in King safety for the side that mates, the mating move outlined in red there (elsewhere, the same move is drawn as that criterion sees it: in Other threats, a capture).";
+const IMB_MARKS = "<strong>Material</strong> the extra pieces, and the bishop pair (labelled Pair) against a side without it; <strong>Pawns</strong> passed pawns (no enemy pawn left to stop them) and connected ones from their 5th rank (Linked), and weak ones (isolated, doubled, backward: behind its neighbours, the square in front attacked by an enemy pawn) in the other side's colour, each labelled; a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; pawn islands (groups of pawns on adjacent files: each one beyond the first is a weakness, as much as an isolated pawn; not in Stockfish): each pawn shows its island's letter (a, b, c… from the a-file) in its corner, when at least one file is half-open; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the pawns that gain safe squares behind them (Central on the d and e files, Flank on c and f), and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts (and an empty one a knight or bishop can go to next move, guarded by a pawn), rooks on open and half-open files, rooks on their 5th rank or beyond facing enemy pawns (Advanced), a central king when Stockfish rates it (endgames); in the other side's colour: a piece Pinned to its queen by an enemy rook or bishop; <strong>King safety</strong> each king's zone (dashed; attacks on it count only when the other side has at least a rook and a knight's worth of pieces, else it frames the shelter), arrows from the enemy pieces attacking it (every piece touching the zone; Stockfish leaves out squares two pawns protect; hollow while the attack costs almost nothing: it only grows with several attackers, attacks next to the king, or checks), arrows outlined in yellow for safe checks (an enemy piece moving to a square no defender covers; counted once at least two pieces attack the zone, or one with its queen), its pawn shelter where it stands (Shelter: the pawns in front of it, on its file and the next two, still on their 2nd or 3rd rank, that shelter it better than no pawn would), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), castling possible right now (an arrow from the king), and a king left in the centre, unable to castle right now (only when the other king isn't too), when Stockfish's square table rates it 0.3 pawn or more worse than a castled one (Uncastled, in the other side's colour: in the middlegame, the king's square counts for King safety here, not Activity); <strong>Other threats</strong> (about pieces; mates go to King safety) attacks that would win material (on an unguarded piece, by a lesser piece, or on a pawn that can be taken with a gain: not in Stockfish): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece (for the side to move, one it can play now), or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ in King safety for the side that mates, the mating move outlined in red there (elsewhere, the same move is drawn as that criterion sees it: in Other threats, a capture).";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
     what:"Read the position's imbalances, the lasting (static) ones and those that can change within a few moves (dynamic): for each, who has the edge, and how big? Tap a badge, then a level (= balanced, + or ++ for White, − or −− for Black), or slide along the scale.",
     eval:"Based on Stockfish 10's evaluation. Each imbalance scores a sixth: all of it at the engine's level, a third one level off, nothing beyond.",
-    grades:"Each imbalance turns from your level to the engine's (levels set per imbalance so that in master games about 40% of positions are =, 40% + or −, 20% ++ or −−; Material: = up to 0.3 pawn, as over half the positions have equal material). A level off scores nothing, except near the line between the two levels (within half its value either side): there it scores more the closer the engine's value is to the line, all of it at the line, nothing at the band's edge. Green border: you matched it, or nearly (80% or more: your level stays); yellow: some of it; red: none. Then tap an imbalance to see on the board what it's about, white marks favouring White and black ones Black: " + IMB_MARKS,
+    grades:"Each imbalance turns from your level to the engine's (levels set per imbalance so that in master games about 40% of positions are =, 40% + or −, 20% ++ or −−; Material: = up to 0.3 pawn, as about half the positions have equal material; Material counts the pieces and the bishop pair only). A level off scores nothing, except near the line between the two levels (within half its value either side): there it scores more the closer the engine's value is to the line, all of it at the line, nothing at the band's edge. Green border: you matched it, or nearly (80% or more: your level stays); yellow: some of it; red: none. Then tap an imbalance to see on the board what it's about, white marks favouring White and black ones Black: " + IMB_MARKS,
   },
   analysis: {
     title:'Position evaluation',
@@ -2329,12 +2329,12 @@ function fmtBarScore(info){
 // (Imbalance reading's 140, with our adaptations: adaptAspects) each comes out about 40% "=", 40% + or −, 20% ++ or −− (Space is "=" in
 // half of them: Stockfish counts no space once enough pieces are traded).
 const ASPECTS = [
-  { key:'material', name:'Material',    levels:[0.3, 0.887] },
-  { key:'pawns',    name:'Pawns',       levels:[0.07, 0.28] },
+  { key:'material', name:'Material',    levels:[0.3, 0.788] },
+  { key:'pawns',    name:'Pawns',       levels:[0.066, 0.28] },
   { key:'space',    name:'Space',       levels:[0.059, 0.185] },
-  { key:'activity', name:'Activity',    levels:[0.257, 0.611] },
-  { key:'king',     name:'King safety', levels:[0.285, 1.175] },
-  { key:'threats',  name:'Other threats', levels:[0.108, 0.265] },
+  { key:'activity', name:'Activity',    levels:[0.255, 0.618] },
+  { key:'king',     name:'King safety', levels:[0.285, 1.162] },
+  { key:'threats',  name:'Other threats', levels:[0.109, 0.267] },
 ];
 // Each aspect as signs, from its value in pawns and its own levels (above): "=", then + and ++ for White,
 // − and −− for Black.
@@ -2345,6 +2345,25 @@ const SF_PAWN_EG = 208, SF_MG_LIMIT = 15258, SF_EG_LIMIT = 3915;
 // Pawn islands (ours, not Stockfish's): each island beyond the first costs this [middlegame, endgame],
 // in Stockfish's units (an isolated pawn costs [5, 15], a doubled one [11, 56]).
 const PAWN_ISLAND = [5, 15];
+// Backward pawns as players define them (ours; Stockfish also counts a pawn blocked by an enemy pawn, and
+// one with a neighbour level with the square in front): its neighbours on the next files all ahead of
+// it (none to protect it as it advances), and the square in front attacked by an enemy pawn (it can't
+// advance safely; a pawn blocked in front isn't backward). Each costs Stockfish's backward penalty.
+const SF_BACKWARD = [9, 24];
+function backwardPawns(fen){
+  const m = boardMap(fen), out = [];
+  for(const c of ['w','b']){
+    const up = c==='w' ? 1 : -1, mine = pawnsOf(m, c), theirs = pawnsOf(m, other(c));
+    for(const sq of mine){
+      const f = FILES.indexOf(sq[0]), r = relRank(sq, c);
+      const nb = mine.filter(o=>Math.abs(FILES.indexOf(o[0]) - f)===1);
+      if(!nb.length || nb.some(o=>relRank(o, c) <= r)) continue;
+      const stop = sqAt(f, +sq[1] + up); if(!stop || m[stop]) continue;
+      if(theirs.some(e=>Math.abs(FILES.indexOf(e[0]) - f)===1 && +e[1]===+stop[1] + up)) out.push({ sq, c });
+    }
+  }
+  return out;
+}
 // Stockfish 10's bonus for a hanging piece [middlegame, endgame] (a pawn that can be won counts the same: pawnsWon).
 const SF_HANGING = [62, 34];
 // A side's pawn islands: groups of pawns on adjacent files, from the a-file, each a list of squares.
@@ -2390,7 +2409,9 @@ function parseAspects(lines, fen){
     return out;
   }
   const out = {
-    material: pieces + g('Imbalance'),
+    // (Stockfish's imbalance table values piece combinations, which can't be seen on the board: only its
+    // bishop pair term is kept, worth 1438/16 in Stockfish's units)
+    material: pieces + ((count.w.b > 1 ? 1 : 0) - (count.b.b > 1 ? 1 : 0)) * 1438 / 16 / SF_PAWN_EG,
     activity: g('Material') - pieces + g('Mobility') + g('Knights') + g('Bishops') + g('Rooks') + g('Queens'),
     pawns:    g('Pawns') + g('Passed') + g('Initiative'),   // Initiative: an endgame correction, mostly from passed pawns and pawn spread
     king:     g('King safety'),
@@ -2494,6 +2515,8 @@ function adaptAspects(data, fen){
   data.pawns -= pawns(ev.trace.initiative);                                        // the endgame "initiative" correction: dropped
   data.pawns -= sum(x=>x.term==='passed' && !x.strict);                           // pawns not yet passed (an enemy pawn can still meet them): dropped
   data.pawns -= sum(x=>x.term==='passed' && x.strict && pawns(x.v) < 0);            // a passed pawn never counts against its side (Stockfish's d/e-file correction can make a slow one negative)
+  data.pawns -= sum(x=>x.term==='pawns' && x.kind==='backward');                     // Stockfish's backward pawns: replaced by ours
+  data.pawns -= backwardPawns(fen).reduce((t, x)=>t + pawns(SF_BACKWARD) * (x.c==='w' ? 1 : -1), 0);   // backward pawns as players define them (ours)
   const isl = c=>Math.max(0, pawnIslands(fen, c).length - 1);
   data.pawns -= pawns(PAWN_ISLAND) * (isl('w') - isl('b'));                         // pawn islands (ours): each one beyond the first is a weakness
   const T = ev.trace.threats.map(x=>x.slice());
@@ -2912,6 +2935,7 @@ function aspectMarks(fen, key){
     // then the weak ones; a doubled pawn protected by a pawn isn't penalised: an arrow shows its protector.
     const ev = sfEvalOf(fen), F = ev && !ev.special ? ev.features : [];
     const has = (sq, kind, term)=>F.some(f=>f.term===(term || 'pawns') && f.kind===kind && sqName(f.sq)===sq);
+    const back = new Set(backwardPawns(fen).map(x=>x.sq));
     for(const c of ['w','b']){
       const mine = pawnsOf(m, c), up = c==='w' ? 1 : -1;
       for(const sq of mine){
@@ -2924,7 +2948,7 @@ function aspectMarks(fen, key){
         else if(doubledProtected) out.arrows.push({ from: protector, to: sq, c });     // doubled but protected: not penalised
         else if(has(sq, 'doubled')) mark(other(c), 'Doubled');                         // weak: good for the other side (a doubled isolated pair: Doubled in front, Isolated behind)
         else if(has(sq, 'isolated')) mark(other(c), 'Isolated');
-        else if(has(sq, 'backward')) mark(other(c), 'Backward');
+        else if(back.has(sq)) mark(other(c), 'Backward');                                // as players define it (backwardPawns)
       }
     }
     // pawn islands (ours): each pawn carries its island's letter (a, b, c… from the a-file), in its
@@ -3035,7 +3059,11 @@ function aspectMarks(fen, key){
       // enters the zone
       const dist = t=>Math.max(Math.abs(FILES.indexOf(t[0]) - f), Math.abs(+t[1] - r));
       const reach = (a, t)=>Math.max(Math.abs(FILES.indexOf(t[0]) - FILES.indexOf(a[0])), Math.abs(+t[1] - +a[1]));
-      const arrowTo = (a, hits)=>{ const t = hits.sort((x, y)=>(reach(a, x) - reach(a, y)) || (dist(x) - dist(y)))[0]; if(t) out.arrows.push({ from: a, to: t, c: them }); };
+      // hollow when the attack on this king costs almost nothing yet (under 0.05 pawn: Stockfish's king
+      // danger only grows with several attackers, attacks next to the king, or checks)
+      const dg = F.find(x=>x.term==='king' && x.kind==='danger' && x.c===ci);
+      const cost = dg ? -(dg.v[0]*ev.phase + dg.v[1]*(128 - ev.phase)) / 128 / SF_PAWN_EG : 0, hollow = cost < 0.05;
+      const arrowTo = (a, hits)=>{ const t = hits.sort((x, y)=>(reach(a, x) - reach(a, y)) || (dist(x) - dist(y)))[0]; if(t) out.arrows.push({ from: a, to: t, c: them, hollow }); };
       for(const x of F.filter(x=>x.term==='king' && x.kind==='attacker' && x.target===ci)) arrowTo(sqName(x.sq), bbSquares(x.hits));
       if(counted) for(const p of pawnsOf(m, them)) if(!storm.has(p)) arrowTo(p, attacksFrom(m, p).filter(t=>ring.includes(t)));
       // the safe checks Stockfish counts (only once the king is under real attack): the move, outlined in yellow
@@ -3184,6 +3212,11 @@ function drawMarks(svg, marks){
     // outlined (red: a mate; yellow: a check or a threat to the queen): a wider line underneath, its head scaling with it
     // (it starts 2.5 units before the arrow, so the outline also closes its flat start)
     const oc = t.outline || '';   // outlined: red for a mate, yellow for a check or a threat to the queen
+    if(t.hollow){   // hollow: the arrow's shape (the same size) drawn as an outline only
+      const ux = dx/len, uy = dy/len, nx = -uy, ny = ux, bx = ex - ux*14.4, by = ey - uy*14.4, tx = ex + ux*9.6, ty = ey + uy*9.6;
+      const pts = [[a.x + nx*4, a.y + ny*4], [bx + nx*4, by + ny*4], [bx + nx*12, by + ny*12], [tx, ty], [bx - nx*12, by - ny*12], [bx - nx*4, by - ny*4], [a.x - nx*4, a.y - ny*4]];
+      return `<g opacity=".8"><polygon points="${pts.map(q=>q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ')}" fill="none" stroke="${MARK[t.c].ink}" stroke-width="2.5" stroke-linejoin="round" filter="url(#mkShadow)"/></g>`;
+    }
     const red = oc ? `<line x1="${a.x - dx/len*2.5}" y1="${a.y - dy/len*2.5}" x2="${ex}" y2="${ey}" stroke="${OUTLINE[oc]}" stroke-width="13" stroke-linecap="butt" marker-end="url(#mk_${oc})" filter="url(#mkShadow)"/>` : '';
     return `<g opacity=".8">` + red + `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${MARK[t.c].ink}" stroke-width="8" stroke-linecap="butt" marker-end="url(#mk_${t.c})"${oc ? '' : ' filter="url(#mkShadow)"'}/></g>`;
   }).join('');

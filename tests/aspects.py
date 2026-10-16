@@ -10,10 +10,11 @@ async def main():
     fails = []
     async with async_playwright() as p:
         b, pg, errs = await T.page_with_app(p)
-        # 1. Parsing: the aspects add up to Stockfish's own total (it adds a small bonus for the move).
+        # 1. Parsing: the aspects add up to Stockfish's own total (it adds a small bonus for the move), less the imbalance table.
         r = await pg.evaluate("([t, f])=>{ const a = parseAspects(t.split('\\n').concat(['Total evaluation: 0.88 (white side)']), f); return a && {a, sum: Object.values(a).reduce((x,y)=>x+y,0)}; }", [TABLE, FEN])
         print('parsed:', r and {k: round(v, 2) for k, v in r['a'].items()}, 'sum', r and round(r['sum'], 2))
-        if not r or abs(r['sum'] - 0.88) > 0.2: fails.append(f'aspects do not add up to the total: {r}')
+        # (less the imbalance table's 0.28: Material keeps only its bishop pair term, and both sides have the pair here)
+        if not r or abs(r['sum'] - (0.88 - 0.28)) > 0.2: fails.append(f'aspects do not add up to the total: {r}')
         if r and not 0.6 < r['a']['material'] < 1.2: fails.append('White is a pawn up: material should be about +0.9')
         n = await pg.evaluate("parseAspects(['Total evaluation: none (in check)'], 'k7/8/8/8/8/8/8/K7 w - - 0 1')")
         if n is not None: fails.append('in check should give no aspects')
