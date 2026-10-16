@@ -365,6 +365,12 @@
   @keyframes hidden{from,to{opacity:0;}}
   @keyframes rowIn{from{opacity:0;}}
   @keyframes fadeIn{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+  /* from the home page to a page (an activity, the profile): it fades in sliding left; back home: sliding right */
+  @keyframes pageFwd{from{opacity:0; transform:translateX(28px);} to{opacity:1; transform:none;}}
+  @keyframes pageBack{from{opacity:0; transform:translateX(-28px);} to{opacity:1; transform:none;}}
+  #app.page-fwd{animation:pageFwd .24s cubic-bezier(.2,.7,.3,1);}
+  #app.page-back{animation:pageBack .24s cubic-bezier(.2,.7,.3,1);}
+  .wrap{overflow-x:clip;}
 
   .btn{background:var(--accent); color:var(--on-accent); border:1px solid transparent; border-radius:6px; padding:10px 18px; font-size:0.94rem; line-height:1.25; font-weight:600; cursor:pointer;}
   .btn:disabled{opacity:0.35; cursor:not-allowed;}
@@ -5105,12 +5111,20 @@ function renderFinal(){
   wireCommon('final', false);
 }
 
+let shownScreen = null;   // the screen drawn last (for the page transitions)
 function render(){
   // The page is redrawn often (e.g. while your games are analysed): text being typed, and the
   // focus and cursor in it, carry over to the redrawn page.
   const typed = [...document.querySelectorAll('input[type=text][id], textarea[id]')].map(el=>({ id: el.id, value: el.value }));
   const act = document.activeElement, focus = act && act.id && /^(INPUT|TEXTAREA)$/.test(act.tagName) ? { id: act.id, a: act.selectionStart, b: act.selectionEnd } : null;
+  const from = shownScreen;
   renderScreen();
+  shownScreen = screen;
+  if(from && from!==screen && (from==='home' || screen==='home')){
+    const app = document.getElementById('app'), cls = screen==='home' ? 'page-back' : 'page-fwd';
+    app.classList.remove('page-fwd', 'page-back'); void app.offsetWidth; app.classList.add(cls);
+    app.addEventListener('animationend', function done(e){ if(e.target===app){ app.classList.remove(cls); app.removeEventListener('animationend', done); } });
+  }
   typed.forEach(t=>{ const el = document.getElementById(t.id); if(el && /^(INPUT|TEXTAREA)$/.test(el.tagName)) el.value = t.value; });
   if(focus){ const el = document.getElementById(focus.id); if(el){ el.focus(); try{ el.setSelectionRange(focus.a, focus.b); }catch(e){} } }
 }
