@@ -3354,20 +3354,42 @@ function findPosition(key, a){ return POOLS[a].find(p=>p.key===key) || myPositio
 // squares of the bar or more from the imbalances' total. Each is checked once, in the background
 // (Stockfish's eval table: no search); until then it isn't offered. No evaluation, or no engine: kept.
 const quietChecked = new Map();   // position key -> true (quiet) | false (tactical)
+// The checks run in the background a few at a time (each is the eval table and its adaptation, a few
+// milliseconds), so asking for many at once (the profile's counts) never freezes the page; the
+// counts fill in as they're done.
+const quietQueue = [];
+let quietTimer = null, quietRendered = 0, quietFound = false;
 function quietOwn(p){
   if(quietChecked.has(p.key)) return quietChecked.get(p.key);
   quietChecked.set(p.key, undefined);
-  engineAspectsBg(p.fen).then(lines=>{
-    const a = adaptAspects(parseAspects(lines, p.fen), p.fen), g = myGames.find(x=>x.id===p.gameId), e = g && g.evals && p.ply>0 ? g.evals[p.ply-1] : null;
-    let quiet = !(a && a.special);   // no breakdown (one side far ahead): not for Imbalance reading
-    if(quiet && a && e && (e.cp!=null || e.mate!=null)){
-      const sum = ASPECTS.reduce((t, x)=>t + a[x.key], 0);
-      quiet = Math.abs(cpToPct(sum*100, null) - cpToPct(e.cp, e.mate)) < IMBALANCE_FAR;
-    }
-    quietChecked.set(p.key, quiet);
-    if(quiet){ myPosVersion++; refreshPools(); render(); }
-  });
+  quietQueue.push(p);
+  if(!quietTimer) quietTimer = setTimeout(runQuietChecks, 0);
   return undefined;
+}
+function quietOf(p){
+  const lines = sfTableLines(p.fen), a = adaptAspects(parseAspects(lines, p.fen), p.fen);
+  const g = myGames.find(x=>x.id===p.gameId), e = g && g.evals && p.ply>0 ? g.evals[p.ply-1] : null;
+  let quiet = !(a && a.special);   // no breakdown (one side far ahead): not for Imbalance reading
+  if(quiet && a && e && (e.cp!=null || e.mate!=null)){
+    const sum = ASPECTS.reduce((t, x)=>t + a[x.key], 0);
+    quiet = Math.abs(cpToPct(sum*100, null) - cpToPct(e.cp, e.mate)) < IMBALANCE_FAR;
+  }
+  return quiet;
+}
+function runQuietChecks(){
+  quietTimer = null;
+  const t0 = performance.now();
+  while(quietQueue.length && performance.now() - t0 < 12){
+    const p = quietQueue.shift(); let q = true;
+    try{ q = quietOf(p); }catch(e){}
+    quietChecked.set(p.key, q);
+    if(q) quietFound = true;
+  }
+  // the page redrawn when the checks are done, or every half second meanwhile
+  if(quietFound && (!quietQueue.length || performance.now() - quietRendered > 500)){
+    quietFound = false; quietRendered = performance.now(); myPosVersion++; refreshPools(); render();
+  }
+  if(quietQueue.length) quietTimer = setTimeout(runQuietChecks, 20);
 }
 const IMBALANCE_FAR = 25;   // 2 squares of the bar, in winning chances
 // One of your positions in exercise `a`: Imbalance reading takes Position evaluation's.
@@ -4450,6 +4472,7 @@ async function initMyGames(){
   onOwnPositionsChanged();
   if(onProfile()) render();   // these pages waited for the account
   myBackground();
+  setTimeout(()=>myPositions.forEach(p=>{ if(posIn(p, 'analysis')) quietOwn(p); }), 1500);   // Imbalance reading's checks, ahead of time
 }
 function clearMyGames(){
   const ids = myGames.map(g=>g.id);

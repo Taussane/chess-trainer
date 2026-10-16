@@ -1,5 +1,6 @@
-# 190 games saved in the browser, then the page loads: it must never freeze for long (positions are
-# found a few games at a time), and the next load reuses the positions already found.
+# 190 games saved in the browser, then the page loads and the profile is opened at once: it must never
+# freeze for long (positions are found a few games at a time, their Imbalance reading checks a few at a
+# time), and the next load reuses the positions already found.
 import asyncio, sys, json, pathlib
 sys.path.insert(0, '/home/claude/chess-trainer/tests')
 import my_games as T
@@ -23,7 +24,9 @@ async def main():
             await pg.route('http*://**/*', lambda r: asyncio.ensure_future(route(r)))
             await pg.add_init_script("window.claude = { use: async()=>null }; window.__longest=0; new PerformanceObserver(l=>l.getEntries().forEach(e=>{ window.__longest=Math.max(window.__longest, Math.round(e.duration)); })).observe({type:'longtask', buffered:true});")
             await pg.add_init_script(f"localStorage.setItem('cst.mygames.v1', {saved!r});")
-            await pg.goto('https://app.test/'); await pg.wait_for_timeout(5000)
+            await pg.goto('https://app.test/'); await pg.wait_for_timeout(600)
+            # the profile opened right away: its counts (Imbalance reading's checks) fill in without freezing
+            await pg.click('#accountBtn'); await pg.wait_for_timeout(4400)
             r = await pg.evaluate("[myGames.length, myPositions.length, (window.__longest||0)]")
             print(label, '| games, positions, longest freeze (ms):', r)
             if r[0] != 190 or r[1] < 1000 or r[2] > 400: fails.append(f'{label}: {r}')
