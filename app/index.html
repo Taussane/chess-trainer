@@ -3175,7 +3175,9 @@ function drawMarks(svg, marks){
   // A number in the top corner of the square, on a small badge like the labels'.
   const nums = marks.nums.map(t=>{ const r = R(t.sq), w = String(t.n).length*7 + 8, h = 16, x = r.x + 59 - w, y = r.y + 1;
     return `<rect class="mk-num" data-right="${x + w}" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.n}</text>`; }).join('');
-  const defs = ['r','y'].map(k=>`<marker id="mk_${k}" markerWidth="2.1" markerHeight="2.1" refX="1.2" refY="1.05" orient="auto"><path d="M0,0 L2.1,1.05 L0,2.1 Z" fill="${OUTLINE[k]}"/></marker>`).join('') + ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="3" markerHeight="3" refX="1.8" refY="1.5" orient="auto"><path d="M0,0 L3,1.5 L0,3 Z" fill="${MARK[c].ink}"/></marker>`).join('');
+  // the outline's head: the arrow's head (24 units, its base 14.4 behind the line's end) grown by the
+  // same 2.5 units on every side as the line (8 wide in 13): 32.1 units long, its base 16.9 behind
+  const defs = ['r','y'].map(k=>`<marker id="mk_${k}" markerWidth="2.47" markerHeight="2.47" refX="1.3" refY="1.235" orient="auto"><path d="M0,0 L2.47,1.235 L0,2.47 Z" fill="${OUTLINE[k]}"/></marker>`).join('') + ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="3" markerHeight="3" refX="1.8" refY="1.5" orient="auto"><path d="M0,0 L3,1.5 L0,3 Z" fill="${MARK[c].ink}"/></marker>`).join('');
   // longer arrows first, so shorter ones are drawn on top and never hidden under them
   const arrowLen = t=>{ const a = squareCenter(t.from), b = squareCenter(t.to); return Math.hypot(b.x-a.x, b.y-a.y); };
   const arrows = marks.arrows.slice().sort((p, q)=>arrowLen(q) - arrowLen(p)).map(t=>{
