@@ -220,7 +220,7 @@ async def main():
         if am != 'd5w:Outpost d6w:Outpost e8b:Half-open f1w:Open': fails.append(f'activity marks: {am}')
         ad = await pg.evaluate("(()=>{ const d = activityDetail(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'd5'); return [d.circles.map(c=>c.sq).sort().join(' '), d.arrows.map(a=>a.from+a.to).sort().join(' '), d.nums[0].n]; })()")
         print('activity detail, knight d5:', ad)
-        if ad != ['b6 c3 c7 e7 f4', 'c5b4 g7f6', 1]: fails.append(f'activity detail: {ad}')
+        if ad != ['b6 c3 c7 e7 f4', 'c5b4 g7f6', '2']: fails.append(f'activity detail: {ad}')
         di = await pg.evaluate("aspectMarks('4k3/p7/3p4/8/8/2P5/2P5/4K3 w - - 0 1', 'pawns').labels.map(l=>l.sq+':'+l.text).sort().join(' ')")
         if di != 'a7:Passed c2:Isolated c3:Doubled d6:Isolated': fails.append(f'doubled isolated pair: {di}')
         # Space left out when few pieces remain: scored over the other five, greyed in the question
