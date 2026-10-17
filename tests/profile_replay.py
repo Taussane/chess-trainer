@@ -31,6 +31,7 @@ async def main():
         if not rows[0].startswith('Today · 5') : fails.append(f'today row: {rows[0]}')
         await pg.screenshot(path=str(T.SHOTS/'profile.png'), full_page=True)
         # The chart's tip: stays open when the page redraws, and stays inside the chart at both ends.
+        await pg.wait_for_timeout(300)   # the page's slide-in done (its box measured where it stays)
         box = await pg.query_selector('#levelChart'); bb = await box.bounding_box()
         for fx in (0.01, 0.99):
             await pg.mouse.move(bb['x'] + bb['width']*fx, bb['y'] + bb['height']/2); await pg.wait_for_timeout(100)

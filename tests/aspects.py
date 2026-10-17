@@ -10,11 +10,12 @@ async def main():
     fails = []
     async with async_playwright() as p:
         b, pg, errs = await T.page_with_app(p)
-        # 1. Parsing: the aspects add up to Stockfish's own total (it adds a small bonus for the move), less the imbalance table.
+        # 1. Parsing: Material in points, the rest adding up to Stockfish's own total less its material lines.
         r = await pg.evaluate("([t, f])=>{ const a = parseAspects(t.split('\\n').concat(['Total evaluation: 0.88 (white side)']), f); return a && {a, sum: Object.values(a).reduce((x,y)=>x+y,0)}; }", [TABLE, FEN])
         print('parsed:', r and {k: round(v, 2) for k, v in r['a'].items()}, 'sum', r and round(r['sum'], 2))
-        # (less the imbalance table's 0.28: Material keeps only its bishop pair term, and both sides have the pair here)
-        if not r or abs(r['sum'] - (0.88 - 0.28)) > 0.2: fails.append(f'aspects do not add up to the total: {r}')
+        # Material is counted in points (White a pawn up: 1); the other five keep Stockfish's own figures, which
+        # add up to its total less its Material and Imbalance lines (about −0.15 here)
+        if not r or r['a']['material'] != 1 or abs(r['sum'] - 1 + 0.15) > 0.2: fails.append(f'aspects do not add up to the total: {r}')
         if r and not 0.6 < r['a']['material'] < 1.2: fails.append('White is a pawn up: material should be about +0.9')
         n = await pg.evaluate("parseAspects(['Total evaluation: none (in check)'], 'k7/8/8/8/8/8/8/K7 w - - 0 1')")
         if n is not None: fails.append('in check should give no aspects')
@@ -173,7 +174,7 @@ async def main():
         # Material, on the "Material marks" test position: per piece type, the extra ones; the bishop pair labelled.
         mm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Material marks').fen, 'material'); return [m.circles.map(c=>c.sq+c.c).sort().join(' '), m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' ')]; })()")
         print('material marks:', mm)
-        if mm != ['a1w c3w d5w d8b e3w f6b', 'e3w:Pair']: fails.append(f'material marks: {mm}')
+        if mm != ['a1w c3w d5w d8b e3w f6b', 'c4w:Pair e3w:Pair']: fails.append(f'material marks: {mm}')
         pm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Pawn marks').fen, 'pawns'); return [m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '), m.arrows.map(a=>a.from+a.to+a.c).join(' ')]; })()")
         print('pawn marks:', pm)
         if pm != ['a4b:Isolated c3b:Doubled c7w:Backward d5w:Connected e5w:Passed h5b:Passed', 'e2f3w']: fails.append(f'pawn marks: {pm}')
@@ -232,11 +233,11 @@ async def main():
         # at half t away; two levels off: nothing
         ac = await pg.evaluate("(()=>{ const t = ASPECTS.find(x=>x.key==='king').levels[0]; return [[1,1],[0.85,1],[0.6,1],[0.2,1],[1.1,0],[1.3,0],[1.8,0],[0.98,2],[1,0]].map(([v,g])=>+aspectCredit(v*t, g, 'king').toFixed(2)); })()")
         if ac != [1, 0.7, 0.2, 0, 0.8, 0.4, 0, 0, 1]: fails.append(f'credit near a threshold: {ac}')
-        # an ending Stockfish rates on its own (all-zero table): only Material, the rest left out
+        # an ending Stockfish rates on its own (all-zero table): only Material (in points: the queen's 9), the rest left out
         sp = await pg.evaluate("""(()=>{ const z = ['Material','Imbalance','Initiative','Pawns','Knights','Bishops','Rooks','Queens','Mobility','King safety','Threats','Passed','Space'].map(k=>`  ${k} |  0.00  0.00 |  0.00  0.00 |  0.00  0.00`).concat(['Total evaluation: 61.20 (white side)']);
           const v = parseAspects(z, '7k/8/5K2/8/8/8/8/6Q1 w - - 0 60'); return [Math.round(v.material), v.activity, v.off.join(' '), !!v.special]; })()""")
         print('special ending:', sp)
-        if sp != [13, 0, 'pawns space activity king threats', True]: fails.append(f'special ending: {sp}')
+        if sp != [9, 0, 'pawns space activity king threats', True]: fails.append(f'special ending: {sp}')
         km = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='King safety marks').fen, 'king'); return [m.labels.map(l=>l.sq+':'+l.text).sort().join(' '), m.arrows.filter(a=>!a.outline).map(a=>a.from+a.to+a.c).sort().join(' '), m.arrows.filter(a=>a.outline).map(a=>a.from+a.to).join(' '), m.zones.map(z=>z.a+z.b).join(' '), m.circles.filter(c=>c.sq==='e3'||c.sq==='a5').length]; })()")
         print('king marks:', km)
         # mates found by the short search: any mate in King safety (++), Other threats untouched
