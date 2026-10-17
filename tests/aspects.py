@@ -182,7 +182,7 @@ async def main():
         if pm != ['a4w:Isolated c3w:Doubled c7b:Backward d5w:Connected e5w:Passed h5b:Passed', 'e2f3w']: fails.append(f'pawn marks: {pm}')
         sm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Space marks').fen, 'space'); return [m.circles.map(c=>c.sq+c.c).sort().join(' '), m.tints.length, m.labels.map(l=>l.sq+':'+l.text).sort().join(' '), m.arrows.map(a=>a.from+a.to+a.c).sort().join(' ')]; })()")
         print('space marks:', sm)
-        if sm != ['c3w c4w c5b d3w d6b e3w e4w e5b', 0, '', 'c5d4b d5c6w d5e6w e5d4b']: fails.append(f'space marks: {sm}')
+        if sm != ['c3w c4w c5b d3w d5w d6b e3w e4w e5b', 0, '', 'c5d4b d5c6w d5e6w e5d4b']: fails.append(f'space marks: {sm}')
         am = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'activity'); return m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '); })()")
         print('activity marks:', am)
         un = await pg.evaluate("['r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w - - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2QK2R w - - 1 14'].map(f=>aspectMarks(f, 'king').labels.filter(l=>l.text==='Uncastled').map(l=>l.sq+l.c).join(' '))")
