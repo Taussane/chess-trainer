@@ -154,7 +154,7 @@ async def main():
         plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side)=>planFor({ fen:'4k3/8/8/8/8/8/8/4K3 '+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.plan);
           const Q = (vals, side)=>planFor({ fen:'4k2r/8/8/8/8/8/P7/R3K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);
           return { passed: Q({ pawns:0.5 }, 'w'), blockade: Q({ pawns:0.5 }, 'b'),
-                   ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:2.5 }, 200), cramped: P({ space:-4 }, -30),
+                   ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:6 }, 200), cramped: P({ space:-4 }, -30),
                    blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400), conflict: P({ material:1.5, space:4 }, 150) }; })()""")
         print('plans:', plans)
         if plans['ahead'][0] != 'Trade pieces' or plans['behind'][0] != 'Avoid trades, attack' \
@@ -185,8 +185,8 @@ async def main():
         if sm != ['c3w c4w c5b d3w d5w d6b e3w e4w e5b', 0, '', 'c5d4b d5c6w d5e6w e5d4b']: fails.append(f'space marks: {sm}')
         am = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'activity'); return m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '); })()")
         print('activity marks:', am)
-        un = await pg.evaluate("['r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w - - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2QK2R w - - 1 14'].map(f=>aspectMarks(f, 'king').labels.filter(l=>l.text==='Uncastled').map(l=>l.sq+l.c).join(' '))")
-        if un != ['', 'e8w', '']: fails.append(f'uncastled king (King safety; not while it can castle, nor when both kings are): {un}')
+        un = await pg.evaluate("['r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w - - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2QK2R w - - 1 14'].map(f=>aspectMarks(f, 'king').labels.filter(l=>l.text==='Uncastled').map(l=>l.sq+l.c).sort().join(' '))")
+        if un != ['', 'e8b', 'e1w e8b']: fails.append(f'uncastled king (King safety: in the centre, no castling right left, middlegame; −1 for its own side): {un}')
         # one label per piece: Hanging over Pinned (Threats); in Activity, both counted bonuses stacked (Outpost over Pinned)
         one = await pg.evaluate("[['r3r2k/pp3pbp/n5q1/8/5Bb1/PN2N1R1/1PPQ4/2K4R b - - 4 26','threats'], ['6k1/2p5/8/p2PP2p/2PR2bq/6p1/PP4P1/5KQ1 w - - 5 38','activity']].map(([f,k])=>aspectMarks(f, k).labels.filter(l=>l.sq==='g4').map(l=>l.text + (l.sub ? ' ' + l.sub : '')).join(' '))")
         if one != ['Hanging', 'Outpost Pinned']: fails.append(f'one label per piece: {one}')
@@ -210,7 +210,7 @@ async def main():
           const trades = x=>{ if(!K[x.kind]) return false; const c = x.c ? 'b' : 'w', L = lc(c), ts = x.kind==='byKing' ? bbSquares(x.squares) : [sqName(x.sq)];
             return !ts.some(t=>(am[c][t] || []).some(a=>K[x.kind].includes(bm[a].t) && L.has(a + t) && see(bm, am, a, t) > 0)); };
           ev.features.filter(x=>['weakUnopposed', 'byRank', 'restricted', 'knightOnQueen', 'sliderOnQueen'].includes(x.kind) || trades(x)).forEach(x=>{ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; });
-          const ap = activityPoints(f); return [+(a.activity - Math.round((ap.w - ap.b) * 10) / 10).toFixed(4), +(a.king - (raw.king + ks + pw([sh(0) - sh(1), 0]) - trop - sum(x=>x.kind==='pawnDistance'))).toFixed(4),
+          const ap = activityPoints(f); return [+(a.activity - Math.round((ap.w - ap.b) * 10) / 10).toFixed(4), +(a.king - (kingPoints(f).w - kingPoints(f).b)).toFixed(4),
                   +(a.threats - (pw(T[0]) - 0.5*pw(T[1]))).toFixed(4), +ks.toFixed(2), +far.toFixed(3), +trop.toFixed(3)]; })()""")
         print('adaptations:', ad)
         if ad[0] != 0 or ad[1] != 0 or ad[2] != 0 or ad[3] <= 0.3 or ad[5] == 0: fails.append(f'adaptations: {ad}')
@@ -229,9 +229,9 @@ async def main():
           return [Math.round(imbalanceScore(v, { space:2 }, 6)), Math.round(imbalanceScore(v, { material:2 }, 6)), spaceCounts('r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'), spaceCounts(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen)]; })()""")
         print('space left out:', so)
         if so != [100, 80, True, False]: fails.append(f'space left out: {so}')
-        # a level off near a threshold (King safety, t where + starts): all of it at the line, fading to nothing
+        # a level off near a threshold (Other threats, t where + starts): all of it at the line, fading to nothing
         # at half t away; two levels off: nothing
-        ac = await pg.evaluate("(()=>{ const t = ASPECTS.find(x=>x.key==='king').levels[0]; return [[1,1],[0.85,1],[0.6,1],[0.2,1],[1.1,0],[1.3,0],[1.8,0],[0.98,2],[1,0]].map(([v,g])=>+aspectCredit(v*t, g, 'king').toFixed(2)); })()")
+        ac = await pg.evaluate("(()=>{ const t = ASPECTS.find(x=>x.key==='threats').levels[0]; return [[1,1],[0.85,1],[0.6,1],[0.2,1],[1.1,0],[1.3,0],[1.8,0],[0.98,2],[1,0]].map(([v,g])=>+aspectCredit(v*t, g, 'threats').toFixed(2)); })()")
         if ac != [1, 0.7, 0.2, 0, 0.8, 0.4, 0, 0, 1]: fails.append(f'credit near a threshold: {ac}')
         # an ending Stockfish rates on its own (all-zero table): only Material (in points: the queen's 9), the rest left out
         sp = await pg.evaluate("""(()=>{ const z = ['Material','Imbalance','Initiative','Pawns','Knights','Bishops','Rooks','Queens','Mobility','King safety','Threats','Passed','Space'].map(k=>`  ${k} |  0.00  0.00 |  0.00  0.00 |  0.00  0.00`).concat(['Total evaluation: 61.20 (white side)']);
@@ -251,9 +251,9 @@ async def main():
           const bc = TEST_POSITIONS.find(p=>p.title==='Black in check').fen;   // c6 blocks the check (and hits Bb5), a6 can't be played
           return [A(free).includes('a2a3w'), A(chk).includes('a2a3w'), L(chk), A(bc).includes('c7c6b'), A(bc).includes('a7a6b')]; })()""")
         if push != [True, False, 0, True, False]: fails.append(f'pawn push threats (legal only for the side to move): {push}')
-        if km != ['b2:Shelter c2:Shelter c3:Storm f7:Shelter g6:Storm g7:Shelter h6:Shelter', 'a5c3b c6c3b e4g6w g5f7w', 'd1d8', 'b1d3 f6h8', 0]: fails.append(f'king marks: {km}')
+        if km != ['b2:Shelter c2:Shelter f7:Shelter g7:Shelter h6:Shelter', 'a5c3b c6c3b e4g6w g5f7w', 'c3b2 g6f7 d1d8', 'b1d3 f6h8', 0]: fails.append(f'king marks: {km}')
         cs = await pg.evaluate("aspectMarks(TEST_POSITIONS.find(p=>p.title==='Castling').fen, 'king').arrows.filter(a=>a.from==='e1'||a.from==='e8').map(a=>a.from+a.to+(a.dash?'-':'')).sort().join(' ')")
-        if cs != 'e1g1': fails.append(f'castling arrows (only O-O is possible now): {cs}')
+        if cs != '': fails.append(f'no castling arrows (castling isn\'t counted): {cs}')
         np = await pg.evaluate("aspectMarks('4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.map(l=>l.sq+':'+l.text).sort().join(' ')")
         if np != 'c1:Pair f1:Pair': fails.append(f'bishop pair against no bishop: {np}')
         both = await pg.evaluate("aspectMarks('2b1k1b1/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.length")
