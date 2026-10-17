@@ -194,7 +194,7 @@ async def main():
         # counted pawn's points in its corner, Passed and Connected with their rank, each king its side's total
         isl = await pg.evaluate("""(()=>{ const f = 'r4rk1/4bppp/p3bn2/3p4/N7/3BB3/PP3PPP/R3R1K1 w - - 3 16', g = '2r3k1/2p3p1/1p6/3PP2p/P7/2P2P2/2P1PP2/3R2K1 w - - 0 30';
           return [adaptAspects(parseAspects(sfTableLines(f), f), f).pawns, aspectMarks(f, 'pawns').nums.map(n=>n.sq+n.c+n.n).sort().join(' '), aspectMarks(g, 'pawns').nums.map(n=>n.sq+n.c+n.n).sort().join(' ')]; })()""")
-        if isl != [-0.5, 'a6b−0.5 d5b1 d5b4th g8b+0.5', 'a4w−0.5 c3w−0.5 c7b−0.5 d5w1 d5w5th e5w2 e5w5th g1w+2 g8b+0.5 h5b1 h5b4th']: fails.append(f'pawn points: {isl}')
+        if isl != [-0.5, 'a6b−0.5 d5b+1 d5b4th g8bTotal +0.5', 'a4w−0.5 c3w−0.5 c7b−0.5 d5w+1 d5w5th e5w+2 e5w5th g1wTotal +2 g8bTotal +0.5 h5b+1 h5b4th']: fails.append(f'pawn points: {isl}')
         # our adaptations, on one position: Activity loses the kings' middlegame squares and the pieces' distance
         # to their king (both to King safety) and the trapped rook while castling is possible; King safety also
         # takes the shelter where the king stands and drops the attacks on the king's wing; threats by the side
@@ -220,7 +220,7 @@ async def main():
         if am != 'd5w:Outpost d6w:Outpost e8b:Half-open f1w:Open': fails.append(f'activity marks: {am}')
         ad = await pg.evaluate("(()=>{ const d = activityDetail(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'd5'); return [d.circles.map(c=>c.sq).sort().join(' '), d.arrows.map(a=>a.from+a.to).sort().join(' '), d.nums[0].n]; })()")
         print('activity detail, knight d5:', ad)
-        if ad != ['b6 c3 c7 e7 f4', 'c5b4 g7f6', '2']: fails.append(f'activity detail: {ad}')
+        if ad != ['b6 c3 c7 e7 f4', 'c5b4 g7f6', '+2']: fails.append(f'activity detail: {ad}')
         di = await pg.evaluate("aspectMarks('4k3/p7/3p4/8/8/2P5/2P5/4K3 w - - 0 1', 'pawns').labels.map(l=>l.sq+':'+l.text).sort().join(' ')")
         if di != 'a7:Passed c2:Isolated c3:Doubled d6:Isolated': fails.append(f'doubled isolated pair: {di}')
         # Space left out when few pieces remain: scored over the other five, greyed in the question
@@ -274,7 +274,7 @@ async def main():
             spaceFew: M('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 'space').t,
             knight: M('4k3/8/8/8/8/8/8/1N2K3 w - - 0 1', 'activity').n,
           }; })()""")
-        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2w d5b g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b10.6 e1+0.6'}
+        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2w d5b g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b1+0.6 e1Total +0.6'}
         for k, v in want.items():
             if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
         # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (the move's arrow, no rings)
