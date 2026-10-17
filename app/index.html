@@ -3203,7 +3203,7 @@ function drawMarks(svg, marks){
   const circles = marks.circles.map(t=>{ const r = R(t.sq); return `<circle cx="${r.cx}" cy="${r.cy}" r="26" fill="none" stroke="${MARK[t.c].ink}" stroke-width="4" filter="url(#mkShadow)"/>`; }).join('');
   // A number in the top corner of the square, on a small badge like the labels'.
   // (below: centred under the square's label instead, e.g. a pawn's rank)
-  const nums = marks.nums.map(t=>{ const r = R(t.sq), w = String(t.n).length*7 + 8, h = 16, x = t.below ? r.cx - w/2 : r.x + 59 - w, y = t.below ? r.cy + 10 : r.y + 1;
+  const nums = marks.nums.map(t=>{ const r = R(t.sq), w = String(t.n).length*7 + 8, h = 16, x = t.below ? r.cx - w/2 : r.x + 59 - w, y = t.below ? r.cy + 8 : r.y + 1;
     return `<rect class="mk-num" ${t.below ? `data-cx="${r.cx}"` : `data-right="${x + w}"`} x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.n}</text>`; }).join('');
   // the outline's head: the arrow's head (24 units, its base 14.4 behind the line's end) grown by the
   // same 2.5 units on every side as the line (8 wide in 13): 32.1 units long, its base 16.9 behind
