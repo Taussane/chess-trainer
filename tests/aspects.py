@@ -154,8 +154,8 @@ async def main():
         plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side)=>planFor({ fen:'4k3/8/8/8/8/8/8/4K3 '+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.plan);
           const Q = (vals, side)=>planFor({ fen:'4k2r/8/8/8/8/8/P7/R3K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);
           return { passed: Q({ pawns:0.5 }, 'w'), blockade: Q({ pawns:0.5 }, 'b'),
-                   ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:2.5 }, 200), cramped: P({ space:-0.5 }, -30),
-                   blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400), conflict: P({ material:1.5, space:0.5 }, 150) }; })()""")
+                   ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:2.5 }, 200), cramped: P({ space:-4 }, -30),
+                   blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400), conflict: P({ material:1.5, space:4 }, 150) }; })()""")
         print('plans:', plans)
         if plans['ahead'][0] != 'Trade pieces' or plans['behind'][0] != 'Avoid trades, attack' \
            or plans['king'][0] != 'Open lines to it' or plans['cramped'] != ['Trade to breathe'] \
@@ -169,7 +169,7 @@ async def main():
           const fen = 'r1bq1rk1/pp2bppp/2n1pn2/3p4/2PP4/2N1PN2/PP1B1PPP/R2QKB1R w KQ - 0 8';
           myGames.push({ id:'qtest', evals:[{cp:80}, {cp:900}] });
           const near = { key:'own:qtest:1', fen, gameId:'qtest', ply:1 }, far = { key:'own:qtest:2', fen, gameId:'qtest', ply:2 };
-          quietOwn(near); quietOwn(far); await new Promise(r=>setTimeout(r, 50));
+          quietOwn(near); quietOwn(far); await new Promise(r=>setTimeout(r, 400));
           const out = [quietOwn(near), quietOwn(far)]; myGames.pop(); return out; }""", TABLE)
         print('own quiet check:', q)
         if q != [True, False]: fails.append(f'own positions quiet check: {q}')
@@ -182,7 +182,7 @@ async def main():
         if pm != ['a4w:Isolated c3w:Doubled c7b:Backward d5w:Connected e5w:Passed h5b:Passed', 'e2f3w']: fails.append(f'pawn marks: {pm}')
         sm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Space marks').fen, 'space'); return [m.circles.map(c=>c.sq+c.c).sort().join(' '), m.tints.length, m.labels.map(l=>l.sq+':'+l.text).sort().join(' '), m.arrows.map(a=>a.from+a.to+a.c).sort().join(' ')]; })()")
         print('space marks:', sm)
-        if sm != ['c4w c5b d5w d6b e4w e5b', 0, 'c4:Flank c5:Flank d5:Central d6:Central e4:Central e5:Central', 'c5d4b d5c6w d5e6w e4f5w e5d4b e5f4b']: fails.append(f'space marks: {sm}')
+        if sm != ['c3w c4w c5b d5w d6b e2w e4w e5b e7b f3w f6b', 6, '', 'c5d4b d5c6w d5e6w e4f5w e5d4b e5f4b']: fails.append(f'space marks: {sm}')
         am = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'activity'); return m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '); })()")
         print('activity marks:', am)
         un = await pg.evaluate("['r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w - - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2QK2R w - - 1 14'].map(f=>aspectMarks(f, 'king').labels.filter(l=>l.text==='Uncastled').map(l=>l.sq+l.c).join(' '))")

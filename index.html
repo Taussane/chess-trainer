@@ -1082,7 +1082,7 @@ TEST_POSITIONS.forEach(p=>{ p.last = p.last ? { squares:p.last } : null; });   /
 // evaluation far from the imbalances (scripts/imbalance-skip.js lists them): there the right answer
 // is a concrete move, not a reading. A position played in one of the two isn't offered in the other
 // the same day (see markPlayed).
-const IMBALANCE_SKIP = /*IMBALANCE_SKIP*/["r5k1/2q1bppp/1rp1pnb1/p2p4/3P4/P1Q1P1N1/1P1BBPPP/R4RK1 b - -", "2rr4/pp4pk/3qp1Rp/5p2/2PPb3/1Q2N3/P2R1PPP/6K1 w - -", "3r4/pp4pk/4R2p/5p2/3Pbq2/8/PQ1R1PPP/2rN2K1 b - -", "r3rk2/ppp3p1/2pb1p2/q2b3Q/5B2/1P5R/P1P2PPP/5RK1 w - -", "4rk2/p1p1b2p/Pp6/4Rpp1/3r1P2/6B1/1P4PP/4R1K1 w - -", "r1r3k1/3bbppp/pqn1pn2/1p6/3P1B2/1BN2N2/PP2QPPP/R3R1K1 w - -", "1r4k1/1q3p2/2p4p/3npPpP/p1Q1B1P1/P4P2/2R2B2/2K5 b - -", "5rk1/pp4pp/3r2n1/4p2R/6P1/1PB1P3/1P3P2/2R1K3 w - -", "r6k/pp4pp/3n1p2/2b1p3/P7/1B3P1P/1P3P2/3R1RK1 w - -", "r1bnk2r/2ppnppp/pp6/1N1Pp1B1/Qq2P3/1Bb2N2/P4PPP/2R2RK1 b kq -", "r1bnk2r/p2pn1pp/2pq1p2/1pbPp3/Q3P3/NBP2N2/P4PPP/R1BR2K1 w kq b6", "r1b1k2r/pn1pn1pp/Q1pq1p2/1pbPp3/4P3/NBP2N2/P4PPP/R1BR2K1 b kq -", "r3k2r/pnqbn1pp/5p2/1Qb1p3/4P3/1BP2N2/P4PPP/R1BR2K1 w kq -", "r2k3r/p2bnBpp/1q1n1p2/2b1p3/4P3/2P2N2/P1Q2PPP/1RBR2K1 b - -", "2n1k3/r2br1pp/2q2p2/2PRp3/p1N1P3/4P3/P1Q3PP/3R2K1 w - -", "1r1qk2r/ppp2ppp/2nb2n1/3N4/2PpP3/1Q3P2/PP1B1P1P/R3KB1R w KQk -", "1r3rk1/pp3pp1/6n1/2pP1q1p/3p4/6Q1/PP1B1P1P/K2R1BR1 b - -", "1r3rk1/p5p1/3q2n1/1pp2pQp/3p1P2/8/PP1B2BP/K2R2R1 w - f6", "rqb2r2/p2p2kp/3Pnp2/7Q/3N4/2PR4/P4PPP/5RK1 b - -", "rq3r2/p5kp/3Pppb1/8/6Q1/2P4R/P4PPP/5RK1 w - -", "3rr3/p5kp/1q1P1pb1/3Q4/2P5/7R/P4PPP/3R2K1 b - -", "4rrk1/ppp3pp/3p2n1/3Ppqb1/nPP5/6P1/P1NBQP1P/2R1NRK1 b - -", "3r1r1k/1Rp3p1/p6p/3nN2q/3Q4/P4PP1/5P2/4R1K1 b - -", "n2r1r1k/2p3p1/p6p/4Nq2/2Q2PP1/PR6/5P2/2R3K1 b - -", "r1bk3r/pp1p1ppp/2nb4/3N4/5P2/3BBQ2/PPP4q/R3K1R1 b Q -", "r1b2r2/ppk4p/3b1qp1/8/4BP2/4BQ2/PPP5/2KR1R2 b - -", "r4r2/pk5p/2p3p1/2b1B3/2q2P2/2R2Q2/PPP5/2KR4 b - -", "3r1r2/p1q3bk/2p2pb1/1pn4p/4P2P/2P2Q2/PPB2N2/R1B1K1R1 w Q -", "r1bqk2r/2p1n2p/p2b1pp1/1p5Q/2p1P3/2N1B3/PPPN1PPP/R3K2R w KQkq -", "1rb2bkr/2N4p/p1n3p1/1p3p2/2p1PP2/4B3/PPPN2PP/R3K2R w KQ -", "6r1/4k3/4b2p/1r2Ppp1/1p1R1P2/1Pp5/P1N1R1P1/2K5 w - -", "r1b2rk1/pp1n1ppp/8/q1pP4/3P4/1QR1P3/P2N1PPP/4KB1R b K -", "r1r3k1/3nbp2/pq1pb2p/1p4p1/3pP3/3Q2BP/PP3PP1/1B1RRNK1 w - -", "r6r/5bk1/pq4n1/1p1pR1Q1/8/3p2NP/PP4P1/1B1R3K w - -", "2r1r1k1/bp3p1p/4qp2/pP1p4/P1n5/1Q2PBP1/5P1P/1NRR2K1 b - -", "1k4rr/1bq2p2/pp4P1/2bPp2n/2p1P1Qp/2P5/P1B2NPP/2B1RRK1 b - -", "1kb4r/2q2p2/pp4r1/2bPp3/2p1P3/2P2QpN/P1B3P1/2B1RR1K b - -", "r1r3k1/6pp/1nq1Nb2/p2p1P2/1ppP2P1/P4Q1P/1P1B4/R4RK1 b - -", "rnb1k2r/pp3ppp/4p3/q3P3/Pb1P4/2p2N2/2QBBPPP/R4RK1 w kq -", "2r1r1k1/p4ppp/1pn1pn2/4N3/2PP2Pq/P6P/4QP2/2BRR1K1 w - -", "5r1k/p1p2qpp/1p2R3/3p1rP1/1nP2P1P/2NQ1R2/PP2P1K1/8 w - -", "5r1k/p1p2qpp/1p6/3P1rP1/5P1P/2N2R2/PPQ1P1K1/8 b - -", "3r1k1r/pp2np2/2p2b2/8/3PBBQp/P1P4P/qP6/2KRR3 w - -", "7r/pQ1rkp2/2p2b2/3n4/3PB2p/P1P4P/qP1B4/2KR1R2 w - -", "r2k1bnr/1p1b1pp1/4p2p/1N1pP2P/1pnP2P1/4BN2/PP3P2/R3KB1R w KQ -", "b1r1r2k/8/p4bB1/1pBP3p/1P3Pq1/2NQ4/P6P/5R1K b - -", "1nr3k1/4bp2/rppq2p1/3pN2p/P2P1N1P/1QR1P1P1/5PK1/2R5 b - -", "1r1r2k1/5p1p/p2b1p2/3R4/2p5/1P6/P1P1BPPP/4R1K1 b - -", "r3r1k1/pp3ppp/5n2/q1bp1bB1/2Pnp3/P1NBP3/1P1N1PPP/1Q1RK2R w K -", "r3r1k1/pp3ppp/5q2/2bp1b2/2P1p3/PNN1P3/1PQ2PPP/3RK2R b K -", "8/p1p1q1k1/1p5p/n1Pr2p1/P2P1pN1/2Q3P1/5P1P/1R4K1 w - -", "r4rk1/pp2bppp/2n2n2/5N2/5B2/3BPQ1P/qP4P1/3R1RK1 b - -", "6r1/r2q1knR/4p3/PR3p2/1B1Qp1p1/2P5/5PP1/4K3 b - -", "3r2k1/4p2p/p3q1p1/4P3/R5PP/2Q1bNBK/6P1/5n2 b - -", "2n3k1/q4pp1/1p2p2p/4N3/n7/4PBP1/5P1P/1Q4K1 w - -", "4r1k1/pp4b1/4p1Q1/1q1pPP2/3P2p1/4BN2/1r6/6RK b - -", "8/1b2kp1p/4pn2/1B6/PP1R1pQ1/2r5/5PPP/6K1 b - -", "b2r2k1/p1r3p1/7p/2p2P2/2N1q3/R5PK/PP3R1P/2Q5 b - -", "b5k1/p1r5/6q1/2p4p/3r2PK/R3N3/PP3R1P/2Q5 w - -", "3r2k1/2pqnpp1/1p5p/p2P4/P4PP1/2P1p3/1PQ2P2/3RR1K1 b - -"]/*END IMBALANCE_SKIP*/;
+const IMBALANCE_SKIP = /*IMBALANCE_SKIP*/["r3k3/p1bq1pp1/2p2nr1/2Pp1b1p/P2Pp3/2N1P2P/1B1NBQ2/R4KR1 b q -", "1r2k3/p7/2p5/P1Pp2pp/3PpbN1/2B5/2K1Nq2/4R2R b - -", "1r4k1/1q3p2/2p4p/3npPpP/p1Q1B1P1/P4P2/2R2B2/2K5 b - -", "r1q1k2r/pp4pp/2pbp1n1/3p4/2PPn1p1/2NBP2P/PP1B1P2/2RQK2R w Kkq -", "5rk1/pp4pp/3r2n1/4p2R/6P1/1PB1P3/1P3P2/2R1K3 w - -", "r1b2k2/pp1p1p2/1bpPn3/4P1Nr/5P2/1B4N1/P6P/3R1R1K b - -", "rr6/3b1kp1/q1pP3p/p1b1BB2/5nQN/P7/5PPP/3R2K1 b - -", "r1bnk2r/2ppnppp/pp6/1N1Pp1B1/Qq2P3/1Bb2N2/P4PPP/2R2RK1 b kq -", "4r1k1/p4ppp/2p3r1/3pP1q1/1QnP4/5P2/PP2RBPP/4RK2 w - -", "r1b1k2r/pn1pn1pp/Q1pq1p2/1pbPp3/4P3/NBP2N2/P4PPP/R1BR2K1 b kq -", "2n1k3/r2br1pp/2q2p2/2PRp3/p1N1P3/4P3/P1Q3PP/3R2K1 w - -", "1r1qk2r/ppp2ppp/2nb2n1/3N4/2PpP3/1Q3P2/PP1B1P1P/R3KB1R w KQk -", "1r3rk1/pp3pp1/3b4/2pP1P1p/3pPn1q/5Q2/PP1B1P1P/1K1R1BR1 w - c6", "1r3rk1/p5p1/3q2n1/1pp2pQp/3p1P2/8/PP1B2BP/K2R2R1 w - f6", "rqb2r2/p2p2kp/3Pnp2/7Q/3N4/2PR4/P4PPP/5RK1 b - -", "3rr3/p5kp/1q1P1pb1/3Q4/2P5/7R/P4PPP/3R2K1 b - -", "3rbrk1/p1q1n1b1/2p2p2/1pn1pPPp/7P/2PP1Q2/PPB2N2/R1B1K2R w KQ -", "3r1r2/p1q3bk/2p2pb1/1pn4p/4P2P/2P2Q2/PPB2N2/R1B1K1R1 w Q -", "6r1/4k3/4b2p/1r2Ppp1/1p1R1P2/1Pp5/P1N1R1P1/2K5 w - -", "r1b2rk1/pp1n1ppp/8/q1pP4/3P4/1QR1P3/P2N1PPP/4KB1R b K -", "5r1k/p3prb1/n1p5/8/N2P1P1q/P2Q4/3BK3/2R2R2 b - -", "5r1k/p3prb1/2R5/1n5q/N2P1P2/P2Q1R2/3BK3/8 w - -", "1k4rr/1bq2p2/pp4P1/2bPp2n/2p1P1Qp/2P5/P1B2NPP/2B1RRK1 b - -", "1kb4r/2q2p2/pp4r1/2bPp3/2p1P3/2P2QpN/P1B3P1/2B1RR1K b - -", "1r4k1/7p/Rp6/1Pp1N1p1/4np2/3r3P/1PR2PP1/6K1 b - -", "r6k/pQ1bN2p/Pn2q3/2Bp4/3P1p2/2r5/5PPP/R4RK1 w - -", "2r1r1k1/p4ppp/1pn1pn2/4N3/2PP2Pq/P6P/4QP2/2BRR1K1 w - -", "5r1k/p1p2qpp/1p2R3/3p1rP1/1nP2P1P/2NQ1R2/PP2P1K1/8 w - -", "5r1k/p1p2qpp/1p6/3P1rP1/5P1P/2N2R2/PPQ1P1K1/8 b - -", "7r/pQ1rkp2/2p2b2/3n4/3PB2p/P1P4P/qP1B4/2KR1R2 w - -", "r3r1k1/pp3ppp/5n2/q1bp1bB1/2Pnp3/P1NBP3/1P1N1PPP/1Q1RK2R w K -", "8/p1p1q1k1/1p5p/n1Pr2p1/P2P1pN1/2Q3P1/5P1P/1R4K1 w - -", "6r1/r2q1knR/4p3/PR3p2/1B1Qp1p1/2P5/5PP1/4K3 b - -", "2n3k1/q4pp1/1p2p2p/4N3/n7/4PBP1/5P1P/1Q4K1 w - -", "8/1b2kp1p/4pn2/1B6/PP1R1pQ1/2r5/5PPP/6K1 b - -", "b2r2k1/p1r3p1/7p/2p2P2/2N1q3/R5PK/PP3R1P/2Q5 b - -", "b5k1/p1r5/6q1/2p4p/3r2PK/R3N3/PP3R1P/2Q5 w - -", "3r2k1/2pqnpp1/1p5p/p2P4/P4PP1/2P1p3/1PQ2P2/3RR1K1 b - -"]/*END IMBALANCE_SKIP*/;
 // A castling right lost with no trace on the board (king and a rook still on their first squares,
 // the right gone) would mislead: those positions are left out of both.
 function hiddenCastlingLoss(fen){
@@ -1196,7 +1196,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> in the usual points (pawn 1, knight and bishop 3, rook 5, queen 9; the bishop pair ½ against a side without it): the extra pieces ringed, with their value in the corner, the bishop pair labelled Pair, and on each king what its side has extra (+5, +0.5); <strong>Pawns</strong> in points: a passed pawn (no enemy pawn left to stop it) 1 up to its 4th rank, then 2, 3, 4 on its 5th, 6th, 7th; a connected pawn (side by side with, or protected by, one of its own) 1, 2, 3 on its 5th, 6th, 7th; an isolated, doubled (a pawn of its own behind it on its file, and none protecting it) or backward pawn (behind its neighbours, the square in front attacked by an enemy pawn) −½. Each counted pawn ringed and labelled in its own colour (with its rank under Passed and Connected), its points in its corner (1, −0.5); on each king, its side's total (+2); a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board) each side's half of the centre (dashed: c to f files, its 3rd and 4th ranks; Stockfish also counts the 2nd): the pawns that gain safe squares behind them (Central on the d and e files, Flank on c and f), and arrows from enemy pawns taking squares away; <strong>Activity</strong> how many squares each piece attacks or defends (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts (and an empty one a knight or bishop can go to next move, guarded by a pawn), rooks on open and half-open files, rooks on their 5th rank or beyond facing enemy pawns (Advanced), a central king when Stockfish rates it (endgames); in the other side's colour: a piece Pinned to its queen by an enemy rook or bishop; <strong>King safety</strong> each king's zone (dashed; attacks on it count only when the other side has at least a rook and a knight's worth of pieces, else it frames the shelter), arrows from the enemy pieces attacking it (every piece touching the zone; Stockfish leaves out squares two pawns protect; hollow while the attack costs almost nothing: it only grows with several attackers, attacks next to the king, or checks), arrows outlined in yellow for safe checks (an enemy piece moving to a square no defender covers; counted once at least two pieces attack the zone, or one with its queen), its pawn shelter where it stands (Shelter: the pawns in front of it, on its file and the next two, still on their 2nd or 3rd rank, that shelter it better than no pawn would), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), castling possible right now (an arrow from the king), and a king left in the centre, unable to castle right now (only when the other king isn't too), when Stockfish's square table rates it 0.3 pawn or more worse than a castled one (Uncastled, in the other side's colour: in the middlegame, the king's square counts for King safety here, not Activity); <strong>Other threats</strong> (about pieces; mates go to King safety) attacks that would win material (on an unguarded piece, by a lesser piece, or on a pawn that can be taken with a gain: not in Stockfish): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece (for the side to move, one it can play now), or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ in King safety for the side that mates, the mating move outlined in red there (elsewhere, the same move is drawn as that criterion sees it: in Other threats, a capture).";
+const IMB_MARKS = "<strong>Material</strong> in the usual points (pawn 1, knight and bishop 3, rook 5, queen 9; the bishop pair ½ against a side without it): the extra pieces ringed, with their value in the corner, the bishop pair labelled Pair, and on each king what its side has extra (+5, +0.5); <strong>Pawns</strong> in points: a passed pawn (no enemy pawn left to stop it) 1 up to its 4th rank, then 2, 3, 4 on its 5th, 6th, 7th; a connected pawn (side by side with, or protected by, one of its own) 1, 2, 3 on its 5th, 6th, 7th; an isolated, doubled (a pawn of its own behind it on its file, and none protecting it) or backward pawn (behind its neighbours, the square in front attacked by an enemy pawn) −½. Each counted pawn ringed and labelled in its own colour (with its rank under Passed and Connected), its points in its corner (1, −0.5); on each king, its side's total (+2); a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> in points (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board), on the c to f files, ranks 2 to 7: each pawn there worth its rank less 2 (1 on its 3rd rank… 5 on its 7th), each piece there 1, and each empty square of its own half (dashed: its 2nd to 4th ranks) that no enemy pawn attacks 1 (tinted); arrows from enemy pawns taking squares away; on each king, its side's total; <strong>Activity</strong> how many squares each piece attacks or defends (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; tap a piece to see them, with arrows from the pawns that take squares away); labelled: outposts (and an empty one a knight or bishop can go to next move, guarded by a pawn), rooks on open and half-open files, rooks on their 5th rank or beyond facing enemy pawns (Advanced), a central king when Stockfish rates it (endgames); in the other side's colour: a piece Pinned to its queen by an enemy rook or bishop; <strong>King safety</strong> each king's zone (dashed; attacks on it count only when the other side has at least a rook and a knight's worth of pieces, else it frames the shelter), arrows from the enemy pieces attacking it (every piece touching the zone; Stockfish leaves out squares two pawns protect; hollow while the attack costs almost nothing: it only grows with several attackers, attacks next to the king, or checks), arrows outlined in yellow for safe checks (an enemy piece moving to a square no defender covers; counted once at least two pieces attack the zone, or one with its queen), its pawn shelter where it stands (Shelter: the pawns in front of it, on its file and the next two, still on their 2nd or 3rd rank, that shelter it better than no pawn would), enemy pawns storming toward it when Stockfish counts it heavily (Storm: on the king's 3rd rank, or the 4th on the a and h files), castling possible right now (an arrow from the king), and a king left in the centre, unable to castle right now (only when the other king isn't too), when Stockfish's square table rates it 0.3 pawn or more worse than a castled one (Uncastled, in the other side's colour: in the middlegame, the king's square counts for King safety here, not Activity); <strong>Other threats</strong> (about pieces; mates go to King safety) attacks that would win material (on an unguarded piece, by a lesser piece, or on a pawn that can be taken with a gain: not in Stockfish): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece (for the side to move, one it can play now), or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ in King safety for the side that mates, the mating move outlined in red there (elsewhere, the same move is drawn as that criterion sees it: in Other threats, a capture).";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -2342,7 +2342,7 @@ function fmtBarScore(info){
 const ASPECTS = [
   { key:'material', name:'Material',    levels:[0.5, 2], points:true },   // points: ½ (the bishop pair) to 1½ is +, 2 or more ++
   { key:'pawns',    name:'Pawns',       levels:[0.5, 2], points:true },   // points (pawnPoints): ½ (one weak pawn) to 1½ is +, 2 or more ++
-  { key:'space',    name:'Space',       levels:[0.059, 0.185] },
+  { key:'space',    name:'Space',       levels:[3, 6], points:true },   // points (spacePoints): 3 to 5 is +, 6 or more ++
   { key:'activity', name:'Activity',    levels:[0.255, 0.618] },
   { key:'king',     name:'King safety', levels:[0.285, 1.162] },
   { key:'threats',  name:'Other threats', levels:[0.109, 0.267] },
@@ -2372,6 +2372,28 @@ function backwardPawns(fen){
       const stop = sqAt(f, +sq[1] + up); if(!stop || m[stop]) continue;
       if(theirs.some(e=>Math.abs(FILES.indexOf(e[0]) - f)===1 && +e[1]===+stop[1] + up)) out.push({ sq, c });
     }
+  }
+  return out;
+}
+// Stockfish 10's own static evaluation of the position, in pawns from White's side (its eval table's
+// total, phases blended): what the six criteria describe, before any search. Positions where the
+// engine's search finds something far from it (tactics) are left out of Imbalance reading.
+function staticEval(fen){
+  const ev = sfEvalOf(fen); if(!ev || ev.special || !ev.trace.total) return null;
+  const t = ev.trace.total; return (t[0]*ev.phase + t[1]*(128 - ev.phase)) / 128 / SF_PAWN_EG;
+}
+// Space as points (ours): on the c to f files, ranks 2 to 7, each side's pawns worth their rank less 2
+// (counted from its side: 0 on its 2nd rank, 1 on its 3rd… 5 on its 7th) and its pieces 1 each, plus
+// 1 for each empty square in its own half (its 2nd to 4th ranks) that no enemy pawn attacks.
+// { w, b, items:[{ sq, c, n, kind:'pawn'|'piece'|'square', rank }] }
+function spacePoints(fen){
+  const m = boardMap(fen), A = attackMaps(m), out = { w:0, b:0, items:[] };
+  for(const c of ['w','b']) for(const fl of 'cdef') for(let r=2; r<=7; r++){
+    const sq = fl + r, pc = m[sq], rr = c==='w' ? r : 9 - r;
+    const add = (n, kind)=>{ out[c] += n; out.items.push({ sq, c, n, kind, rank: rr }); };
+    if(pc && pc.c===c && pc.t==='p'){ if(rr > 2) add(rr - 2, 'pawn'); }
+    else if(pc && pc.c===c && pc.t!=='k') add(1, 'piece');
+    else if(!pc && rr<=4 && !(A[other(c)][sq] || []).some(a=>m[a].t==='p')) add(1, 'square');
   }
   return out;
 }
@@ -2564,7 +2586,8 @@ function adaptAspects(data, fen){
   data.pawns -= pawns(ev.trace.initiative);                                        // the endgame "initiative" correction: dropped
   data.pawns -= sum(x=>x.term==='passed' && !x.strict);                           // pawns not yet passed (an enemy pawn can still meet them): dropped
   data.pawns -= sum(x=>x.term==='passed' && x.strict && pawns(x.v) < 0);            // a passed pawn never counts against its side (Stockfish's d/e-file correction can make a slow one negative)
-  { const pp = pawnPoints(fen); data.pawns = pp.w - pp.b; }                         // Pawns as points (ours: pawnPoints)
+  { const pp = pawnPoints(fen); data.pawns = pp.w - pp.b; }
+  { const sp = spacePoints(fen); data.space = sp.w - sp.b; }                         // Space as points (ours: spacePoints)                         // Pawns as points (ours: pawnPoints)
   const T = ev.trace.threats.map(x=>x.slice());
   // attacks on a piece (by a pawn, knight, bishop, rook or the king, or on a hanging one) that no
   // attacker of that kind can legally turn into a material gain: dropped (an exchange, a pinned
@@ -3003,26 +3026,25 @@ function aspectMarks(fen, key){
     }
   }
   if(key==='space'){
-    if(spaceCounts(fen)) for(const c of ['w','b']){
-      const mine = pawnsOf(m, c);
-      // Stockfish's area is c to f on each side's 2nd to 4th ranks; the 2nd ranks, nearly always
-      // safe for both, aren't drawn: squares and arrows only in the 4x4 centre (3rd and 4th ranks).
-      // The pawns that gain space are judged on the whole area.
-      out.zones.push({ a: c==='w' ? 'c3' : 'c6', b: c==='w' ? 'f4' : 'f5', c });
-      for(const fl of 'cdef') for(const rr of [2,3,4]){
-        const drawn = rr >= 3;
-        const sq = fl + (c==='w' ? rr : 9-rr);
-        if(m[sq] && m[sq].t==='p' && m[sq].c===c) continue;
-        const challengers = (A[other(c)][sq] || []).filter(a=>m[a].t==='p');
-        if(challengers.length){   // taken away by an enemy pawn: an arrow says why the square isn't ringed (not onto a pawn)
-          if(drawn && !(m[sq] && m[sq].t==='p')) challengers.forEach(a=>out.arrows.push({ from: a, to: sq, c: other(c) }));
-          continue;
+    // spacePoints: each side's half of the area dashed (c to f, its 2nd to 4th ranks); its free squares
+    // tinted; its pawns in the area ringed with their points and rank, its pieces there ringed with a 1;
+    // arrows from the enemy pawns taking squares away; on each king, its side's total.
+    if(spaceCounts(fen)){
+      const sp = spacePoints(fen), ord = n=>n + (n===2 ? 'nd' : n===3 ? 'rd' : 'th');
+      for(const c of ['w','b']){
+        out.zones.push({ a: c==='w' ? 'c2' : 'c7', b: c==='w' ? 'f4' : 'f5', c });
+        for(const fl of 'cdef') for(const rr of [2,3,4]){
+          const sq = fl + (c==='w' ? rr : 9 - rr);
+          if(m[sq]) continue;
+          (A[other(c)][sq] || []).filter(a=>m[a].t==='p').forEach(a=>out.arrows.push({ from: a, to: sq, c: other(c) }));
         }
-        const by = mine.find(o=>o[0]===fl && relRank(o, c) > relRank(sq, c) && relRank(o, c) - relRank(sq, c) <= 3);
-        if(by && !out.circles.some(x=>x.sq===by)){   // the pawn that gains that space: Central on the d or e file, Flank on c or f
-          out.circles.push({ sq: by, c });
-          out.labels.push({ sq: by, c, text: 'de'.includes(by[0]) ? 'Central' : 'Flank' });
-        }
+        const k = pieces(c).find(sq=>m[sq].t==='k');
+        if(k && sp[c]) out.nums.push({ sq: k, n: '+' + sp[c], c });
+      }
+      for(const x of sp.items){
+        if(x.kind==='square'){ out.tints.push({ sq: x.sq, c: x.c }); continue; }
+        out.circles.push({ sq: x.sq, c: x.c }); out.nums.push({ sq: x.sq, n: x.n, c: x.c });
+        if(x.kind==='pawn') out.nums.push({ sq: x.sq, n: ord(x.rank), c: x.c, below: true });
       }
     }
   }
@@ -3453,10 +3475,8 @@ function quietOf(p){
   const lines = sfTableLines(p.fen), a = adaptAspects(parseAspects(lines, p.fen), p.fen);
   const g = myGames.find(x=>x.id===p.gameId), e = g && g.evals && p.ply>0 ? g.evals[p.ply-1] : null;
   let quiet = !(a && a.special);   // no breakdown (one side far ahead): not for Imbalance reading
-  if(quiet && a && e && (e.cp!=null || e.mate!=null)){
-    const sum = ASPECTS.reduce((t, x)=>t + a[x.key], 0);
-    quiet = Math.abs(cpToPct(sum*100, null) - cpToPct(e.cp, e.mate)) < IMBALANCE_FAR;
-  }
+  const st = staticEval(p.fen);
+  if(quiet && st!=null && e && (e.cp!=null || e.mate!=null)) quiet = Math.abs(cpToPct(st*100, null) - cpToPct(e.cp, e.mate)) < IMBALANCE_FAR;
   return quiet;
 }
 function runQuietChecks(){
