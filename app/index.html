@@ -3288,7 +3288,7 @@ function drawMarks(svg, marks){
     return `<path d="M${xl},${yf} L${xl},${yb} L${xr},${yb} L${xr},${yf}" fill="none" stroke="${MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7" stroke-linejoin="round" filter="url(#mkShadow)"/>`; }).join('');
   // a red outline on a square (a safe check for the other side)
   const boxes = (marks.boxes||[]).map(t=>{ const r = R(t.sq); return `<rect x="${r.x+3}" y="${r.y+3}" width="54" height="54" rx="4" fill="none" stroke="#D9473F" stroke-width="4" filter="url(#mkShadow)"/>`; }).join('');
-  svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}<g opacity=".8">${zones}</g>${boxes}<g opacity=".8">${circles}</g>${nums}${labels}${arrows}`;   // areas, rings, badges, then arrows on top
+  svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}<g opacity=".8">${zones}</g>${boxes}<g opacity=".8">${circles}</g>${labels}${arrows}${nums}`;   // areas, rings, labels, arrows, then the score badges on top
   // Corner numbers fit their text too, kept to the square's right edge.
   svg.querySelectorAll('rect.mk-num').forEach(rc=>{
     const tx = rc.nextElementSibling; let tw = 0;
