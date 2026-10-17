@@ -210,14 +210,14 @@ async def main():
           const trades = x=>{ if(!K[x.kind]) return false; const c = x.c ? 'b' : 'w', L = lc(c), ts = x.kind==='byKing' ? bbSquares(x.squares) : [sqName(x.sq)];
             return !ts.some(t=>(am[c][t] || []).some(a=>K[x.kind].includes(bm[a].t) && L.has(a + t) && see(bm, am, a, t) > 0)); };
           ev.features.filter(x=>['weakUnopposed', 'byRank', 'restricted', 'knightOnQueen', 'sliderOnQueen'].includes(x.kind) || trades(x)).forEach(x=>{ T[x.c][0] -= x.v[0]; T[x.c][1] -= x.v[1]; });
-          return [+(a.activity - (raw.activity - ks - trapped - pw(ev.trace.pieceSquares))).toFixed(4), +(a.king - (raw.king + ks + pw([sh(0) - sh(1), 0]) - trop - sum(x=>x.kind==='pawnDistance'))).toFixed(4),
+          const ap = activityPoints(f); return [+(a.activity - Math.round((ap.w - ap.b) * 10) / 10).toFixed(4), +(a.king - (raw.king + ks + pw([sh(0) - sh(1), 0]) - trop - sum(x=>x.kind==='pawnDistance'))).toFixed(4),
                   +(a.threats - (pw(T[0]) - 0.5*pw(T[1]))).toFixed(4), +ks.toFixed(2), +far.toFixed(3), +trop.toFixed(3)]; })()""")
         print('adaptations:', ad)
         if ad[0] != 0 or ad[1] != 0 or ad[2] != 0 or ad[3] <= 0.3 or ad[5] == 0: fails.append(f'adaptations: {ad}')
         kg = await pg.evaluate("[kingSquareGain(boardMap('r1b1n1k1/pp3ppp/8/8/8/4K3/PP3PPP/R1B1N3 w - - 0 1'), 'e3', 'w'), kingSquareGain(boardMap('r2qr1k1/pp3ppp/8/8/8/4K3/PP3PPP/R2QR3 w - - 0 1'), 'e3', 'w')].map(x=>Math.round(x*100)/100)")
         print('king square gain (Stockfish: +0.38 with R+B+N each, -0.27 with Q+R+R each):', kg)
         if not (0.33 <= kg[0] <= 0.43 and -0.32 <= kg[1] <= -0.22): fails.append(f'king square gain: {kg}')
-        if am != 'd5w:Outpost d6w:Outpost e3w:Central e8b:Half-open f1w:Open g5b:Outpost': fails.append(f'activity marks: {am}')
+        if am != 'd5w:Outpost d6w:Outpost e8b:Half-open f1w:Open': fails.append(f'activity marks: {am}')
         ad = await pg.evaluate("(()=>{ const d = activityDetail(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'd5'); return [d.circles.map(c=>c.sq).sort().join(' '), d.arrows.map(a=>a.from+a.to).sort().join(' '), d.nums[0].n]; })()")
         print('activity detail, knight d5:', ad)
         if ad != ['b6 c3 c7 e7 f4', 'c5b4 g7f6', 5]: fails.append(f'activity detail: {ad}')
@@ -274,7 +274,7 @@ async def main():
             spaceFew: M('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 'space').t,
             knight: M('4k3/8/8/8/8/8/8/1N2K3 w - - 0 1', 'activity').n,
           }; })()""")
-        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2w d5b g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b13'}
+        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2w d5b g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b13 e1+0.6'}
         for k, v in want.items():
             if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
         # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (the move's arrow, no rings)
