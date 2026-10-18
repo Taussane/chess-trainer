@@ -186,7 +186,7 @@ async def main():
         am = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen, 'activity'); return m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '); })()")
         print('activity marks:', am)
         un = await pg.evaluate("['r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w kq - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2Q1RK1 w - - 1 14', 'r3k2r/pb1n1p2/2p1pq1p/1p6/P1pP4/2P2N2/4BPPP/R2QK2R w - - 1 14'].map(f=>aspectMarks(f, 'king').labels.filter(l=>l.text==='Uncastled').map(l=>l.sq+l.c).sort().join(' '))")
-        if un != ['', 'e8b', 'e1w e8b']: fails.append(f'uncastled king (King safety: in the centre, no castling right left, middlegame; −1 for its own side): {un}')
+        if un != ['', '', '']: fails.append(f'no Uncastled label any more (King safety: shelter pawns less attackers only): {un}')
         # one label per piece: Hanging over Pinned (Threats); in Activity, both counted bonuses stacked (Outpost over Pinned)
         one = await pg.evaluate("[['r3r2k/pp3pbp/n5q1/8/5Bb1/PN2N1R1/1PPQ4/2K4R b - - 4 26','threats'], ['6k1/2p5/8/p2PP2p/2PR2bq/6p1/PP4P1/5KQ1 w - - 5 38','activity']].map(([f,k])=>aspectMarks(f, k).labels.filter(l=>l.sq==='g4').map(l=>l.text + (l.sub ? ' ' + l.sub : '')).join(' '))")
         if one != ['Hanging', 'Outpost Pinned']: fails.append(f'one label per piece: {one}')
@@ -251,7 +251,7 @@ async def main():
           const bc = TEST_POSITIONS.find(p=>p.title==='Black in check').fen;   // c6 blocks the check (and hits Bb5), a6 can't be played
           return [A(free).includes('a2a3w'), A(chk).includes('a2a3w'), L(chk), A(bc).includes('c7c6b'), A(bc).includes('a7a6b')]; })()""")
         if push != [True, False, 0, True, False]: fails.append(f'pawn push threats (legal only for the side to move): {push}')
-        if km != ['b2:Shelter c2:Shelter f7:Shelter g7:Shelter h6:Shelter', 'a5c3b c6c3b e4g6w g5f7w', 'c3b2 g6f7 d1d8', 'b1d3 f6h8', 0]: fails.append(f'king marks: {km}')
+        if km != ['b2:Shelter c2:Shelter f7:Shelter g7:Shelter h6:Shelter', 'a5c3b c3b2b c6c3b d1d8w e4g6w g5f7w g6f7w', '', 'b1d3 f6h8', 0]: fails.append(f'king marks: {km}')
         cs = await pg.evaluate("aspectMarks(TEST_POSITIONS.find(p=>p.title==='Castling').fen, 'king').arrows.filter(a=>a.from==='e1'||a.from==='e8').map(a=>a.from+a.to+(a.dash?'-':'')).sort().join(' ')")
         if cs != '': fails.append(f'no castling arrows (castling isn\'t counted): {cs}')
         np = await pg.evaluate("aspectMarks('4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.map(l=>l.sq+':'+l.text).sort().join(' ')")
