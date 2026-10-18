@@ -3201,7 +3201,7 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
   // a mate: on the mated king, "#n" (mate in n) instead of its total, and on the mating piece instead of its points
   if(mateHere && key==='king'){
     const loser = other(mt.side), k = Object.keys(m).find(x=>m[x].c===loser && m[x].t==='k'), tag = '#' + mt.n;
-    if(k){ out.nums = out.nums.filter(x=>x.sq!==k); out.nums.push({ sq: k, n: tag, c: loser }); }
+    if(k){ out.nums = out.nums.filter(x=>x.sq!==k); out.nums.push({ sq: k, n: tag, c: loser, ctr: 0, tap: true }); }   // centred on the king, like the totals
     if(mt.uci){ const from = mt.uci.slice(0, 2); out.nums = out.nums.filter(x=>x.sq!==from); out.nums.push({ sq: from, n: tag, c: loser }); }
   }
   if(key==='threats'){
