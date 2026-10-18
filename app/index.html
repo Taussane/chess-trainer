@@ -2461,8 +2461,14 @@ function kingPoints(fen){
     const them = other(c), side = { k: z.k, zone: z.squares, shelter: [], attackers: [], uncastled: false };
     side.shelter = z.squares.filter(t=>m[t] && m[t].c===c && m[t].t==='p');
     // the other side's legal checks (as if it were its turn)
-    let ms = []; try{ const pz = fen.split(' '); pz[1] = them; pz[3] = '-'; ms = new Chess(pz.join(' ')).moves({ verbose: true }); }catch(e){}
-    const checks = {}; for(const x of ms) if(/[+#]/.test(x.san)) (checks[x.from] = checks[x.from] || []).push(x.to);
+    // (only checks the move itself gives: a king already in check, as in an illegal test position, doesn't
+    // make every move a check)
+    let ms = [], ch = null; try{ const pz = fen.split(' '); pz[1] = them; pz[3] = '-'; ch = new Chess(pz.join(' ')); ms = ch.moves({ verbose: true }); }catch(e){}
+    const before = new Set(A[them][z.k] || []), checks = {};
+    for(const x of ms){ if(!/[+#]/.test(x.san)) continue;
+      ch.move(x); const m2 = boardMap(ch.fen()), k2 = Object.keys(m2).find(t=>m2[t].c===c && m2[t].t==='k'); ch.undo();
+      const now = k2 ? (attackMaps(m2)[them][k2] || []) : [];
+      if(now.some(a=>a===x.to || !before.has(a))) (checks[x.from] = checks[x.from] || []).push(x.to); }
     const touch = {}; for(const t of z.squares.concat([z.k])) for(const a of (A[them][t] || [])) if(m[a].t!=='k') (touch[a] = touch[a] || []).push(t);
     for(const a of new Set([...Object.keys(touch), ...Object.keys(checks)])) if(m[a] && m[a].t!=='k') side.attackers.push({ sq: a, check: !!checks[a], hits: touch[a] || [], to: checks[a] || [] });
     const canCastle = c==='w' ? /[KQ]/.test(cast) : /[kq]/.test(cast);
