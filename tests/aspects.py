@@ -229,9 +229,9 @@ async def main():
           return [Math.round(imbalanceScore(v, { space:2 }, 6)), Math.round(imbalanceScore(v, { material:2 }, 6)), spaceCounts('r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'), spaceCounts(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen)]; })()""")
         print('space left out:', so)
         if so != [100, 80, True, False]: fails.append(f'space left out: {so}')
-        # every criterion now in points: the level is exact (no credit for a level off, however close)
-        ac = await pg.evaluate("(()=>{ const t = ASPECTS.find(x=>x.key==='threats').levels[0]; return [[1,1],[0.85,1],[0.6,1],[0.2,1],[1.1,0],[1.3,0],[1.8,0],[0.98,2],[1,0]].map(([v,g])=>+aspectCredit(v*t, g, 'threats').toFixed(2)); })()")
-        if ac != [1, 0, 0, 0, 0, 0, 0, 0, 0]: fails.append(f'credit near a threshold: {ac}')
+        # every criterion in points: the exact level, all of it; the right side at the wrong strength (+ for ++), half; else nothing
+        ac = await pg.evaluate("[[1,1],[2,1],[1,2],[1,0],[1,-1],[-2,-1],[0,1]].map(([v,g])=>aspectCredit(v, g, 'threats'))")
+        if ac != [1, 0.5, 0.5, 0, 0, 0.5, 0]: fails.append(f'credit (exact 1, right side 0.5): {ac}')
         # an ending Stockfish rates on its own (all-zero table): only Material (in points: the queen's 9), the rest left out
         sp = await pg.evaluate("""(()=>{ const z = ['Material','Imbalance','Initiative','Pawns','Knights','Bishops','Rooks','Queens','Mobility','King safety','Threats','Passed','Space'].map(k=>`  ${k} |  0.00  0.00 |  0.00  0.00 |  0.00  0.00`).concat(['Total evaluation: 61.20 (white side)']);
           const v = parseAspects(z, '7k/8/5K2/8/8/8/8/6Q1 w - - 0 60'); return [Math.round(v.material), v.activity, v.off.join(' '), !!v.special]; })()""")
