@@ -153,7 +153,7 @@ async def main():
         # the plan, from made-up imbalances (White to play)
         plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side)=>planFor({ fen:'4k3/8/8/8/8/8/8/4K3 '+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.plan);
           const Q = (vals, side)=>planFor({ fen:'4k2r/8/8/8/8/8/P7/R3K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);
-          return { passed: Q({ pawns:0.5 }, 'w'), blockade: Q({ pawns:0.5 }, 'b'),
+          return { passed: Q({ pawns:1 }, 'w'), blockade: Q({ pawns:1 }, 'b'),
                    ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:6 }, 200), cramped: P({ space:-4 }, -30),
                    blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400), conflict: P({ material:1.5, space:4 }, 150) }; })()""")
         print('plans:', plans)
@@ -190,11 +190,11 @@ async def main():
         # one label per piece: Hanging over Pinned (Threats); in Activity, both counted bonuses stacked (Outpost over Pinned)
         one = await pg.evaluate("[['r3r2k/pp3pbp/n5q1/8/5Bb1/PN2N1R1/1PPQ4/2K4R b - - 4 26','threats'], ['6k1/2p5/8/p2PP2p/2PR2bq/6p1/PP4P1/5KQ1 w - - 5 38','activity']].map(([f,k])=>aspectMarks(f, k).labels.filter(l=>l.sq==='g4').map(l=>l.text + (l.sub ? ' ' + l.sub : '')).join(' '))")
         if one != ['Hanging', 'Outpost Pinned']: fails.append(f'one label per piece: {one}')
-        # Pawns in points: Black's a6 isolated (−0.5) and d5 passed on its 4th rank (+1): −0.5 for White; each
-        # counted pawn's points in its corner, Passed and Connected with their rank, each king its side's total
+        # Pawns in points: Black's a6 isolated (−1) and d5 passed on its 4th rank (+2): −1 for White; each
+        # counted pawn's points in its corner, Passed and Connected with their rank stacked under, each king its side's total
         isl = await pg.evaluate("""(()=>{ const f = 'r4rk1/4bppp/p3bn2/3p4/N7/3BB3/PP3PPP/R3R1K1 w - - 3 16', g = '2r3k1/2p3p1/1p6/3PP2p/P7/2P2P2/2P1PP2/3R2K1 w - - 0 30';
           return [adaptAspects(parseAspects(sfTableLines(f), f), f).pawns, aspectMarks(f, 'pawns').nums.map(n=>n.sq+n.c+n.n).sort().join(' '), aspectMarks(g, 'pawns').nums.map(n=>n.sq+n.c+n.n).sort().join(' ')]; })()""")
-        if isl != [-0.5, 'a6b−0.5 d5b+1 d5b4th g8bTotal +0.5', 'a4w−0.5 c3w−0.5 c7b−0.5 d5w+1 d5w5th e5w+2 e5w5th g1wTotal +2 g8bTotal +0.5 h5b+1 h5b4th']: fails.append(f'pawn points: {isl}')
+        if isl != [-1, 'a6b−1 d5b+2 g8bTotal +1', 'a4w−1 c3w−1 c7b−1 d5w+2 e5w+4 g1wTotal +4 g8bTotal +1 h5b+2']: fails.append(f'pawn points: {isl}')
         # our adaptations, on one position: Activity loses the kings' middlegame squares and the pieces' distance
         # to their king (both to King safety) and the trapped rook while castling is possible; King safety also
         # takes the shelter where the king stands and drops the attacks on the king's wing; threats by the side
