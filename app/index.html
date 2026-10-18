@@ -3173,7 +3173,7 @@ function aspectMarks(fen, key){
   const mt = aspectsStore[fen] && aspectsStore[fen].data && aspectsStore[fen].data.mate;
   if(mt && mt.key===key && mt.uci){
     const from = mt.uci.slice(0, 2), to = mt.uci.slice(2, 4);
-    out.arrows = out.arrows.filter(a=>!(a.from===from && a.to===to));
+    out.arrows = out.arrows.filter(a=>!(a.from===from && (a.to===to || key==='king')));   // (in King safety, the mate replaces the piece's other arrows: its check, its attack on the zone)
     out.arrows.push({ from, to, c: mt.side, outline: 'r' });
   }
   // a mate: on the mated king, "#n" (mate in n) instead of its total, and on the mating piece instead of its points
