@@ -71,7 +71,7 @@ async def main():
         print('revealed in steps:', sorted(seen), 'score:', scores)
         if len(seen) < 4: fails.append(f'the imbalances should turn one by one: {sorted(seen)}')
         rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+[...r.querySelector('.asp-badge').classList].filter(c=>['w','b','eq'].includes(c))[0]+' '+r.querySelector('.asp-badge').textContent)")
-        heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.textContent)")
+        heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.firstChild.textContent)")
         print('rows:', rows, heads)
         if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King safety', 'Other threats']: fails.append(f'rows: {rows}')
         if heads != ['Static', 'Dynamic']: fails.append(f'column titles: {heads}')

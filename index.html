@@ -361,6 +361,8 @@
   .asp-badge.bad{border-color:var(--bad); box-shadow:0 0 0 1px var(--bad);}
   .asp-picker .asp-badge.eq{border-color:var(--border);}
   .asp-item.off .asp-name{color:var(--text-mute);}
+  .asp-head{position:relative;}
+  .act-mode{position:absolute; right:0; top:50%; transform:translateY(-50%); letter-spacing:0; text-transform:none; font:600 0.7rem/1 system-ui,sans-serif; padding:2px 6px; border-radius:6px; border:1px solid var(--text-mute); background:transparent; color:var(--text-mute); cursor:pointer; vertical-align:2px;}
   .asp-badge.off{background:transparent; color:var(--text-mute); border-color:var(--border); border-style:dashed; opacity:.75;}
   .asp-picker.note{justify-content:center; padding:9px 10px; font-size:0.84rem; color:var(--text-mute); text-align:center;}
   .asp-pick.editing{box-shadow:0 0 0 2px var(--dubious);}
@@ -1196,7 +1198,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> in the usual points (pawn 1, knight and bishop 3, rook 5, queen 9; the bishop pair ½ against a side without it): the extra pieces ringed, with their value in the corner (an extra bishop that makes the pair counting +3.5, labelled Pair; of two, White's light-squared one, Black's dark-squared one), and on each king what its side has extra (Total +5); <strong>Pawns</strong> in points: a passed pawn (no enemy pawn left to stop it) 2 up to its 4th rank, then 4, 6, 8 on its 5th, 6th, 7th; a connected pawn (side by side with, or protected by, one of its own) 2, 4, 6 on its 5th, 6th, 7th; an isolated, doubled (a pawn of its own behind it on its file, and none protecting it) or backward pawn (behind its neighbours, the square in front attacked by an enemy pawn) +1 for the other side, labelled in its colour (both, when doubled and isolated: +2). Each counted pawn ringed and labelled in its own colour (Passed and Connected with their rank stacked under), its points in its corner (+2, +1); on each king, its side's total (Total +2); a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> in points (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board; no marks when the pawns mirror each other): in the area (the c to f files, the 3rd to 6th ranks, dashed), 1 for each of a side's pawns and 1 for each free square behind one of its pawns (no pawn, no enemy piece, no enemy pawn controlling it, no enemy pawn between it and that pawn), each ringed; arrows from the enemy pawns taking squares away; on each king, its side's total (Total +5: the rings); <strong>Activity</strong> in points: each knight, bishop, rook and queen gets 1 point for each square it attacks or defends, shown in its corner with its bonuses (below) included (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; a piece pinned to its king only along the pin; tap a piece to see them, with arrows from the pawns that take squares away); plus, ringed and labelled: a piece on an Outpost +5, a rook on an Open file +5 or a Half-open file +2.5, a rook on its 5th rank or beyond facing enemy pawns (Advanced) +5 (on top of Open or Half-open), a piece Pinned to its own king, or to its queen by an enemy rook or bishop, −5; on each king, its side's total (Total +32); a white and a black piece worth the same cancel out in pairs, the same kind first (a rook with a rook), then any kind (no score shown, left out of the totals; tap them still), and a piece worth 0 shows none; <strong>King safety</strong> in points: each king's zone (dashed: its rank and the two in front of it, on its file and the next ones; 2 files on the edge); each of its own pawns in the zone +1 (Shelter, ringed); each enemy piece or pawn touching the zone, or able to give check, −1 (an arrow from it; outlined in yellow, to the square it would check from, when it can give check); on each king its side's total (the shelter pawns less the attackers); <strong>Other threats</strong> (about pieces; mates go to King safety) attacks that would win material (on an unguarded piece, by a lesser piece, or on a pawn that can be taken with a gain: not in Stockfish): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece (for the side to move, one it can play now), or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ in King safety for the side that mates, the mating move outlined in red there, \"#2\" (mate in 2) on the mated king and the mating piece (elsewhere, the same move is drawn as that criterion sees it: in Other threats, a capture).";
+const IMB_MARKS = "<strong>Material</strong> in the usual points (pawn 1, knight and bishop 3, rook 5, queen 9; the bishop pair ½ against a side without it): the extra pieces ringed, with their value in the corner (an extra bishop that makes the pair counting +3.5, labelled Pair; of two, White's light-squared one, Black's dark-squared one), and on each king what its side has extra (Total +5); <strong>Pawns</strong> in points: a passed pawn (no enemy pawn left to stop it) 2 up to its 4th rank, then 4, 6, 8 on its 5th, 6th, 7th; a connected pawn (side by side with, or protected by, one of its own) 2, 4, 6 on its 5th, 6th, 7th; an isolated, doubled (a pawn of its own behind it on its file, and none protecting it) or backward pawn (behind its neighbours, the square in front attacked by an enemy pawn) +1 for the other side, labelled in its colour (both, when doubled and isolated: +2). Each counted pawn ringed and labelled in its own colour (Passed and Connected with their rank stacked under), its points in its corner (+2, +1); on each king, its side's total (Total +2); a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> in points (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board; no marks when the pawns mirror each other): in the area (the c to f files, the 3rd to 6th ranks, dashed), 1 for each of a side's pawns and 1 for each free square behind one of its pawns (no pawn, no enemy piece, no enemy pawn controlling it, no enemy pawn between it and that pawn), each ringed; arrows from the enemy pawns taking squares away; on each king, its side's total (Total +5: the rings); <strong>Activity</strong> in points: each knight, bishop, rook and queen gets 1 point for each square it attacks or defends, shown in its corner with its bonuses (below) included (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; a piece pinned to its king only along the pin; tap a piece to see them, with arrows from the pawns that take squares away); plus, ringed and labelled: a piece on an Outpost +5, a rook on an Open file +5 or a Half-open file +2.5, a rook on its 5th rank or beyond facing enemy pawns (Advanced) +5 (on top of Open or Half-open), a piece Pinned to its own king, or to its queen by an enemy rook or bishop, −5; on each king, its side's total (Total +32); a white and a black piece worth the same cancel out in pairs, the same kind first (a rook with a rook), then any kind (no score shown, left out of the totals; tap them still), and a piece worth 0 shows none; <strong>Activity B</strong> (switch it in the review, next to Dynamic) a simpler reading: each knight, bishop, rook and queen +1 when it stands on or attacks a central square (d4, e4, d5, e5: Central), +2 on an Outpost, a rook +2 on an Open file or +1 on a Half-open one, −2 when it reaches 2 safe squares or fewer (Stuck); its points in its corner, equal pieces cancelling out as above, the total on each king (+ from 2, ++ from 5); <strong>King safety</strong> in points: each king's zone (dashed: its rank and the two in front of it, on its file and the next ones; 2 files on the edge); each of its own pawns in the zone +1 (Shelter, ringed); each enemy piece or pawn touching the zone, or able to give check, −1 (an arrow from it; outlined in yellow, to the square it would check from, when it can give check); on each king its side's total (the shelter pawns less the attackers); <strong>Other threats</strong> (about pieces; mates go to King safety) attacks that would win material (on an unguarded piece, by a lesser piece, or on a pawn that can be taken with a gain: not in Stockfish): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece (for the side to move, one it can play now), or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ in King safety for the side that mates, the mating move outlined in red there, \"#2\" (mate in 2) on the mated king and the mating piece (elsewhere, the same move is drawn as that criterion sees it: in Other threats, a capture).";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -2343,7 +2345,7 @@ const ASPECTS = [
   { key:'material', name:'Material',    levels:[0.5, 2], points:true },   // points: ½ (the bishop pair) to 1½ is +, 2 or more ++
   { key:'pawns',    name:'Pawns',       levels:[1, 4], points:true },   // points (pawnPoints): 1 (one weak pawn) to 3 is +, 4 or more ++
   { key:'space',    name:'Space',       levels:[1, 3], points:true },   // points (spacePoints): 1 to 2 is +, 3 or more ++
-  { key:'activity', name:'Activity',    levels:[5, 15], points:true },   // points (activityPoints)
+  { key:'activity', name:'Activity',    levels:[5, 15], points:true },   // (mode B: ACT_LEVELS.B, set by setActMode)   // points (activityPoints)
   { key:'king',     name:'King safety', levels:[2, 3], points:true },   // points (kingPoints)
   { key:'threats',  name:'Other threats', levels:[0.109, 0.267] },
 ];
@@ -2452,6 +2454,34 @@ function activityPoints(fen){
   return out;
 }
 const KING_PIN = -5;
+// Activity, mode B (a simpler reading, to compare): each knight, bishop, rook and queen +1 when it stands
+// on or attacks a central square (d4, e4, d5, e5: Central), +2 on an Outpost, a rook +2 on an Open file or
+// +1 on a Half-open one, −2 when it reaches 2 safe squares or fewer (Stuck). The switch sits in the
+// review (A: squares and bonuses, activityPoints).
+let ACT_MODE = 'A';
+try{ if(localStorage.getItem('cst.actMode')==='B') ACT_MODE = 'B'; }catch(e){}
+const ACT_LEVELS = { A:[5, 15], B:[2, 5] };
+function activityPointsB(fen){
+  const ev = sfEvalOf(fen), out = { w:0, b:0, pieces:[] };
+  if(!ev || ev.special) return out;
+  const F = ev.features, m = boardMap(fen), C4 = ['d4','e4','d5','e5'];
+  for(const x of F.filter(f=>f.kind==='mobility')){
+    const sq = sqName(x.sq), c = x.c===0 ? 'w' : 'b', it = { sq, c, t: m[sq].t, v:0, labels:[] }, add = (n, text)=>{ it.v += n; it.labels.push(text); };
+    if(C4.includes(sq) || attacksFrom(m, sq).some(t=>C4.includes(t))) add(1, 'Central');
+    if(F.some(f=>f.kind==='outpost' && f.sq===x.sq)) add(2, 'Outpost');
+    if(F.some(f=>f.kind==='openFile' && f.sq===x.sq)) add(2, 'Open');
+    else if(F.some(f=>f.kind==='semiOpenFile' && f.sq===x.sq)) add(1, 'Half-open');
+    if(x.n <= 2) add(-2, 'Stuck');
+    out[c] += it.v; out.pieces.push(it);
+  }
+  return out;
+}
+function setActMode(mode){
+  ACT_MODE = mode; try{ localStorage.setItem('cst.actMode', mode); }catch(e){}
+  ASPECTS.find(x=>x.key==='activity').levels = ACT_LEVELS[mode];
+  for(const fen in aspectsStore){ const d = aspectsStore[fen].data; if(d && d.actA!==undefined) d.activity = mode==='B' ? d.actB : d.actA; }
+}
+ASPECTS.find(x=>x.key==='activity').levels = ACT_LEVELS[ACT_MODE];
 // One piece's Activity points: its squares plus its bonuses (Outpost, Open, Pinned…).
 const piecePoints = (ap, sq, n)=>Math.round((n + ap.items.filter(x=>x.sq===sq).reduce((t, x)=>t + x.n, 0)) * 10) / 10;
 const fmtPts = v=>(v < 0 ? '−' : v > 0 ? '+' : '') + Math.abs(v);
@@ -2678,7 +2708,10 @@ function adaptAspects(data, fen){
   data.pawns -= sum(x=>x.term==='passed' && x.strict && pawns(x.v) < 0);            // a passed pawn never counts against its side (Stockfish's d/e-file correction can make a slow one negative)
   { const pp = pawnPoints(fen); data.pawns = pp.w - pp.b; }
   { const sp = spacePoints(fen); data.space = sp.w - sp.b; }
-  { const ap = activityPoints(fen); data.activity = Math.round((ap.w - ap.b) * 10) / 10; }   // Activity as points (ours: activityPoints)
+  { const ap = activityPoints(fen), bp = activityPointsB(fen);   // Activity as points (ours: activityPoints; mode B: activityPointsB)
+    Object.defineProperty(data, 'actA', { value: Math.round((ap.w - ap.b) * 10) / 10, writable: true });
+    Object.defineProperty(data, 'actB', { value: bp.w - bp.b, writable: true });
+    data.activity = ACT_MODE==='B' ? data.actB : data.actA; }
   { const kp = kingPoints(fen); data.king = kp.w - kp.b; }                                    // King safety as points (ours: kingPoints; a mate still counts as ++: applyMate)                         // Space as points (ours: spacePoints)                         // Pawns as points (ours: pawnPoints)
   const T = ev.trace.threats.map(x=>x.slice());
   // attacks on a piece (by a pawn, knight, bishop, rook or the king, or on a hanging one) that no
@@ -2810,7 +2843,7 @@ function aspectsGridHtml(vals, guesses, shown, hidden, view, pickable, fadeIn){ 
   const item = (x, i)=>{ const pk = !!pickable && !isOff(vals, x) && hasMarks(pickable, x.key);
     return `<div class="asp-item${pk ? ' pickable' : ''}${isOff(vals, x) ? ' off' : ''}${view===x.key ? ' sel' : ''}" data-asp="${x.key}"${pk ? ` role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}><span class="asp-name">${x.name}</span>${reviewBadge(vals, guesses, x, i, shown)}</div>`; };
   return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
-      <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
+      <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic${vals && shown > 3 && !hidden ? `<button class="act-mode" aria-label="Activity reading ${ACT_MODE}: tap to switch">Activity ${ACT_MODE}</button>` : ''}</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
     </div>`;
 }
 // Tapping an aspect in a review draws its marks (aspectMarks) on the board; tapping it again clears them.
@@ -2821,14 +2854,16 @@ function wireAspectView(p, s){
   draw();
   // Activity: tap a piece to see which squares it counts (again, or elsewhere, to go back).
   if(board){
-    board.classList.toggle('asp-tappable', s.aspView==='activity');
-    board.onclick = s.aspView!=='activity' ? null : e=>{
+    board.classList.toggle('asp-tappable', s.aspView==='activity' && ACT_MODE==='A');
+    board.onclick = s.aspView!=='activity' || ACT_MODE!=='A' ? null : e=>{
       const el = e.target.closest && e.target.closest('.sq'); if(!el) return;
       const sq = el.dataset.sq;
       s.aspPiece = s.aspPiece!==sq && activityDetail(p.fen, sq) ? sq : null;
       draw();
     };
   }
+  // the Activity reading switch (A: squares and bonuses; B: Central, Outpost, Open, Stuck)
+  document.querySelectorAll('#aspects .act-mode').forEach(b=>{ b.onclick = e=>{ e.stopPropagation(); setActMode(ACT_MODE==='A' ? 'B' : 'A'); s.aspPiece = null; render(); }; b.onkeydown = e=>e.stopPropagation(); });
   document.querySelectorAll('#aspects .asp-item.pickable').forEach(el=>{
     const pick = ()=>{ s.aspView = s.aspView===el.dataset.asp ? null : el.dataset.asp; s.aspPiece = null; render(); };
     el.onclick = pick;
@@ -3144,6 +3179,20 @@ function aspectMarks(fen, key){
     // ringed and labelled in its side's colour (Outpost, Open, Half-open, Advanced; Pinned −1, to its king or queen); on each
     // king, its side's total (its squares plus the bonuses).
     const ev = sfEvalOf(fen), F = ev && !ev.special ? ev.features : [], ap = activityPoints(fen);
+    if(ACT_MODE==='B'){
+      // mode B: each piece's labels (Central, Outpost, Open, Half-open, Stuck: two at most, stacked) and
+      // its points in its corner; equal pieces cancel out as in mode A; on each king, its side's total
+      const pts = activityPointsB(fen).pieces;
+      for(const same of [true, false]) for(const a of pts.filter(q=>q.c==='w' && !q.gone)){
+        const b = pts.find(q=>q.c==='b' && !q.gone && q.v===a.v && (!same || q.t===a.t)); if(b){ a.gone = b.gone = true; } }
+      const tot = { w:0, b:0 };
+      for(const q of pts){
+        if(q.labels.length){ out.circles.push({ sq: q.sq, c: q.c }); out.labels.push({ sq: q.sq, c: q.c, text: q.labels[0], sub: q.labels[1] }); }
+        if(q.gone) continue; tot[q.c] += q.v; if(q.v) out.nums.push({ sq: q.sq, n: fmtPts(q.v), c: q.c });
+      }
+      for(const c of ['w','b']){ const k = pieces(c).find(sq=>m[sq].t==='k'); if(k && tot[c]) out.nums.push({ sq: k, n: 'Total ' + fmtPts(tot[c]), c }); }
+      return out;
+    }
     // its points (squares plus its bonuses); a white and a black piece worth the same (any kinds: a
     // knight and a queen at +0.6) cancel out, in pairs (pieces of the same kind first): neither shown nor in the totals (nor a piece worth 0)
     const pts = F.filter(f=>f.term==='mobility').map(x=>{ const t = sqName(x.sq); return { sq: t, c: x.c===0 ? 'w' : 'b', t: m[t].t, v: piecePoints(ap, t, x.n) }; });
