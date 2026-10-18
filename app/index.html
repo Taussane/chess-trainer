@@ -3271,7 +3271,7 @@ function drawMarks(svg, marks){
   // A number in the top corner of the square, on a small badge like the labels'.
   // (below: centred under the square's label instead, e.g. a pawn's rank)
   const nums = marks.nums.map(t=>{ const r = R(t.sq), w = String(t.n).length*7 + 8, h = 16, x = t.below ? r.cx - w/2 : Math.max(1, r.x + 59 - w), y = t.below ? r.cy + 8 : r.y + 1;
-    return `<rect class="mk-num" ${t.below ? `data-cx="${r.cx}"` : `data-right="${x + w}"`} x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.n}</text>${t.tap ? `<line x1="${x + 4.5}" x2="${x + w - 4.5}" y1="${y + 14}" y2="${y + 14}" stroke="${MARK[t.c].edge}" stroke-width="1.2" stroke-dasharray="1.2 1.8" stroke-linecap="round"/>` : ''}`; }).join('');   // tap: a dotted underline (tap the piece for its squares)
+    return `<rect class="mk-num" ${t.below ? `data-cx="${r.cx}"` : `data-right="${x + w}"`} x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.n}</text>${t.tap ? `<line class="mk-tap" x1="${x + 4.5}" x2="${x + w - 4.5}" y1="${y + 14}" y2="${y + 14}" stroke="${MARK[t.c].edge}" stroke-width="1.2" stroke-dasharray="1.2 1.8" stroke-linecap="round"/>` : ''}`; }).join('');   // tap: a dotted underline (tap the piece for its squares)
   // the outline's head: the arrow's head (24 units, its base 14.4 behind the line's end) grown by the
   // same 2.5 units on every side as the line (8 wide in 13): 32.1 units long, its base 16.9 behind
   const defs = ['r','y'].map(k=>`<marker id="mk_${k}" markerWidth="2.47" markerHeight="2.47" refX="1.3" refY="1.235" orient="auto"><path d="M0,0 L2.47,1.235 L0,2.47 Z" fill="${OUTLINE[k]}"/></marker>`).join('') + ['w','b'].map(c=>`<marker id="mk_${c}" markerWidth="3" markerHeight="3" refX="1.8" refY="1.5" orient="auto"><path d="M0,0 L3,1.5 L0,3 Z" fill="${MARK[c].ink}"/></marker>`).join('');
@@ -3316,6 +3316,8 @@ function drawMarks(svg, marks){
     if(!tw) return;
     const w = Math.max(16, tw + 8), x = rc.dataset.cx!=null ? +rc.dataset.cx - w/2 : +rc.dataset.right - w;
     rc.setAttribute('x', x); rc.setAttribute('width', w); tx.setAttribute('x', x + w/2);
+    const ln = tx.nextElementSibling;   // a dotted underline: the text's own width
+    if(ln && ln.classList.contains('mk-tap')){ ln.setAttribute('x1', x + w/2 - tw/2 + 0.5); ln.setAttribute('x2', x + w/2 + tw/2 - 0.5); }
   });
   // Badges fit their text (4 units each side) and stay centred on their square (only kept inside the board).
   svg.querySelectorAll('rect.mk-label').forEach(rc=>{
