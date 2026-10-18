@@ -1187,7 +1187,7 @@ function labelColor(label){
 
 
 const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
-const IMB_MARKS = "<strong>Material</strong> in the usual points (pawn 1, knight and bishop 3, rook 5, queen 9; the bishop pair ½ against a side without it): the extra pieces ringed, with their value in the corner (an extra bishop that makes the pair counting +3.5, labelled Pair; of two, White's light-squared one, Black's dark-squared one), and on each king what its side has extra (Total +5); <strong>Pawns</strong> in points: a passed pawn (no enemy pawn left to stop it) 2 up to its 4th rank, then 4, 6, 8 on its 5th, 6th, 7th; a connected pawn (side by side with, or protected by, one of its own) 2, 4, 6 on its 5th, 6th, 7th; an isolated, doubled (a pawn of its own behind it on its file, and none protecting it) or backward pawn (behind its neighbours, the square in front attacked by an enemy pawn) +1 for the other side, labelled in its colour (both, when doubled and isolated: +2). Each counted pawn ringed and labelled in its own colour (Passed and Connected with their rank stacked under), its points in its corner (+2, +1); on each king, its side's total (Total +2); a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> in points (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board; no marks when the pawns mirror each other): in the area (the c to f files, the 3rd to 6th ranks, dashed), 1 for each of a side's pawns and 1 for each free square behind one of its pawns (no pawn, no enemy piece, no enemy pawn controlling it, no enemy pawn between it and that pawn), each ringed; arrows from the enemy pawns taking squares away; on each king, its side's total (Total +5: the rings); <strong>Activity</strong> in points: each knight, bishop, rook and queen gets 1 point for each square it attacks or defends, shown in its corner with its bonuses (below) included (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; a piece pinned to its king only along the pin; tap a piece to see them, with arrows from the pawns that take squares away); plus, ringed and labelled: a piece on an Outpost +5, a rook on an Open file +5 or a Half-open file +2.5, a rook on its 5th rank or beyond facing enemy pawns (Advanced) +5 (on top of Open or Half-open), a piece Pinned to its own king, or to its queen by an enemy rook or bishop, −5; on each king, its side's total (Total +32); a white and a black piece worth the same cancel out in pairs, the same kind first (a rook with a rook), then any kind (no score shown, left out of the totals; tap them still), and a piece worth 0 shows none; <strong>Activity B</strong> (switch it in the review, next to Dynamic) a simpler reading: each knight, bishop, rook and queen +1 when it stands on or attacks a central square (d4, e4, d5, e5: Central), +2 on an Outpost, a rook +2 on an Open file or +1 on a Half-open one, −2 when it reaches 2 safe squares or fewer (Stuck); its points in its corner, equal pieces cancelling out as above, the total on each king (+ from 2, ++ from 5); <strong>King safety</strong> in points: each king's zone (dashed: its rank and the two in front of it, on its file and the next ones; 2 files on the edge); each of its own pawns in the zone +1 (Shelter, ringed); each enemy piece or pawn touching the zone, or able to give check, −1 (an arrow from it; outlined in yellow, to the square it would check from, when it can give check); on each king its side's total (the shelter pawns less the attackers); <strong>Other threats</strong> (about pieces; mates go to King safety) attacks that would win material (on an unguarded piece, by a lesser piece, or on a pawn that can be taken with a gain: not in Stockfish): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece (for the side to move, one it can play now), or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ in King safety for the side that mates, the mating move outlined in red there, \"#2\" (mate in 2) on the mated king and the mating piece (elsewhere, the same move is drawn as that criterion sees it: in Other threats, a capture).";
+const IMB_MARKS = "<strong>Material</strong> in the usual points (pawn 1, knight and bishop 3, rook 5, queen 9; the bishop pair ½ against a side without it): the extra pieces ringed, with their value in the corner (an extra bishop that makes the pair counting +3.5, labelled Pair; of two, White's light-squared one, Black's dark-squared one), and on each king what its side has extra (Total +5); <strong>Pawns</strong> in points: a passed pawn (no enemy pawn left to stop it) 2 up to its 4th rank, then 4, 6, 8 on its 5th, 6th, 7th; a connected pawn (side by side with, or protected by, one of its own) 2, 4, 6 on its 5th, 6th, 7th; an isolated, doubled (a pawn of its own behind it on its file, and none protecting it) or backward pawn (behind its neighbours, the square in front attacked by an enemy pawn) +1 for the other side, labelled in its colour (both, when doubled and isolated: +2). Each counted pawn ringed and labelled in its own colour (Passed and Connected with their rank stacked under), its points in its corner (+2, +1); on each king, its side's total (Total +2); a doubled pawn protected by a pawn isn't weak: an arrow shows its protector; <strong>Space</strong> in points (left out, greyed, when few pieces remain: Stockfish only counts it with most pieces on the board; no marks when the pawns mirror each other): in the area (the c to f files, the 3rd to 6th ranks, dashed), 1 for each of a side's pawns and 1 for each free square behind one of its pawns (no pawn, no enemy piece, no enemy pawn controlling it, no enemy pawn between it and that pawn), each ringed; arrows from the enemy pawns taking squares away; on each king, its side's total (Total +5: the rings); <strong>Activity</strong> in points: each knight, bishop, rook and queen gets 1 point for each square it attacks or defends, shown in its corner with its bonuses (below) included (as Stockfish counts them: not its own king and queen, nor its own pawns that are blocked or still on their 2nd or 3rd rank, nor squares an enemy pawn controls; a piece pinned to its king only along the pin; tap a piece to see them, with arrows from the pawns that take squares away); plus, ringed and labelled: a piece on an Outpost +5, a rook on an Open file +5 or a Half-open file +2.5, a rook on its 5th rank or beyond facing enemy pawns (Advanced) +5 (on top of Open or Half-open), a piece Pinned to its own king, or to its queen by an enemy rook or bishop, −5; on each king, its side's total (Total +32); a white and a black piece worth the same cancel out in pairs, the same kind first (a rook with a rook), then any kind (no score shown, left out of the totals; tap them still), and a piece worth 0 shows none; <strong>Activity B</strong> (switch it in the review, next to Dynamic) a simpler reading: each knight, bishop, rook and queen against the most squares it could reach on an empty board (knight 8, bishop 13, rook 14, queen 27): Good +1 from 45% of it (knight 4, bishop 6, rook 7, queen 13), Bad −1 at 25% or less (knight 2, bishop 3, rook 3, queen 6), labelled (tap it to see its squares against its most: 9/14); +1 each for an Outpost, a rook on an Open or Half-open file, an Advanced rook; Pinned shown, not counted; its points in its corner (tap it for its squares), equal pieces cancelling out, the total on each king (+ from 2, ++ from 4); <strong>King safety</strong> in points: each king's zone (dashed: its rank and the two in front of it, on its file and the next ones; 2 files on the edge); each of its own pawns in the zone +1 (Shelter, ringed); each enemy piece or pawn touching the zone, or able to give check, −1 (an arrow from it; outlined in yellow, to the square it would check from, when it can give check); on each king its side's total (the shelter pawns less the attackers); <strong>Other threats</strong> (about pieces; mates go to King safety) attacks that would win material (on an unguarded piece, by a lesser piece, or on a pawn that can be taken with a gain: not in Stockfish): the hanging targets ringed and labelled Hanging, the pieces attacked by a lesser piece ringed and labelled Losing; pieces pinned to their king, or to their queen, ringed and labelled Pinned; and threats for the next move: a pawn push to a safe square that would attack a piece (for the side to move, one it can play now), or a piece coming to attack the queen with a fork or leaving it no safe square. Arrows on the queen are outlined in yellow, like checks; red is kept for mates. A mate the engine finds counts as ++ in King safety for the side that mates, the mating move outlined in red there, \"#2\" (mate in 2) on the mated king and the mating piece (elsewhere, the same move is drawn as that criterion sees it: in Other threats, a capture).";
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
@@ -2443,24 +2443,28 @@ function activityPoints(fen){
   return out;
 }
 const KING_PIN = -5;
-// Activity, mode B (a simpler reading, to compare): each knight, bishop, rook and queen +1 when it stands
-// on or attacks a central square (d4, e4, d5, e5: Central), +2 on an Outpost, a rook +2 on an Open file or
-// +1 on a Half-open one, −2 when it reaches 2 safe squares or fewer (Stuck). The switch sits in the
-// review (A: squares and bonuses, activityPoints).
+// Activity, mode B (a simpler reading, to compare): each knight, bishop, rook and queen measured
+// against the most squares it could reach on an empty board (knight 8, bishop 13, rook 14, queen 27):
+// Good (+1) from 45% of it (knight 4, bishop 6, rook 7, queen 13), Bad (−1) at 25% or less (knight 2,
+// bishop 3, rook 3, queen 6); then +1 each for an Outpost, a rook on an Open or Half-open file, an
+// Advanced rook; Pinned shown, not counted (a pinned piece is nearly always Bad already). The switch
+// sits in the review (A: squares and bonuses, activityPoints).
 let ACT_MODE = 'A';
 try{ if(localStorage.getItem('cst.actMode')==='B') ACT_MODE = 'B'; }catch(e){}
-const ACT_LEVELS = { A:[5, 15], B:[2, 5] };
+const ACT_LEVELS = { A:[5, 15], B:[2, 4] };
+const REACH_MAX = { n:8, b:13, r:14, q:27 };
 function activityPointsB(fen){
   const ev = sfEvalOf(fen), out = { w:0, b:0, pieces:[] };
   if(!ev || ev.special) return out;
-  const F = ev.features, m = boardMap(fen), C4 = ['d4','e4','d5','e5'];
+  const F = ev.features, m = boardMap(fen), ap = activityPoints(fen);
   for(const x of F.filter(f=>f.kind==='mobility')){
-    const sq = sqName(x.sq), c = x.c===0 ? 'w' : 'b', it = { sq, c, t: m[sq].t, v:0, labels:[] }, add = (n, text)=>{ it.v += n; it.labels.push(text); };
-    if(C4.includes(sq) || attacksFrom(m, sq).some(t=>C4.includes(t))) add(1, 'Central');
-    if(F.some(f=>f.kind==='outpost' && f.sq===x.sq)) add(2, 'Outpost');
-    if(F.some(f=>f.kind==='openFile' && f.sq===x.sq)) add(2, 'Open');
-    else if(F.some(f=>f.kind==='semiOpenFile' && f.sq===x.sq)) add(1, 'Half-open');
-    if(x.n <= 2) add(-2, 'Stuck');
+    const sq = sqName(x.sq), c = x.c===0 ? 'w' : 'b', t = m[sq].t, max = REACH_MAX[t], r = x.n / max;
+    const it = { sq, c, t, v:0, labels:[] }, has = k=>ap.items.some(y=>y.sq===sq && y.text===k);
+    if(r >= 0.45){ it.v++; it.labels.push('Good'); } else if(r <= 0.25){ it.v--; it.labels.push('Bad'); }
+    if(has('Advanced')){ it.v++; it.labels.push('Advanced'); }
+    if(has('Open')){ it.v++; it.labels.push('Open'); } else if(has('Half-open')){ it.v++; it.labels.push('Half-open'); }
+    if(has('Outpost')){ it.v++; it.labels.push('Outpost'); }
+    if(has('Pinned')) it.labels.push('Pinned');
     out[c] += it.v; out.pieces.push(it);
   }
   return out;
@@ -2843,8 +2847,8 @@ function wireAspectView(p, s){
   draw();
   // Activity: tap a piece to see which squares it counts (again, or elsewhere, to go back).
   if(board){
-    board.classList.toggle('asp-tappable', s.aspView==='activity' && ACT_MODE==='A');
-    board.onclick = s.aspView!=='activity' || ACT_MODE!=='A' ? null : e=>{
+    board.classList.toggle('asp-tappable', s.aspView==='activity');
+    board.onclick = s.aspView!=='activity' ? null : e=>{
       const el = e.target.closest && e.target.closest('.sq'); if(!el) return;
       const sq = el.dataset.sq;
       s.aspPiece = s.aspPiece!==sq && activityDetail(p.fen, sq) ? sq : null;
@@ -3070,7 +3074,7 @@ function activityDetail(fen, sq){
   const pawnAtt = ev.attackedBy[them][1];
   for(const t of bbSquares(ev.pieceAttacks[s] & pawnAtt))
     pawnsOf(m, other(c)).filter(p=>attacksFrom(m, p).includes(t)).forEach(a=>out.arrows.push({ from: a, to: t, c: other(c) }));
-  out.nums.push({ sq, n: fmtPts(piecePoints(activityPoints(fen), sq, mob.n)), c });   // its points (the rings, plus its bonuses)
+  out.nums.push({ sq, n: ACT_MODE==='B' ? mob.n + '/' + REACH_MAX[pc.t] : fmtPts(piecePoints(activityPoints(fen), sq, mob.n)), c });   // its points (the rings, plus its bonuses); mode B: its reach against its most (5/8)
   return out;
 }
 // Stockfish counts Space only while most pieces are on the board (queens, rooks and minor pieces worth
@@ -3169,15 +3173,15 @@ function aspectMarks(fen, key){
     // king, its side's total (its squares plus the bonuses).
     const ev = sfEvalOf(fen), F = ev && !ev.special ? ev.features : [], ap = activityPoints(fen);
     if(ACT_MODE==='B'){
-      // mode B: each piece's labels (Central, Outpost, Open, Half-open, Stuck: two at most, stacked) and
+      // mode B: each piece's labels (Good or Bad with its reach, Advanced, Open, Half-open, Outpost, Pinned: three at most, stacked) and
       // its points in its corner; equal pieces cancel out as in mode A; on each king, its side's total
       const pts = activityPointsB(fen).pieces;
       for(const same of [true, false]) for(const a of pts.filter(q=>q.c==='w' && !q.gone)){
         const b = pts.find(q=>q.c==='b' && !q.gone && q.v===a.v && (!same || q.t===a.t)); if(b){ a.gone = b.gone = true; } }
       const tot = { w:0, b:0 };
       for(const q of pts){
-        if(q.labels.length){ out.circles.push({ sq: q.sq, c: q.c }); out.labels.push({ sq: q.sq, c: q.c, text: q.labels[0], sub: q.labels[1] }); }
-        if(q.gone) continue; tot[q.c] += q.v; if(q.v) out.nums.push({ sq: q.sq, n: fmtPts(q.v), c: q.c });
+        if(q.labels.length){ out.circles.push({ sq: q.sq, c: q.c }); out.labels.push({ sq: q.sq, c: q.c, text: q.labels[0], sub: q.labels[1], sub2: q.labels[2] }); }
+        if(q.gone) continue; tot[q.c] += q.v; if(q.v) out.nums.push({ sq: q.sq, n: fmtPts(q.v), c: q.c, tap: true });
       }
       for(const c of ['w','b']){ const k = pieces(c).find(sq=>m[sq].t==='k'); if(k && tot[c]) out.nums.push({ sq: k, n: 'Total ' + fmtPts(tot[c]), c }); }
       return out;
@@ -3360,7 +3364,7 @@ function drawMarks(svg, marks){
   }).join('');
   // A small badge across the middle of the square (kept inside the board).
   // (sub: a second label, the two stacked and centred together, e.g. Doubled over Isolated)
-  const labels = (marks.labels||[]).flatMap(t=>t.sub ? [{ ...t, sub: null, dy: -9 }, { ...t, text: t.sub, sub: null, dy: 9 }] : [t]).map(t=>{ const r = R(t.sq), w = t.text.length*7 + 8, h = 16;
+  const labels = (marks.labels||[]).flatMap(t=>t.sub2 ? [{ ...t, sub: null, sub2: null, dy: -17 }, { ...t, text: t.sub, sub: null, sub2: null, dy: 0 }, { ...t, text: t.sub2, sub: null, sub2: null, dy: 17 }] : t.sub ? [{ ...t, sub: null, dy: -9 }, { ...t, text: t.sub, sub: null, dy: 9 }] : [t]).map(t=>{ const r = R(t.sq), w = t.text.length*7 + 8, h = 16;
     const x = Math.max(1, Math.min(480 - w - 1, r.cx - w/2)), y = r.cy - h/2 + (t.dy || 0);
     return `<rect class="mk-label" data-cx="${r.cx}" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${MARK[t.c].ink}" fill-opacity=".72" filter="url(#mkShadow)"/><text x="${x + w/2}" y="${y + 12}" text-anchor="middle" font-size="12" font-weight="500" font-family="system-ui,sans-serif" fill="${MARK[t.c].edge}">${t.text}</text>`; }).join('');
   const shadow = `<filter id="mkShadow" filterUnits="userSpaceOnUse" x="-20" y="-20" width="520" height="520"><feDropShadow dx="0" dy="1.5" stdDeviation="1.8" flood-color="#000" flood-opacity=".6"/></filter>`;
