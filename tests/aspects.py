@@ -251,7 +251,7 @@ async def main():
           const bc = TEST_POSITIONS.find(p=>p.title==='Black in check').fen;   // c6 blocks the check (and hits Bb5), a6 can't be played
           return [A(free).includes('a2a3w'), A(chk).includes('a2a3w'), L(chk), A(bc).includes('c7c6b'), A(bc).includes('a7a6b')]; })()""")
         if push != [True, False, 0, True, False]: fails.append(f'pawn push threats (legal only for the side to move): {push}')
-        if km != ['b2:Shelter c2:Shelter f7:Shelter g7:Shelter h6:Shelter', 'a5c3b c3b2b c6c3b d1d8w e4g6w g5f7w g6f7w', '', 'b1d3 f6h8', 0]: fails.append(f'king marks: {km}')
+        if km != ['b2:Shelter c2:Shelter f7:Shelter g7:Shelter h6:Shelter', 'a5c3b c6c3b e4g6w g5f7w', 'c3b2 g6f7 d1d8', 'b1d3 f6h8', 0]: fails.append(f'king marks: {km}')
         cs = await pg.evaluate("aspectMarks(TEST_POSITIONS.find(p=>p.title==='Castling').fen, 'king').arrows.filter(a=>a.from==='e1'||a.from==='e8').map(a=>a.from+a.to+(a.dash?'-':'')).sort().join(' ')")
         if cs != '': fails.append(f'no castling arrows (castling isn\'t counted): {cs}')
         np = await pg.evaluate("aspectMarks('4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1', 'material').labels.map(l=>l.sq+':'+l.text).sort().join(' ')")
