@@ -92,7 +92,7 @@ async def main():
         def credit(v, g, t, pts=False):   # the app's aspectCredit
             n = sum(abs(v) >= x for x in t); lv = n if v >= 0 else -n
             if g == lv: return 1
-            if pts: return 0.5 if g and (g > 0) == (lv > 0) else 0   # in points: the right side at the wrong strength, half
+            if pts: return 0.5 if g * lv > 0 else 0   # in points: the right side at the wrong strength, half
             if abs(g - lv) > 1: return 0
             e = [float('-inf'), -t[1], -t[0], t[0], t[1], float('inf')]; lo, hi = e[g + 2], e[g + 3]
             d, th = (lo - v, abs(lo)) if v < lo else (v - hi, abs(hi))
