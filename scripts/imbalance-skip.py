@@ -31,7 +31,7 @@ JS = r"""async ()=>{
     const misleads = lean!==0 && Math.abs(cp) >= 100 && Math.sign(lean)!==Math.sign(cp);
     // or one criterion at ++ (or −−) while Stockfish's own term for it is clearly the other way (past its old ++ line)
     const raw = parseAspects(sfTableLines(p.fen), p.fen), OLD = { material:2, pawns:0.6, space:0.4, activity:0.618, king:1.162, threats:0.267 };
-    const jarring = !!raw && ASPECTS.some(x=>{ if(d.off.includes(x.key)) return false; const l = aspectLevel(d[x.key], x.key); return Math.abs(l)===2 && Math.sign(l)!==Math.sign(raw[x.key]) && Math.abs(raw[x.key]) >= OLD[x.key]; });
+    const jarring = !!raw && ASPECTS.some(x=>{ if(d.off.includes(x.key) || (x.key==='king' && isEndgame(p.fen))) return false; const l = aspectLevel(d[x.key], x.key); return Math.abs(l)===2 && Math.sign(l)!==Math.sign(raw[x.key]) && Math.abs(raw[x.key]) >= OLD[x.key]; });
     out.push({ key: p.key, far: !!d.special || st==null || Math.abs(wp(sum) - wp(cp)) >= 25 || misleads || jarring, off: d.off.slice(), vals: Object.fromEntries(ASPECTS.map(x=>[x.key, d[x.key]])) });
   }
   return out;

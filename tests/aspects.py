@@ -71,9 +71,12 @@ async def main():
         print('revealed in steps:', sorted(seen), 'score:', scores)
         if len(seen) < 4: fails.append(f'the imbalances should turn one by one: {sorted(seen)}')
         rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+[...r.querySelector('.asp-badge').classList].filter(c=>['w','b','eq'].includes(c))[0]+' '+r.querySelector('.asp-badge').textContent)")
-        heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.textContent)")
+        heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.firstChild.textContent)")
+        eg = await pg.evaluate("isEndgame(pos().fen)")
+        tag = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-mode')].map(x=>x.textContent)")
+        if tag != (['Endgame'] if eg else []): fails.append(f'endgame tag: {tag} (endgame {eg})')
         print('rows:', rows, heads)
-        if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King safety', 'Other threats']: fails.append(f'rows: {rows}')
+        if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King activity' if eg else 'King safety', 'Other threats']: fails.append(f'rows: {rows}')
         if heads != ['Static', 'Dynamic']: fails.append(f'column titles: {heads}')
         vals = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>a[x.key]); })()")
         LEVELS = await pg.evaluate("ASPECTS.map(x=>x.levels)")   # the app's own thresholds
@@ -152,14 +155,14 @@ async def main():
             if await pg.evaluate("st('analysis').aspView") != k: fails.append('tapping a plan line should show its imbalance')
             if await pg.evaluate("getComputedStyle(document.querySelector('#aspects .plan-row.sel .plan-sit')).textDecorationLine") != 'none': fails.append('the selected plan line should not be underlined')
         # the plan, from made-up imbalances (White to play)
-        plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side)=>planFor({ fen:'4k3/8/8/8/8/8/8/4K3 '+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.plan);
+        plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side, eg)=>planFor({ fen:(eg ? '4k3/8/8/8/8/8/8/4K3 ' : '3qk3/8/8/8/8/8/8/3QK3 ')+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.plan);
           const Q = (vals, side)=>planFor({ fen:'4k2r/8/8/8/8/8/P7/R3K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);
           return { passed: Q({ pawns:1 }, 'w'), blockade: Q({ pawns:1 }, 'b'),
-                   ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:6 }, 200), cramped: P({ space:-4 }, -30),
+                   ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:6 }, 200), kingEg: P({ king:-1 }, 0, 'w', true), cramped: P({ space:-4 }, -30),
                    blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400), conflict: P({ material:1.5, space:4 }, 150) }; })()""")
         print('plans:', plans)
         if plans['ahead'][0] != 'Trade pieces' or plans['behind'][0] != 'Avoid trades, attack' \
-           or plans['king'][0] != 'Open lines to it' or plans['cramped'] != ['Trade to breathe'] \
+           or plans['king'][0] != 'Open lines to it' or plans['kingEg'] != ['Centralize it'] or plans['cramped'] != ['Trade to breathe'] \
            or plans['blackAhead'][0] != 'Trade pieces' or plans['even'] != ['Find a pawn break'] \
            or 'Simplify, stay safe' in plans['king'] or plans['conflict'] != ['Trade pieces'] \
            or plans['lost'][0] != 'Complicate' or plans['passed'] != ['Passed pawn: Push it'] or plans['blockade'] != ['Enemy passed pawn: Blockade it']: fails.append(f'plans: {plans}')

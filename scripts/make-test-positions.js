@@ -26,6 +26,8 @@ const T = [
   ['King safety marks', {fen:'6k1/pb3pp1/1pr2nPp/q5N1/4B2P/2p1Q3/PPP2P2/2KR3R w - - 0 20'}, 'Rd8+'],
   // Threats marks: White Nf3 on the hanging Bh4 (ringed, Hanging), d4-d5 forking Nc6 and Ne6 (the move's arrow); Black a6 on Bb5 (a lesser piece); Bb5 on the guarded Nc6 not shown.
   ['Threats marks', {fen:'r4rk1/1ppq1ppp/p1npn3/1B6/2PP3b/2N1PN2/PP3PPP/R2QK2R w KQ - 0 10'}, 'Bxc6'],
+  // King activity marks (endgame: no queens): White Ke4 central (Centre +3), attacking d4 and f4 (Target), beside its passed e5 (Escort); Black Kf7 Centre +1.
+  ['King activity marks', {fen:'8/5k2/8/4P3/3pKp2/8/8/8 w - - 0 40'}, 'Kxd4'],
 ];
 const sf = spawn(SF); let buf = '', wait = null;
 sf.stdout.on('data', d=>{ buf += d; if(wait && buf.includes('bestmove')){ const o = buf; buf = ''; const w = wait; wait = null; w(o); } });
