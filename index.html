@@ -453,10 +453,8 @@
   .modal-box h3{margin:0 0 10px; font-size:1.05rem; font-family:var(--font-display);}
   .modal-box p{font-size:0.88rem; color:var(--text); line-height:1.55; margin:0 0 10px;}
   .modal-box p.eval-note{color:var(--text-mute);}
-  .help-levels{border-collapse:collapse; font-size:0.85rem; margin:-4px 0 10px;}
-  .help-levels th, .help-levels td{padding:2px 10px 2px 0; text-align:left;}
-  .help-levels th{color:var(--text-mute); font-weight:500;}
-  .help-levels td+td, .help-levels th+th{text-align:center; min-width:28px;}
+  .modal-box .help-list{font-size:0.88rem; line-height:1.5; margin:-6px 0 10px; padding-left:18px;}
+  .modal-box .help-list li{margin:2px 0;}
   .modal-actions{display:flex; justify-content:flex-end; margin-top:4px;}
   @media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important;} }
 </style>
@@ -1199,24 +1197,23 @@ function labelColor(label){
 }
 
 
-const GRADES = "<strong>Best</strong> is the engine's first choice. <strong>Good, Ok, Dubious, Mistake, Blunder</strong> say how much winning chance a move gives up compared with it.";
+const GRADES = ["<strong>Best</strong>: the engine's first choice.", "<strong>Good, Ok, Dubious, Mistake, Blunder</strong>: how much winning chance a move gives up compared with it."];
 // Help (the ? button): `task` while you answer, `review` once checked. Each is a list of paragraphs:
-// a string, or [heading, text]. In a review with an imbalance selected (a row, or a plan line), that
-// imbalance's own help shows instead (ASP_HELP).
+// a string, or [heading, text, bullets?] (text may be ''). In a review with an imbalance selected (a
+// row, or a plan line), that imbalance's own help shows instead (ASP_HELP).
 const HELP = {
   imbalances: {
     title:'Imbalance reading',
     task:[
       "Grade six imbalances: who has the edge in each, and by how much. Tap a badge, then a level: = balanced, + or ++ for White, − or −− for Black.",
       ['The idea', "Each imbalance is counted on the board in points, one side's minus the other's. Count roughly, then pick the level: the review shows the exact count."],
-      ['Tips', "Start with the lasting ones (Material, Pawns, Space), then those that can change in a few moves (Activity, King safety, Other threats). Look at both sides before grading. = is often the right answer."],
-      ['Levels', 'LEVELS'],
+      ['Tips', '', ["Start with the lasting ones: Material, Pawns, Space.", "Then those that can change in a few moves: Activity, King safety, Other threats.", "Look at both sides before grading."]],
     ],
-    note:"Inspired by Stockfish's evaluation.",
+    note:"Inspired by Stockfish's former evaluation system.",
     review:[
-      ['Score', "Each imbalance is worth an equal share (a sixth; a fifth when Space is left out): all of it at the right level, half on the right side at the wrong strength (+ for ++), nothing otherwise."],
-      ['Borders', "Green: right level. Yellow: right side, wrong strength. Red: missed. The badge then shows the right level."],
-      ['On the board', "Tap an imbalance to see what counts: white marks for White's points, black ones for Black's, each with its points, and each side's Total on its king. Then tap ? for that imbalance's details."],
+      ['Score', "Each imbalance is worth an equal share (a sixth; a fifth when Space is left out):", ["Right level: all of it.", "Right side, wrong strength (+ for ++): half.", "Otherwise: nothing."]],
+      ['Borders', "Yellow and red badges show the right level.", ["Green: right level.", "Yellow: right side, wrong strength.", "Red: missed."]],
+      ['Details', "Tap an imbalance to see what counts on the board, then ? for how it's counted and the plans it suggests."],
     ],
   },
   analysis: {
@@ -1224,85 +1221,84 @@ const HELP = {
     task:[
       "Judge who's better and by how much, then drag the bar to your evaluation.",
       ['The idea', "Weigh the imbalances: one big edge can outweigh several small ones. Then check what's forcing: checks, captures and threats can change everything."],
-      ['Tips', "Material first: a pawn is about one square of the bar. A safer king or active pieces can make up for some of it. The side to move often has the edge in sharp positions."],
+      ['Tips', '', ["Material first: a pawn is about one square of the bar.", "A safer king or more active pieces can make up for some material.", "In sharp positions, the side to move often has the edge."]],
     ],
-    note:"Every square of the bar you're off costs 25%.",
     review:[
-      ['Score', "Your bar is compared with the engine's: every square you're off costs 25%."],
+      ['Score', "Every square of the bar you're off costs 25%."],
       ['Plan', "Up to three ideas for the side to play, from its strongest imbalances and the evaluation: general principles, not a calculated line."],
-      ['On the board', "Tap a line to see its imbalance on the board, then ? for that imbalance's details."],
+      ['Details', "Tap a line to see its imbalance on the board, then ? for how it's counted and the plans it suggests."],
     ],
   },
   candidates: {
     title:'Candidate moves',
     task:[
       "Find the strongest moves for the side to play: pick 1 to 3.",
-      ['Tips', "Checks, captures and threats first, for both sides. Then the moves that follow the plan: use your edges, fix your weaknesses. When unsure, pick fewer: a bad pick costs more than a missing one."],
+      ['Tips', '', ["Checks, captures and threats first, for both sides.", "Then the moves that follow the plan: use your edges, fix your weaknesses.", "When unsure, pick fewer: a Dubious or worse pick counts as fully missed."]],
     ],
-    note:"Dubious or worse picks count as fully missed.",
     review:[
       ['Score', "Each move is scored by how much it gives up compared with the engine's best. Dubious or worse picks count as fully missed."],
-      ['Grades', GRADES],
-      ['Lists', "Tap a list's title to show its arrows. Greyed-out top moves are Dubious or worse."],
+      ['Grades', '', GRADES],
+      ['Lists', '', ["Tap a list's title to show its arrows.", "Greyed-out top moves are Dubious or worse."]],
     ],
   },
   final: {
     title:'Move selection',
     task:[
-      "Rank the four moves from best to worst. One of them was played in the game (in your own games, the move you played).",
-      ['Tips', "Find the best move first: it's worth half the score. Look for what each move allows: a move that drops material or the king's safety goes last."],
+      "Rank the four moves from best to worst.",
+      "One of them was played in the game. In your own games, it's your move, and always a bad one: only positions where you played a Dubious move or worse are picked.",
+      ['Tips', '', ["Find the best move first: it's worth half the score.", "For each move, look at what it allows: one that drops material or the king's safety goes last."]],
     ],
-    note:"1st place counts 50%, 2nd 30%, 3rd 20%.",
     review:[
-      ['Score', "Your 1st place counts 50%, 2nd 30%, 3rd 20%. Each place is scored against the best move you haven't ranked yet: full marks if yours is as good, nothing if it's Dubious or worse by comparison."],
-      ['Grades', GRADES + " <strong>Game move</strong> marks the move played in the game (<strong>Your move</strong> in your own games)."],
+      ['Score', '', ["1st place counts 50%, 2nd 30%, 3rd 20%.", "Each place is scored against the best move you haven't ranked yet: full marks if yours is as good, nothing if it's Dubious or worse by comparison."]],
+      ['Grades', '', GRADES.concat(["<strong>Game move</strong>: the move played in the game (<strong>Your move</strong> in your own games: Dubious or worse)."])],
     ],
   },
 };
-// One imbalance's help: how it's counted, its levels (from ASPECTS), what the marks show, what to do with it.
+// One imbalance's help: how it's counted (with what the marks don't make obvious), its levels (from
+// ASPECTS), what to do with it.
 const ASP_HELP = {
   material: {
-    count:"Usual values: pawn 1, knight and bishop 3, rook 5, queen 9. The bishop pair is worth ½ more: the extra bishop that makes it counts 3.5 (labelled Pair).",
-    marks:"The extra pieces ringed, with their value; each side's extra on its king (Total).",
-    plans:"Up material: trade pieces (not pawns), head for the endgame. Down material: avoid trades, look for activity or an attack to make up for it.",
+    count:["Pawn 1, knight and bishop 3, rook 5, queen 9.", "The bishop pair is worth ½ more: the extra bishop that makes it counts 3.5 (labelled Pair)."],
+    plans:["Up material: trade pieces (not pawns), head for the endgame.", "Down material: avoid trades, look for activity or an attack."],
   },
   pawns: {
-    count:"Passed pawn (no enemy pawn can stop it): 2 up to its 4th rank, then 4, 6, 8 on its 5th, 6th, 7th. Connected pawn (beside or protected by its own): 2, 4, 6 on its 5th, 6th, 7th. Each weak pawn −1: isolated (no own pawn on the next files), doubled (an own pawn behind it, none protecting it) or backward (behind its neighbours, the square ahead covered by an enemy pawn); doubled and isolated +2.",
-    marks:"Each counted pawn ringed and labelled in its own colour, its points in its corner; each side's Total on its king.",
-    plans:"Passed pawn: push it, with your pieces behind it. Enemy passed pawn: blockade it, a knight in front is best. Weak enemy pawns: fix them, then attack them and use the square in front. Your weak pawns: keep your pieces active and avoid the endgame.",
+    count:["Passed pawn (no enemy pawn can stop it): 2 up to its 4th rank, then 4, 6, 8 on its 5th, 6th, 7th.",
+           "Connected pawn (beside or protected by its own): 2, 4, 6 on its 5th, 6th, 7th.",
+           "Weak pawn −1: isolated (no own pawn on the next files), doubled (an own pawn behind it, none protecting it) or backward (behind its neighbours, the square ahead covered by an enemy pawn). Doubled and isolated: −2.",
+           "A doubled pawn protected by a pawn isn't weak: an arrow shows its protector."],
+    plans:["Passed pawn: push it, with your pieces behind it.", "Enemy passed pawn: blockade it, a knight in front is best.", "Weak enemy pawns: fix them, attack them, use the square in front.", "Your weak pawns: keep your pieces active, avoid the endgame."],
   },
   space: {
-    count:"In the centre area (c to f files, 3rd to 6th ranks, dashed): 1 for each of your pawns, 1 for each free square behind one of them (empty, not covered by an enemy pawn, no enemy pawn in between).",
-    marks:"Each pawn and free square ringed; arrows from the enemy pawns taking squares away. Left out (greyed) when few pieces remain: space only matters with pieces to use it.",
-    plans:"More space: keep pieces on, switch them between wings, prepare a pawn break. Less space: trade pieces to breathe, strike at the enemy pawns with a break.",
+    count:["The area: c to f files, 3rd to 6th ranks (dashed).", "1 for each of your pawns in it.", "1 for each free square behind one of them: empty, not covered by an enemy pawn, no enemy pawn in between. Arrows show the enemy pawns taking squares away.",
+           "Left out (greyed) when few pieces remain: space only matters with pieces to use it."],
+    plans:["More space: keep pieces on, switch them between wings, prepare a pawn break.", "Less space: trade pieces to breathe, strike at the enemy pawns with a break."],
   },
   activity: {
-    count:"Each knight, bishop, rook and queen: 1 point for each safe square it attacks or defends (not squares an enemy pawn covers, its own blocked or unmoved pawns, its own king and queen; rooks and queens see through their own queen and rooks).",
-    bonus:"Outpost +5 (a knight or bishop on the 4th to 6th rank that no enemy pawn can attack), rook on an Open file +5 or Half-open +2.5, Advanced rook (5th rank or beyond, facing enemy pawns) +5, Pinned to its king or queen −5.",
-    marks:"Each piece's points in its corner (dotted: tap it to see its squares), bonuses labelled. Pieces of the same value cancel in pairs (same kind first), so only the difference shows.",
-    plans:"Better pieces: keep the initiative, open the position, act before the other side catches up. Worse pieces: improve the worst one first (to an outpost, an open file), trade the opponent's best one.",
+    count:["Each knight, bishop, rook and queen: 1 point for each safe square it attacks or defends.", "Not counted: squares an enemy pawn covers, its own blocked or unmoved pawns, its own king and queen.", "Rooks and queens see through their own queen and rooks.",
+           "Tap a piece (dotted score) to see its squares.", "Pieces of the same value cancel in pairs (same kind first): only the difference shows."],
+    bonus:["Outpost +5: a knight or bishop on the 4th to 6th rank that no enemy pawn can attack.", "Rook on an Open file +5, Half-open +2.5.", "Advanced rook +5: on the 5th rank or beyond, facing enemy pawns.", "Pinned to its king or queen −5."],
+    plans:["Better pieces: keep the initiative, open the position, act before the other side catches up.", "Worse pieces: improve the worst one first (to an outpost, an open file), trade the opponent's best one."],
   },
   king: {
-    count:"The king's zone (dashed): its rank and the two in front, on its file and the next ones. Each own pawn in it +1 (Shelter). Each enemy piece or pawn touching it, or able to give check, −1. A forced mate counts as ++ for the side that mates.",
-    marks:"Shelter pawns ringed, arrows from the attackers (outlined in yellow to the checking square when they can give check), the total on each king. Tap a king to see its side alone. A mate shows #n on the king and the mating piece.",
-    plans:"Weak enemy king: bring more pieces, open lines towards it (files, diagonals, a pawn storm). Weak king: trade attackers, keep the shelter pawns, bring a defender, keep lines closed.",
+    count:["The zone (dashed): the king's rank and the two in front, on its file and the next ones.", "Shelter: each own pawn in the zone +1.", "Each enemy piece or pawn touching the zone, or able to give check, −1. Outlined in yellow: the square it would check from.",
+           "Tap a king to see its side alone.", "A forced mate counts as ++ for the side that mates: #n on the king and the mating piece, its move outlined in red."],
+    plans:["Weak enemy king: bring more pieces, open lines towards it (files, diagonals, a pawn storm).", "Weak king: trade attackers, keep the shelter pawns, bring a defender, keep lines closed."],
   },
   threats: {
-    count:"1 for each enemy piece or pawn you can win now: Hanging (unguarded, or the exchange wins) or Losing (attacked by a cheaper piece). 1 for each threat for the next move: a pawn push attacking a piece, a piece attacking the queen with nowhere safe to go. Mates count in King safety.",
-    marks:"Pieces that can be won ringed, with an arrow from each piece that wins them; threats as arrows, yellow on the queen.",
-    plans:"Your threats: play forcing moves first (checks, captures, threats) before the other side can parry. Their threats: parry first: move, defend, or answer with a bigger threat.",
+    count:["Each enemy piece or pawn you can win now +1: Hanging (unguarded, or the exchange wins) or Losing (attacked by a cheaper piece).", "Each threat for the next move +1: a pawn push attacking a piece, or a piece attacking the queen with nowhere safe to go.",
+           "Outlined in yellow: arrows on the queen.", "Mates count in King safety."],
+    plans:["Your threats: forcing moves first (checks, captures, threats), before the other side can parry.", "Their threats: parry first: move, defend, or answer with a bigger threat."],
   },
 };
 const fmtLvl = v=>String(v).replace('0.5', '½').replace('.5', '½');
-const LEVELS_HTML = ()=>`<table class="help-levels"><tr><th></th><th>+</th><th>++</th></tr>${ASPECTS.map(x=>`<tr><td>${x.name}</td><td>${fmtLvl(x.levels[0])}</td><td>${fmtLvl(x.levels[1])}</td></tr>`).join('')}</table>`;
-const helpPara = q=>Array.isArray(q) ? `<p><strong>${q[0]}.</strong> ${q[1]==='LEVELS' ? 'Points needed for each level:' : q[1]}</p>${q[1]==='LEVELS' ? LEVELS_HTML() : ''}` : `<p>${q}</p>`;
+const helpPara = q=>Array.isArray(q) ? `${q[1] || !q[2] ? `<p><strong>${q[0]}.</strong> ${q[1]}</p>` : `<p><strong>${q[0]}</strong></p>`}${q[2] ? `<ul class="help-list">${q[2].map(b=>`<li>${b}</li>`).join('')}</ul>` : ''}` : `<p>${q}</p>`;
 function helpBody(helpKey, checked, asp){
   if(asp && ASP_HELP[asp]){
     const x = ASPECTS.find(a=>a.key===asp), h = ASP_HELP[asp];
-    return { title:x.name, html:[['Counted', h.count], ...(h.bonus ? [['Bonuses', h.bonus]] : []), ['Levels', `+ from ${fmtLvl(x.levels[0])} point${x.levels[0] > 1 ? 's' : ''} apart, ++ from ${fmtLvl(x.levels[1])}.`], ['On the board', h.marks], ['Plans', h.plans]].map(helpPara).join('') + `<p class="eval-note">Tap the row again for the general help.</p>` };
+    return { title:x.name, html:[['Counted', '', h.count], ...(h.bonus ? [['Bonuses', '', h.bonus]] : []), ['Levels', `+ from ${fmtLvl(x.levels[0])} point${x.levels[0] > 1 ? 's' : ''} apart, ++ from ${fmtLvl(x.levels[1])}.`], ['Plans', '', h.plans]].map(helpPara).join('') };
   }
   const h = HELP[helpKey];
-  return { title:h.title, html:(checked ? h.review : h.task).map(helpPara).join('') + (checked ? '' : `<p class="eval-note">${h.note}</p>`) };
+  return { title:h.title, html:(checked ? h.review : h.task).map(helpPara).join('') + (!checked && h.note ? `<p class="eval-note">${h.note}</p>` : '') };
 }
 
 function boardObjFromGame(g){
