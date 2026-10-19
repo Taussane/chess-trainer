@@ -89,10 +89,11 @@ async def main():
         lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key], x.key)); })()")
         mine = [2, 0, 1, 0, -2, 0]
         POINTS = await pg.evaluate("ASPECTS.map(x=>!!x.points)")   # counted in points (Material, Pawns): exact levels
-        def credit(v, g, t, pts=False):   # the app's aspectCredit: a level off scores more near the line between the two
+        def credit(v, g, t, pts=False):   # the app's aspectCredit
             n = sum(abs(v) >= x for x in t); lv = n if v >= 0 else -n
             if g == lv: return 1
-            if abs(g - lv) > 1 or pts: return 0
+            if pts: return 0.5 if g and (g > 0) == (lv > 0) else 0   # in points: the right side at the wrong strength, half
+            if abs(g - lv) > 1: return 0
             e = [float('-inf'), -t[1], -t[0], t[0], t[1], float('inf')]; lo, hi = e[g + 2], e[g + 3]
             d, th = (lo - v, abs(lo)) if v < lo else (v - hi, abs(hi))
             d = max(0, d)
