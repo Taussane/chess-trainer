@@ -1,6 +1,7 @@
 # Lists the Position evaluation master positions left out of Imbalance reading: those where the app's
 # engine (Stockfish 19 lite, 1.2 s, in the page) and Stockfish 10's static evaluation (staticEval) are
-# 2 squares of the bar apart or more (tactics take the evaluation away from them), or where Stockfish gives no breakdown.
+# 2 squares of the bar apart or more (tactics take the evaluation away from them), where Stockfish gives no breakdown,
+# or where the six grades added up lean one way while the engine has the other side a pawn or more better.
 # Writes the list into app/index.html (/*IMBALANCE_SKIP*/) and prints, for each imbalance, the
 # thresholds that would split the remaining positions 40% = / 40% + or − / 20% ++ or −− (the levels
 # in ASPECTS are set from them by hand).
@@ -23,7 +24,11 @@ JS = r"""async ()=>{
     const r = await eng(p.fen), l = r.lines && r.lines[0];
     let cp = l ? (l.mate!=null ? (l.mate>0 ? 1e5 : -1e5) : l.cp) : 0; if(p.side==='b') cp = -cp;
     const st = staticEval(p.fen), sum = (st==null ? 0 : st) * 100;   // Stockfish's own static evaluation (what the criteria describe)
-    out.push({ key: p.key, far: !!d.special || st==null || Math.abs(wp(sum) - wp(cp)) >= 25, off: d.off.slice(), vals: Object.fromEntries(ASPECTS.map(x=>[x.key, d[x.key]])) });
+    // the six grades added up by sign (+ 1, ++ 2, from White's side) leaning one way while the engine has
+    // the other side a pawn or more better: misleading, left out
+    const lean = ASPECTS.reduce((s, x)=>s + (d.off.includes(x.key) ? 0 : aspectLevel(d[x.key], x.key)), 0);
+    const misleads = lean!==0 && Math.abs(cp) >= 100 && Math.sign(lean)!==Math.sign(cp);
+    out.push({ key: p.key, far: !!d.special || st==null || Math.abs(wp(sum) - wp(cp)) >= 25 || misleads, off: d.off.slice(), vals: Object.fromEntries(ASPECTS.map(x=>[x.key, d[x.key]])) });
   }
   return out;
 }"""
