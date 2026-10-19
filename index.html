@@ -1267,8 +1267,8 @@ const ASP_HELP = {
     plans:"Up material: trade pieces (not pawns), head for the endgame. Down material: avoid trades, look for activity or an attack to make up for it.",
   },
   pawns: {
-    count:"Passed pawn (no enemy pawn can stop it): 2 up to its 4th rank, then 4, 6, 8 on its 5th, 6th, 7th. Connected pawn (beside or protected by its own): 2, 4, 6 on its 5th, 6th, 7th. Each weak enemy pawn +1: isolated (no own pawn on the next files), doubled (an own pawn behind it, none protecting it) or backward (behind its neighbours, the square ahead covered by an enemy pawn); doubled and isolated +2.",
-    marks:"Each counted pawn ringed. A weak pawn is labelled in the colour of the side it helps, so every score is a plus.",
+    count:"Passed pawn (no enemy pawn can stop it): 2 up to its 4th rank, then 4, 6, 8 on its 5th, 6th, 7th. Connected pawn (beside or protected by its own): 2, 4, 6 on its 5th, 6th, 7th. Each weak pawn −1: isolated (no own pawn on the next files), doubled (an own pawn behind it, none protecting it) or backward (behind its neighbours, the square ahead covered by an enemy pawn); doubled and isolated +2.",
+    marks:"Each counted pawn ringed and labelled in its own colour, its points in its corner; each side's Total on its king.",
     plans:"Passed pawn: push it, with your pieces behind it. Enemy passed pawn: blockade it, a knight in front is best. Weak enemy pawns: fix them, then attack them and use the square in front. Your weak pawns: keep your pieces active and avoid the endgame.",
   },
   space: {
@@ -2603,7 +2603,7 @@ function pawnPoints(fen){
     else {
       const weak = (doubledPawn(m, sq, c) ? ['doubled'] : []).concat(has(sq, 'isolated') ? ['isolated'] : [], back.has(sq) ? ['backward'] : []);
       const cap = w=>w[0].toUpperCase() + w.slice(1);
-      if(weak.length) add(other(c), weak.length, cap(weak[0]), weak[1] && cap(weak[1]));   // a weak pawn: +1 for the other side, in its colour (a doubled isolated pawn: +2, both labels)
+      if(weak.length) add(c, -weak.length, cap(weak[0]), weak[1] && cap(weak[1]));   // a weak pawn: −1, in its own colour (a doubled isolated pawn: −2, both labels)
     }
   }
   return out;
@@ -2833,10 +2833,9 @@ function planFor(p, vals, info){
   const me = p.side, sgn = me==='w' ? 1 : -1, who = me==='w' ? 'White' : 'Black';
   const lv = k=>aspectLevel(vals[k], k) * sgn;   // + good for the side to play
   const E = info.mate!=null ? (info.mate*sgn > 0 ? 99 : -99) : info.cp/100*sgn;
-  // Pawn rings (aspectMarks): a ring in a side's colour favours that side — on its own pawn it's a
-  // passed pawn, on the other side's pawn a weak one.
-  const m = boardMap(p.fen), rings = aspectMarks(p.fen, 'pawns').circles;
-  const ring = (fav, owner)=>rings.some(c=>c.c===fav && m[c.sq] && m[c.sq].c===owner), them = other(me);
+  // A passed pawn (pawnPoints) for a side, or only weak pawns.
+  const pp = pawnPoints(p.fen).items, them = other(me);
+  const passed = c=>pp.some(x=>x.c===c && x.text==='Passed');
   const out = [];
   const add = (key, weight, situation, plan)=>out.push({ key, weight, situation, plan });
   if(E >= 99) add('threats', 9, 'Mate is on', 'Check forcing moves');
@@ -2850,8 +2849,8 @@ function planFor(p, vals, info){
   if(lv('king') <= -2) add('king', 3 - lv('king'), 'Weak king', 'Trade attackers');
   if(lv('threats') >= 1) add('threats', 2 + lv('threats'), 'Your threats', 'Forcing moves first');
   if(lv('threats') <= -1) add('threats', 2 - lv('threats'), 'Their threats', 'Parry them first');
-  if(lv('pawns') >= 1) add('pawns', 1 + lv('pawns'), ...(ring(me, me) ? ['Passed pawn', 'Push it'] : ['Weak enemy pawns', 'Attack them']));
-  if(lv('pawns') <= -1) add('pawns', 1 - lv('pawns'), ...(ring(them, them) ? ['Enemy passed pawn', 'Blockade it'] : ['Weak pawns', 'Keep pieces active']));
+  if(lv('pawns') >= 1) add('pawns', 1 + lv('pawns'), ...(passed(me) ? ['Passed pawn', 'Push it'] : ['Weak enemy pawns', 'Attack them']));
+  if(lv('pawns') <= -1) add('pawns', 1 - lv('pawns'), ...(passed(them) ? ['Enemy passed pawn', 'Blockade it'] : ['Weak pawns', 'Keep pieces active']));
   if(lv('space') >= 1) add('space', 1 + lv('space'), 'More space', 'Avoid freeing trades');
   if(lv('space') <= -1) add('space', 1 - lv('space'), 'Less space', 'Trade to breathe');
   if(lv('activity') >= 1) add('activity', 1 + lv('activity'), 'Better pieces', 'Keep the initiative');
@@ -3206,7 +3205,7 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
   }
   if(key==='pawns'){
     // pawnPoints: each pawn that counts ringed and labelled in its own side's colour (Passed and Connected
-    // with their rank stacked under the label), its points in its corner (+2, +1); on each king, its side's net
+    // with their rank stacked under the label), its points in its corner (+2, −1); on each king, its side's net
     // total (+2, −0.5); a doubled pawn protected by a pawn isn't penalised: an arrow shows its protector.
     const pp = pawnPoints(fen), ord = n=>n + (n===2 ? 'nd' : n===3 ? 'rd' : 'th'), ev = sfEvalOf(fen);
     for(const x of pp.items){

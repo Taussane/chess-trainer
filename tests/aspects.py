@@ -180,7 +180,7 @@ async def main():
         if mm != ['a1w c3w d5w d8b e3w f6b', 'e3w:Pair']: fails.append(f'material marks: {mm}')
         pm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Pawn marks').fen, 'pawns'); return [m.labels.map(l=>l.sq+l.c+':'+l.text).sort().join(' '), m.arrows.map(a=>a.from+a.to+a.c).join(' ')]; })()")
         print('pawn marks:', pm)
-        if pm != ['a4b:Isolated c3b:Doubled c7w:Backward d5w:Connected e5w:Passed h5b:Passed', 'e2f3w']: fails.append(f'pawn marks: {pm}')
+        if pm != ['a4w:Isolated c3w:Doubled c7b:Backward d5w:Connected e5w:Passed h5b:Passed', 'e2f3w']: fails.append(f'pawn marks: {pm}')
         sm = await pg.evaluate("(()=>{ const m = aspectMarks(TEST_POSITIONS.find(p=>p.title==='Space marks').fen, 'space'); return [m.circles.map(c=>c.sq+c.c).sort().join(' '), m.tints.length, m.labels.map(l=>l.sq+':'+l.text).sort().join(' '), m.arrows.map(a=>a.from+a.to+a.c).sort().join(' ')]; })()")
         print('space marks:', sm)
         if sm != ['c3w c4w c5b d3w d5w d6b e3w e4w e5b', 0, '', 'c5d4b d5c6w d5e6w e5d4b']: fails.append(f'space marks: {sm}')
@@ -191,11 +191,11 @@ async def main():
         # one label per piece: Hanging over Pinned (Threats); in Activity, both counted bonuses stacked (Outpost over Pinned)
         one = await pg.evaluate("[['r3r2k/pp3pbp/n5q1/8/5Bb1/PN2N1R1/1PPQ4/2K4R b - - 4 26','threats'], ['6k1/2p5/8/p2PP2p/2PR2bq/6p1/PP4P1/5KQ1 w - - 5 38','activity']].map(([f,k])=>aspectMarks(f, k).labels.filter(l=>l.sq==='g4').map(l=>l.text + (l.sub ? ' ' + l.sub : '')).join(' '))")
         if one != ['Hanging', 'Outpost Pinned']: fails.append(f'one label per piece: {one}')
-        # Pawns in points: Black's a6 isolated (+1 for White) and d5 passed on its 4th rank (+2): −1 for White; each
+        # Pawns in points: Black's a6 isolated (−1) and d5 passed on its 4th rank (+2): −1 for White; each
         # counted pawn's points in its corner, Passed and Connected with their rank stacked under, each king its side's total
         isl = await pg.evaluate("""(()=>{ const f = 'r4rk1/4bppp/p3bn2/3p4/N7/3BB3/PP3PPP/R3R1K1 w - - 3 16', g = '2r3k1/2p3p1/1p6/3PP2p/P7/2P2P2/2P1PP2/3R2K1 w - - 0 30';
           return [adaptAspects(parseAspects(sfTableLines(f), f), f).pawns, aspectMarks(f, 'pawns').nums.map(n=>n.sq+n.c+n.n).sort().join(' '), aspectMarks(g, 'pawns').nums.map(n=>n.sq+n.c+n.n).sort().join(' ')]; })()""")
-        if isl != [-1, 'a6w+1 d5b+2 g1wTotal +1 g8bTotal +2', 'a4b+1 c3b+1 c7w+1 d5w+2 e5w+4 g1wTotal +7 g8bTotal +4 h5b+2']: fails.append(f'pawn points: {isl}')
+        if isl != [-1, 'a6b−1 d5b+2 g8bTotal +1', 'a4w−1 c3w−1 c7b−1 d5w+2 e5w+4 g1wTotal +4 g8bTotal +1 h5b+2']: fails.append(f'pawn points: {isl}')
         # our adaptations, on one position: Activity loses the kings' middlegame squares and the pieces' distance
         # to their king (both to King safety) and the trapped rook while castling is possible; King safety also
         # takes the shelter where the king stands and drops the attacks on the king's wing; threats by the side
@@ -274,7 +274,7 @@ async def main():
             spaceFew: M('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 'space').t,
             knight: M('4k3/8/8/8/8/8/8/1N2K3 w - - 0 1', 'activity').n,
           }; })()""")
-        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2b d5w g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b1+3 e1Total +3'}
+        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2w d5b g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b1+3 e1Total +3'}
         for k, v in want.items():
             if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
         # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (the move's arrow, no rings)
