@@ -73,10 +73,9 @@ async def main():
         rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+[...r.querySelector('.asp-badge').classList].filter(c=>['w','b','eq'].includes(c))[0]+' '+r.querySelector('.asp-badge').textContent)")
         heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.firstChild.textContent)")
         eg = await pg.evaluate("isEndgame(pos().fen)")
-        tag = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-mode')].map(x=>x.textContent)")
-        if tag != (['Endgame'] if eg else []): fails.append(f'endgame tag: {tag} (endgame {eg})')
+
         print('rows:', rows, heads)
-        if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King activity' if eg else 'King safety', 'Other threats']: fails.append(f'rows: {rows}')
+        if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Activity', 'King activityno queens' if eg else 'King safety', 'Other threats']: fails.append(f'rows: {rows}')
         if heads != ['Static', 'Dynamic']: fails.append(f'column titles: {heads}')
         vals = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>a[x.key]); })()")
         LEVELS = await pg.evaluate("ASPECTS.map(x=>x.levels)")   # the app's own thresholds

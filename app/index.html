@@ -313,7 +313,6 @@
   /* In the review the score sits where the prompt was: pull the grid up so each imbalance stays put. */
   .prompt + .aspects.asp-input{margin-top:16px;}   /* the review's score is 4 px taller than the prompt: the imbalances stay put */
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
-  .asp-mode{margin-left:8px; padding:0 6px; border:1px solid var(--accent); border-radius:999px; color:var(--accent); font-size:0.66rem; letter-spacing:0.04em; vertical-align:1px;}
   .aspects.asp-input{position:relative;}
   .asp-badge{line-height:1.35; transition:background-color .5s, color .5s, border-color .5s, box-shadow .5s;}
   .aspects.plan{margin-top:4px;}
@@ -341,6 +340,8 @@
   .asp-picker .asp-badge.on{outline:2px solid var(--accent); outline-offset:1px;}
   .asp-item{display:flex; justify-content:space-between; align-items:center; gap:4px; font-size:0.88rem; min-width:0;}
   .asp-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .asp-name:has(.asp-qual){overflow:visible; line-height:1.15; position:relative; top:-5px;}
+  .asp-qual{display:block; height:0; font-size:0.68rem; line-height:1.2; color:var(--text-mute);}
   .asp-badge{flex:none; min-width:2.4em; text-align:center; padding:1px 4px; white-space:nowrap; border-radius:4px; font-size:0.9rem; font-weight:700; letter-spacing:0.04em; border:1px solid transparent;}
   .asp-badge.w{background:var(--white-fill); color:var(--black-fill);}
   .asp-badge.b{background:var(--black-fill); color:var(--white-fill); border-color:var(--text-mute);}
@@ -1197,7 +1198,7 @@ const HELP = {
     task:[
       "Grade six imbalances: who has the edge in each, and by how much. Tap a badge, then a level: = balanced, + or ++ for White, − or −− for Black.",
       ['The idea', "Each imbalance is counted on the board in points, one side's minus the other's. Count roughly, then pick the level: the review shows the exact count."],
-      ['Tips', '', ["Start with the lasting ones: Material, Pawns, Space.", "Then those that can change in a few moves: Activity, King safety, Other threats.", "Look at both sides before grading.", "Endgame (no queens, tagged above the grid): Space is left out, and King safety becomes King activity."]],
+      ['Tips', '', ["Start with the lasting ones: Material, Pawns, Space.", "Then those that can change in a few moves: Activity, King safety, Other threats.", "Look at both sides before grading.", "With few pieces left, Space is left out; with no queens, King safety becomes King activity."]],
     ],
     note:"Inspired by Stockfish's former evaluation system.",
     review:[
@@ -1263,7 +1264,7 @@ const ASP_HELP = {
   },
   space: {
     count:["The area: c to f files, 3rd to 6th ranks (dashed).", "1 for each of your pawns in it.", "1 for each free square behind one of them: empty, not covered by an enemy pawn, no enemy pawn in between. Arrows show the enemy pawns taking squares away.",
-           "Left out (greyed) in an endgame (no queens): space matters less with fewer pieces to use it."],
+           "Left out (greyed) when few pieces remain: space matters less with fewer pieces to use it."],
     plans:["More space: keep pieces on, switch them between wings, prepare a pawn break.", "Less space: trade pieces to breathe, strike at the enemy pawns with a break."],
   },
   activity: {
@@ -1279,7 +1280,7 @@ const ASP_HELP = {
   },
   kingEg: {
     name:'King activity',
-    count:["In an endgame (no queens), the king is no longer in danger: it becomes a fighting piece.", "Centre: 3 on d4–e5, 2 on the ring around them (c3–f6), 1 on the next ring (b2–g7), 0 on the edge.", "Target: each enemy pawn it attacks +1.", "Escort: each of its own passed pawns beside it +1.",
+    count:["With the queens off, the king is no longer in much danger: it becomes a fighting piece.", "Centre: 3 on d4–e5, 2 on the ring around them (c3–f6), 1 on the next ring (b2–g7), 0 on the edge.", "Target: each enemy pawn it attacks +1.", "Escort: each of its own passed pawns beside it +1.",
            "Tap a king to see its side alone.", "A forced mate counts as ++ for the side that mates."],
     plans:["More active king: use it, go for the enemy pawns or escort your passed pawn.", "Passive king: centralize it before anything else."],
   },
@@ -2424,10 +2425,12 @@ const ASPECTS = [
 // Each aspect as signs, from its value in pawns and its own levels (above): "=", then + and ++ for White,
 // − and −− for Black.
 const ASPECT_MAX = 2;
-// An imbalance's name in this position: King safety is King activity in an endgame (no queens).
-const aspName = (x, fen)=>x.key==='king' && fen && isEndgame(fen) ? 'King activity' : x.name;
+// An imbalance's name in this position: King activity (no queens) in place of King safety; Space (few
+// pieces) when left out.
+const aspNameText = (x, fen)=>!fen ? x.name : x.key==='king' && isEndgame(fen) ? 'King activity (no queens)' : x.key==='space' && !spaceCounts(fen) ? 'Space (few pieces)' : x.name;
+// (in the grids: the qualifier on a small second line, so the name fits on a phone)
+const aspName = (x, fen)=>{ const t = aspNameText(x, fen), m = t.match(/^(.*) \((.*)\)$/); return m ? `${m[1]}<span class="asp-qual">${m[2]}</span>` : t; };
 const curFen = ()=>{ try{ const p = pos(); return p && p.fen; }catch(e){ return null; } };
-const modeTag = fen=>fen && isEndgame(fen) ? '<span class="asp-mode">Endgame</span>' : '';
 // Stockfish 10's piece values [middlegame, endgame], and its game-phase limits (non-pawn material).
 const SF_VALUES = { p:[136,208], n:[782,865], b:[830,918], r:[1289,1378], q:[2529,2687] };
 const SF_PAWN_EG = 208, SF_MG_LIMIT = 15258, SF_EG_LIMIT = 3915;
@@ -2925,7 +2928,7 @@ function aspectsGridHtml(vals, guesses, shown, hidden, view, pickable, fadeIn){ 
   const item = (x, i)=>{ const pk = !!pickable && !isOff(vals, x) && hasMarks(pickable, x.key);
     return `<div class="asp-item${pk ? ' pickable' : ''}${isOff(vals, x) ? ' off' : ''}${view===x.key ? ' sel' : ''}" data-asp="${x.key}"${pk ? ` role="radio" aria-checked="${view===x.key}" tabindex="0"` : ''}><span class="asp-name">${aspName(x, fen)}</span>${reviewBadge(vals, guesses, x, i, shown)}</div>`; };
   return `<div class="aspects${fadeIn ? ' fade-in' : ''}"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
-      <div class="asp-grid"><div class="asp-head">Static${hidden ? '' : modeTag(fen)}</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
+      <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map((x, i)=>item(x, i)).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map((x, i)=>item(x, i+3)).join('')}</div>
     </div>`;
 }
 // Tapping an aspect in a review draws its marks (aspectMarks) on the board; tapping it again clears them.
@@ -3019,10 +3022,10 @@ function aspectsInputHtml(s, hidden){
     return `<div class="asp-item${off ? ' off' : ''}"><span class="asp-name">${aspName(x, fen)}</span>${hidden
       ? `<span class="asp-badge eq asp-pick">=</span>`
       : off
-      ? `<button class="asp-badge off asp-pick" data-asp="${x.key}" data-off="1" aria-label="${aspName(x, fen)}: not counted here" aria-haspopup="true">·</button>`
-      : `<button class="asp-badge ${levelCls(l)} asp-pick" data-asp="${x.key}" aria-label="${aspName(x, fen)}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
+      ? `<button class="asp-badge off asp-pick" data-asp="${x.key}" data-off="1" aria-label="${aspNameText(x, fen)}: not counted here" aria-haspopup="true">·</button>`
+      : `<button class="asp-badge ${levelCls(l)} asp-pick" data-asp="${x.key}" aria-label="${aspNameText(x, fen)}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
   return `<div class="aspects asp-input"${hidden ? '' : ' id="aspInput"'}>
-      <div class="asp-grid"><div class="asp-head">Static${modeTag(fen)}</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
+      <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
     </div>`;
 }
 let aspPicker = null;   // {key, el, sliding}: the scale open under a badge
@@ -3175,7 +3178,7 @@ function activityDetail(fen, sq){
 // Stockfish counts Space only while most pieces are on the board (queens, rooks and minor pieces worth
 // 12222 or more in all, about a queen, both rooks and two minor pieces each); below that, the
 // criterion is left out of Imbalance reading.
-const SPACE_OFF_NOTE = 'Endgame (no queens): Space is left out.';
+const SPACE_MIN_NPM = 12222, SPACE_OFF_NOTE = 'Space only counts with most pieces on the board.';
 const SPECIAL_NOTE = 'One side is so far ahead that Stockfish skips the details: only Material is scored.';
 // The criteria left out for this position: Space with few pieces left, and all but Material in the
 // endings Stockfish rates on their own (known once its evaluation is in).
@@ -3184,10 +3187,13 @@ function offKeys(fen){
   return ASPECTS.map(x=>x.key).filter(k=>aspectOffIn(fen, k) || (d && d.off.includes(k)));
 }
 const offNote = fen=>{ const e = aspectsStore[fen]; return e && e.data && e.data.special ? SPECIAL_NOTE : SPACE_OFF_NOTE; };
-// Endgame mode (ours): no queens on the board. Space is left out, and King safety becomes King activity
-// (Stockfish's king danger mostly goes with the queens; its space term goes with most pieces).
+// No queens on the board (ours): King safety becomes King activity (Stockfish's king danger mostly goes
+// with the queens). Space has its own switch: left out with few pieces left (Stockfish's own threshold).
 const isEndgame = fen=>!/[Qq]/.test(fen.split(' ')[0]);
-function spaceCounts(fen){ return !isEndgame(fen); }
+function spaceCounts(fen){
+  let npm = 0; for(const ch of fen.split(' ')[0]){ const t = ch.toLowerCase(); if('nbrq'.includes(t)) npm += SF_VALUES[t][0]; }
+  return npm >= SPACE_MIN_NPM;
+}
 const aspectOffIn = (fen, key)=>key==='space' && !spaceCounts(fen);   // a criterion left out in this position
 function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.nums.length || m.arrows.length || m.labels.length || m.zones.length || m.boxes.length); }
 // From the port's square numbers (a1 = 0) and colours (0 White, 1 Black) to the marks' names.
