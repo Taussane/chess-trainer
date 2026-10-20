@@ -250,6 +250,27 @@
   .sq{position:relative; display:flex;align-items:center;justify-content:center; font-size:10cqw; line-height:1; user-select:none;}
   .sq.light{background:var(--board-light);}
   .sq.dark{background:var(--board-dark);}
+  .coord{position:absolute; font-size:3cqw; font-weight:600; line-height:1; pointer-events:none; z-index:1;}
+  .coord-f{right:2px; bottom:1px;} .coord-r{left:2px; top:2px;}
+  .sq.light .coord{color:var(--board-dark);} .sq.dark .coord{color:var(--board-light);}
+  .set-page .board-outer{max-width:360px;}
+  .fig{font-size:1.25em; line-height:0; vertical-align:-0.06em;}
+  .set-chips{display:flex; flex-wrap:wrap; gap:6px; justify-content:center;}
+  .set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:34px;}
+  .set-label{display:flex; align-items:center; gap:8px; font-size:0.9rem; min-width:0;}
+  .set-sw{width:14px; height:14px; border-radius:4px; flex:none; border:1px solid var(--border);}
+  .set-hue{-webkit-appearance:none; appearance:none; width:46%; max-width:200px; height:10px; border-radius:999px; outline:none; flex:none; cursor:pointer;}
+  .set-hue::-webkit-slider-thumb{-webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--text); border:2px solid var(--bg); box-shadow:0 1px 3px var(--shadow);}
+  .set-hue::-moz-range-thumb{width:18px; height:18px; border-radius:50%; background:var(--text); border:2px solid var(--bg);}
+  .set-toggle{width:44px; height:26px; border-radius:999px; border:1px solid var(--border); background:var(--panel-2); position:relative; cursor:pointer; flex:none; padding:0;}
+  .set-toggle span{position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--text-mute); transition:left .15s;}
+  .set-toggle.on{background:var(--accent);} .set-toggle.on span{left:20px; background:var(--on-accent);}
+  .set-seg{display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;}
+  .set-opt{background:var(--panel-2); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:8px 4px; font:inherit; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;}
+  .set-opt small{color:var(--text-mute); font-size:0.74rem;}
+  .set-opt.on{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent);}
+  .set-opt:disabled{opacity:.45; cursor:default;}
+  .set-reset{align-self:center; margin:6px auto 0; display:block;}
   .sq.last::before{content:""; position:absolute; inset:0; background:var(--square-hl);}
   .sq.selected::before{content:""; position:absolute; inset:0; background:var(--square-hl);}
   .sq.check{background-image:radial-gradient(circle at center, rgba(255,40,40,1) 0%, rgba(230,0,0,.85) 28%, rgba(200,0,0,.35) 58%, rgba(170,0,0,0) 80%);}
@@ -1672,7 +1693,7 @@ function moveOutcome(baseFen, uci, evalData){
 
 
 // Board seen from the side to play: when Black is to play, Black's pieces sit at the bottom.
-function boardFlipped(){ return pos().side==='b'; }
+function boardFlipped(){ return !settingsPreview && pos().side==='b'; }
 function squareCenter(sq){
   const file = FILES.indexOf(sq[0]);
   const rank = parseInt(sq[1],10);
@@ -1686,7 +1707,7 @@ function renderBoard(container, boardOverride, lastOverride, opts){
   const destSet = new Set(opts.destSquares || []);
   container.innerHTML = '';
   const flip = boardFlipped();
-  const checkSq = checkedKingSquare(pos().fen);
+  const checkSq = opts.noCheck ? null : checkedKingSquare(pos().fen);
   for(let row=0; row<8; row++){
     const rank = flip ? row+1 : 8-row;
     for(let col=0; col<8; col++){
@@ -1701,6 +1722,10 @@ function renderBoard(container, boardOverride, lastOverride, opts){
       if(opts.selectedSq===sq) div.className += ' selected';
       if(checkSq===sq) div.className += ' check';
       if(destSet.has(sq)) div.className += bs[sq] ? ' dest-capture' : ' dest';
+      if(settings.coords){   // coordinates: files along the bottom edge, ranks along the left one
+        if(row===7){ const c = document.createElement('span'); c.className = 'coord coord-f'; c.textContent = FILES[f]; div.appendChild(c); }
+        if(col===0){ const c = document.createElement('span'); c.className = 'coord coord-r'; c.textContent = rank; div.appendChild(c); }
+      }
       const p = bs[sq];
       if(p){
         const span = document.createElement('span');
@@ -3553,7 +3578,7 @@ function reviewRowHtml(m){
   const tags = m.historical ? [pos().gameId ? 'Your move' : 'Game move'] : [];
   const labelStyle = m.outcome ? `color:${labelColor(label)};` : '';
   return `<div class="review-row${label==='Best' ? ' best-row' : ''}">
-      <div class="move-tag"><span class="num">${m.num}</span><span class="move-chip" style="background:${m.color}">${m.san}</span>${tags.length ? `<span class="badges">${tags.map(t=>`<span class="badge">${t}</span>`).join('')}</span>` : ''}</div>
+      <div class="move-tag"><span class="num">${m.num}</span><span class="move-chip" style="background:${m.color}">${fmtSan(m.san)}</span>${tags.length ? `<span class="badges">${tags.map(t=>`<span class="badge">${t}</span>`).join('')}</span>` : ''}</div>
       <div class="move-result"><span class="grade" style="${labelStyle}">${label}</span><span class="move-eval">${m.outcome ? fmtSigned(m.outcome) : m.na ? '—' : '…'}</span></div>
     </div>`;
 }
@@ -3565,7 +3590,7 @@ function miniRowHtml(m, highlight, fadeIn){
   const best = highlight && label==='Best';
   return `<div class="mini-row${best ? ' best-row' : ''}${best && fadeIn ? ' best-in' : ''}${m.muted ? ' muted' : ''}" data-key="${m.from}${m.to}">
       <span class="num">${m.num}</span>
-      <span class="move-chip" style="background:${m.color}">${m.san}</span>
+      <span class="move-chip" style="background:${m.color}">${fmtSan(m.san)}</span>
       <span class="mini-result"><span class="mini-label" style="${m.outcome ? 'color:'+labelColor(label) : ''}">${label}</span><span class="move-eval">${m.outcome ? fmtSigned(m.outcome) : m.na ? '' : '…'}</span></span>
     </div>`;
 }
@@ -3591,6 +3616,7 @@ const ACT_GLYPHS = {
   final:      actIcon('<path d="M4 6h10M4 11h7M4 16h4"/><path d="M18 5v14M15 16l3 3 3-3"/>'),
 };
 const ACT_NAMES = { imbalances:'Imbalance reading', analysis:'Position evaluation', candidates:'Candidate moves', final:'Move selection' };
+const GEAR_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.85 1.85M16.65 16.65l1.85 1.85M5.5 18.5l1.85-1.85M16.65 7.35l1.85-1.85" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 const BACK_ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ACT_SHORT = { imbalances:'Imbalances', analysis:'Evaluation', candidates:'Candidates', final:'Selection' };   // where space is short (profile)
 const LEVEL_K = 0.15, DAILY_GOAL = 4;
@@ -3698,8 +3724,9 @@ function openReplayAt(i){
 async function loadProfileMeta(db, id){
   const col = db.collection('data/users/' + id + '/trainer/meta');
   try{
-    const [pd, rd] = await Promise.all([col.doc('profile').get(), col.doc('replay').get()]);
+    const [pd, rd, sd] = await Promise.all([col.doc('profile').get(), col.doc('replay').get(), col.doc('settings').get().catch(()=>null)]);
     const p = pd.exists ? pd.data() : null, r = rd.exists ? rd.data() : null;
+    if(sd && sd.exists) mergeSettings(sd.data());   // your settings from another device, when newer
     if(p && p.joinedAt) profile.joinedAt = profile.joinedAt ? Math.min(profile.joinedAt, p.joinedAt) : p.joinedAt;
     if(r && Array.isArray(r.items)) r.items.forEach(x=>{ if(!legacyMissed.some(y=>y.key===x.key && y.a===x.a)) legacyMissed.push(x); });
     metaCol = col;   // written to only after a successful read
@@ -3886,7 +3913,7 @@ function renderAccount(){
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to exercises">${BACK_ARROW}</button>
       <h1>Profile</h1>
-      <span class="title-spacer" aria-hidden="true"></span>
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings">${GEAR_ICON}</button>
     </div>
     <div class="pf-scroll">
       <section class="pf-card pf-id">
@@ -3902,6 +3929,7 @@ function renderAccount(){
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; render(); };
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('testsBtn', ()=>{ screen = 'tests'; render(); });
+  on('settingsBtn', ()=>{ screen = 'settings'; render(); });
   on('lichessLogin', ()=>lichessLogin()); on('googleLogin', ()=>googleLogin());
   on('pfLogout', logout);
   on('pfDelete', ()=>{ pfConfirmDelete = true; render(); }); on('pfDeleteNo', ()=>{ pfConfirmDelete = false; render(); }); on('pfDeleteYes', deleteMyAccount);
@@ -4875,7 +4903,7 @@ function renderTests(){
     </div>
     <div class="test-list">${TEST_POSITIONS.map((p,i)=>`
       <div class="test-item">
-        <div class="test-name">${p.title}<small>${p.side==='w' ? 'White' : 'Black'} to play · game move ${p.hist.san}</small></div>
+        <div class="test-name">${p.title}<small>${p.side==='w' ? 'White' : 'Black'} to play · game move ${fmtSan(p.hist.san)}</small></div>
         <div class="test-go">${ACTIVITIES.filter(a=>!(a==='imbalances' && p.noImbalances)).map(a=>`<button class="chip-btn" data-i="${i}" data-a="${a}">${ACT_NAMES[a]}</button>`).join('')}</div>
       </div>`).join('')}
     </div>`;
@@ -5174,10 +5202,10 @@ function renderCandidates(){
   s.picks.forEach((m,i)=>{
     const row = document.createElement('div');
     row.className = 'review-row pick-row';
-    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${cols[m.slot]}">${m.san}</span></div>`;
+    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${cols[m.slot]}">${fmtSan(m.san)}</span></div>`;
     const rm = document.createElement('button');
     rm.className = 'del-btn'; rm.textContent = '✕';
-    rm.setAttribute('aria-label', 'Remove ' + m.san);
+    rm.setAttribute('aria-label', 'Remove ' + fmtSan(m.san, false));
     rm.onclick = ()=>{ s.picks.splice(i,1); render(); };
     row.appendChild(rm);
     listEl.appendChild(row);
@@ -5373,7 +5401,7 @@ function renderFinal(){
     const row = document.createElement('div');
     row.className = 'rate-row';
     row.dataset.id = m.id;
-    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${m.color}">${m.san}</span></div><span class="drag-handle" aria-hidden="true">⠿</span>`;
+    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${m.color}">${fmtSan(m.san)}</span></div><span class="drag-handle" aria-hidden="true">⠿</span>`;
     rankedEl.appendChild(row);
     fadeAt(row, INTRO_START + i*INTRO_STEP);
   });
@@ -5408,6 +5436,118 @@ function render(){
   typed.forEach(t=>{ const el = document.getElementById(t.id); if(el && /^(INPUT|TEXTAREA)$/.test(el.tagName)) el.value = t.value; });
   if(focus){ const el = document.getElementById(focus.id); if(el){ el.focus(); try{ el.setSelectionRange(focus.a, focus.b); }catch(e){} } }
 }
+// ================= Settings =================
+// Saved on this device (and to your account when logged in): board coordinates, the board's hue, the
+// last move's hue, the six arrows' hues, the move notation. Colours keep their saturation and lightness:
+// only the hue changes, so contrast stays as designed.
+const SETTINGS_LS = 'cst.settings';
+const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#3AA655', pick2:'#D64545', pick3:'#4A78D6', system:'#E0B93C', 'cyan-arrow':'#22D3EE', top3:'#B58BE8' };
+const SET_ARROWS = [['pick1', 'Your 1st move'], ['pick2', 'Your 2nd move'], ['pick3', 'Your 3rd move'], ['system', 'Best move, 4th move'], ['cyan-arrow', '2nd best'], ['top3', '3rd best']];
+const SET_DEFAULT = { coords:false, boardHue:0, lastHue:null, arrows:{}, notation:'intl', at:0 };
+let settings = (()=>{ try{ return { ...SET_DEFAULT, ...JSON.parse(localStorage.getItem(SETTINGS_LS) || '{}') }; }catch(e){ return { ...SET_DEFAULT }; } })();
+function hexHsl(hex){
+  const n = parseInt(hex.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  if(!d) return [0, 0, Math.round(l * 100)];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = mx===r ? ((g - b) / d) % 6 : mx===g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [Math.round((h * 60 + 360) % 360), Math.round(s * 100), Math.round(l * 100)];
+}
+const hslCss = (h, s, l, a)=>`hsl(${Math.round(((h % 360) + 360) % 360)} ${s}% ${l}%${a!=null ? ` / ${a}` : ''})`;
+const baseHue = k=>hexHsl(SET_BASE[k])[0];
+function applySettings(){
+  const st = document.documentElement.style;
+  const set = (k, css)=>css ? st.setProperty('--' + k, css) : st.removeProperty('--' + k);   // default: the stylesheet's own colour
+  for(const k of ['board-light', 'board-dark']){ const [h, s, l] = hexHsl(SET_BASE[k]); set(k, settings.boardHue ? hslCss(h + settings.boardHue, s, l) : null); }
+  { const [h, s, l] = hexHsl(SET_BASE['square-hl']); set('square-hl', settings.lastHue!=null ? hslCss(settings.lastHue, s, l, .45) : null); }
+  for(const [k] of SET_ARROWS){ const [, s, l] = hexHsl(SET_BASE[k]), h = settings.arrows[k]; set(k, h!=null ? hslCss(h, s, l) : null); }
+}
+let settingsSyncT = null;
+function saveSettings(){
+  settings.at = Date.now();
+  try{ localStorage.setItem(SETTINGS_LS, JSON.stringify(settings)); }catch(e){}
+  clearTimeout(settingsSyncT);
+  settingsSyncT = setTimeout(()=>{ if(metaCol) metaCol.doc('settings').set(settings).catch(()=>{}); }, 800);
+}
+// From your account (loadProfileMeta): the newer of the two wins.
+function mergeSettings(s){
+  if(!s || !((s.at || 0) > (settings.at || 0))) return;
+  settings = { ...SET_DEFAULT, ...s, arrows: { ...(s.arrows || {}) } };
+  try{ localStorage.setItem(SETTINGS_LS, JSON.stringify(settings)); }catch(e){}
+  applySettings(); render();
+}
+applySettings();
+// Move notation: international letters (K Q R B N), your language's letters, or figurines.
+const LOCAL_PIECES = { fr:'RDTFC', de:'KDTLS', es:'RDTAC', it:'RDTAC', pt:'RDTBC', nl:'KDTLP', pl:'KHWGS', sv:'KDTLS', da:'KDTLS', no:'KDTLS', nb:'KDTLS', cs:'KDVSJ', hu:'KVBFH', ro:'RDTNC', tr:'ŞVKFA', fi:'KDTLR' };
+const localPieces = (()=>{ try{ const l = (navigator.language || 'en').slice(0, 2).toLowerCase(); return LOCAL_PIECES[l] || null; }catch(e){ return null; } })();
+const FIGURINES = { K:'♔', Q:'♕', R:'♖', B:'♗', N:'♘' };
+// (html: figurines in a span, drawn a little larger than the letters)
+function fmtSan(san, html = true){
+  if(!san || settings.notation==='intl') return san;
+  const sym = settings.notation==='symbols', map = sym ? FIGURINES : localPieces ? Object.fromEntries('KQRBN'.split('').map((k, i)=>[k, localPieces[i]])) : null;
+  if(!map) return san;
+  const g = x=>sym ? (html ? `<span class="fig">${map[x]}︎</span>` : map[x] + '︎') : map[x];
+  return san.replace(/^[KQRBN]/, x=>g(x)).replace(/=([QRBN])/, (_, x)=>'=' + g(x));
+}
+// The settings page: a sample position on top (coordinates, last move, the six arrows, their moves
+// as chips in your notation), then the controls; every change shows at once and is saved.
+const SET_SAMPLE = { fen:'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3', last:{ from:'f1', to:'b5' },
+  moves:[['a7','a6','a6'], ['g8','f6','Nf6'], ['d7','d6','d6'], ['f8','c5','Bc5'], ['g8','e7','Nge7'], ['f7','f5','f5']] };
+let settingsPreview = false;
+function renderSettingsPreview(){
+  const b = document.getElementById('setBoard'), svg = document.getElementById('setArrows'); if(!b) return;
+  settingsPreview = true;
+  try{
+    renderBoard(b, boardObjFromGame(new Chess(SET_SAMPLE.fen)), SET_SAMPLE.last, { noCheck: true });
+    drawArrows(svg, SET_SAMPLE.moves.map(([from, to], i)=>({ from, to, color: `var(--${SET_ARROWS[i][0]})` })), 'setar');
+  } finally { settingsPreview = false; }
+  document.getElementById('setChips').innerHTML = SET_SAMPLE.moves.map(([, , san], i)=>`<span class="move-chip" style="background:var(--${SET_ARROWS[i][0]})">${fmtSan(san)}</span>`).join('');
+}
+const hueTrack = (s, l)=>`linear-gradient(to right, ${[0, 60, 120, 180, 240, 300, 360].map(h=>hslCss(h, s, l)).join(', ')})`;
+function renderSettings(){
+  const app = document.getElementById('app');
+  const row = (label, ctl, sw)=>`<div class="set-row"><span class="set-label">${sw ? `<span class="set-sw" style="background:${sw}"></span>` : ''}${label}</span>${ctl}</div>`;
+  const slider = (id, min, max, val, track)=>`<input type="range" class="set-hue" id="${id}" min="${min}" max="${max}" value="${val}" style="background:${track}">`;
+  const [, bs, bl] = hexHsl(SET_BASE['board-dark']), [, ls, ll] = hexHsl(SET_BASE['square-hl']);
+  const local = localPieces ? localPieces.split('').join(' ') : null;
+  const notes = [['intl', 'International', 'K Q R B N'], ['local', 'Local', local || 'same as international'], ['symbols', 'Symbols', '♔ ♕ ♖ ♗ ♘']];
+  app.innerHTML = `
+    <div class="title-row">
+      <button class="icon-btn back" id="homeBtn" aria-label="Back to profile">${BACK_ARROW}</button>
+      <h1>Settings</h1>
+      <span class="title-spacer" aria-hidden="true"></span>
+    </div>
+    <div class="pf-scroll set-page">
+      <section class="pf-card set-preview" aria-label="Preview">
+        <div class="board-outer"><div class="board" id="setBoard"></div><svg class="arrows" id="setArrows" viewBox="0 0 480 480"></svg></div>
+        <div class="set-chips" id="setChips"></div>
+      </section>
+      <h2 class="pf-h">Board</h2>
+      <section class="pf-card">
+        ${row('Coordinates', `<button class="set-toggle${settings.coords ? ' on' : ''}" id="setCoords" role="switch" aria-checked="${settings.coords}" aria-label="Coordinates"><span></span></button>`)}
+        ${row('Board hue', slider('setBoardHue', -180, 180, settings.boardHue, `linear-gradient(to right, ${[-180, -120, -60, 0, 60, 120, 180].map(d=>hslCss(baseHue('board-dark') + d, bs, bl)).join(', ')})`), 'var(--board-dark)')}
+        ${row('Last move', slider('setLastHue', 0, 359, settings.lastHue ?? baseHue('square-hl'), hueTrack(ls, ll)), 'var(--square-hl)')}
+      </section>
+      <h2 class="pf-h">Arrows</h2>
+      <section class="pf-card">
+        ${SET_ARROWS.map(([k, label])=>{ const [, s, l] = hexHsl(SET_BASE[k]); return row(label, slider('setAr-' + k, 0, 359, settings.arrows[k] ?? baseHue(k), hueTrack(s, l)), `var(--${k})`); }).join('')}
+      </section>
+      <h2 class="pf-h">Move notation</h2>
+      <section class="pf-card">
+        <div class="set-seg" role="radiogroup" aria-label="Move notation">${notes.map(([k, name, eg])=>`<button class="set-opt${settings.notation===k ? ' on' : ''}" data-n="${k}" role="radio" aria-checked="${settings.notation===k}"${k==='local' && !local ? ' disabled' : ''}><b>${name}</b><small>${eg}</small></button>`).join('')}</div>
+      </section>
+      <button class="btn secondary set-reset" id="setReset">Reset to defaults</button>
+    </div>`;
+  renderSettingsPreview();
+  document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
+  const live = ()=>{ applySettings(); renderSettingsPreview(); saveSettings(); document.querySelectorAll('.set-sw').forEach(x=>x.style.background = x.style.background); };
+  document.getElementById('setCoords').onclick = ()=>{ settings.coords = !settings.coords; saveSettings(); render(); };
+  document.getElementById('setBoardHue').oninput = e=>{ settings.boardHue = +e.target.value; live(); };
+  document.getElementById('setLastHue').oninput = e=>{ settings.lastHue = +e.target.value; live(); };
+  for(const [k] of SET_ARROWS) document.getElementById('setAr-' + k).oninput = e=>{ settings.arrows = { ...settings.arrows, [k]: +e.target.value }; live(); };
+  document.querySelectorAll('.set-opt').forEach(b=>b.onclick = ()=>{ settings.notation = b.dataset.n; saveSettings(); render(); });
+  document.getElementById('setReset').onclick = ()=>{ settings = { ...SET_DEFAULT, arrows:{} }; applySettings(); saveSettings(); render(); };
+}
 function renderScreen(){
   syncPos();
   const wrap = document.querySelector('.wrap');
@@ -5415,6 +5555,7 @@ function renderScreen(){
   if(screen==='home') renderHome();
   else if(onProfile()) renderAccount();
   else if(screen==='tests') renderTests();
+  else if(screen==='settings') renderSettings();
   else if(screen==='analysis') renderAnalysis();
   else if(screen==='imbalances') renderImbalances();
   else if(screen==='candidates') renderCandidates();
