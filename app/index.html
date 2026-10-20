@@ -3298,7 +3298,7 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
   if(key==='king' && isEndgame(fen)){
     // King activity (kingActivityPoints): the centre's three rings (dashed, in yellow: the inner one
     // strongest); each king's Centre points in its corner; an arrow from it to each enemy pawn it attacks
-    // (Target: the arrow alone); each passed pawn of its own beside it ringed and labelled Escort, +1; on
+    // (Target: the arrow alone); each passed pawn of its own beside it ringed and labelled Escort; on
     // each king, its side's total (Total +0 too).
     const ka = kingActivityPoints(fen);
     out.zones.push({ a:'b2', b:'g7', full: true, color: OUTLINE.y, op: .5 }, { a:'c3', b:'f6', full: true, color: OUTLINE.y, op: .75 }, { a:'d4', b:'e5', full: true, color: OUTLINE.y, op: 1 });
@@ -3306,7 +3306,7 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
       const sd = ka.sides[c]; if(!sd) continue;
       if(sd.centre) out.nums.push({ sq: sd.k, n: '+' + sd.centre, c });   // its Centre points, in its corner
       for(const t of sd.targets) out.arrows.push({ from: sd.k, to: t, c });
-      for(const t of sd.escorts){ out.circles.push({ sq: t, c }); out.labels.push({ sq: t, c, text: 'Escort' }); out.nums.push({ sq: t, n: '+1', c }); }
+      for(const t of sd.escorts){ out.circles.push({ sq: t, c }); out.labels.push({ sq: t, c, text: 'Escort' }); }
       out.nums.push({ sq: sd.k, n: 'Total ' + (sd.points ? fmtPts(sd.points) : '+0'), c });
     }
   }
