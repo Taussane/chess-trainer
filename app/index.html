@@ -83,8 +83,9 @@
   .acct-chip:not(:has(.acct-dot)){padding:6px 14px; color:var(--accent);}
   .acct-dot.big{width:44px; height:44px; font-size:1.2rem;}
   .pf-who{display:flex; gap:12px; align-items:center;}
-  .ac-row{display:flex; align-items:center; gap:10px; font-size:0.9rem; min-height:32px;}
-  .ac-row .ac-site{min-width:96px;}
+  .ac-row{display:flex; align-items:center; gap:10px; font-size:0.9rem; min-height:26px;}
+  .ac-row + .ac-row{margin-top:-4px;}
+  .ac-row .ac-site{min-width:112px;}
   .ac-row .link-inline{margin-left:auto;}
   .ac-sep{border-top:1px solid var(--border); padding-top:8px; margin-top:4px;}
   .ac-divider{height:1px; background:var(--border); margin:4px 0;}
@@ -307,7 +308,8 @@
   .engine-error{color:var(--bad); margin-top:12px;}
   /* Key aspects (Position evaluation): static and dynamic columns of name + badge */
   .aspects{margin:12px 0 6px;}
-  .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:10px; row-gap:10px;}
+  .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:22px; row-gap:10px;}
+  .asp-item.tap-row{cursor:pointer;}
   .aspects:not(.plan){margin:6px 0 0;}
   .aspects:not(.plan) .asp-grid{row-gap:6px;}
   /* In the review the score sits where the prompt was: pull the grid up so each imbalance stays put. */
@@ -326,7 +328,7 @@
   .plan-row.asp-item.pickable .plan-sit{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
   .asp-item.pickable{cursor:pointer; border-radius:6px; margin:-3px -6px; padding:3px 6px; -webkit-tap-highlight-color:transparent;}
   .plan-row.asp-item.pickable{margin:-4px -6px; padding:4px 6px;}
-  .asp-item.pickable .asp-name{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
+  .asp-item.pickable .asp-name:not(:has(.asp-qual)), .asp-item.pickable .asp-main{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
   .asp-item.sel{background:var(--panel-2); box-shadow:inset 0 0 0 1px var(--accent);}
   .asp-item.sel .asp-name, .plan-row.asp-item.sel .plan-sit{text-decoration:none;}
   .asp-pick{font-family:inherit; cursor:pointer;}
@@ -1280,8 +1282,8 @@ const ASP_HELP = {
   },
   kingEg: {
     name:'King activity',
-    count:["With the queens off, the king is no longer in much danger: it becomes a fighting piece.", "Centre: 3 on d4–e5, 2 on the ring around them (c3–f6), 1 on the next ring (b2–g7), 0 on the edge.", "Target: each enemy pawn it attacks +1.", "Escort: each of its own passed pawns beside it +1.",
-           "Tap a king to see its side alone.", "A forced mate counts as ++ for the side that mates."],
+    count:["With the queens off, the king is no longer in much danger: it becomes a fighting piece.", "Centre: 3 on d4–e5, 2 on the ring around them (c3–f6), 1 on the next ring (b2–g7), 0 on the edge.", "Target: each enemy pawn it attacks +1 (an arrow).", "Escort: each of its own passed pawns beside it (diagonals included) +1.",
+           "Dashed yellow: the three central rings, the inner one brightest.", "A forced mate counts as ++ for the side that mates."],
     plans:["More active king: use it, go for the enemy pawns or escort your passed pawn.", "Passive king: centralize it before anything else."],
   },
   threats: {
@@ -2429,7 +2431,7 @@ const ASPECT_MAX = 2;
 // pieces) when left out.
 const aspNameText = (x, fen)=>!fen ? x.name : x.key==='king' && isEndgame(fen) ? 'King activity (no queens)' : x.key==='space' && !spaceCounts(fen) ? 'Space (few pieces)' : x.name;
 // (in the grids: the qualifier on a small second line, so the name fits on a phone)
-const aspName = (x, fen)=>{ const t = aspNameText(x, fen), m = t.match(/^(.*) \((.*)\)$/); return m ? `${m[1]}<span class="asp-qual">${m[2]}</span>` : t; };
+const aspName = (x, fen)=>{ const t = aspNameText(x, fen), m = t.match(/^(.*) \((.*)\)$/); return m ? `<span class="asp-main">${m[1]}</span><span class="asp-qual">${m[2]}</span>` : t; };
 const curFen = ()=>{ try{ const p = pos(); return p && p.fen; }catch(e){ return null; } };
 // Stockfish 10's piece values [middlegame, endgame], and its game-phase limits (non-pawn material).
 const SF_VALUES = { p:[136,208], n:[782,865], b:[830,918], r:[1289,1378], q:[2529,2687] };
@@ -2940,9 +2942,10 @@ function wireAspectView(p, s){
   draw();
   // Activity: tap a piece to see which squares it counts (again, or elsewhere, to go back).
   if(board){
-    board.classList.toggle('asp-tappable', s.aspView==='activity' || s.aspView==='king');
+    const kingTap = s.aspView==='king' && !isEndgame(p.fen);   // (King safety only; not King activity)
+    board.classList.toggle('asp-tappable', s.aspView==='activity' || kingTap);
     // King safety: tap a king to see only what bears on it (again, or elsewhere, to see both)
-    if(s.aspView==='king') board.onclick = e=>{
+    if(kingTap) board.onclick = e=>{
       const el = e.target.closest && e.target.closest('.sq'); if(!el) return;
       const pc = boardMap(p.fen)[el.dataset.sq];
       s.aspKing = pc && pc.t==='k' && s.aspKing!==pc.c ? pc.c : null;
@@ -3071,6 +3074,7 @@ function openAspPicker(s, key){
   el.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeAspPicker(); badge.focus(); } });
 }
 function wireAspectsInput(s){
+  const was = aspPicker && aspPicker.key;   // a scale or note open when the page redraws (e.g. an evaluation arriving): open it again
   aspPicker = null;
   document.querySelectorAll('#aspInput .asp-pick').forEach(b=>{
     b.onclick = e=>{ e.stopPropagation(); if(aspPicker && aspPicker.key===b.dataset.asp) closeAspPicker(); else openAspPicker(s, b.dataset.asp); };
@@ -3079,11 +3083,14 @@ function wireAspectsInput(s){
       const step = (e.key==='ArrowUp' || e.key==='ArrowRight') ? 1 : (e.key==='ArrowDown' || e.key==='ArrowLeft') ? -1 : 0;
       if(step){ setAspect(s, b.dataset.asp, (s.asp[b.dataset.asp]||0) + step); e.preventDefault(); }
     };
+    // the criterion's name opens it too: the whole row
+    const row = b.closest('.asp-item'); if(row){ row.classList.add('tap-row'); row.onclick = e=>{ if(e.target.closest('.asp-pick')) return; b.click(); }; }
   });
+  if(was) openAspPicker(s, was);
 }
 // A tap anywhere else closes the scale (registered once).
 document.addEventListener('pointerdown', e=>{
-  if(aspPicker && !aspPicker.el.contains(e.target) && !(e.target.closest && e.target.closest('.asp-pick'))) closeAspPicker();
+  if(aspPicker && !aspPicker.el.contains(e.target) && !(e.target.closest && e.target.closest('.asp-pick, #aspInput .asp-item'))) closeAspPicker();
 });
 // ---- What each aspect is about, drawn on the board (the review; tap an aspect) ----
 // Simplified from Stockfish 10's own definitions. One rule for every aspect: a white mark favours
@@ -3289,17 +3296,18 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
     for(const c of ['w','b']){ const k = pieces(c).find(sq=>m[sq].t==='k'), v = Math.round(tot[c] * 10) / 10; if(k && v) out.nums.push({ sq: k, n: 'Total ' + fmtPts(v), c }); }
   }
   if(key==='king' && isEndgame(fen)){
-    // King activity (kingActivityPoints): each king's Centre points in its corner; each enemy pawn
-    // it attacks (Target) and passed pawn of its own beside it (Escort) ringed, +1, an arrow from the king;
-    // on each king, its side's total.
+    // King activity (kingActivityPoints): the centre's three rings (dashed, in yellow: the inner one
+    // strongest); each king's Centre points in its corner; an arrow from it to each enemy pawn it attacks
+    // (Target: the arrow alone); each passed pawn of its own beside it ringed and labelled Escort, +1; on
+    // each king, its side's total (Total +0 too).
     const ka = kingActivityPoints(fen);
+    out.zones.push({ a:'b2', b:'g7', full: true, color: OUTLINE.y, op: .5 }, { a:'c3', b:'f6', full: true, color: OUTLINE.y, op: .75 }, { a:'d4', b:'e5', full: true, color: OUTLINE.y, op: 1 });
     for(const c of ['w','b']){
-      const sd = ka.sides[c]; if(!sd || (opts && opts.only && opts.only!==c)) continue;
+      const sd = ka.sides[c]; if(!sd) continue;
       if(sd.centre) out.nums.push({ sq: sd.k, n: '+' + sd.centre, c });   // its Centre points, in its corner
-      for(const [list, text] of [[sd.targets, 'Target'], [sd.escorts, 'Escort']]) for(const t of list){
-        out.circles.push({ sq: t, c }); out.labels.push({ sq: t, c, text }); out.nums.push({ sq: t, n: '+1', c }); out.arrows.push({ from: sd.k, to: t, c });
-      }
-      if(sd.points) out.nums.push({ sq: sd.k, n: 'Total ' + fmtPts(sd.points), c, tap: true });
+      for(const t of sd.targets) out.arrows.push({ from: sd.k, to: t, c });
+      for(const t of sd.escorts){ out.circles.push({ sq: t, c }); out.labels.push({ sq: t, c, text: 'Escort' }); out.nums.push({ sq: t, n: '+1', c }); }
+      out.nums.push({ sq: sd.k, n: 'Total ' + (sd.points ? fmtPts(sd.points) : '+0'), c });
     }
   }
   else if(key==='king'){
@@ -3470,7 +3478,7 @@ function drawMarks(svg, marks){
   // read as one outline.
   const zones = (marks.zones||[]).map(t=>{ const p = squareCenter(t.a), q = squareCenter(t.b), dir = Math.sign(q.y - p.y) || 1;
     if(t.full){ const x = Math.min(p.x, q.x) - 28, y = Math.min(p.y, q.y) - 28, w = Math.abs(p.x - q.x) + 56, h = Math.abs(p.y - q.y) + 56;
-      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="none" stroke="${MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7" filter="url(#mkShadow)"/>`; }
+      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="none" stroke="${t.color || MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7"${t.op!=null ? ` opacity="${t.op}"` : ''} filter="url(#mkShadow)"/>`; }
     const xl = Math.min(p.x, q.x) - 27, xr = Math.max(p.x, q.x) + 27, yb = p.y - dir*27, yf = q.y + dir*30;
     return `<path d="M${xl},${yf} L${xl},${yb} L${xr},${yb} L${xr},${yf}" fill="none" stroke="${MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7" stroke-linejoin="round" filter="url(#mkShadow)"/>`; }).join('');
   // a red outline on a square (a safe check for the other side)
