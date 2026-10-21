@@ -3929,7 +3929,7 @@ function renderAccount(){
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; render(); };
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('testsBtn', ()=>{ screen = 'tests'; render(); });
-  on('settingsBtn', ()=>{ screen = 'settings'; render(); });
+  on('settingsBtn', ()=>{ screen = 'settings'; settingsRebuild = true; render(); });
   on('lichessLogin', ()=>lichessLogin()); on('googleLogin', ()=>googleLogin());
   on('pfLogout', logout);
   on('pfDelete', ()=>{ pfConfirmDelete = true; render(); }); on('pfDeleteNo', ()=>{ pfConfirmDelete = false; render(); }); on('pfDeleteYes', deleteMyAccount);
@@ -5487,7 +5487,7 @@ function mergeSettings(s){
   if(!s || !((s.at || 0) > (settings.at || 0))) return;
   s = setClean(s); settings = { ...SET_DEFAULT, ...s, arrows: { ...(s.arrows || {}) } };
   try{ localStorage.setItem(SETTINGS_LS, JSON.stringify(settings)); }catch(e){}
-  applySettings(); render();
+  applySettings(); settingsRebuild = true; render();
 }
 applySettings();
 // Move notation: international letters (K Q R B N), your language's letters, or figurines.
@@ -5517,7 +5517,12 @@ function renderSettingsPreview(){
   document.getElementById('setChips').innerHTML = SET_SAMPLE.moves.map(([, , san], i)=>`<span class="move-chip" style="background:var(--${SET_ARROWS[i][0]})">${fmtSan(san)}</span>`).join('');
 }
 const hueTrack = k=>`linear-gradient(to right, ${[0, 45, 90, 135, 180, 225, 270, 315, 360].map(h=>hueCss(k, h)).join(', ')})`;
+// The page redraws often in the background (your account, games, the engine arriving): the settings
+// page is then left as it is (a slider being dragged keeps going); only its own changes rebuild it.
+let settingsRebuild = true;
 function renderSettings(){
+  if(!settingsRebuild && document.querySelector('#app .set-page')){ renderSettingsPreview(); return; }
+  settingsRebuild = false;
   const app = document.getElementById('app');
   const row = (label, ctl, sw)=>`<div class="set-row"><span class="set-label">${sw ? `<span class="set-sw" style="background:${sw}"></span>` : ''}${label}</span>${ctl}</div>`;
   const slider = (id, min, max, val, track)=>`<input type="range" class="set-hue" id="${id}" min="${min}" max="${max}" value="${val}" style="background:${track}">`;
@@ -5551,14 +5556,15 @@ function renderSettings(){
       <button class="btn secondary set-reset" id="setReset">Reset to defaults</button>
     </div>`;
   renderSettingsPreview();
-  document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
+  document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; settingsRebuild = true; render(); };
+  const rebuild = ()=>{ settingsRebuild = true; render(); };
   const live = ()=>{ applySettings(); renderSettingsPreview(); saveSettings(); document.querySelectorAll('.set-sw').forEach(x=>x.style.background = x.style.background); };
-  document.getElementById('setCoords').onclick = ()=>{ settings.coords = !settings.coords; saveSettings(); render(); };
+  document.getElementById('setCoords').onclick = ()=>{ settings.coords = !settings.coords; saveSettings(); rebuild(); };
   document.getElementById('setBoardHue').oninput = e=>{ settings.boardHue = +e.target.value; live(); };
   document.getElementById('setLastHue').oninput = e=>{ settings.lastHue = +e.target.value; live(); };
   for(const [k] of SET_ARROWS) document.getElementById('setAr-' + k).oninput = e=>{ settings.arrows = { ...settings.arrows, [k]: +e.target.value }; live(); };
-  document.querySelectorAll('.set-opt').forEach(b=>b.onclick = ()=>{ settings.notation = b.dataset.n; saveSettings(); render(); });
-  document.getElementById('setReset').onclick = ()=>{ settings = { ...SET_DEFAULT, arrows:{} }; applySettings(); saveSettings(); render(); };
+  document.querySelectorAll('.set-opt').forEach(b=>b.onclick = ()=>{ settings.notation = b.dataset.n; saveSettings(); rebuild(); });
+  document.getElementById('setReset').onclick = ()=>{ settings = { ...SET_DEFAULT, arrows:{} }; applySettings(); saveSettings(); rebuild(); };
 }
 function renderScreen(){
   syncPos();
