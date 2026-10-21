@@ -135,9 +135,8 @@
   .link-btn.quiet{color:var(--text-mute); font-weight:500;}
   .title-spacer{width:36px; flex:none;}
   .title-chip{margin-left:auto; flex:none; display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font:inherit; font-size:0.86rem; font-weight:600; cursor:pointer; white-space:nowrap;}
-  .install-box{display:flex; flex-direction:column; align-items:center; gap:8px; margin:18px 0 4px;}
-  .install-btn{min-width:60%;}
-  .install-help{margin:0; font-size:0.86rem; color:var(--text-mute); text-align:center;}
+  .ac-foot .install-link, .ac-foot .install-link:visited{color:var(--accent); font-weight:600; text-decoration-color:var(--accent);}
+  .install-help{margin:-4px 0 0; font-size:0.84rem; color:var(--text-mute); text-align:center;}
   .title-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
   .test-item{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px 12px; display:flex; flex-direction:column; gap:6px;}
@@ -3928,11 +3927,9 @@ addEventListener('beforeinstallprompt', e=>{ installPrompt = e; if(onProfile()) 
 addEventListener('appinstalled', ()=>{ installPrompt = null; if(onProfile()) render(); });
 const runningAsApp = ()=>{ try{ return matchMedia('(display-mode: standalone)').matches || navigator.standalone===true; }catch(e){ return false; } };
 const isIOS = ()=>/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints > 1);
-function installSection(){
-  if(!DIRECT_LICHESS || runningAsApp() || !(installPrompt || isIOS())) return '';
-  return `<div class="install-box"><button class="btn install-btn" id="installBtn">Install the app</button>
-    ${installHelp ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}</div>`;
-}
+const installOffered = ()=>DIRECT_LICHESS && !runningAsApp() && !!(installPrompt || isIOS());
+// first in the links at the bottom of the profile, in yellow
+const installLink = ()=>installOffered() ? `<button class="link-plain install-link" id="installBtn">Install the app</button> · ` : '';
 async function installApp(){
   if(installPrompt){ const e = installPrompt; try{ await e.prompt(); const r = await e.userChoice; if(r && r.outcome==='accepted') installPrompt = null; }catch(err){} render(); return; }
   installHelp = !installHelp; render();
@@ -3957,8 +3954,8 @@ function renderAccount(){
       ${prog.html}
       ${positionsSection()}
       ${DIRECT_LICHESS ? accountSection() : gamesFileSection()}
-      ${installSection()}
-      <p class="ac-foot">${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
+      <p class="ac-foot">${installLink()}${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
+      ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; render(); };
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
