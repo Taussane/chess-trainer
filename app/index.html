@@ -3926,7 +3926,7 @@ function accountSection(){
 // ================= Support (donations) =================
 // The page behind the profile's Support link: why the app is free, what donations help with, then Ko-fi
 // (card or PayPal, no account needed; Ko-fi takes no fee on donations).
-const KOFI_URL = '';   // the Ko-fi page, e.g. 'https://ko-fi.com/yourname' (empty: the button says it's coming soon)
+const KOFI_URL = 'https://ko-fi.com/taussane';   // the Ko-fi page (empty: the button says it's coming soon)
 function renderSupport(){
   const app = document.getElementById('app');
   app.innerHTML = `
@@ -3951,8 +3951,8 @@ function renderSupport(){
         </ul>
       </section>
       <section class="pf-card sup-card">
-        <p>Any amount helps, once or monthly. Donations go through Ko-fi: card or PayPal, no account needed. Ko-fi takes no fee on donations; only the payment processor's applies.</p>
-        ${KOFI_URL ? `<a class="btn sup-btn" href="${KOFI_URL}" target="_blank" rel="noopener">Support on Ko-fi</a>` : `<button class="btn sup-btn" disabled>Ko-fi: coming soon</button>`}
+        <p>Any amount helps, once or monthly. Donations go through Ko-fi: card or PayPal, no account needed. Ko-fi takes no fee on one-time donations; only the payment processor's applies.</p>
+        ${KOFI_URL ? `<a class="btn sup-btn" href="${KOFI_URL}" target="_blank" rel="noopener">Buy me a knight on Ko-fi</a>` : `<button class="btn sup-btn" disabled>Ko-fi: coming soon</button>`}
         <p class="sup-note">Donations are personal gifts: they aren't tax-deductible and don't unlock anything. Everyone gets the same app.</p>
       </section>
       <p class="sup-thanks">Not in a position to give? Sharing the trainer with a chess friend helps just as much. Thank you!</p>
@@ -5823,8 +5823,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "the account server and its storage, as more players join;": "le serveur des comptes et son stockage, à mesure que des joueurs arrivent ;",
 "more master positions, and better ones from your own games;": "plus de positions de maîtres, et de meilleures tirées de vos parties ;",
 "new exercises and languages.": "de nouveaux exercices et de nouvelles langues.",
-"Any amount helps, once or monthly. Donations go through Ko-fi: card or PayPal, no account needed. Ko-fi takes no fee on donations; only the payment processor's applies.": "Tout montant aide, une fois ou chaque mois. Les dons passent par Ko-fi : carte ou PayPal, sans compte. Ko-fi ne prend aucun frais sur les dons ; seuls ceux du service de paiement s'appliquent.",
-"Support on Ko-fi": "Soutenir sur Ko-fi", "Ko-fi: coming soon": "Ko-fi : bientôt disponible",
+"Any amount helps, once or monthly. Donations go through Ko-fi: card or PayPal, no account needed. Ko-fi takes no fee on one-time donations; only the payment processor's applies.": "Tout montant aide, une fois ou chaque mois. Les dons passent par Ko-fi : carte ou PayPal, sans compte. Ko-fi ne prend aucun frais sur les dons ponctuels ; seuls ceux du service de paiement s'appliquent.",
+"Buy me a knight on Ko-fi": "Offrez-moi un cavalier sur Ko-fi", "Ko-fi: coming soon": "Ko-fi : bientôt disponible",
 "Donations are personal gifts: they aren't tax-deductible and don't unlock anything. Everyone gets the same app.": "Les dons sont des cadeaux personnels : ils ne sont pas déductibles des impôts et ne débloquent rien. Tout le monde a la même application.",
 "Not in a position to give? Sharing the trainer with a chess friend helps just as much. Thank you!": "Pas en mesure de donner ? Faire connaître l'entraîneur à un ami joueur aide tout autant. Merci !", "Install the app": "Installer l'application", "In Safari, tap Share, then Add to Home Screen.": "Dans Safari, touchez Partager, puis Sur l'écran d'accueil.", "Saturation": "Saturation", "Lightness": "Luminosité",
 "Last move": "Dernier coup",
