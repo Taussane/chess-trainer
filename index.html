@@ -18,11 +18,11 @@
     --text:#EDE7DC; --text-mute:#9A9488;
     --board-light:#D8E1E8; --board-dark:#4991BE;
     --accent:#C9A227; --on-accent:#1A1400;
-    --pick1:#67B373; --pick2:#DF7F78; --pick3:#769DE9; --system:#BA9B39; --top3:#AF8BDB;
+    --pick1:#3AA655; --pick2:#D64545; --pick3:#4A78D6; --system:#E0B93C; --top3:#B58BE8;
     --white-fill:#E8E2D4; --black-fill:#2B241C;
     --good:#6FAE7C; --best-green:#3FAE5C; --ok:#A4A95E; --dubious:#E8C547; --mistake:#D9A441; --bad:#C9584F;
     --border:#2E3742;
-    --cyan:rgba(34,211,238,0.35); --square-hl:rgba(155,205,20,0.45); --dest-dot:rgba(120,128,138,0.8); --cyan-arrow:#10B1CA; --masters-dot:#D0B0FF;
+    --cyan:rgba(34,211,238,0.35); --square-hl:rgba(155,205,20,0.45); --dest-dot:rgba(120,128,138,0.8); --cyan-arrow:#22D3EE; --masters-dot:#D0B0FF;
     --best-row:rgba(224,185,60,0.14); --scrim:rgba(0,0,0,.55); --shadow:rgba(0,0,0,.4);
     --piece-w:#F7F3EA; --piece-b:#151515;
     --font-display:"Iowan Old Style","Palatino Linotype",Georgia,serif;
@@ -5452,8 +5452,8 @@ function render(){
 // last move's hue, the six arrows' hues, the move notation. Colours keep their saturation and lightness:
 // only the hue changes, so contrast stays as designed.
 const SETTINGS_LS = 'cst.settings';
-const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#67B373', pick2:'#DF7F78', pick3:'#769DE9', system:'#BA9B39', 'cyan-arrow':'#10B1CA', top3:'#AF8BDB' };
-// (the six arrows share one lightness and colour strength, OKLCH 70% / 0.12: only their hue differs)
+const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#3AA655', pick2:'#D64545', pick3:'#4A78D6', system:'#E0B93C', 'cyan-arrow':'#22D3EE', top3:'#B58BE8' };
+// (each arrow keeps its own lightness and colour strength: green, red, blue, then the lighter yellow, cyan, purple)
 const SET_ARROWS = [['pick1', '1st'], ['pick2', '2nd'], ['pick3', '3rd'], ['system', '4th'], ['cyan-arrow', '5th'], ['top3', '6th']];
 const SET_DEFAULT = { coords:false, boardHue:0, lastHue:null, arrows:{}, notation:'intl', at:0, v:2 };
 const SET_VERSION = 2;   // 2: hues in OKLCH (earlier saved hues, in HSL, are dropped)
