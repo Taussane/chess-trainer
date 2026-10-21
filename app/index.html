@@ -80,7 +80,8 @@
   .home-head{margin:4px 0 18px;}
   .home-top{display:flex; justify-content:flex-end; margin:-4px 0 6px;}
   .acct-chip{display:inline-flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:5px 12px 5px 6px; font:inherit; font-size:0.86rem; font-weight:600; cursor:pointer; max-width:60%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .acct-chip:not(:has(.acct-dot)){padding:6px 14px; color:var(--accent);}
+  .acct-login{color:var(--accent);}
+  .acct-dot .pc{width:112%; height:112%; flex:none; margin-top:4%;}   /* the white king of the board, in the yellow circle */
   .acct-dot.big{width:44px; height:44px; font-size:1.2rem;}
   .pf-who{display:flex; gap:12px; align-items:center;}
   .ac-row{display:flex; align-items:center; gap:10px; font-size:0.9rem; min-height:26px;}
@@ -3927,7 +3928,7 @@ function renderAccount(){
     </div>
     <div class="pf-scroll">
       <section class="pf-card pf-id">
-        <div class="pf-who"><span class="acct-dot big" aria-hidden="true">${name ? esc(name[0].toUpperCase()) : 'G'}</span>
+        <div class="pf-who"><span class="acct-dot big" aria-hidden="true"><span class="pc pc-wK"></span></span>
           <div><div class="pf-name">${esc(name) || 'Guest'}</div>
           <div class="pf-facts"><span><b>${results.length}</b> position${results.length===1?'':'s'} played since ${since}</span></div></div></div>
       </section>
@@ -4006,7 +4007,7 @@ function renderHome(){
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="home-head">
-      <div class="home-top"><button class="acct-chip" id="accountBtn">${DIRECT_LICHESS && !signedIn() ? 'Log in' : `<span class="acct-dot" aria-hidden="true">${(displayName()[0] || 'G').toUpperCase().replace(/</g,'')}</span>${displayName().replace(/</g,'&lt;') || 'Guest'}`}</button></div>
+      <div class="home-top"><button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span>${DIRECT_LICHESS && !signedIn() ? '<span class="acct-login">Log in</span>' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</button></div>
       <h1>Chess Strategy Trainer</h1>
       ${(DIRECT_LICHESS ? !signedIn() : !results.length) ? `<p>Train your strategy beyond tactics puzzles: gauge the imbalances, evaluate the position, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
