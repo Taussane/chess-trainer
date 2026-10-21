@@ -5,12 +5,12 @@
 import pathlib, sys
 root = pathlib.Path(__file__).resolve().parent.parent
 app = (root / 'app' / 'index.html').read_text(encoding='utf-8')
-icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%99%9E%3C/text%3E%3C/svg%3E"
+icon = "icons/icon.svg"   # the white king of the board, on the yellow accent (icons/: the app icons, the same)
 page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
         '<meta name="theme-color" content="#12161B">\n'
         '<meta name="description" content="Chess strategy training on positions from master games and your own Lichess and Chess.com games.">\n'
-        f'<link rel="icon" href="{icon}">\n'
+        f'<link rel="icon" type="image/svg+xml" href="{icon}">\n'
         '<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">\n'
         '<link rel="manifest" href="manifest.webmanifest">\n'
         '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">\n'
