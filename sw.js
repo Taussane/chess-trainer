@@ -1,7 +1,7 @@
 // The installed app's helper (registered by the page on the website only): network first, so you always
 // get the latest version when online; the last copy of each page and file is kept for when you're offline.
 // Calls to the account server, Lichess and Chess.com are never cached.
-const CACHE = 'cst-v4';
+const CACHE = 'cst-v5';
 self.addEventListener('install', e=>self.skipWaiting());
 self.addEventListener('activate', e=>e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', e=>{
