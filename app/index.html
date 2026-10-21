@@ -5548,7 +5548,7 @@ function renderSettings(){
       : setTab==='arrows' ? SET_ARROWS.map(([k, label])=>row(label, slider('setAr-' + k, 0, 359, settings.arrows[k] ?? baseHue(k), hueTrack(k)), `var(--${k})`)).join('')
       : `<div class="set-seg" role="radiogroup" aria-label="Move notation">${notes.map(([k, name, eg])=>`<button class="set-opt${settings.notation===k ? ' on' : ''}" data-n="${k}" role="radio" aria-checked="${settings.notation===k}"${k==='local' && !local ? ' disabled' : ''}><b>${name}</b><small>${eg}</small></button>`).join('')}</div>`}
       </section>
-      <button class="btn secondary set-reset" id="setReset">Reset to defaults</button>
+      <button class="btn secondary set-reset" id="setReset">Reset ${setTab==='board' ? 'board' : setTab==='arrows' ? 'arrows' : 'notation'}</button>
     </div>`;
   renderSettingsPreview();
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; settingsRebuild = true; render(); };
@@ -5561,7 +5561,12 @@ function renderSettings(){
   on('setLastHue', 'oninput', e=>{ settings.lastHue = +e.target.value; live(); });
   for(const [k] of SET_ARROWS) on('setAr-' + k, 'oninput', e=>{ settings.arrows = { ...settings.arrows, [k]: +e.target.value }; live(); });
   document.querySelectorAll('.set-opt').forEach(b=>b.onclick = ()=>{ settings.notation = b.dataset.n; saveSettings(); rebuild(); });
-  document.getElementById('setReset').onclick = ()=>{ settings = { ...SET_DEFAULT, arrows:{} }; applySettings(); saveSettings(); rebuild(); };
+  // Reset: only the section shown (Board, Arrows or Notation)
+  document.getElementById('setReset').onclick = ()=>{
+    if(setTab==='board') Object.assign(settings, { coords: SET_DEFAULT.coords, boardHue: SET_DEFAULT.boardHue, lastHue: SET_DEFAULT.lastHue });
+    else if(setTab==='arrows') settings.arrows = {};
+    else settings.notation = SET_DEFAULT.notation;
+    applySettings(); saveSettings(); rebuild(); };
 }
 function renderScreen(){
   syncPos();
