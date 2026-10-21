@@ -3518,7 +3518,9 @@ function drawMarks(svg, marks){
   // A dashed outline around a block of squares (a: a back corner, b: the opposite front corner):
   // the back and the two sides only, running up to the front edge, so two areas facing each other
   // read as one outline.
-  const zoneSvg = t=>{ const p = squareCenter(t.a), q = squareCenter(t.b), dir = Math.sign(q.y - p.y) || 1;
+  // (dir: towards the zone's open front, the board's middle; a one-rank zone takes it from its side: up the board for White)
+  const frontOf = c=>Math.sign(squareCenter(c==='b' ? 'a1' : 'a8').y - squareCenter(c==='b' ? 'a8' : 'a1').y);
+  const zoneSvg = t=>{ const p = squareCenter(t.a), q = squareCenter(t.b), dir = Math.sign(q.y - p.y) || frontOf(t.c);
     if(t.full){ const x = Math.min(p.x, q.x) - 28, y = Math.min(p.y, q.y) - 28, w = Math.abs(p.x - q.x) + 56, h = Math.abs(p.y - q.y) + 56;
       return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="none" stroke="${t.color || MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7"${t.op!=null ? ` opacity="${t.op}"` : ''} filter="url(#mkShadow)"/>`; }
     const xl = Math.min(p.x, q.x) - 27, xr = Math.max(p.x, q.x) + 27, yb = p.y - dir*27, yf = q.y + dir*30;
