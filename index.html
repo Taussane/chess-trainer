@@ -5446,8 +5446,10 @@ function render(){
   const from = shownScreen;
   renderScreen();
   shownScreen = screen;
-  if(from && from!==screen && (from==='home' || screen==='home')){
-    const app = document.getElementById('app'), cls = screen==='home' ? 'page-back' : 'page-fwd';
+  // pages slide: in from the right going deeper (home → a page, profile → settings), from the left coming back
+  const settingsStep = (from==='settings' && onProfile()) || (screen==='settings' && ['account', 'progress', 'mygames'].includes(from));
+  if(from && from!==screen && (from==='home' || screen==='home' || settingsStep)){
+    const app = document.getElementById('app'), cls = screen==='home' || from==='settings' ? 'page-back' : 'page-fwd';
     app.classList.remove('page-fwd', 'page-back'); void app.offsetWidth; app.classList.add(cls);
     app.addEventListener('animationend', function done(e){ if(e.target===app){ app.classList.remove(cls); app.removeEventListener('animationend', done); } });
   }
