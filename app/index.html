@@ -3937,25 +3937,17 @@ function renderSupport(){
     </div>
     <div class="pf-scroll sup-page">
       <section class="pf-card sup-card">
-        <p class="sup-lead">Chess Strategy Trainer is free, and stays free.</p>
+        <p class="sup-lead">Free, and staying free.</p>
         <ul class="sup-list">
-          <li>No ads, no paywall, no premium tier.</li>
+          <li>No ads, no paywall.</li>
           <li>Your data is never sold.</li>
-          <li>The code is open source (AGPL).</li>
+          <li>Open source.</li>
         </ul>
-        <p>It's made by one person, on their own time. Donations help with:</p>
-        <ul class="sup-list">
-          <li>the account server and its storage, as more players join;</li>
-          <li>more master positions, and better ones from your own games;</li>
-          <li>new exercises and languages.</li>
-        </ul>
-      </section>
-      <section class="pf-card sup-card">
-        <p>Any amount helps, once or monthly. Donations go through Ko-fi: card or PayPal, no account needed. Ko-fi takes no fee on one-time donations; only the payment processor's applies.</p>
+        <p>Made by one person. Donations help pay for the server and new features.</p>
         ${KOFI_URL ? `<a class="btn sup-btn" href="${KOFI_URL}" target="_blank" rel="noopener">Buy me a knight on Ko-fi</a>` : `<button class="btn sup-btn" disabled>Ko-fi: coming soon</button>`}
-        <p class="sup-note">Donations are personal gifts: they aren't tax-deductible and don't unlock anything. Everyone gets the same app.</p>
+        <p class="sup-note">Once or monthly, by card or PayPal. A gift: it doesn't unlock anything.</p>
       </section>
-      <p class="sup-thanks">Not in a position to give? Sharing the trainer with a chess friend helps just as much. Thank you!</p>
+      <p class="sup-thanks">Can't give? Share it with a chess friend. Thank you!</p>
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
 }
@@ -3996,7 +3988,7 @@ function renderAccount(){
       ${prog.html}
       ${positionsSection()}
       ${DIRECT_LICHESS ? accountSection() : gamesFileSection()}
-      <p class="ac-foot"><button class="link-plain" id="supportBtn">Support</button> · ${installLink()}${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
+      <p class="ac-foot"><button class="link-plain install-link" id="supportBtn">Support</button> · ${installLink()}${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; render(); };
@@ -5815,18 +5807,14 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Notation": "Notation",
 "Coordinates": "Coordonnées",
 "Board hue": "Teinte", "Support": "Soutenir",
-"Chess Strategy Trainer is free, and stays free.": "Entraîneur de stratégie aux échecs est gratuit, et le restera.",
-"No ads, no paywall, no premium tier.": "Pas de pub, pas de contenu payant, pas d'abonnement premium.",
+"Free, and staying free.": "Gratuit, et ça le restera.",
+"No ads, no paywall.": "Pas de pub, pas de contenu payant.",
 "Your data is never sold.": "Vos données ne sont jamais vendues.",
-"The code is open source (AGPL).": "Le code est libre (AGPL).",
-"It's made by one person, on their own time. Donations help with:": "Il est fait par une seule personne, sur son temps libre. Les dons aident à financer :",
-"the account server and its storage, as more players join;": "le serveur des comptes et son stockage, à mesure que des joueurs arrivent ;",
-"more master positions, and better ones from your own games;": "plus de positions de maîtres, et de meilleures tirées de vos parties ;",
-"new exercises and languages.": "de nouveaux exercices et de nouvelles langues.",
-"Any amount helps, once or monthly. Donations go through Ko-fi: card or PayPal, no account needed. Ko-fi takes no fee on one-time donations; only the payment processor's applies.": "Tout montant aide, une fois ou chaque mois. Les dons passent par Ko-fi : carte ou PayPal, sans compte. Ko-fi ne prend aucun frais sur les dons ponctuels ; seuls ceux du service de paiement s'appliquent.",
-"Buy me a knight on Ko-fi": "Offrez-moi un cavalier sur Ko-fi", "Ko-fi: coming soon": "Ko-fi : bientôt disponible",
-"Donations are personal gifts: they aren't tax-deductible and don't unlock anything. Everyone gets the same app.": "Les dons sont des cadeaux personnels : ils ne sont pas déductibles des impôts et ne débloquent rien. Tout le monde a la même application.",
-"Not in a position to give? Sharing the trainer with a chess friend helps just as much. Thank you!": "Pas en mesure de donner ? Faire connaître l'entraîneur à un ami joueur aide tout autant. Merci !", "Install the app": "Installer l'application", "In Safari, tap Share, then Add to Home Screen.": "Dans Safari, touchez Partager, puis Sur l'écran d'accueil.", "Saturation": "Saturation", "Lightness": "Luminosité",
+"Open source.": "Code libre.",
+"Made by one person. Donations help pay for the server and new features.": "Fait par une seule personne. Les dons aident à payer le serveur et les nouveautés.",
+"Buy me a knight on Ko-fi": "Offrez-moi un cavalier", "Ko-fi: coming soon": "Ko-fi : bientôt disponible",
+"Once or monthly, by card or PayPal. A gift: it doesn't unlock anything.": "Une fois ou chaque mois, par carte ou PayPal. Un cadeau : ça ne débloque rien.",
+"Can't give? Share it with a chess friend. Thank you!": "Pas en mesure de donner ? Partagez-le avec un ami joueur. Merci !",
 "Last move": "Dernier coup",
 "Move notation": "Notation des coups",
 "International": "Internationale",
