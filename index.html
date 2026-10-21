@@ -161,6 +161,7 @@
   .sup-list{margin:-2px 0 0; padding-left:20px; font-size:0.92rem; line-height:1.55;}
   .sup-btn{align-self:center; min-width:60%; text-align:center; justify-content:center;}
   .sup-note{color:var(--text-mute); font-size:0.84rem !important;}
+  .sup-thanks .sup-share{color:var(--accent); text-decoration-color:var(--accent);}
   .sup-thanks{margin:4px 2px 0; text-align:center; color:var(--text-mute); font-size:0.88rem; line-height:1.5;}
   .title-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
@@ -3962,9 +3963,25 @@ function renderSupport(){
         ${KOFI_URL ? `<a class="btn sup-btn" href="${KOFI_URL}" target="_blank" rel="noopener">Buy me a knight on Ko-fi</a>` : `<button class="btn sup-btn" disabled>Ko-fi: coming soon</button>`}
         <p class="sup-note">Once or monthly, by card or PayPal. A gift: it doesn't unlock anything.</p>
       </section>
-      <p class="sup-thanks">Can't give? Share it with a chess friend. Thank you!</p>
+      <p class="sup-thanks">Can't give?<br><button class="link-plain sup-share" id="supShare">Share it with a chess friend</button> · <button class="link-plain sup-share" id="supCopy">${supCopied ? 'Link copied ✓' : 'Copy link'}</button><br>Thank you!</p>
     </div>`;
-  document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
+  document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; supCopied = false; render(); };
+  document.getElementById('supShare').onclick = shareApp;
+  document.getElementById('supCopy').onclick = copyAppLink;
+}
+// Sharing the app: the device's own share sheet (apps, messages, copy) where there is one, else the link copied.
+const APP_URL = 'https://taussane.github.io/chess-trainer/';
+let supCopied = false;
+async function shareApp(){
+  const data = { title: tr('Chess Strategy Trainer'), text: tr('Free chess strategy training on master games and your own. No ads.'), url: APP_URL };
+  if(navigator.share){ try{ await navigator.share(data); }catch(e){} return; }   // (closing the sheet is not an error worth showing)
+  copyAppLink();
+}
+async function copyAppLink(){
+  try{ await navigator.clipboard.writeText(APP_URL); }
+  catch(e){ const t = document.createElement('textarea'); t.value = APP_URL; document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); }catch(err){} t.remove(); }
+  supCopied = true; if(screen==='support') render();
+  setTimeout(()=>{ supCopied = false; if(screen==='support') render(); }, 2500);
 }
 // The test positions (the app's own checks) are offered to its author only: Taussane on Lichess.
 const isOwner = ()=>/^taussane$/i.test(lichessName() || '');
@@ -5831,7 +5848,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Buy me a knight on Ko-fi": "Offrez-moi un cavalier",
 "Ko-fi: coming soon": "Ko-fi : bientôt disponible",
 "Once or monthly, by card or PayPal. A gift: it doesn't unlock anything.": "Une fois ou chaque mois, par carte ou PayPal. Un cadeau : ça ne débloque rien.",
-"Can't give? Share it with a chess friend. Thank you!": "Pas en mesure de donner ? Partagez-le avec un ami joueur. Merci !",
 "Last move": "Dernier coup",
 "Move notation": "Notation des coups",
 "International": "Internationale",
@@ -5989,7 +6005,13 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Saturation": "Saturation",
 "Lightness": "Luminosité",
 "Install the app": "Installer l'application",
-"In Safari, tap Share, then Add to Home Screen.": "Dans Safari, touchez Partager, puis Sur l'écran d'accueil."
+"In Safari, tap Share, then Add to Home Screen.": "Dans Safari, touchez Partager, puis Sur l'écran d'accueil.",
+"Can't give?": "Pas en mesure de donner ?",
+"Share it with a chess friend": "Partagez-le avec un ami joueur",
+"Copy link": "Copier le lien",
+"Link copied ✓": "Lien copié ✓",
+"Thank you!": "Merci !",
+"Free chess strategy training on master games and your own. No ads.": "Entraînement gratuit à la stratégie aux échecs, sur des parties de maîtres et les vôtres. Sans pub."
 }/*END I18N_FR*/));
 const I18N_FR_RE = [
   [/^(\d+)\. White to play$/, '$1. Aux Blancs de jouer'],
