@@ -137,6 +137,12 @@
   .title-chip{margin-left:auto; flex:none; display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font:inherit; font-size:0.86rem; font-weight:600; cursor:pointer; white-space:nowrap;}
   .ac-foot .install-link, .ac-foot .install-link:visited{color:var(--accent); text-decoration-color:var(--accent);}
   .install-help{margin:-4px 0 0; font-size:0.84rem; color:var(--text-mute); text-align:center;}
+  .sup-card p{margin:0; font-size:0.92rem; line-height:1.55;}
+  .sup-lead{font-family:var(--font-display); font-size:1.1rem !important; font-weight:600;}
+  .sup-list{margin:-2px 0 0; padding-left:20px; font-size:0.92rem; line-height:1.55;}
+  .sup-btn{align-self:center; min-width:60%; text-align:center; justify-content:center;}
+  .sup-note{color:var(--text-mute); font-size:0.84rem !important;}
+  .sup-thanks{margin:4px 2px 0; text-align:center; color:var(--text-mute); font-size:0.88rem; line-height:1.5;}
   .title-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
   .test-item{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px 12px; display:flex; flex-direction:column; gap:6px;}
@@ -3917,6 +3923,42 @@ function accountSection(){
           ? `</div><div class="mg-confirm"><span>Delete your account, progress and games for good?</span><button class="btn small danger" id="pfDeleteYes">Delete</button><button class="btn small ghost" id="pfDeleteNo">Keep</button></div>`
           : `<button class="link-btn quiet pf-delete" id="pfDelete">Delete my account</button></div>`}`);
 }
+// ================= Support (donations) =================
+// The page behind the profile's Support link: why the app is free, what donations help with, then Ko-fi
+// (card or PayPal, no account needed; Ko-fi takes no fee on donations).
+const KOFI_URL = '';   // the Ko-fi page, e.g. 'https://ko-fi.com/yourname' (empty: the button says it's coming soon)
+function renderSupport(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="title-row">
+      <button class="icon-btn back" id="homeBtn" aria-label="Back to profile">${BACK_ARROW}</button>
+      <h1>Support</h1>
+      <span class="title-spacer" aria-hidden="true"></span>
+    </div>
+    <div class="pf-scroll sup-page">
+      <section class="pf-card sup-card">
+        <p class="sup-lead">Chess Strategy Trainer is free, and stays free.</p>
+        <ul class="sup-list">
+          <li>No ads, no paywall, no premium tier.</li>
+          <li>Your data is never sold.</li>
+          <li>The code is open source (AGPL).</li>
+        </ul>
+        <p>It's made by one person, on their own time. Donations help with:</p>
+        <ul class="sup-list">
+          <li>the account server and its storage, as more players join;</li>
+          <li>more master positions, and better ones from your own games;</li>
+          <li>new exercises and languages.</li>
+        </ul>
+      </section>
+      <section class="pf-card sup-card">
+        <p>Any amount helps, once or monthly. Donations go through Ko-fi: card or PayPal, no account needed. Ko-fi takes no fee on donations; only the payment processor's applies.</p>
+        ${KOFI_URL ? `<a class="btn sup-btn" href="${KOFI_URL}" target="_blank" rel="noopener">Support on Ko-fi</a>` : `<button class="btn sup-btn" disabled>Ko-fi: coming soon</button>`}
+        <p class="sup-note">Donations are personal gifts: they aren't tax-deductible and don't unlock anything. Everyone gets the same app.</p>
+      </section>
+      <p class="sup-thanks">Not in a position to give? Sharing the trainer with a chess friend helps just as much. Thank you!</p>
+    </div>`;
+  document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
+}
 // The test positions (the app's own checks) are offered to its author only: Taussane on Lichess.
 const isOwner = ()=>/^taussane$/i.test(lichessName() || '');
 // Installing the website as an app: Chrome and Edge hand us their install prompt (beforeinstallprompt),
@@ -3954,13 +3996,14 @@ function renderAccount(){
       ${prog.html}
       ${positionsSection()}
       ${DIRECT_LICHESS ? accountSection() : gamesFileSection()}
-      <p class="ac-foot">${installLink()}${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
+      <p class="ac-foot"><button class="link-plain" id="supportBtn">Support</button> · ${installLink()}${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; render(); };
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('testsBtn', ()=>{ screen = 'tests'; render(); });
   on('installBtn', installApp);
+  on('supportBtn', ()=>{ screen = 'support'; render(); });
   on('settingsBtn', ()=>{ screen = 'settings'; settingsRebuild = true; render(); });
   on('lichessLogin', ()=>lichessLogin()); on('googleLogin', ()=>googleLogin());
   on('pfLogout', logout);
@@ -5461,9 +5504,9 @@ function render(){
   renderScreen();
   shownScreen = screen;
   // pages slide: in from the right going deeper (home → a page, profile → settings), from the left coming back
-  const settingsStep = (from==='settings' && onProfile()) || (screen==='settings' && ['account', 'progress', 'mygames'].includes(from));
+  const sub = x=>x==='settings' || x==='support', settingsStep = (sub(from) && onProfile()) || (sub(screen) && ['account', 'progress', 'mygames'].includes(from));
   if(from && from!==screen && (from==='home' || screen==='home' || settingsStep)){
-    const app = document.getElementById('app'), cls = screen==='home' || from==='settings' ? 'page-back' : 'page-fwd';
+    const app = document.getElementById('app'), cls = screen==='home' || sub(from) ? 'page-back' : 'page-fwd';
     app.classList.remove('page-fwd', 'page-back'); void app.offsetWidth; app.classList.add(cls);
     app.addEventListener('animationend', function done(e){ if(e.target===app){ app.classList.remove(cls); app.removeEventListener('animationend', done); } });
   }
@@ -5771,7 +5814,19 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Arrows": "Flèches",
 "Notation": "Notation",
 "Coordinates": "Coordonnées",
-"Board hue": "Teinte", "Install the app": "Installer l'application", "In Safari, tap Share, then Add to Home Screen.": "Dans Safari, touchez Partager, puis Sur l'écran d'accueil.", "Saturation": "Saturation", "Lightness": "Luminosité",
+"Board hue": "Teinte", "Support": "Soutenir",
+"Chess Strategy Trainer is free, and stays free.": "Entraîneur de stratégie aux échecs est gratuit, et le restera.",
+"No ads, no paywall, no premium tier.": "Pas de pub, pas de contenu payant, pas d'abonnement premium.",
+"Your data is never sold.": "Vos données ne sont jamais vendues.",
+"The code is open source (AGPL).": "Le code est libre (AGPL).",
+"It's made by one person, on their own time. Donations help with:": "Il est fait par une seule personne, sur son temps libre. Les dons aident à financer :",
+"the account server and its storage, as more players join;": "le serveur des comptes et son stockage, à mesure que des joueurs arrivent ;",
+"more master positions, and better ones from your own games;": "plus de positions de maîtres, et de meilleures tirées de vos parties ;",
+"new exercises and languages.": "de nouveaux exercices et de nouvelles langues.",
+"Any amount helps, once or monthly. Donations go through Ko-fi: card or PayPal, no account needed. Ko-fi takes no fee on donations; only the payment processor's applies.": "Tout montant aide, une fois ou chaque mois. Les dons passent par Ko-fi : carte ou PayPal, sans compte. Ko-fi ne prend aucun frais sur les dons ; seuls ceux du service de paiement s'appliquent.",
+"Support on Ko-fi": "Soutenir sur Ko-fi", "Ko-fi: coming soon": "Ko-fi : bientôt disponible",
+"Donations are personal gifts: they aren't tax-deductible and don't unlock anything. Everyone gets the same app.": "Les dons sont des cadeaux personnels : ils ne sont pas déductibles des impôts et ne débloquent rien. Tout le monde a la même application.",
+"Not in a position to give? Sharing the trainer with a chess friend helps just as much. Thank you!": "Pas en mesure de donner ? Faire connaître l'entraîneur à un ami joueur aide tout autant. Merci !", "Install the app": "Installer l'application", "In Safari, tap Share, then Add to Home Screen.": "Dans Safari, touchez Partager, puis Sur l'écran d'accueil.", "Saturation": "Saturation", "Lightness": "Luminosité",
 "Last move": "Dernier coup",
 "Move notation": "Notation des coups",
 "International": "Internationale",
@@ -6062,6 +6117,7 @@ function renderScreen(){
   else if(onProfile()) renderAccount();
   else if(screen==='tests') renderTests();
   else if(screen==='settings') renderSettings();
+  else if(screen==='support') renderSupport();
   else if(screen==='analysis') renderAnalysis();
   else if(screen==='imbalances') renderImbalances();
   else if(screen==='candidates') renderCandidates();
