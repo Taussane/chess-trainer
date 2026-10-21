@@ -152,7 +152,8 @@
   a.link-btn{text-decoration:none;}
   .link-btn.quiet{color:var(--text-mute); font-weight:500;}
   .title-spacer{width:36px; flex:none;}
-  .title-link{margin-left:auto; flex:none;}
+  .title-chip{margin-left:auto; flex:none; display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font:inherit; font-size:0.86rem; font-weight:600; cursor:pointer; white-space:nowrap;}
+  .title-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
   .test-item{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px 12px; display:flex; flex-direction:column; gap:6px;}
   .test-name{font-weight:600;}
@@ -3941,7 +3942,7 @@ function renderAccount(){
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to exercises">${BACK_ARROW}</button>
       <h1>Profile</h1>
-      <button class="btn small secondary title-link" id="settingsBtn">Settings</button>
+      <button class="title-chip" id="settingsBtn">Settings</button>
     </div>
     <div class="pf-scroll">
       <section class="pf-card pf-id">
@@ -5473,7 +5474,7 @@ function render(){
 const SETTINGS_LS = 'cst.settings';
 const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#279C47', pick2:'#D25450', pick3:'#4E7EE2', system:'#D9B33A', 'cyan-arrow':'#00CEEB', top3:'#CBA0FF' };
 const SET_ARROWS = [['pick1', '1st'], ['pick2', '2nd'], ['pick3', '3rd'], ['system', '4th'], ['cyan-arrow', '5th'], ['top3', '6th']];
-const SET_DEFAULT = { coords:false, boardHue:0, lastHue:null, arrows:{}, notation:'intl', lang:null, at:0, v:2 };   // lang null: the device's (French when it's French, else English)
+const SET_DEFAULT = { coords:false, boardHue:0, boardSat:100, boardLum:0, lastHue:null, arrows:{}, notation:'intl', lang:null, at:0, v:2 };   // lang null: the device's (French when it's French, else English)
 const SET_VERSION = 2;   // 2: hues in OKLCH (earlier saved hues, in HSL, are dropped)
 const setClean = x=>x && x.v===SET_VERSION ? x : { ...(x || {}), lastHue:null, arrows:{}, v:SET_VERSION };
 let settings = (()=>{ try{ return { ...SET_DEFAULT, ...setClean(JSON.parse(localStorage.getItem(SETTINGS_LS) || 'null')) }; }catch(e){ return { ...SET_DEFAULT }; } })();
@@ -5504,7 +5505,9 @@ const hueCss = (k, h, a)=>{ const [L, C] = ARROW_FAMILY[k] || hexOklch(SET_BASE[
 function applySettings(){
   const st = document.documentElement.style;
   const set = (k, css)=>css ? st.setProperty('--' + k, css) : st.removeProperty('--' + k);   // default: the stylesheet's own colour
-  for(const k of ['board-light', 'board-dark']) set(k, settings.boardHue ? hueCss(k, hexOklch(SET_BASE[k])[2] + settings.boardHue) : null);
+  // the board: hue turned, colourfulness scaled (boardSat %), lightness moved (boardLum, in OKLCH points), both squares alike
+  const boardSet = settings.boardHue || (settings.boardSat ?? 100)!==100 || (settings.boardLum || 0);
+  for(const k of ['board-light', 'board-dark']){ const [L, C, h] = hexOklch(SET_BASE[k]); set(k, boardSet ? oklchCss(Math.min(.98, Math.max(.15, L + (settings.boardLum || 0) / 100)), C * (settings.boardSat ?? 100) / 100, h + settings.boardHue) : null); }
   set('square-hl', settings.lastHue!=null ? hueCss('square-hl', settings.lastHue, .45) : null);
   for(const [k] of SET_ARROWS){ const h = settings.arrows[k]; set(k, h!=null ? hueCss(k, h) : null); }
 }
@@ -5765,7 +5768,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Arrows": "Flèches",
 "Notation": "Notation",
 "Coordinates": "Coordonnées",
-"Board hue": "Teinte",
+"Board hue": "Teinte", "Saturation": "Saturation", "Lightness": "Luminosité",
 "Last move": "Dernier coup",
 "Move notation": "Notation des coups",
 "International": "Internationale",
@@ -5974,8 +5977,9 @@ setLanguage();
 // The settings page: a sample position on top (coordinates, last move, the six arrows, their moves
 // as chips in your notation), then the controls; every change shows at once and is saved.
 const SET_SAMPLE = { fen:'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3', last:{ from:'f1', to:'b5' },
-  moves:[['b1','c3','Nc3'], ['d2','d4','d4'], ['e1','g1','O-O'], ['a7','a6','a6'], ['f8','c5','Bc5'], ['g8','f6','Nf6']] };   // 1st to 3rd: White's, 4th to 6th: Black's
+  moves:[['a7','a6','a6'], ['f8','c5','Bc5'], ['g8','f6','Nf6'], ['b1','c3','Nc3'], ['d2','d4','d4'], ['e1','g1','O-O']] };   // in reading order: Black's (top) 1st to 3rd, then White's 4th to 6th, left to right
 let settingsPreview = false;
+function refreshBoardTracks(){ const a = document.getElementById('setBoardSat'), b = document.getElementById('setBoardLum'); if(a) a.style.background = boardTrack('sat'); if(b) b.style.background = boardTrack('lum'); }
 function renderSettingsPreview(){
   const b = document.getElementById('setBoard'), svg = document.getElementById('setArrows'); if(!b) return;
   settingsPreview = true;
@@ -5986,6 +5990,11 @@ function renderSettingsPreview(){
   const chip = ([, , san], i)=>`<span class="move-chip" style="background:var(--${SET_ARROWS[i][0]})">${fmtSan(san)}</span>`;
   document.getElementById('setChips').innerHTML = `<span class="set-side">${SET_SAMPLE.moves.slice(0, 3).map(chip).join('')}</span><span class="set-side">${SET_SAMPLE.moves.slice(3).map((m, i)=>chip(m, i + 3)).join('')}</span>`;
 }
+// The board's saturation and lightness tracks: the dark square's colour at the current hue, from grey to
+// vivid, and from darker to lighter.
+const boardTrack = kind=>{ const [L, C, h] = hexOklch(SET_BASE['board-dark']), hh = h + settings.boardHue, sat = (settings.boardSat ?? 100) / 100, lum = (settings.boardLum || 0) / 100;
+  const stops = kind==='sat' ? [0, .5, 1, 1.5, 2, 2.5].map(x=>oklchCss(L + lum, C * x, hh)) : [-25, -12, 0, 12, 25].map(d=>oklchCss(Math.max(.15, Math.min(.98, L + d / 100)), C * sat, hh));
+  return `linear-gradient(to right, ${stops.join(', ')})`; };
 const hueTrack = k=>`linear-gradient(to right, ${[0, 45, 90, 135, 180, 225, 270, 315, 360].map(h=>hueCss(k, h)).join(', ')})`;
 // The page redraws often in the background (your account, games, the engine arriving): the settings
 // page is then left as it is (a slider being dragged keeps going); only its own changes rebuild it.
@@ -6002,7 +6011,7 @@ function renderSettings(){
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to profile">${BACK_ARROW}</button>
       <h1>Settings</h1>
-      <button class="btn small secondary title-link" id="setLang" data-no-i18n aria-label="Language: ${LANG==='fr' ? 'French' : 'English'}">${LANG.toUpperCase()}</button>
+      <button class="title-chip" id="setLang" data-no-i18n aria-label="Language: ${LANG==='fr' ? 'French' : 'English'}">${LANG.toUpperCase()}</button>
     </div>
     <div class="pf-scroll set-page">
       <div class="set-preview" aria-label="Preview">
@@ -6013,6 +6022,8 @@ function renderSettings(){
       <section class="pf-card">${setTab==='board' ? `
         ${row('Coordinates', `<button class="set-toggle${settings.coords ? ' on' : ''}" id="setCoords" role="switch" aria-checked="${settings.coords}" aria-label="Coordinates"><span></span></button>`)}
         ${row('Board hue', slider('setBoardHue', -180, 180, settings.boardHue, `linear-gradient(to right, ${[-180, -135, -90, -45, 0, 45, 90, 135, 180].map(d=>hueCss('board-dark', baseHue('board-dark') + d)).join(', ')})`), 'var(--board-dark)')}
+        ${row('Saturation', slider('setBoardSat', 0, 250, settings.boardSat ?? 100, boardTrack('sat')), 'var(--board-dark)')}
+        ${row('Lightness', slider('setBoardLum', -25, 25, settings.boardLum || 0, boardTrack('lum')), 'var(--board-light)')}
         ${row('Last move', slider('setLastHue', 0, 359, settings.lastHue ?? baseHue('square-hl'), hueTrack('square-hl')), 'var(--square-hl)')}`
       : setTab==='arrows' ? SET_ARROWS.map(([k, label])=>row(label, slider('setAr-' + k, 0, 359, settings.arrows[k] ?? baseHue(k), hueTrack(k)), `var(--${k})`)).join('')
       : `<div class="set-seg" role="radiogroup" aria-label="Move notation">${notes.map(([k, name, eg])=>`<button class="set-opt${settings.notation===k ? ' on' : ''}" data-n="${k}" role="radio" aria-checked="${settings.notation===k}"${k==='local' && !local ? ' disabled' : ''}><b>${name}</b><small>${eg}</small></button>`).join('')}</div>`}
@@ -6027,13 +6038,15 @@ function renderSettings(){
   const on = (id, ev, f)=>{ const el = document.getElementById(id); if(el) el[ev] = f; };
   document.querySelectorAll('.set-page .seg-btn').forEach(b=>b.onclick = ()=>{ setTab = b.dataset.tab; rebuild(); });
   on('setCoords', 'onclick', ()=>{ settings.coords = !settings.coords; saveSettings(); rebuild(); });
-  on('setBoardHue', 'oninput', e=>{ settings.boardHue = +e.target.value; live(); });
+  on('setBoardHue', 'oninput', e=>{ settings.boardHue = +e.target.value; live(); refreshBoardTracks(); });
+  on('setBoardSat', 'oninput', e=>{ settings.boardSat = +e.target.value; live(); refreshBoardTracks(); });
+  on('setBoardLum', 'oninput', e=>{ settings.boardLum = +e.target.value; live(); refreshBoardTracks(); });
   on('setLastHue', 'oninput', e=>{ settings.lastHue = +e.target.value; live(); });
   for(const [k] of SET_ARROWS) on('setAr-' + k, 'oninput', e=>{ settings.arrows = { ...settings.arrows, [k]: +e.target.value }; live(); });
   document.querySelectorAll('.set-opt').forEach(b=>b.onclick = ()=>{ settings.notation = b.dataset.n; saveSettings(); rebuild(); });
   // Reset: only the section shown (Board, Arrows or Notation)
   document.getElementById('setReset').onclick = ()=>{
-    if(setTab==='board') Object.assign(settings, { coords: SET_DEFAULT.coords, boardHue: SET_DEFAULT.boardHue, lastHue: SET_DEFAULT.lastHue });
+    if(setTab==='board') Object.assign(settings, { coords: SET_DEFAULT.coords, boardHue: SET_DEFAULT.boardHue, boardSat: SET_DEFAULT.boardSat, boardLum: SET_DEFAULT.boardLum, lastHue: SET_DEFAULT.lastHue });
     else if(setTab==='arrows') settings.arrows = {};
     else settings.notation = SET_DEFAULT.notation;
     applySettings(); saveSettings(); rebuild(); };
