@@ -267,7 +267,7 @@
   .set-page .board-outer{max-width:360px;}
   .fig{font-size:1.25em; line-height:0; vertical-align:-0.06em;}
   .set-chips{display:flex; flex-wrap:wrap; gap:6px; justify-content:center;}
-  .set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:34px;}
+  .set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:30px;}
   .set-label{display:flex; align-items:center; gap:8px; font-size:0.9rem; min-width:0;}
   .set-sw{width:14px; height:14px; border-radius:4px; flex:none; border:1px solid var(--border);}
   .set-hue{-webkit-appearance:none; appearance:none; width:46%; max-width:200px; height:10px; border-radius:999px; outline:none; flex:none; cursor:pointer;}
@@ -5454,7 +5454,7 @@ function render(){
 const SETTINGS_LS = 'cst.settings';
 const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#67B373', pick2:'#DF7F78', pick3:'#769DE9', system:'#BA9B39', 'cyan-arrow':'#10B1CA', top3:'#AF8BDB' };
 // (the six arrows share one lightness and colour strength, OKLCH 70% / 0.12: only their hue differs)
-const SET_ARROWS = [['pick1', 'Your 1st move'], ['pick2', 'Your 2nd move'], ['pick3', 'Your 3rd move'], ['system', 'Best move, 4th move'], ['cyan-arrow', '2nd best'], ['top3', '3rd best']];
+const SET_ARROWS = [['pick1', '1st'], ['pick2', '2nd'], ['pick3', '3rd'], ['system', '4th'], ['cyan-arrow', '5th'], ['top3', '6th']];
 const SET_DEFAULT = { coords:false, boardHue:0, lastHue:null, arrows:{}, notation:'intl', at:0, v:2 };
 const SET_VERSION = 2;   // 2: hues in OKLCH (earlier saved hues, in HSL, are dropped)
 const setClean = x=>x && x.v===SET_VERSION ? x : { ...(x || {}), lastHue:null, arrows:{}, v:SET_VERSION };
@@ -5531,7 +5531,7 @@ function renderSettingsPreview(){
 const hueTrack = k=>`linear-gradient(to right, ${[0, 45, 90, 135, 180, 225, 270, 315, 360].map(h=>hueCss(k, h)).join(', ')})`;
 // The page redraws often in the background (your account, games, the engine arriving): the settings
 // page is then left as it is (a slider being dragged keeps going); only its own changes rebuild it.
-let settingsRebuild = true;
+let settingsRebuild = true, setTab = 'board';   // the section shown under the preview: 'board' | 'arrows' | 'notation'
 function renderSettings(){
   if(!settingsRebuild && document.querySelector('#app .set-page')){ renderSettingsPreview(); return; }
   settingsRebuild = false;
@@ -5551,19 +5551,13 @@ function renderSettings(){
         <div class="board-outer"><div class="board" id="setBoard"></div><svg class="arrows" id="setArrows" viewBox="0 0 480 480"></svg></div>
         <div class="set-chips" id="setChips"></div>
       </section>
-      <h2 class="pf-h">Board</h2>
-      <section class="pf-card">
+      <div class="seg" role="tablist" aria-label="Settings">${[['board', 'Board'], ['arrows', 'Arrows'], ['notation', 'Notation']].map(([k, v])=>`<button class="seg-btn${setTab===k ? ' active' : ''}" role="tab" aria-selected="${setTab===k}" data-tab="${k}">${v}</button>`).join('')}</div>
+      <section class="pf-card">${setTab==='board' ? `
         ${row('Coordinates', `<button class="set-toggle${settings.coords ? ' on' : ''}" id="setCoords" role="switch" aria-checked="${settings.coords}" aria-label="Coordinates"><span></span></button>`)}
         ${row('Board hue', slider('setBoardHue', -180, 180, settings.boardHue, `linear-gradient(to right, ${[-180, -135, -90, -45, 0, 45, 90, 135, 180].map(d=>hueCss('board-dark', baseHue('board-dark') + d)).join(', ')})`), 'var(--board-dark)')}
-        ${row('Last move', slider('setLastHue', 0, 359, settings.lastHue ?? baseHue('square-hl'), hueTrack('square-hl')), 'var(--square-hl)')}
-      </section>
-      <h2 class="pf-h">Arrows</h2>
-      <section class="pf-card">
-        ${SET_ARROWS.map(([k, label])=>row(label, slider('setAr-' + k, 0, 359, settings.arrows[k] ?? baseHue(k), hueTrack(k)), `var(--${k})`)).join('')}
-      </section>
-      <h2 class="pf-h">Move notation</h2>
-      <section class="pf-card">
-        <div class="set-seg" role="radiogroup" aria-label="Move notation">${notes.map(([k, name, eg])=>`<button class="set-opt${settings.notation===k ? ' on' : ''}" data-n="${k}" role="radio" aria-checked="${settings.notation===k}"${k==='local' && !local ? ' disabled' : ''}><b>${name}</b><small>${eg}</small></button>`).join('')}</div>
+        ${row('Last move', slider('setLastHue', 0, 359, settings.lastHue ?? baseHue('square-hl'), hueTrack('square-hl')), 'var(--square-hl)')}`
+      : setTab==='arrows' ? SET_ARROWS.map(([k, label])=>row(label, slider('setAr-' + k, 0, 359, settings.arrows[k] ?? baseHue(k), hueTrack(k)), `var(--${k})`)).join('')
+      : `<div class="set-seg" role="radiogroup" aria-label="Move notation">${notes.map(([k, name, eg])=>`<button class="set-opt${settings.notation===k ? ' on' : ''}" data-n="${k}" role="radio" aria-checked="${settings.notation===k}"${k==='local' && !local ? ' disabled' : ''}><b>${name}</b><small>${eg}</small></button>`).join('')}</div>`}
       </section>
       <button class="btn secondary set-reset" id="setReset">Reset to defaults</button>
     </div>`;
@@ -5571,10 +5565,12 @@ function renderSettings(){
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; settingsRebuild = true; render(); };
   const rebuild = ()=>{ settingsRebuild = true; render(); };
   const live = ()=>{ applySettings(); renderSettingsPreview(); saveSettings(); document.querySelectorAll('.set-sw').forEach(x=>x.style.background = x.style.background); };
-  document.getElementById('setCoords').onclick = ()=>{ settings.coords = !settings.coords; saveSettings(); rebuild(); };
-  document.getElementById('setBoardHue').oninput = e=>{ settings.boardHue = +e.target.value; live(); };
-  document.getElementById('setLastHue').oninput = e=>{ settings.lastHue = +e.target.value; live(); };
-  for(const [k] of SET_ARROWS) document.getElementById('setAr-' + k).oninput = e=>{ settings.arrows = { ...settings.arrows, [k]: +e.target.value }; live(); };
+  const on = (id, ev, f)=>{ const el = document.getElementById(id); if(el) el[ev] = f; };
+  document.querySelectorAll('.set-page .seg-btn').forEach(b=>b.onclick = ()=>{ setTab = b.dataset.tab; rebuild(); });
+  on('setCoords', 'onclick', ()=>{ settings.coords = !settings.coords; saveSettings(); rebuild(); });
+  on('setBoardHue', 'oninput', e=>{ settings.boardHue = +e.target.value; live(); });
+  on('setLastHue', 'oninput', e=>{ settings.lastHue = +e.target.value; live(); });
+  for(const [k] of SET_ARROWS) on('setAr-' + k, 'oninput', e=>{ settings.arrows = { ...settings.arrows, [k]: +e.target.value }; live(); });
   document.querySelectorAll('.set-opt').forEach(b=>b.onclick = ()=>{ settings.notation = b.dataset.n; saveSettings(); rebuild(); });
   document.getElementById('setReset').onclick = ()=>{ settings = { ...SET_DEFAULT, arrows:{} }; applySettings(); saveSettings(); rebuild(); };
 }
