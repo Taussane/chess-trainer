@@ -7,11 +7,11 @@
     --text:#EDE7DC; --text-mute:#9A9488;
     --board-light:#D8E1E8; --board-dark:#4991BE;
     --accent:#C9A227; --on-accent:#1A1400;
-    --pick1:#3AA655; --pick2:#D64545; --pick3:#4A78D6; --system:#E0B93C; --top3:#B58BE8;
+    --pick1:#279C47; --pick2:#D25450; --pick3:#4E7EE2; --system:#D9B33A; --top3:#CBA0FF;
     --white-fill:#E8E2D4; --black-fill:#2B241C;
     --good:#6FAE7C; --best-green:#3FAE5C; --ok:#A4A95E; --dubious:#E8C547; --mistake:#D9A441; --bad:#C9584F;
     --border:#2E3742;
-    --cyan:rgba(34,211,238,0.35); --square-hl:rgba(155,205,20,0.45); --dest-dot:rgba(120,128,138,0.8); --cyan-arrow:#22D3EE; --masters-dot:#D0B0FF;
+    --cyan:rgba(34,211,238,0.35); --square-hl:rgba(155,205,20,0.45); --dest-dot:rgba(120,128,138,0.8); --cyan-arrow:#00CEEB; --masters-dot:#D0B0FF;
     --best-row:rgba(224,185,60,0.14); --scrim:rgba(0,0,0,.55); --shadow:rgba(0,0,0,.4);
     --piece-w:#F7F3EA; --piece-b:#151515;
     --font-display:"Iowan Old Style","Palatino Linotype",Georgia,serif;
@@ -255,7 +255,10 @@
   .sq.light .coord{color:var(--board-dark);} .sq.dark .coord{color:var(--board-light);}
   .set-page .board-outer{max-width:360px;}
   .fig{font-size:1.25em; line-height:0; vertical-align:-0.06em;}
-  .set-chips{display:flex; flex-wrap:wrap; gap:6px; justify-content:center;}
+  .set-preview{display:flex; flex-direction:column; gap:8px;}
+  .set-chips{display:flex; justify-content:space-between; gap:10px;}
+  .set-side{display:flex; gap:5px;}
+  .set-page .seg-btn{padding:5px 4px;}
   .set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:30px;}
   .set-label{display:flex; align-items:center; gap:8px; font-size:0.9rem; min-width:0;}
   .set-sw{width:14px; height:14px; border-radius:4px; flex:none; border:1px solid var(--border);}
@@ -5441,8 +5444,7 @@ function render(){
 // last move's hue, the six arrows' hues, the move notation. Colours keep their saturation and lightness:
 // only the hue changes, so contrast stays as designed.
 const SETTINGS_LS = 'cst.settings';
-const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#3AA655', pick2:'#D64545', pick3:'#4A78D6', system:'#E0B93C', 'cyan-arrow':'#22D3EE', top3:'#B58BE8' };
-// (each arrow keeps its own lightness and colour strength: green, red, blue, then the lighter yellow, cyan, purple)
+const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#279C47', pick2:'#D25450', pick3:'#4E7EE2', system:'#D9B33A', 'cyan-arrow':'#00CEEB', top3:'#CBA0FF' };
 const SET_ARROWS = [['pick1', '1st'], ['pick2', '2nd'], ['pick3', '3rd'], ['system', '4th'], ['cyan-arrow', '5th'], ['top3', '6th']];
 const SET_DEFAULT = { coords:false, boardHue:0, lastHue:null, arrows:{}, notation:'intl', at:0, v:2 };
 const SET_VERSION = 2;   // 2: hues in OKLCH (earlier saved hues, in HSL, are dropped)
@@ -5468,7 +5470,10 @@ function hexOklch(hex){
 }
 const oklchCss = (L, C, h, a)=>`oklch(${(L * 100).toFixed(1)}% ${C.toFixed(4)} ${(((h % 360) + 360) % 360).toFixed(1)}${a!=null ? ` / ${a}` : ''})`;
 const baseHue = k=>Math.round(hexOklch(SET_BASE[k])[2]);
-const hueCss = (k, h, a)=>{ const [L, C] = hexOklch(SET_BASE[k]); return oklchCss(L, C, h, a); };   // SET_BASE[k]'s colour at hue h
+// The arrows come in two families sharing lightness and colour strength (OKLCH): 1st to 3rd stronger,
+// 4th to 6th lighter (their default hues: green, red, blue; yellow, cyan, purple).
+const ARROW_FAMILY = { pick1:[0.61, 0.16], pick2:[0.61, 0.16], pick3:[0.61, 0.16], system:[0.78, 0.14], 'cyan-arrow':[0.78, 0.14], top3:[0.78, 0.14] };
+const hueCss = (k, h, a)=>{ const [L, C] = ARROW_FAMILY[k] || hexOklch(SET_BASE[k]); return oklchCss(L, C, h, a); };   // SET_BASE[k]'s colour (or its family's) at hue h
 function applySettings(){
   const st = document.documentElement.style;
   const set = (k, css)=>css ? st.setProperty('--' + k, css) : st.removeProperty('--' + k);   // default: the stylesheet's own colour
@@ -5494,7 +5499,7 @@ applySettings();
 // Move notation: international letters (K Q R B N), your language's letters, or figurines.
 const LOCAL_PIECES = { fr:'RDTFC', de:'KDTLS', es:'RDTAC', it:'RDTAC', pt:'RDTBC', nl:'KDTLP', pl:'KHWGS', sv:'KDTLS', da:'KDTLS', no:'KDTLS', nb:'KDTLS', cs:'KDVSJ', hu:'KVBFH', ro:'RDTNC', tr:'ŞVKFA', fi:'KDTLR' };
 const localPieces = (()=>{ try{ const l = (navigator.language || 'en').slice(0, 2).toLowerCase(); return LOCAL_PIECES[l] || null; }catch(e){ return null; } })();
-const FIGURINES = { K:'♔', Q:'♕', R:'♖', B:'♗', N:'♘' };
+const FIGURINES = { K:'♚', Q:'♛', R:'♜', B:'♝', N:'♞' };   // the filled glyphs
 // (html: figurines in a span, drawn a little larger than the letters)
 function fmtSan(san, html = true){
   if(!san || settings.notation==='intl') return san;
@@ -5506,7 +5511,7 @@ function fmtSan(san, html = true){
 // The settings page: a sample position on top (coordinates, last move, the six arrows, their moves
 // as chips in your notation), then the controls; every change shows at once and is saved.
 const SET_SAMPLE = { fen:'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3', last:{ from:'f1', to:'b5' },
-  moves:[['a7','a6','a6'], ['g8','f6','Nf6'], ['d7','d6','d6'], ['f8','c5','Bc5'], ['g8','e7','Nge7'], ['f7','f5','f5']] };
+  moves:[['b1','c3','Nc3'], ['d2','d4','d4'], ['e1','g1','O-O'], ['a7','a6','a6'], ['g8','f6','Nf6'], ['f8','c5','Bc5']] };   // 1st to 3rd: White's, 4th to 6th: Black's
 let settingsPreview = false;
 function renderSettingsPreview(){
   const b = document.getElementById('setBoard'), svg = document.getElementById('setArrows'); if(!b) return;
@@ -5515,7 +5520,8 @@ function renderSettingsPreview(){
     renderBoard(b, boardObjFromGame(new Chess(SET_SAMPLE.fen)), SET_SAMPLE.last, { noCheck: true });
     drawArrows(svg, SET_SAMPLE.moves.map(([from, to], i)=>({ from, to, color: `var(--${SET_ARROWS[i][0]})` })), 'setar');
   } finally { settingsPreview = false; }
-  document.getElementById('setChips').innerHTML = SET_SAMPLE.moves.map(([, , san], i)=>`<span class="move-chip" style="background:var(--${SET_ARROWS[i][0]})">${fmtSan(san)}</span>`).join('');
+  const chip = ([, , san], i)=>`<span class="move-chip" style="background:var(--${SET_ARROWS[i][0]})">${fmtSan(san)}</span>`;
+  document.getElementById('setChips').innerHTML = `<span class="set-side">${SET_SAMPLE.moves.slice(0, 3).map(chip).join('')}</span><span class="set-side">${SET_SAMPLE.moves.slice(3).map((m, i)=>chip(m, i + 3)).join('')}</span>`;
 }
 const hueTrack = k=>`linear-gradient(to right, ${[0, 45, 90, 135, 180, 225, 270, 315, 360].map(h=>hueCss(k, h)).join(', ')})`;
 // The page redraws often in the background (your account, games, the engine arriving): the settings
@@ -5528,7 +5534,7 @@ function renderSettings(){
   const row = (label, ctl, sw)=>`<div class="set-row"><span class="set-label">${sw ? `<span class="set-sw" style="background:${sw}"></span>` : ''}${label}</span>${ctl}</div>`;
   const slider = (id, min, max, val, track)=>`<input type="range" class="set-hue" id="${id}" min="${min}" max="${max}" value="${val}" style="background:${track}">`;
   const local = localPieces ? localPieces.split('').join(' ') : null;
-  const notes = [['intl', 'International', 'K Q R B N'], ['local', 'Local', local || 'same as international'], ['symbols', 'Symbols', '♔ ♕ ♖ ♗ ♘']];
+  const notes = [['intl', 'International', 'K Q R B N'], ['local', 'Local', local || 'same as international'], ['symbols', 'Symbols', '♚\uFE0E ♛\uFE0E ♜\uFE0E ♝\uFE0E ♞\uFE0E']];
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to profile">${BACK_ARROW}</button>
@@ -5536,10 +5542,10 @@ function renderSettings(){
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
     <div class="pf-scroll set-page">
-      <section class="pf-card set-preview" aria-label="Preview">
+      <div class="set-preview" aria-label="Preview">
         <div class="board-outer"><div class="board" id="setBoard"></div><svg class="arrows" id="setArrows" viewBox="0 0 480 480"></svg></div>
         <div class="set-chips" id="setChips"></div>
-      </section>
+      </div>
       <div class="seg" role="tablist" aria-label="Settings">${[['board', 'Board'], ['arrows', 'Arrows'], ['notation', 'Notation']].map(([k, v])=>`<button class="seg-btn${setTab===k ? ' active' : ''}" role="tab" aria-selected="${setTab===k}" data-tab="${k}">${v}</button>`).join('')}</div>
       <section class="pf-card">${setTab==='board' ? `
         ${row('Coordinates', `<button class="set-toggle${settings.coords ? ' on' : ''}" id="setCoords" role="switch" aria-checked="${settings.coords}" aria-label="Coordinates"><span></span></button>`)}
