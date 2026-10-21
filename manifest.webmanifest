@@ -1,0 +1,17 @@
+{
+  "name": "Chess Strategy Trainer",
+  "short_name": "Chess Strategy",
+  "description": "Chess strategy training on positions from master games and your own Lichess and Chess.com games.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12161B",
+  "theme_color": "#12161B",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

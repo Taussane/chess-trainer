@@ -11,6 +11,16 @@ page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="theme-color" content="#12161B">\n'
         '<meta name="description" content="Chess strategy training on positions from master games and your own Lichess and Chess.com games.">\n'
         f'<link rel="icon" href="{icon}">\n'
+        '<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">\n'
+        '<link rel="manifest" href="manifest.webmanifest">\n'
+        '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">\n'
+        '<meta name="apple-mobile-web-app-capable" content="yes">\n'
+        '<meta name="mobile-web-app-capable" content="yes">\n'
+        '<meta name="apple-mobile-web-app-status-bar-style" content="black">\n'
+        '<meta name="apple-mobile-web-app-title" content="Chess Strategy">\n'
+        # the installed app's offline helper (sw.js), on the website only (not the local test server, not inside Claude)
+        "<script>if('serviceWorker' in navigator && /github\\.io$/.test(location.hostname)) addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>\n"
+
         '<!-- Built from app/index.html by scripts/build-site.py: edit the app, not this file. -->\n'
         '</head>\n<body>\n' + app + '\n</body>\n</html>\n')
 out = root / 'index.html'
