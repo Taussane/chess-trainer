@@ -5454,8 +5454,10 @@ function render(){
 const SETTINGS_LS = 'cst.settings';
 const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#3AA655', pick2:'#D64545', pick3:'#4A78D6', system:'#E0B93C', 'cyan-arrow':'#22D3EE', top3:'#B58BE8' };
 const SET_ARROWS = [['pick1', 'Your 1st move'], ['pick2', 'Your 2nd move'], ['pick3', 'Your 3rd move'], ['system', 'Best move, 4th move'], ['cyan-arrow', '2nd best'], ['top3', '3rd best']];
-const SET_DEFAULT = { coords:false, boardHue:0, lastHue:null, arrows:{}, notation:'intl', at:0 };
-let settings = (()=>{ try{ return { ...SET_DEFAULT, ...JSON.parse(localStorage.getItem(SETTINGS_LS) || '{}') }; }catch(e){ return { ...SET_DEFAULT }; } })();
+const SET_DEFAULT = { coords:false, boardHue:0, lastHue:null, arrows:{}, notation:'intl', at:0, v:2 };
+const SET_VERSION = 2;   // 2: hues in OKLCH (earlier saved hues, in HSL, are dropped)
+const setClean = x=>x && x.v===SET_VERSION ? x : { ...(x || {}), lastHue:null, arrows:{}, v:SET_VERSION };
+let settings = (()=>{ try{ return { ...SET_DEFAULT, ...setClean(JSON.parse(localStorage.getItem(SETTINGS_LS) || 'null')) }; }catch(e){ return { ...SET_DEFAULT }; } })();
 function hexHsl(hex){
   const n = parseInt(hex.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
@@ -5465,13 +5467,24 @@ function hexHsl(hex){
   return [Math.round((h * 60 + 360) % 360), Math.round(s * 100), Math.round(l * 100)];
 }
 const hslCss = (h, s, l, a)=>`hsl(${Math.round(((h % 360) + 360) % 360)} ${s}% ${l}%${a!=null ? ` / ${a}` : ''})`;
-const baseHue = k=>hexHsl(SET_BASE[k])[0];
+// Hues are turned in OKLCH (perceptual lightness and colourfulness kept): a pale light square keeps the
+// same visible tint, and an arrow the same brightness, whatever the hue.
+function hexOklch(hex){
+  const n = parseInt(hex.slice(1), 16), lin = c=>{ c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const r = lin(n >> 16), g = lin(n >> 8 & 255), b = lin(n & 255);
+  const l = Math.cbrt(0.4122214708*r + 0.5363325363*g + 0.0514459929*b), m = Math.cbrt(0.2119034982*r + 0.6806995451*g + 0.1073969566*b), s = Math.cbrt(0.0883024619*r + 0.2817188376*g + 0.6299787005*b);
+  const L = 0.2104542553*l + 0.7936177850*m - 0.0040720468*s, A = 1.9779984951*l - 2.4285922050*m + 0.4505937099*s, B = 0.0259040371*l + 0.7827717662*m - 0.8086757660*s;
+  return [L, Math.hypot(A, B), (Math.atan2(B, A) * 180 / Math.PI + 360) % 360];
+}
+const oklchCss = (L, C, h, a)=>`oklch(${(L * 100).toFixed(1)}% ${C.toFixed(4)} ${(((h % 360) + 360) % 360).toFixed(1)}${a!=null ? ` / ${a}` : ''})`;
+const baseHue = k=>Math.round(hexOklch(SET_BASE[k])[2]);
+const hueCss = (k, h, a)=>{ const [L, C] = hexOklch(SET_BASE[k]); return oklchCss(L, C, h, a); };   // SET_BASE[k]'s colour at hue h
 function applySettings(){
   const st = document.documentElement.style;
   const set = (k, css)=>css ? st.setProperty('--' + k, css) : st.removeProperty('--' + k);   // default: the stylesheet's own colour
-  for(const k of ['board-light', 'board-dark']){ const [h, s, l] = hexHsl(SET_BASE[k]); set(k, settings.boardHue ? hslCss(h + settings.boardHue, s, l) : null); }
-  { const [h, s, l] = hexHsl(SET_BASE['square-hl']); set('square-hl', settings.lastHue!=null ? hslCss(settings.lastHue, s, l, .45) : null); }
-  for(const [k] of SET_ARROWS){ const [, s, l] = hexHsl(SET_BASE[k]), h = settings.arrows[k]; set(k, h!=null ? hslCss(h, s, l) : null); }
+  for(const k of ['board-light', 'board-dark']) set(k, settings.boardHue ? hueCss(k, hexOklch(SET_BASE[k])[2] + settings.boardHue) : null);
+  set('square-hl', settings.lastHue!=null ? hueCss('square-hl', settings.lastHue, .45) : null);
+  for(const [k] of SET_ARROWS){ const h = settings.arrows[k]; set(k, h!=null ? hueCss(k, h) : null); }
 }
 let settingsSyncT = null;
 function saveSettings(){
@@ -5483,7 +5496,7 @@ function saveSettings(){
 // From your account (loadProfileMeta): the newer of the two wins.
 function mergeSettings(s){
   if(!s || !((s.at || 0) > (settings.at || 0))) return;
-  settings = { ...SET_DEFAULT, ...s, arrows: { ...(s.arrows || {}) } };
+  s = setClean(s); settings = { ...SET_DEFAULT, ...s, arrows: { ...(s.arrows || {}) } };
   try{ localStorage.setItem(SETTINGS_LS, JSON.stringify(settings)); }catch(e){}
   applySettings(); render();
 }
@@ -5514,12 +5527,11 @@ function renderSettingsPreview(){
   } finally { settingsPreview = false; }
   document.getElementById('setChips').innerHTML = SET_SAMPLE.moves.map(([, , san], i)=>`<span class="move-chip" style="background:var(--${SET_ARROWS[i][0]})">${fmtSan(san)}</span>`).join('');
 }
-const hueTrack = (s, l)=>`linear-gradient(to right, ${[0, 60, 120, 180, 240, 300, 360].map(h=>hslCss(h, s, l)).join(', ')})`;
+const hueTrack = k=>`linear-gradient(to right, ${[0, 45, 90, 135, 180, 225, 270, 315, 360].map(h=>hueCss(k, h)).join(', ')})`;
 function renderSettings(){
   const app = document.getElementById('app');
   const row = (label, ctl, sw)=>`<div class="set-row"><span class="set-label">${sw ? `<span class="set-sw" style="background:${sw}"></span>` : ''}${label}</span>${ctl}</div>`;
   const slider = (id, min, max, val, track)=>`<input type="range" class="set-hue" id="${id}" min="${min}" max="${max}" value="${val}" style="background:${track}">`;
-  const [, bs, bl] = hexHsl(SET_BASE['board-dark']), [, ls, ll] = hexHsl(SET_BASE['square-hl']);
   const local = localPieces ? localPieces.split('').join(' ') : null;
   const notes = [['intl', 'International', 'K Q R B N'], ['local', 'Local', local || 'same as international'], ['symbols', 'Symbols', '♔ ♕ ♖ ♗ ♘']];
   app.innerHTML = `
@@ -5536,12 +5548,12 @@ function renderSettings(){
       <h2 class="pf-h">Board</h2>
       <section class="pf-card">
         ${row('Coordinates', `<button class="set-toggle${settings.coords ? ' on' : ''}" id="setCoords" role="switch" aria-checked="${settings.coords}" aria-label="Coordinates"><span></span></button>`)}
-        ${row('Board hue', slider('setBoardHue', -180, 180, settings.boardHue, `linear-gradient(to right, ${[-180, -120, -60, 0, 60, 120, 180].map(d=>hslCss(baseHue('board-dark') + d, bs, bl)).join(', ')})`), 'var(--board-dark)')}
-        ${row('Last move', slider('setLastHue', 0, 359, settings.lastHue ?? baseHue('square-hl'), hueTrack(ls, ll)), 'var(--square-hl)')}
+        ${row('Board hue', slider('setBoardHue', -180, 180, settings.boardHue, `linear-gradient(to right, ${[-180, -135, -90, -45, 0, 45, 90, 135, 180].map(d=>hueCss('board-dark', baseHue('board-dark') + d)).join(', ')})`), 'var(--board-dark)')}
+        ${row('Last move', slider('setLastHue', 0, 359, settings.lastHue ?? baseHue('square-hl'), hueTrack('square-hl')), 'var(--square-hl)')}
       </section>
       <h2 class="pf-h">Arrows</h2>
       <section class="pf-card">
-        ${SET_ARROWS.map(([k, label])=>{ const [, s, l] = hexHsl(SET_BASE[k]); return row(label, slider('setAr-' + k, 0, 359, settings.arrows[k] ?? baseHue(k), hueTrack(s, l)), `var(--${k})`); }).join('')}
+        ${SET_ARROWS.map(([k, label])=>row(label, slider('setAr-' + k, 0, 359, settings.arrows[k] ?? baseHue(k), hueTrack(k)), `var(--${k})`)).join('')}
       </section>
       <h2 class="pf-h">Move notation</h2>
       <section class="pf-card">
