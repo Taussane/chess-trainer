@@ -365,6 +365,7 @@
   .asp-item.pickable{cursor:pointer; border-radius:6px; margin:-3px -6px; padding:3px 6px; -webkit-tap-highlight-color:transparent;}
   .plan-row.asp-item.pickable{margin:-4px -6px; padding:4px 6px;}
   .asp-item.pickable .asp-name:not(:has(.asp-qual)), .asp-item.pickable .asp-main{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
+  .asp-item.pickable.sel .asp-name, .asp-item.pickable.sel .asp-main{text-decoration:none;}   /* the one shown: no underline */
   .asp-item.sel{background:var(--panel-2); box-shadow:inset 0 0 0 1px var(--accent);}
   .asp-item.sel .asp-name, .plan-row.asp-item.sel .plan-sit{text-decoration:none;}
   .asp-pick{font-family:inherit; cursor:pointer;}
@@ -1319,7 +1320,7 @@ const ASP_HELP = {
   kingEg: {
     name:'King activity',
     count:["With the queens off, the king is no longer in much danger: it becomes a fighting piece.", "Centre: 3 on d4–e5, 2 on the ring around them (c3–f6), 1 on the next ring (b2–g7), 0 on the edge.", "Target: each enemy pawn it attacks +1 (an arrow).", "Escort: each of its own passed pawns beside it (diagonals included) +1.",
-           "Dashed yellow: the three central rings, the inner one brightest.", "A forced mate counts as ++ for the side that mates."],
+           "Dashed: the three central rings, each side's half in its colour, the inner one brightest.", "A forced mate counts as ++ for the side that mates."],
     plans:["More active king: use it, go for the enemy pawns or escort your passed pawn.", "Passive king: centralize it before anything else."],
   },
   threats: {
@@ -3336,12 +3337,13 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
     for(const c of ['w','b']){ const k = pieces(c).find(sq=>m[sq].t==='k'), v = Math.round(tot[c] * 10) / 10; if(k && v) out.nums.push({ sq: k, n: 'Total ' + fmtPts(v), c }); }
   }
   if(key==='king' && isEndgame(fen)){
-    // King activity (kingActivityPoints): the centre's three rings (dashed, in yellow: the inner one
-    // strongest); each king's Centre points in its corner; an arrow from it to each enemy pawn it attacks
+    // King activity (kingActivityPoints): the centre's three rings (dashed, each side's half in its colour,
+    // like Space's area: 30%, 60%, 90% from the outer one in); each king's Centre points in its corner; an arrow from it to each enemy pawn it attacks
     // (Target: the arrow alone); each passed pawn of its own beside it ringed and labelled Escort; on
     // each king, its side's total (Total +0 too).
     const ka = kingActivityPoints(fen);
-    out.zones.push({ a:'b2', b:'g7', full: true, color: OUTLINE.y, op: .5 }, { a:'c3', b:'f6', full: true, color: OUTLINE.y, op: .75 }, { a:'d4', b:'e5', full: true, color: OUTLINE.y, op: 1 });
+    for(const [w, b, op] of [[['b2', 'g4'], ['b7', 'g5'], .3], [['c3', 'f4'], ['c6', 'f5'], .6], [['d4', 'e4'], ['d5', 'e5'], .9]])   // each ring: White's half, Black's half
+      out.zones.push({ a: w[0], b: w[1], c: 'w', op }, { a: b[0], b: b[1], c: 'b', op });
     for(const c of ['w','b']){
       const sd = ka.sides[c]; if(!sd) continue;
       if(sd.centre) out.nums.push({ sq: sd.k, n: '+' + sd.centre, c });   // its Centre points, in its corner
@@ -3516,11 +3518,12 @@ function drawMarks(svg, marks){
   // A dashed outline around a block of squares (a: a back corner, b: the opposite front corner):
   // the back and the two sides only, running up to the front edge, so two areas facing each other
   // read as one outline.
-  const zones = (marks.zones||[]).map(t=>{ const p = squareCenter(t.a), q = squareCenter(t.b), dir = Math.sign(q.y - p.y) || 1;
+  const zoneSvg = t=>{ const p = squareCenter(t.a), q = squareCenter(t.b), dir = Math.sign(q.y - p.y) || 1;
     if(t.full){ const x = Math.min(p.x, q.x) - 28, y = Math.min(p.y, q.y) - 28, w = Math.abs(p.x - q.x) + 56, h = Math.abs(p.y - q.y) + 56;
       return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="none" stroke="${t.color || MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7"${t.op!=null ? ` opacity="${t.op}"` : ''} filter="url(#mkShadow)"/>`; }
     const xl = Math.min(p.x, q.x) - 27, xr = Math.max(p.x, q.x) + 27, yb = p.y - dir*27, yf = q.y + dir*30;
-    return `<path d="M${xl},${yf} L${xl},${yb} L${xr},${yb} L${xr},${yf}" fill="none" stroke="${MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7" stroke-linejoin="round" filter="url(#mkShadow)"/>`; }).join('');
+    return `<path d="M${xl},${yf} L${xl},${yb} L${xr},${yb} L${xr},${yf}" fill="none" stroke="${MARK[t.c].ink}" stroke-width="3.5" stroke-dasharray="10 7" stroke-linejoin="round"${t.op!=null ? ` opacity="${t.op}"` : ''} filter="url(#mkShadow)"/>`; };
+  const zs = marks.zones || [], zones = zs.filter(t=>t.op==null).map(zoneSvg).join('') + `</g><g>` + zs.filter(t=>t.op!=null).map(zoneSvg).join('');   // (own opacity: not dimmed further)
   // a red outline on a square (a safe check for the other side)
   const boxes = (marks.boxes||[]).map(t=>{ const r = R(t.sq); return `<rect x="${r.x+3}" y="${r.y+3}" width="54" height="54" rx="4" fill="none" stroke="#D9473F" stroke-width="4" filter="url(#mkShadow)"/>`; }).join('');
   svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}<g opacity=".8">${zones}</g>${boxes}<g opacity=".8">${circles}</g>${labels}${arrows}${nums}`;   // areas, rings, labels, arrows, then the score badges on top
@@ -5809,7 +5812,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Centre: 3 on d4–e5, 2 on the ring around them (c3–f6), 1 on the next ring (b2–g7), 0 on the edge.": "Centre : 3 sur d4–e5, 2 sur l'anneau autour (c3–f6), 1 sur l'anneau suivant (b2–g7), 0 au bord.",
 "Checks, captures and threats first, for both sides.": "Échecs, prises et menaces d'abord, pour les deux camps.",
 "Connected pawn (beside or protected by its own): 2, 4, 6 on its 5th, 6th, 7th.": "Pion lié (à côté d'un des siens ou protégé par lui) : 2, 4, 6 sur sa 5e, 6e, 7e rangée.",
-"Dashed yellow: the three central rings, the inner one brightest.": "Pointillés jaunes : les trois anneaux du centre, le plus intérieur le plus vif.",
+"Dashed: the three central rings, each side's half in its colour, the inner one brightest.": "En pointillé : les trois anneaux du centre, la moitié de chaque camp à sa couleur, le plus intérieur le plus vif.",
 "Down material: avoid trades, look for activity or an attack.": "Matériel en moins : évitez les échanges, cherchez l'activité ou l'attaque.",
 "Each enemy piece or pawn touching the zone, or able to give check, −1. Outlined in yellow: the square it would check from.": "Chaque pièce ou pion adverse qui touche la zone, ou qui peut donner échec, −1. Cerclée de jaune : la case d'où elle donnerait échec.",
 "Each enemy piece or pawn you can win now +1: Hanging (unguarded, or the exchange wins) or Losing (attacked by a cheaper piece).": "Chaque pièce ou pion adverse que vous pouvez gagner maintenant +1 : En prise (non défendu, ou l'échange gagne) ou Menacée (attaquée par une pièce de moindre valeur).",
