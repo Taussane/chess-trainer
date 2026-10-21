@@ -256,7 +256,7 @@
   .set-page .board-outer{max-width:360px;}
   .fig{font-size:1.25em; line-height:0; vertical-align:-0.06em;}
   .set-preview{display:flex; flex-direction:column; gap:8px;}
-  .set-chips{display:flex; justify-content:space-between; gap:10px;}
+  .set-chips{display:flex; justify-content:center; gap:16px;}
   .set-side{display:flex; gap:5px;}
   .set-page .seg-btn{padding:5px 4px;}
   .set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:30px;}
@@ -5511,7 +5511,7 @@ function fmtSan(san, html = true){
 // The settings page: a sample position on top (coordinates, last move, the six arrows, their moves
 // as chips in your notation), then the controls; every change shows at once and is saved.
 const SET_SAMPLE = { fen:'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3', last:{ from:'f1', to:'b5' },
-  moves:[['b1','c3','Nc3'], ['d2','d4','d4'], ['e1','g1','O-O'], ['a7','a6','a6'], ['g8','f6','Nf6'], ['f8','c5','Bc5']] };   // 1st to 3rd: White's, 4th to 6th: Black's
+  moves:[['b1','c3','Nc3'], ['d2','d4','d4'], ['e1','g1','O-O'], ['a7','a6','a6'], ['f8','c5','Bc5'], ['g8','f6','Nf6']] };   // 1st to 3rd: White's, 4th to 6th: Black's
 let settingsPreview = false;
 function renderSettingsPreview(){
   const b = document.getElementById('setBoard'), svg = document.getElementById('setArrows'); if(!b) return;
