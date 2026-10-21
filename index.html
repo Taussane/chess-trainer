@@ -144,6 +144,7 @@
   a.link-btn{text-decoration:none;}
   .link-btn.quiet{color:var(--text-mute); font-weight:500;}
   .title-spacer{width:36px; flex:none;}
+  .title-link{margin-left:auto; flex:none;}
   .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
   .test-item{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px 12px; display:flex; flex-direction:column; gap:6px;}
   .test-name{font-weight:600;}
@@ -2334,13 +2335,13 @@ function fmtGameDate(d){   // "1981-05-12" | "1981-05" | "1981"
   const [y, m, dd] = String(d || '').split('-').map(Number);
   if(!y) return '';
   if(!m) return String(y);
-  return new Date(y, m-1, dd || 1).toLocaleDateString(undefined, dd ? { day:'numeric', month:'short', year:'numeric' } : { month:'short', year:'numeric' });
+  return new Date(y, m-1, dd || 1).toLocaleDateString(dateLoc(), dd ? { day:'numeric', month:'short', year:'numeric' } : { month:'short', year:'numeric' });
 }
 function posSource(p){
   if(p.gameId){
     const g = currentGame(p.gameId), site = g ? siteOf(g) : 'lichess';
     const name = site==='chesscom' ? 'Chess.com' : site==='file' ? 'PGN file' : 'Lichess';
-    const when = g && g.playedAt ? new Date(g.playedAt).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' }) : g && /^\d{4}$/.test(g.year || '') ? g.year : '';
+    const when = g && g.playedAt ? new Date(g.playedAt).toLocaleDateString(dateLoc(), { day:'numeric', month:'short', year:'numeric' }) : g && /^\d{4}$/.test(g.year || '') ? g.year : '';
     return [name, g && SPEED_NAMES[g.speed], when].filter(Boolean).join(' · ');
   }
   if(p.game){ const gi = GAME_INFO[p.game] || {}; return ['Masters', gi.event, fmtGameDate(gi.date) || p.year].filter(Boolean).map(escHtml).join(' · '); }
@@ -3841,7 +3842,7 @@ function progressSection(){
   // This week: the last 7 days, today first.
   const days = Array.from({length:7}, (_,i)=>{ const d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-i); return d; });
   const byDay = {}; results.forEach(r=>{ const k = dayKey(r.ts); (byDay[k] = byDay[k] || zeroCounts())[r.a]++; });
-  const dayName = (d,i)=>i===0 ? 'Today' : i===1 ? 'Yesterday' : d.toLocaleDateString(undefined, { weekday:'short', day:'numeric', month:'short' });
+  const dayName = (d,i)=>i===0 ? 'Today' : i===1 ? 'Yesterday' : d.toLocaleDateString(dateLoc(), { weekday:'short', day:'numeric', month:'short' });
   const weekRows = days.map((d,i)=>{ const c = byDay[dayKey(d.getTime())] || zeroCounts(), done = ACTS.every(x=>c[x]>=DAILY_GOAL), any = ACTS.some(x=>c[x]);
     return `<tr class="${any ? '' : 'idle'}"><th scope="row">${dayName(d,i)}</th>${ACTS.map(x=>`<td>${c[x] || '·'}</td>`).join('')}<td class="wk-done">${done ? '✓' : ''}</td></tr>`; }).join('');
   const nReplay = replayable(a).length;   // for the exercise selected below
@@ -3921,13 +3922,13 @@ function accountSection(){
 // The profile: who you are, your progress, your account and games, the positions found; then links.
 function renderAccount(){
   const app = document.getElementById('app'), esc = x=>String(x).replace(/</g,'&lt;');
-  const since = new Date(joinedAt()).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
+  const since = new Date(joinedAt()).toLocaleDateString(dateLoc(), { day:'numeric', month:'short', year:'numeric' });
   const name = displayName(), prog = progressSection();
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to exercises">${BACK_ARROW}</button>
       <h1>Profile</h1>
-      <button class="icon-btn" id="settingsBtn" aria-label="Settings">${GEAR_ICON}</button>
+      <button class="btn small secondary title-link" id="settingsBtn">Settings</button>
     </div>
     <div class="pf-scroll">
       <section class="pf-card pf-id">
@@ -3985,7 +3986,7 @@ function wireChartHover(sr){
     chartHover = { tab: progressTabNow(), i };
     cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.setAttribute('opacity', '.5');
     if(!tip){ tip = document.createElement('div'); tip.className = 'chart-tip'; box.appendChild(tip); }
-    tip.innerHTML = `#${first+i+1} · ${new Date(r.ts).toLocaleDateString(undefined,{month:'short', day:'numeric'})}<br>Accuracy ${r.acc}% · Average ${pct(r.level)}`;
+    tip.innerHTML = `#${first+i+1} · ${new Date(r.ts).toLocaleDateString(dateLoc(),{month:'short', day:'numeric'})}<br>Accuracy ${r.acc}% · Average ${pct(r.level)}`;
     const bx = box.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
     const px = rect.left - bx.left + cx*rect.width/CH.w, py = rect.top - bx.top + chartY(Math.max(r.level, r.acc))*rect.height/CH.h;
     tip.style.left = Math.max(4, Math.min(bx.width - w - 4, px - w/2)) + 'px';
@@ -4018,7 +4019,7 @@ function renderHome(){
     <div class="source-row"><span class="source-label">Positions from</span>
       <div class="seg seg-sm" role="radiogroup" aria-label="Positions from">${Object.entries(SOURCES).map(([k,v])=>{
         const off = k!=='masters' && !myPositions.length;
-        return `<button class="seg-btn${k===source?' active':''}" role="radio" aria-checked="${k===source}" data-src="${k}" ${off ? 'disabled title="No positions from your games yet"' : ''}>${v}</button>`; }).join('')}</div>
+        return `<button class="seg-btn${k===source?' active':''}" role="radio" aria-checked="${k===source}" data-src="${k}" ${off ? 'disabled title="No positions from your games yet"' : ''}>${k==='mine' && LANG==='fr' ? '<span data-no-i18n>Miennes</span>' : v}</button>`; }).join('')}</div>
     </div>
     <div class="cards">
       ${[['imbalances',ACT_GLYPHS.imbalances,'Who has the edge, aspect by aspect?'],
@@ -5457,7 +5458,7 @@ function render(){
 const SETTINGS_LS = 'cst.settings';
 const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#279C47', pick2:'#D25450', pick3:'#4E7EE2', system:'#D9B33A', 'cyan-arrow':'#00CEEB', top3:'#CBA0FF' };
 const SET_ARROWS = [['pick1', '1st'], ['pick2', '2nd'], ['pick3', '3rd'], ['system', '4th'], ['cyan-arrow', '5th'], ['top3', '6th']];
-const SET_DEFAULT = { coords:false, boardHue:0, lastHue:null, arrows:{}, notation:'intl', at:0, v:2 };
+const SET_DEFAULT = { coords:false, boardHue:0, lastHue:null, arrows:{}, notation:'intl', lang:null, at:0, v:2 };   // lang null: the device's (French when it's French, else English)
 const SET_VERSION = 2;   // 2: hues in OKLCH (earlier saved hues, in HSL, are dropped)
 const setClean = x=>x && x.v===SET_VERSION ? x : { ...(x || {}), lastHue:null, arrows:{}, v:SET_VERSION };
 let settings = (()=>{ try{ return { ...SET_DEFAULT, ...setClean(JSON.parse(localStorage.getItem(SETTINGS_LS) || 'null')) }; }catch(e){ return { ...SET_DEFAULT }; } })();
@@ -5504,12 +5505,12 @@ function mergeSettings(s){
   if(!s || !((s.at || 0) > (settings.at || 0))) return;
   s = setClean(s); settings = { ...SET_DEFAULT, ...s, arrows: { ...(s.arrows || {}) } };
   try{ localStorage.setItem(SETTINGS_LS, JSON.stringify(settings)); }catch(e){}
-  applySettings(); settingsRebuild = true; render();
+  applySettings(); setLanguage(); settingsRebuild = true; render();
 }
 applySettings();
 // Move notation: international letters (K Q R B N), your language's letters, or figurines.
 const LOCAL_PIECES = { fr:'RDTFC', de:'KDTLS', es:'RDTAC', it:'RDTAC', pt:'RDTBC', nl:'KDTLP', pl:'KHWGS', sv:'KDTLS', da:'KDTLS', no:'KDTLS', nb:'KDTLS', cs:'KDVSJ', hu:'KVBFH', ro:'RDTNC', tr:'ŞVKFA', fi:'KDTLR' };
-const localPieces = (()=>{ try{ const l = (navigator.language || 'en').slice(0, 2).toLowerCase(); return LOCAL_PIECES[l] || null; }catch(e){ return null; } })();
+let localPieces = null;   // your language's piece letters (the app's language: French R D T F C; English has none of its own)
 const FIGURINES = { K:'♚', Q:'♛', R:'♜', B:'♝', N:'♞' };   // the filled glyphs
 // (html: figurines in a span, drawn a little larger than the letters)
 function fmtSan(san, html = true){
@@ -5519,6 +5520,442 @@ function fmtSan(san, html = true){
   const g = x=>sym ? (html ? `<span class="fig">${map[x]}︎</span>` : map[x] + '︎') : map[x];
   return san.replace(/^[KQRBN]/, x=>g(x)).replace(/=([QRBN])/, (_, x)=>'=' + g(x));
 }
+// ================= Language =================
+const dateLoc = ()=>typeof LANG!=='undefined' && LANG==='fr' ? 'fr-CA' : undefined;   // dates in the app's language
+// The app is written in English; in French, every text shown is swapped as it appears on the page
+// (a watcher on the page: screens, popups, help, board marks alike), from I18N_FR (exact texts) and
+// I18N_FR_RE (texts with numbers or names in them). Anything not listed stays in English. Elements
+// marked data-no-i18n (and their children) are left alone: moves, names.
+var LANG = 'en';   // (var: read by dateLoc before this line runs, at worst)
+const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
+"Chess Strategy Trainer": "Entraîneur de stratégie aux échecs",
+"Back to exercises": "Retour aux exercices",
+"Back to profile": "Retour au profil",
+"How this exercise works": "Comment fonctionne cet exercice",
+"Got it": "Compris",
+"Check": "Vérifier",
+"Next position": "Position suivante",
+"Next": "Suivante",
+"Finish": "Terminer",
+"Open in Lichess": "Voir sur Lichess",
+"Test": "Test",
+"Replay": "Revoir",
+"Routine": "Routine",
+"Settings": "Réglages",
+"Profile": "Profil",
+"Progress": "Progression",
+"Account": "Compte",
+"Guest": "Invité",
+"Log in": "Se connecter",
+"Log out": "Se déconnecter",
+"Privacy": "Confidentialité",
+"Terms": "Conditions",
+"Source code": "Code source",
+"Test positions": "Positions de test",
+"Preview": "Aperçu",
+"Language: English": "Langue : anglais",
+"Language: French": "Langue : français",
+"Today": "Aujourd'hui",
+"Yesterday": "Hier",
+"Average": "Moyenne",
+"Your average": "Votre moyenne",
+"Accuracy": "Précision",
+"Average after each position": "Moyenne après chaque position",
+"Not recorded": "Non comptée",
+"Loading…": "Chargement…",
+"Evaluating…": "Évaluation…",
+"Engine unavailable": "Moteur indisponible",
+"Unavailable": "Indisponible",
+"White": "Blancs",
+"Black": "Noirs",
+"Masters": "Maîtres",
+"My games": "Mes parties",
+"Both": "Les deux",
+"Positions from": "Positions de",
+"Learn from master games and your own mistakes.": "Apprenez des parties de maîtres et de vos propres erreurs.",
+"Train your strategy beyond tactics puzzles: gauge the imbalances, evaluate the position, find good candidates, choose the best.": "Entraînez votre stratégie au-delà des problèmes tactiques : jaugez les déséquilibres, évaluez la position, trouvez de bons candidats, choisissez le meilleur.",
+"Imbalance reading": "Lecture des déséquilibres",
+"Position evaluation": "Évaluation de la position",
+"Candidate moves": "Coups candidats",
+"Move selection": "Choix du coup",
+"Imbalances": "Lecture",
+"Evaluation": "Évaluation",
+"Candidates": "Candidats",
+"Selection": "Choix",
+"Who has the edge, aspect by aspect?": "Qui a l'avantage, aspect par aspect ?",
+"Who's better, and by how much?": "Qui est mieux, et de combien ?",
+"Find the strongest moves.": "Trouvez les meilleurs coups.",
+"Rank four moves, best to worst.": "Classez quatre coups, du meilleur au pire.",
+"Daily routine": "Routine quotidienne",
+"Today's routine": "Routine du jour",
+"Daily routine done": "Routine quotidienne faite",
+"Done ✓": "Fait ✓",
+"Start routine": "Commencer la routine",
+"Continue routine": "Continuer la routine",
+"Keep training": "Continuer l'entraînement",
+"Finding positions…": "Recherche de positions…",
+"Finding positions in your games…": "Recherche de positions dans vos parties…",
+"No positions yet": "Pas encore de positions",
+"All played today": "Toutes jouées aujourd'hui",
+"Gauge each positional imbalance.": "Jaugez chaque déséquilibre positionnel.",
+"Drag the evaluation bar to where you think it sits.": "Placez la barre d'évaluation là où vous pensez qu'elle se situe.",
+"Your evaluation": "Votre évaluation",
+"Static": "Statique",
+"Dynamic": "Dynamique",
+"Possible plans": "Plans possibles",
+"Possible plans for White": "Plans possibles pour les Blancs",
+"Possible plans for Black": "Plans possibles pour les Noirs",
+"Suggest at least one strong move for White.": "Proposez au moins un bon coup pour les Blancs.",
+"Suggest at least one strong move for Black.": "Proposez au moins un bon coup pour les Noirs.",
+"Add up to three moves, but avoid bad ones.": "Ajoutez jusqu'à trois coups, mais évitez les mauvais.",
+"Any last move worth considering?": "Un dernier coup à envisager ?",
+"Check when you're happy with your selection.": "Vérifiez quand votre sélection vous convient.",
+"Your moves": "Vos coups",
+"Top moves": "Meilleurs coups",
+"Order the moves, best first.": "Ordonnez les coups, le meilleur d'abord.",
+"Rank the four moves from best to worst.": "Classez les quatre coups du meilleur au pire.",
+"Choosing four moves to rank…": "Choix de quatre coups à classer…",
+"No moves to rank: the position couldn't be evaluated.": "Aucun coup à classer : la position n'a pas pu être évaluée.",
+"Game move": "Coup joué",
+"Your move": "Votre coup",
+"Best": "Meilleur",
+"Good": "Bon",
+"Ok": "Correct",
+"Dubious": "Douteux",
+"Mistake": "Erreur",
+"Blunder": "Gaffe",
+"One side is so far ahead that Stockfish skips the details: only Material is scored.": "Un camp est si loin devant que Stockfish passe les détails : seul le Matériel est noté.",
+"Space only counts with most pieces on the board.": "L'Espace ne compte qu'avec la plupart des pièces sur l'échiquier.",
+"The engine is unavailable, so analysis is paused.": "Le moteur est indisponible, l'analyse est en pause.",
+"The chess engine stopped working, so positions can't be evaluated. Try reloading the page.": "Le moteur d'échecs s'est arrêté, les positions ne peuvent pas être évaluées. Essayez de recharger la page.",
+"The chess engine couldn't be loaded, so positions can't be evaluated. Try reloading the page.": "Le moteur d'échecs n'a pas pu être chargé, les positions ne peuvent pas être évaluées. Essayez de recharger la page.",
+"Material": "Matériel",
+"Pawns": "Pions",
+"Space": "Espace",
+"Activity": "Activité",
+"King safety": "Sécurité du roi",
+"Other threats": "Menaces",
+"King activity": "Activité du roi",
+"few pieces": "peu de pièces",
+"no queens": "sans dames",
+"King activity (no queens)": "Activité du roi (sans dames)",
+"Space (few pieces)": "Espace (peu de pièces)",
+"Passed": "Passé",
+"Connected": "Lié",
+"Isolated": "Isolé",
+"Doubled": "Doublé",
+"Backward": "Arriéré",
+"Outpost": "Avant-poste",
+"Open": "Ouverte",
+"Half-open": "Semi-ouverte",
+"Advanced": "Avancée",
+"Pinned": "Clouée",
+"Shelter": "Abri",
+"Hanging": "En prise",
+"Losing": "Menacée",
+"Target": "Cible",
+"Escort": "Escorte",
+"Pair": "Paire",
+"Total": "Total",
+"1st": "1er",
+"2nd": "2e",
+"3rd": "3e",
+"4th": "4e",
+"5th": "5e",
+"6th": "6e",
+"7th": "7e",
+"Mate is on": "Mat en vue",
+"Check forcing moves": "Cherchez les coups forcés",
+"Mate threat": "Menace de mat",
+"Defend first": "Défendez d'abord",
+"Up material": "Matériel en plus",
+"Trade pieces": "Échangez les pièces",
+"Down material": "Matériel en moins",
+"Avoid trades, attack": "Évitez les échanges, attaquez",
+"Clearly better": "Nettement mieux",
+"Simplify, stay safe": "Simplifiez, restez prudent",
+"Clearly worse": "Nettement moins bien",
+"Complicate": "Compliquez",
+"More active king": "Roi plus actif",
+"Go for the pawns": "Allez chercher les pions",
+"Passive king": "Roi passif",
+"Centralize it": "Centralisez-le",
+"Weak enemy king": "Roi adverse faible",
+"Open lines to it": "Ouvrez des lignes vers lui",
+"Weak king": "Roi faible",
+"Trade attackers": "Échangez les attaquants",
+"Your threats": "Vos menaces",
+"Forcing moves first": "Coups forcés d'abord",
+"Their threats": "Menaces adverses",
+"Parry them first": "Parez-les d'abord",
+"Passed pawn": "Pion passé",
+"Push it": "Poussez-le",
+"Weak enemy pawns": "Pions adverses faibles",
+"Attack them": "Attaquez-les",
+"Enemy passed pawn": "Pion passé adverse",
+"Blockade it": "Bloquez-le",
+"Weak pawns": "Pions faibles",
+"Keep pieces active": "Gardez les pièces actives",
+"More space": "Plus d'espace",
+"Avoid freeing trades": "Évitez les échanges libérateurs",
+"Less space": "Moins d'espace",
+"Trade to breathe": "Échangez pour respirer",
+"Better pieces": "Meilleures pièces",
+"Keep the initiative": "Gardez l'initiative",
+"Worse pieces": "Pièces moins bonnes",
+"Improve the worst": "Améliorez la pire",
+"Balanced": "Équilibré",
+"Find a pawn break": "Trouvez une rupture de pions",
+"Games and positions": "Parties et positions",
+"Games": "Parties",
+"No positions from your games yet": "Pas encore de positions tirées de vos parties",
+"Delete": "Supprimer",
+"Keep": "Garder",
+"Delete my account": "Supprimer mon compte",
+"Delete your account, progress and games for good?": "Supprimer définitivement votre compte, votre progression et vos parties ?",
+"Disconnect": "Déconnecter",
+"Connect with Chess.com": "Connecter Chess.com",
+"Chess.com username": "Nom d'utilisateur Chess.com",
+"Connect with Lichess": "Connecter Lichess",
+"Log in and connect with Lichess": "Se connecter avec Lichess",
+"Log in with Google": "Se connecter avec Google",
+"Log in to keep your progress, connect to load your games.": "Connectez-vous pour garder votre progression, et reliez un compte pour charger vos parties.",
+"Log in to keep your progress.": "Connectez-vous pour garder votre progression.",
+"Connect to load your games.": "Reliez un compte pour charger vos parties.",
+"Loading your account…": "Chargement de votre compte…",
+"Loading your games…": "Chargement de vos parties…",
+"Logging in with Google…": "Connexion avec Google…",
+"Logging in with Lichess…": "Connexion avec Lichess…",
+"Couldn't reach your account. Your progress is saved on this device and will sync next time.": "Votre compte est injoignable. Votre progression est enregistrée sur cet appareil et se synchronisera la prochaine fois.",
+"Google login cancelled.": "Connexion Google annulée.",
+"Google login didn't go through. Try again.": "La connexion Google n'a pas abouti. Réessayez.",
+"Lichess login cancelled.": "Connexion Lichess annulée.",
+"Lichess login didn't go through. Try again.": "La connexion Lichess n'a pas abouti. Réessayez.",
+"Lichess is busy, try again in a minute": "Lichess est occupé, réessayez dans une minute",
+"your Lichess login expired. Log in again": "votre connexion Lichess a expiré. Reconnectez-vous",
+"Enter your Chess.com username.": "Entrez votre nom d'utilisateur Chess.com.",
+"Remove all your games and their positions?": "Retirer toutes vos parties et leurs positions ?",
+"Remove my games": "Retirer mes parties",
+"Remove": "Retirer",
+"Add these games": "Ajouter ces parties",
+"No games found. Use the .pgn file from step 1, or paste games in PGN format.": "Aucune partie trouvée. Utilisez le fichier .pgn de l'étape 1, ou collez des parties au format PGN.",
+"This file could not be read. Try downloading it again.": "Ce fichier n'a pas pu être lu. Essayez de le télécharger à nouveau.",
+"The account couldn't be deleted. Try again.": "Le compte n'a pas pu être supprimé. Réessayez.",
+"Bullet": "Bullet",
+"Blitz": "Blitz",
+"Rapid": "Rapide",
+"Classical": "Classique",
+"Correspondence": "Correspondance",
+"Board": "Échiquier",
+"Arrows": "Flèches",
+"Notation": "Notation",
+"Coordinates": "Coordonnées",
+"Board hue": "Teinte",
+"Last move": "Dernier coup",
+"Move notation": "Notation des coups",
+"International": "Internationale",
+"Local": "Locale",
+"Symbols": "Symboles",
+"same as international": "comme l'internationale",
+"Reset board": "Réinitialiser l'échiquier",
+"Reset arrows": "Réinitialiser les flèches",
+"Reset notation": "Réinitialiser la notation",
+"White in check": "Blancs en échec",
+"Black in check": "Noirs en échec",
+"En passant (White)": "En passant (Blancs)",
+"En passant (Black)": "En passant (Noirs)",
+"Castling": "Roque",
+"Promotion: knight fork (White)": "Promotion : fourchette de cavalier (Blancs)",
+"Promotion: knight fork (Black)": "Promotion : fourchette de cavalier (Noirs)",
+"Promotion with captures": "Promotion avec prises",
+"Mate in one": "Mat en un",
+"Stalemate trap (game move stalemates)": "Piège du pat (le coup joué fait pat)",
+"Material marks": "Marques Matériel",
+"Pawn marks": "Marques Pions",
+"Space marks": "Marques Espace",
+"Activity marks": "Marques Activité",
+"King safety marks": "Marques Sécurité du roi",
+"Threats marks": "Marques Menaces",
+"King activity marks": "Marques Activité du roi",
+"World Championship match": "Match du championnat du monde",
+"0 of 4": "0 sur 4",
+"1 for each free square behind one of them: empty, not covered by an enemy pawn, no enemy pawn in between. Arrows show the enemy pawns taking squares away.": "1 par case libre derrière l'un d'eux : vide, non contrôlée par un pion adverse, sans pion adverse entre les deux. Les flèches montrent les pions adverses qui enlèvent des cases.",
+"1 for each of your pawns in it.": "1 par pion à vous dans la zone.",
+"1st place counts 50%, 2nd 30%, 3rd 20%.": "La 1re place compte pour 50 %, la 2e pour 30 %, la 3e pour 20 %.",
+": how much winning chance a move gives up compared with it.": " : combien de chances de gain un coup cède par rapport à lui.",
+": the engine's first choice.": " : le premier choix du moteur.",
+": the move played in the game (": " : le coup joué dans la partie (",
+"in your own games: Dubious or worse).": "dans vos parties : Douteux ou pire).",
+"A doubled pawn protected by a pawn isn't weak: an arrow shows its protector.": "Un pion doublé protégé par un pion n'est pas faible : une flèche montre son protecteur.",
+"A forced mate counts as ++ for the side that mates.": "Un mat forcé compte ++ pour le camp qui mate.",
+"A forced mate counts as ++ for the side that mates: #n on the king and the mating piece, its move outlined in red.": "Un mat forcé compte ++ pour le camp qui mate : #n sur le roi et sur la pièce qui mate, son coup cerclé de rouge.",
+"A safer king or more active pieces can make up for some material.": "Un roi plus sûr ou des pièces plus actives peuvent compenser un peu de matériel.",
+"Advanced rook +5: on the 5th rank or beyond, facing enemy pawns.": "Tour avancée +5 : sur la 5e rangée ou au-delà, face à des pions adverses.",
+"Better pieces: keep the initiative, put pressure on weaknesses, act before the other side catches up.": "Meilleures pièces : gardez l'initiative, mettez la pression sur les faiblesses, agissez avant que l'adversaire ne rattrape son retard.",
+"Bonuses": "Bonus",
+"Borders.": "Bordures.",
+"Counted": "Comptage",
+"Details.": "Détails.",
+"Grades": "Notes",
+"Keep in mind.": "À retenir.",
+"Levels.": "Niveaux.",
+"Lists": "Listes",
+"Plan.": "Plan.",
+"Plans": "Plans",
+"Score": "Score",
+"Score.": "Score.",
+"The idea.": "L'idée.",
+"Tips": "Conseils",
+"Centre: 3 on d4–e5, 2 on the ring around them (c3–f6), 1 on the next ring (b2–g7), 0 on the edge.": "Centre : 3 sur d4–e5, 2 sur l'anneau autour (c3–f6), 1 sur l'anneau suivant (b2–g7), 0 au bord.",
+"Checks, captures and threats first, for both sides.": "Échecs, prises et menaces d'abord, pour les deux camps.",
+"Connected pawn (beside or protected by its own): 2, 4, 6 on its 5th, 6th, 7th.": "Pion lié (à côté d'un des siens ou protégé par lui) : 2, 4, 6 sur sa 5e, 6e, 7e rangée.",
+"Dashed yellow: the three central rings, the inner one brightest.": "Pointillés jaunes : les trois anneaux du centre, le plus intérieur le plus vif.",
+"Down material: avoid trades, look for activity or an attack.": "Matériel en moins : évitez les échanges, cherchez l'activité ou l'attaque.",
+"Each enemy piece or pawn touching the zone, or able to give check, −1. Outlined in yellow: the square it would check from.": "Chaque pièce ou pion adverse qui touche la zone, ou qui peut donner échec, −1. Cerclée de jaune : la case d'où elle donnerait échec.",
+"Each enemy piece or pawn you can win now +1: Hanging (unguarded, or the exchange wins) or Losing (attacked by a cheaper piece).": "Chaque pièce ou pion adverse que vous pouvez gagner maintenant +1 : En prise (non défendu, ou l'échange gagne) ou Menacée (attaquée par une pièce de moindre valeur).",
+"Each imbalance is counted on the board in points, one side's minus the other's. Count roughly, then pick the level: the review shows the exact count.": "Chaque déséquilibre se compte sur l'échiquier en points, ceux d'un camp moins ceux de l'autre. Comptez à peu près, puis choisissez le niveau : la correction montre le compte exact.",
+"Each imbalance is worth an equal share (a sixth; a fifth when Space is left out):": "Chaque déséquilibre vaut une part égale (un sixième ; un cinquième quand l'Espace n'est pas compté) :",
+"Each knight, bishop, rook and queen: 1 point for each safe square it attacks or defends.": "Chaque cavalier, fou, tour et dame : 1 point par case sûre qu'il attaque ou défend.",
+"Each move is scored by how much it gives up compared with the engine's best. Dubious or worse picks count as fully missed.": "Chaque coup est noté selon ce qu'il cède par rapport au meilleur coup du moteur. Un choix Douteux ou pire compte comme entièrement manqué.",
+"Each place is scored against the best move you haven't ranked yet: full marks if yours is as good, nothing if it's Dubious or worse by comparison.": "Chaque place est notée par rapport au meilleur coup que vous n'avez pas encore classé : tous les points si le vôtre est aussi bon, rien s'il est Douteux ou pire en comparaison.",
+"Each threat for the next move +1: a pawn push attacking a piece, or a piece attacking the queen with nowhere safe to go.": "Chaque menace pour le coup suivant +1 : une poussée de pion qui attaque une pièce, ou une pièce qui attaque la dame sans case de repli sûre.",
+"Enemy passed pawn: blockade it, a knight in front is best.": "Pion passé adverse : bloquez-le, un cavalier devant est idéal.",
+"Escort: each of its own passed pawns beside it (diagonals included) +1.": "Escorte : chacun de ses pions passés à côté de lui (diagonales comprises) +1.",
+"Every square of the bar you're off costs 25%.": "Chaque case d'écart sur la barre coûte 25 %.",
+"Explore before choosing: list the moves worth a closer look, not only the one you'd play. Several moves can be just as good.": "Explorez avant de choisir : listez les coups qui méritent un examen, pas seulement celui que vous joueriez. Plusieurs coups peuvent se valoir.",
+"Find the best move first: it's worth half the score.": "Trouvez d'abord le meilleur coup : il vaut la moitié du score.",
+"Find the strongest moves for the side to play: pick 1 to 3.": "Trouvez les meilleurs coups pour le camp au trait : choisissez-en 1 à 3.",
+"For each move, look at what it allows: one that drops material or the king's safety goes last.": "Pour chaque coup, regardez ce qu'il permet : celui qui perd du matériel ou la sécurité du roi va en dernier.",
+"Good, Ok, Dubious, Mistake, Blunder": "Bon, Correct, Douteux, Erreur, Gaffe",
+"Grade six imbalances: who has the edge in each, and by how much. Tap a badge, then a level: = balanced, + or ++ for White, − or −− for Black.": "Notez six déséquilibres : qui a l'avantage dans chacun, et de combien. Touchez un badge, puis un niveau : = équilibré, + ou ++ pour les Blancs, − ou −− pour les Noirs.",
+"Green: right level.": "Vert : bon niveau.",
+"Greyed-out top moves are Dubious or worse.": "Les meilleurs coups grisés sont Douteux ou pire.",
+"In sharp positions, the side to move often has the edge.": "Dans les positions tranchantes, le camp au trait a souvent l'avantage.",
+"Inspired by Stockfish's former evaluation system.": "Inspiré de l'ancien système d'évaluation de Stockfish.",
+"Judge who's better and by how much, then drag the bar to your evaluation.": "Jugez qui est mieux et de combien, puis placez la barre sur votre évaluation.",
+"Left out (greyed) when few pieces remain: space matters less with fewer pieces to use it.": "Non compté (grisé) quand il reste peu de pièces : l'espace compte moins avec moins de pièces pour l'utiliser.",
+"Less space: trade pieces to breathe, strike at the enemy pawns with a break.": "Moins d'espace : échangez des pièces pour respirer, frappez les pions adverses par une rupture.",
+"Look at both sides before grading.": "Regardez les deux camps avant de noter.",
+"Material first: near equality, a pawn is about one square of the bar; when one side is already winning, it moves the bar less.": "Le matériel d'abord : près de l'égalité, un pion vaut environ une case de la barre ; quand un camp gagne déjà, il la déplace moins.",
+"Mates count in King safety.": "Les mats comptent dans la Sécurité du roi.",
+"More active king: use it, go for the enemy pawns or escort your passed pawn.": "Roi plus actif : utilisez-le, allez chercher les pions adverses ou escortez votre pion passé.",
+"More space: keep pieces on, switch them between wings, prepare a pawn break.": "Plus d'espace : gardez les pièces, faites-les passer d'une aile à l'autre, préparez une rupture.",
+"Not counted: squares an enemy pawn covers, its own blocked or unmoved pawns, its own king and queen.": "Non comptées : les cases contrôlées par un pion adverse, ses propres pions bloqués ou non bougés, son propre roi et sa dame.",
+"One of them was played in the game to learn from. In your own games, it's your move, and always a bad one: with the right focus, can you do better?": "L'un d'eux a été joué dans la partie, pour en tirer une leçon. Dans vos parties, c'est votre coup, et toujours un mauvais : avec la bonne attention, ferez-vous mieux ?",
+"Otherwise: nothing.": "Sinon : rien.",
+"Outlined in yellow: arrows on the queen.": "Cerclées de jaune : les flèches sur la dame.",
+"Outpost +5: a knight or bishop on the 4th to 6th rank that no enemy pawn can attack.": "Avant-poste +5 : un cavalier ou un fou sur la 4e à la 6e rangée qu'aucun pion adverse ne peut attaquer.",
+"Passed pawn (no enemy pawn can stop it): 2 up to its 4th rank, then 4, 6, 8 on its 5th, 6th, 7th.": "Pion passé (aucun pion adverse ne peut l'arrêter) : 2 jusqu'à sa 4e rangée, puis 4, 6, 8 sur sa 5e, 6e, 7e.",
+"Passed pawn: push it, with your pieces behind it.": "Pion passé : poussez-le, avec vos pièces derrière.",
+"Passive king: centralize it before anything else.": "Roi passif : centralisez-le avant tout.",
+"Pawn 1, knight and bishop 3, rook 5, queen 9.": "Pion 1, cavalier et fou 3, tour 5, dame 9.",
+"Pieces of the same value cancel in pairs (same kind first): only the difference shows.": "Les pièces de même valeur s'annulent par paires (même type d'abord) : seule la différence s'affiche.",
+"Pinned to its king or queen −5.": "Clouée sur son roi ou sa dame −5.",
+"Red: missed.": "Rouge : manqué.",
+"Right level: all of it.": "Bon niveau : toute la part.",
+"Right side, wrong strength (+ for ++): half.": "Bon camp, mauvaise intensité (+ pour ++) : la moitié.",
+"Rook on an Open file +5, Half-open +2.5.": "Tour sur une colonne Ouverte +5, Semi-ouverte +2,5.",
+"Rooks and queens see through their own queen and rooks.": "Tours et dames voient à travers leur propre dame et leurs tours.",
+"Shelter: each own pawn in the zone +1.": "Abri : chaque pion à soi dans la zone +1.",
+"Start with the lasting ones: Material, Pawns, Space.": "Commencez par les durables : Matériel, Pions, Espace.",
+"Tap a king to see its side alone.": "Touchez un roi pour ne voir que son camp.",
+"Tap a line to see its imbalance on the board, then ? for how it's counted and the plans it suggests.": "Touchez une ligne pour voir son déséquilibre sur l'échiquier, puis ? pour savoir comment il se compte et quels plans il suggère.",
+"Tap a list's title to show its arrows.": "Touchez le titre d'une liste pour afficher ses flèches.",
+"Tap a piece (dotted score) to see its squares.": "Touchez une pièce (score en pointillé) pour voir ses cases.",
+"Tap an imbalance to see what counts on the board, then ? for how it's counted and the plans it suggests.": "Touchez un déséquilibre pour voir ce qui compte sur l'échiquier, puis ? pour savoir comment il se compte et quels plans il suggère.",
+"Target: each enemy pawn it attacks +1 (an arrow).": "Cible : chaque pion adverse qu'il attaque +1 (une flèche).",
+"The area: c to f files, 3rd to 6th ranks (dashed).": "La zone : colonnes c à f, 3e à 6e rangées (en pointillé).",
+"The bishop pair is worth ½ more: the extra bishop that makes it counts 3.5 (labelled Pair).": "La paire de fous vaut ½ de plus : le fou en plus qui la forme compte 3,5 (marqué Paire).",
+"The final decision, where everything comes together: analyze the position, find the move you'd play, then rate the others against it.": "La décision finale, où tout se rejoint : analysez la position, trouvez le coup que vous joueriez, puis jugez les autres par rapport à lui.",
+"The game phase changes priorities: develop and castle in the opening, follow the imbalances in the middlegame, activate the king and push passed pawns in the endgame.": "La phase de jeu change les priorités : développez et roquez dans l'ouverture, suivez les déséquilibres au milieu de partie, activez le roi et poussez les pions passés en finale.",
+"The grades don't add up to the evaluation: one big imbalance can outweigh several small ones, and tactics can override them all.": "Les notes ne s'additionnent pas pour donner l'évaluation : un gros déséquilibre peut l'emporter sur plusieurs petits, et la tactique peut tous les renverser.",
+"The zone (dashed): the king's rank and the two in front, on its file and the next ones.": "La zone (en pointillé) : la rangée du roi et les deux devant, sur sa colonne et les voisines.",
+"Their threats: parry first: move, defend, or answer with a bigger threat.": "Menaces adverses : parez d'abord : déplacez, défendez, ou répondez par une menace plus forte.",
+"Then the moves that follow the plan: use your edges, fix your weaknesses.": "Puis les coups qui suivent le plan : exploitez vos atouts, corrigez vos faiblesses.",
+"Then those that can change in a few moves: Activity, King safety, Other threats.": "Puis ceux qui peuvent changer en quelques coups : Activité, Sécurité du roi, Menaces.",
+"Up material: trade pieces (not pawns), head for the endgame.": "Matériel en plus : échangez les pièces (pas les pions), allez vers la finale.",
+"Up to three ideas for the side to play, from its strongest imbalances and the evaluation: general principles, not a calculated line.": "Jusqu'à trois idées pour le camp au trait, tirées de ses plus forts déséquilibres et de l'évaluation : des principes généraux, pas une variante calculée.",
+"Weak enemy king: bring more pieces, open lines towards it (files, diagonals, a pawn storm).": "Roi adverse faible : amenez plus de pièces, ouvrez des lignes vers lui (colonnes, diagonales, attaque de pions).",
+"Weak enemy pawns: fix them, attack them, use the square in front.": "Pions adverses faibles : fixez-les, attaquez-les, utilisez la case devant.",
+"Weak king: trade attackers, keep the shelter pawns, bring a defender, keep lines closed.": "Roi faible : échangez les attaquants, gardez les pions d'abri, amenez un défenseur, gardez les lignes fermées.",
+"Weak pawn −1: isolated (no own pawn on the next files), doubled (an own pawn behind it, none protecting it) or backward (behind its neighbours, the square ahead covered by an enemy pawn). Doubled and isolated: −2.": "Pion faible −1 : isolé (aucun pion à soi sur les colonnes voisines), doublé (un pion à soi derrière lui, aucun pour le protéger) ou arriéré (en retrait de ses voisins, la case devant contrôlée par un pion adverse). Doublé et isolé : −2.",
+"Weigh the imbalances: one big edge can outweigh several small ones. Then check what's forcing: checks, captures and threats can change everything.": "Pesez les déséquilibres : un gros atout peut l'emporter sur plusieurs petits. Puis vérifiez ce qui est forcé : échecs, prises et menaces peuvent tout changer.",
+"When unsure, pick fewer: a Dubious or worse pick counts as fully missed.": "En cas de doute, choisissez-en moins : un choix Douteux ou pire compte comme entièrement manqué.",
+"With few pieces left, Space is left out; with no queens, King safety becomes King activity.": "Avec peu de pièces, l'Espace n'est pas compté ; sans dames, la Sécurité du roi devient l'Activité du roi.",
+"With the queens off, the king is no longer in much danger: it becomes a fighting piece.": "Sans les dames, le roi n'est plus vraiment en danger : il devient une pièce de combat.",
+"Worse pieces: improve the worst one first (to an outpost, an open file), trade the opponent's best one.": "Pièces moins bonnes : améliorez d'abord la pire (vers un avant-poste, une colonne ouverte), échangez la meilleure de l'adversaire.",
+"Yellow and red badges show the right level.": "Les badges jaunes et rouges affichent le bon niveau.",
+"Yellow: right side, wrong strength.": "Jaune : bon camp, mauvaise intensité.",
+"Your threats: forcing moves first (checks, captures, threats), before the other side can parry.": "Vos menaces : coups forcés d'abord (échecs, prises, menaces), avant que l'adversaire ne puisse parer.",
+"Your weak pawns: keep your pieces active, avoid the endgame.": "Vos pions faibles : gardez vos pièces actives, évitez la finale."
+}/*END I18N_FR*/));
+const I18N_FR_RE = [
+  [/^(\d+)\. White to play$/, '$1. Aux Blancs de jouer'],
+  [/^(\d+)\.\.\. Black to play$/, '$1... Aux Noirs de jouer'],
+  [/^White to play · game move (.+)$/, 'Aux Blancs de jouer · coup joué $1'],
+  [/^Black to play · game move (.+)$/, 'Aux Noirs de jouer · coup joué $1'],
+  [/^Test · (.+)$/, (m, a)=>'Test · ' + tr(a)],
+  [/^Remove (.+)$/, 'Retirer $1'],
+  [/^(.+\S): not counted here$/, (m, a)=>tr(a) + ' : non compté ici'],
+  [/^([^:]*\S): ([=+−]+)$/, (m, a, b)=>tr(a) + ' : ' + b],
+  [/^\+ from (\S+) points? apart, \+\+ from (\S+)\.$/, (m, a, b)=>`+ dès ${a.replace('.', ',')} point${a==='1' || a==='½' ? '' : 's'} d'écart, ++ dès ${b.replace('.', ',')}.`],
+  [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'position jouée' : 'positions jouées') + ' depuis le ' + d],
+  [/^(Total )?([+−])(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],   // decimal comma on the board's numbers
+  [/^No positions played yet in (.+)\.$/, (m, a)=>`Aucune position jouée pour l'instant en ${tr(a)}.`],
+  [/^Analysing your games: (\d+) of (\d+) done…$/, 'Analyse de vos parties : $1 sur $2 faites…'],
+  [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess connecté : vos $1 dernières parties Lichess se synchroniseront automatiquement.'],
+  [/^No Chess\.com player named (.+)\.$/, 'Aucun joueur Chess.com nommé $1.'],
+  [/^Couldn't check Chess\.com: (.+)\.$/, 'Impossible de vérifier Chess.com : $1.'],
+  [/^Lichess didn't answer \(error (\d+)\)$/, "Lichess n'a pas répondu (erreur $1)"],
+  [/^Lichess couldn't be added to your account: (.+)\.$/, "Lichess n'a pas pu être ajouté à votre compte : $1."],
+  [/^Next \((\d+) left\) ›$/, 'Suivante ($1 restantes) ›'],
+  [/^(.+) ›$/, (m, a)=>tr(a) + ' ›'],
+  [/^(\d+) of 4$/, '$1 sur 4'],
+  [/^Accuracy (\d+)% · Average (.+)$/, 'Précision $1 % · Moyenne $2'],
+  [/^(Added \d+ games? by|Finished \d+ games? that)/, t=>t   // the games import note, piece by piece
+    .replace(/^Added (\d+) games? by /, (m, n)=>`${n} partie${n==='1' ? '' : 's'} ajoutée${n==='1' ? '' : 's'} de `)
+    .replace(/\((\d+) already analysed by Lichess\)/, '($1 déjà analysées par Lichess)').replace('Skipped: ', 'Ignorées : ')
+    .replace(/(\d+) already added/, '$1 déjà ajoutées').replace(/(\d+) UltraBullet games?/, '$1 en UltraBullet')
+    .replace(/(\d+) variant or from a set-up position/, '$1 variantes ou depuis une position arrangée')
+    .replace(/(\d+) not played by (you|[^,.]+)/, (m, n, w)=>`${n} non jouées par ${w==='you' ? 'vous' : w}`).replace(/(\d+) too short/, '$1 trop courtes')
+    .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} partie${n==='1' ? '' : 's'} interrompue${n==='1' ? '' : 's'} la dernière fois, terminée${n==='1' ? '' : 's'}.`)],
+];
+const I18N_DONE = new Set();   // texts already in French (what tr produced): never translated again
+function tr(s){
+  if(LANG!=='fr' || s==null) return s;
+  const t = String(s).trim(); if(!t || I18N_DONE.has(t)) return s;
+  let out = I18N_FR.get(t);
+  if(out==null) for(const [re, to] of I18N_FR_RE){ if(re.test(t)){ out = t.replace(re, to); break; } }
+  if(out==null) return s;
+  I18N_DONE.add(out.trim());
+  return String(s).replace(t, out);
+}
+const I18N_ATTRS = ['aria-label', 'title', 'placeholder'];
+function translateNode(n){
+  if(LANG!=='fr') return;
+  if(n.nodeType===3){ const p = n.parentElement; if(!p || p.closest('[data-no-i18n],script,style')) return; const v = tr(n.nodeValue); if(v!==n.nodeValue) n.nodeValue = v; return; }
+  if(n.nodeType!==1 || n.closest('[data-no-i18n]') || /^(SCRIPT|STYLE)$/.test(n.tagName)) return;
+  for(const a of I18N_ATTRS){ const v = n.getAttribute(a); if(v){ const w = tr(v); if(w!==v) n.setAttribute(a, w); } }
+  const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+  for(let x = w.nextNode(); x; x = w.nextNode()){
+    if(x.nodeType===1){ if(x.hasAttribute('data-no-i18n')){ const nx = x.nextSibling; /* skip its subtree */ while(w.lastChild()); continue; } for(const a of I18N_ATTRS){ const v = x.getAttribute(a); if(v){ const t2 = tr(v); if(t2!==v) x.setAttribute(a, t2); } } }
+    else translateNode(x);
+  }
+}
+const i18nObserver = new MutationObserver(ms=>{ if(LANG!=='fr') return; for(const m of ms){
+  if(m.type==='characterData') translateNode(m.target);
+  else if(m.type==='attributes') translateNode(m.target);
+  else m.addedNodes.forEach(translateNode); } });
+function setLanguage(){
+  const auto = (()=>{ try{ return /^fr\b/i.test(navigator.language || '') ? 'fr' : 'en'; }catch(e){ return 'en'; } })();
+  LANG = settings.lang || auto;
+  localPieces = LOCAL_PIECES[LANG] || null;
+  document.documentElement.lang = LANG;
+  document.title = LANG==='fr' ? 'Entraîneur de stratégie aux échecs' : 'Chess Strategy Trainer';
+  i18nObserver.disconnect();
+  if(LANG==='fr'){ translateNode(document.body); i18nObserver.observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:I18N_ATTRS }); }
+}
+setLanguage();
 // The settings page: a sample position on top (coordinates, last move, the six arrows, their moves
 // as chips in your notation), then the controls; every change shows at once and is saved.
 const SET_SAMPLE = { fen:'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3', last:{ from:'f1', to:'b5' },
@@ -5550,7 +5987,7 @@ function renderSettings(){
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to profile">${BACK_ARROW}</button>
       <h1>Settings</h1>
-      <span class="title-spacer" aria-hidden="true"></span>
+      <button class="btn small secondary title-link" id="setLang" data-no-i18n aria-label="Language: ${LANG==='fr' ? 'French' : 'English'}">${LANG.toUpperCase()}</button>
     </div>
     <div class="pf-scroll set-page">
       <div class="set-preview" aria-label="Preview">
@@ -5570,6 +6007,7 @@ function renderSettings(){
   renderSettingsPreview();
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; settingsRebuild = true; render(); };
   const rebuild = ()=>{ settingsRebuild = true; render(); };
+  document.getElementById('setLang').onclick = ()=>{ settings.lang = LANG==='fr' ? 'en' : 'fr'; setLanguage(); saveSettings(); rebuild(); };
   const live = ()=>{ applySettings(); renderSettingsPreview(); saveSettings(); document.querySelectorAll('.set-sw').forEach(x=>x.style.background = x.style.background); };
   const on = (id, ev, f)=>{ const el = document.getElementById(id); if(el) el[ev] = f; };
   document.querySelectorAll('.set-page .seg-btn').forEach(b=>b.onclick = ()=>{ setTab = b.dataset.tab; rebuild(); });
