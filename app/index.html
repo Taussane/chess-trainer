@@ -146,6 +146,7 @@
   /* the home page's Donate badge: Ko-fi's floating button look (smaller), opening our Donate page */
   .donate-float{position:fixed; left:max(14px, env(safe-area-inset-left)); bottom:max(14px, env(safe-area-inset-bottom)); z-index:20; display:inline-flex; align-items:center; gap:6px; padding:6px 12px 6px 8px; border:none; border-radius:999px; background:#fcbf47; color:#323842; font:inherit; font-size:0.82rem; font-weight:700; box-shadow:0 3px 10px rgba(0,0,0,.35); cursor:pointer;}
   .donate-float img, .kofi-btn img{width:20px; height:auto;}
+  .kofi-slot{display:flex; justify-content:center;}
   .kofi-btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; align-self:center; padding:9px 18px; border-radius:999px; background:var(--accent); color:var(--on-accent); font-weight:700; font-size:0.94rem; text-decoration:none; box-shadow:0 2px 6px rgba(0,0,0,.25);}
   .title-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
@@ -3951,12 +3952,25 @@ function renderSupport(){
           <li>Open source.</li>
         </ul>
         <p>Made by one person. Donations help pay for the server and new features.</p>
-        <a class="kofi-btn" href="${KOFI_URL}" target="_blank" rel="noopener"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me on Ko-fi</a>
+        <div class="kofi-slot" id="kofiSlot"><a class="kofi-btn" href="${KOFI_URL}" target="_blank" rel="noopener"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me on Ko-fi</a></div>
       </section>
       <p class="sup-thanks">Can't give?<br><button class="link-plain sup-share" id="supShare">${supCopied ? 'Link copied ✓' : 'Share it with a chess friend'}</button><br>Thank you!</p>
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = supportFrom; supCopied = false; supportRebuild = true; render(); };
   document.getElementById('supShare').onclick = shareApp;
+  kofiButton();
+}
+// Ko-fi's own button (its script, Widget_2.js: the cup's little animation), in our yellow and our language.
+// Its draw() writes into the page the old way (document.write), which would wipe the app once it's loaded:
+// its getHTML() is used instead, put in place of our own copy of the button (kept if the script can't load).
+let kofiScript = null;
+function kofiButton(){
+  if(!DIRECT_LICHESS) return;
+  const place = ()=>{ const slot = document.getElementById('kofiSlot'); if(!slot || !window.kofiwidget2 || !kofiwidget2.getHTML) return;
+    try{ kofiwidget2.init(tr('Support me on Ko-fi'), '#C9A227', 'L5M0298EP4'); slot.innerHTML = kofiwidget2.getHTML(); slot.setAttribute('data-no-i18n', ''); }catch(e){} };
+  if(window.kofiwidget2) return place();
+  if(!kofiScript){ kofiScript = document.createElement('script'); kofiScript.src = 'https://storage.ko-fi.com/cdn/widget/Widget_2.js'; document.head.appendChild(kofiScript); }
+  kofiScript.addEventListener('load', place, { once: true });
 }
 // Sharing the app: the device's own share sheet (apps, messages, copy) where there is one, else the link copied
 // (the link then reads "Link copied ✓" for a moment).
