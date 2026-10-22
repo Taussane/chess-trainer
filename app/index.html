@@ -142,9 +142,7 @@
   .sup-btn{align-self:center; min-width:60%; text-align:center; justify-content:center;}
   .sup-note{color:var(--text-mute); font-size:0.84rem !important;}
   .kofi-wrap{border-radius:12px; overflow:hidden; background:var(--panel); border:1px solid var(--border);}
-  .kofi-wrap iframe{display:block; border:none; width:100%; height:min(640px, calc(100dvh - 140px)); background:var(--panel);}   /* (Ko-fi's page can't tell ours its height: as tall as the screen allows, it scrolls inside) */
-  .sup-alt{margin:-2px 0 0; text-align:center; font-size:0.84rem;}
-  .sup-alt a{color:var(--text-mute);}
+  .kofi-wrap iframe{display:block; border:none; width:100%; height:680px; background:var(--panel);}   /* (Ko-fi's page can't tell ours its height: set by hand) */
   .sup-thanks .sup-share{color:var(--accent); text-decoration-color:var(--accent);}
   .sup-thanks{margin:4px 2px 0; text-align:center; color:var(--text-mute); font-size:0.88rem; line-height:1.5;}
   .home-donate{display:flex; justify-content:center; margin:18px 0 4px;}
@@ -3953,8 +3951,7 @@ function renderSupport(){
         <p>Made by one person. Donations help pay for the server and new features.</p>
         ${!DIRECT_LICHESS ? `<a class="btn sup-btn" href="${KOFI_URL}" target="_blank" rel="noopener">Support me on Ko-fi</a>` : ''}
       </section>
-      ${DIRECT_LICHESS ? `<div class="kofi-wrap" data-no-i18n><iframe id="kofiframe" src="${KOFI_URL}/?hidefeed=true&widget=true&embed=true&preview=true" title="Ko-fi" loading="lazy"></iframe></div>
-      <p class="sup-alt"><a href="${KOFI_URL}" target="_blank" rel="noopener">Support me on Ko-fi</a></p>` : ''}
+      ${DIRECT_LICHESS ? `<div class="kofi-wrap" data-no-i18n><iframe id="kofiframe" src="${KOFI_URL}/?hidefeed=true&widget=true&embed=true&preview=true" title="Ko-fi" loading="lazy"></iframe></div>` : ''}
       <p class="sup-thanks">Can't give?<br><button class="link-plain sup-share" id="supShare">${supCopied ? 'Link copied ✓' : 'Share it with a chess friend'}</button><br>Thank you!</p>
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = supportFrom; supCopied = false; supportRebuild = true; render(); };
