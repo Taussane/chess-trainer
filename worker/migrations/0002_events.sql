@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS events (
   day TEXT NOT NULL,                   -- YYYY-MM-DD (UTC)
   did TEXT NOT NULL,                   -- random device id (the browser's)
   sid TEXT NOT NULL,                   -- random id of one visit (page load)
-  k TEXT NOT NULL,                     -- 'open' (a visit), 'pos' (a position finished), 'games' (own games found)
+  k TEXT NOT NULL,                     -- 'open' (a visit), 'pos' (a position finished), 'games' (own games found), 'err' (engine failed)
   a TEXT,                              -- exercise (pos)
   acc INTEGER,                         -- score 0-100 (pos)
   src TEXT,                            -- 'masters' | 'mine' (pos)

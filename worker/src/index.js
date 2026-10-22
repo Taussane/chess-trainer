@@ -339,9 +339,10 @@ async function ccGames(user, since, max) {
 
 // ---- Usage counts (anonymous) ----
 // The website sends small batches of events: a visit opened, a position finished (exercise, score,
-// masters or own game, in the routine or not), the own games found. Each carries a random device id
+// masters or own game, in the routine or not), the own games found, the engine failing (n1: 1 couldn't
+// load, 2 stopped). Each carries a random device id
 // and visit id, never an account or a name. Kept 13 months.
-const EV_KINDS = ['open', 'pos', 'games'], EV_ACTS = ['imbalances', 'analysis', 'candidates', 'final'], KEEP_DAYS = 400;
+const EV_KINDS = ['open', 'pos', 'games', 'err'], EV_ACTS = ['imbalances', 'analysis', 'candidates', 'final'], KEEP_DAYS = 400;
 let eventsReady = false;
 async function ensureEvents(env) {
   if (eventsReady) return;
@@ -392,6 +393,7 @@ async function metrics(env, days) {
   const share = key => devs.reduce((o, d) => (o[d[key] ?? '?'] = (o[d[key] ?? '?'] || 0) + 1, o), {});
   const games = await all(`SELECT did, n1, n2, MAX(ts) ts FROM events WHERE k = 'games' AND day >= ? GROUP BY did`, since);
   const g = games.reduce((o, x) => ({ devices: o.devices + 1, games: o.games + (x.n1 || 0), positions: o.positions + (x.n2 || 0) }), { devices: 0, games: 0, positions: 0 });
+  const errors = await one(`SELECT COUNT(DISTINCT sid) visits, SUM(n1 = 1) load, SUM(n1 = 2) stopped FROM events WHERE k = 'err' AND day >= ?`, since);
   const accounts = await one('SELECT COUNT(*) n, SUM(created_at >= ?) recent FROM accounts', Date.now() - days * DAY);
   const bySite = Object.fromEntries((await all('SELECT site, COUNT(DISTINCT account_id) n FROM connections GROUP BY site')).map(r => [r.site, r.n]));
   const cc = await one(`SELECT COUNT(*) n FROM meta WHERE name = 'chesscom' AND data LIKE '%"username":"%' AND data NOT LIKE '%"username":""%'`);
@@ -407,6 +409,7 @@ async function metrics(env, days) {
     exercises: acts, sources: Object.fromEntries(src.map(r => [r.src || '?', r.n])),
     routine: { positions: routine.r || 0, of: routine.n || 0 },
     devices: { auth: share('auth'), chesscom: share('cc'), lang: share('lang'), app: share('app') },
+    errors: { visits: errors.visits || 0, load: errors.load || 0, stopped: errors.stopped || 0 },
     ownGames: { ...g, positionsPerGame: g.games ? Math.round(g.positions / g.games * 100) / 100 : 0 },
     accounts: { total: accounts.n || 0, recent: accounts.recent || 0, bySite, chesscom: cc.n || 0 },
   };

@@ -33,6 +33,7 @@ CAND = {
   'Activity marks': [('f1','f2',None)],
   'King safety marks': [('d1','d8',None)],
   'Threats marks': [('b5','c6',None)],
+  'King activity marks': [('e4','d4',None)],
 }
 async def main():
     fails = []

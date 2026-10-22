@@ -180,8 +180,9 @@ test('usage counts: anonymous events from this site only; the metrics for the ow
     ev: [{ k: 'open', ts: now }, { k: 'pos', a: 'analysis', acc: 80, src: 'masters', n1: 1, ts: now }, { k: 'pos', a: 'final', acc: 40, src: 'mine', ts: now },
          { k: 'games', n1: 10, n2: 25, ts: now }, { k: 'nonsense' }] })).status, 200);
   assert.equal((await ev({ did: 'dev00002', sid: 'vis00002', ctx: { auth: 'guest', lang: 'en' }, ev: [{ k: 'open' }, { k: 'pos', a: 'analysis', acc: 60, src: 'masters' }] })).status, 200);
+  assert.equal((await ev({ did: 'dev00002', sid: 'vis00002', ev: [{ k: 'err', n1: 1 }] })).status, 200);
   const rows = env.DB.raw.prepare('SELECT * FROM events').all();
-  assert.equal(rows.length, 6, 'unknown kinds dropped');
+  assert.equal(rows.length, 7, 'unknown kinds dropped');
   assert.ok(!JSON.stringify(rows).match(/taussane|tok-/i), 'no account or name in the counts');
   // metrics: the owner (Taussane on Lichess) only
   await call(env, 'GET', '/api/me', { token: 'tok-other' });
@@ -200,4 +201,5 @@ test('usage counts: anonymous events from this site only; the metrics for the ow
   assert.deepEqual(m.body.ownGames, { devices: 1, games: 10, positions: 25, positionsPerGame: 2.5 });
   assert.equal(m.body.visits.positionsPerVisit, 1.5);
   assert.equal(m.body.accounts.total, 2);
+  assert.deepEqual(m.body.errors, { visits: 1, load: 1, stopped: 0 });
 });
