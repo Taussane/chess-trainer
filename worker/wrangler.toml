@@ -6,7 +6,7 @@ compatibility_date = "2026-09-01"
 
 [vars]
 # Websites allowed to call this server (comma-separated).
-ALLOWED_ORIGINS = "https://taussane.github.io"
+ALLOWED_ORIGINS = "https://chessstrategy.org,https://taussane.github.io"
 # "Log in with Google": the OAuth client id from Google Cloud (public; empty = Google sign-in off).
 GOOGLE_CLIENT_ID = "156223514087-0v17r4o6c77ru9hq3kafmpan91l2lunh.apps.googleusercontent.com"
 

@@ -27,7 +27,7 @@ page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="apple-mobile-web-app-status-bar-style" content="black">\n'
         '<meta name="apple-mobile-web-app-title" content="Chess Strategy">\n'
         # the installed app's offline helper (sw.js), on the website only (not the local test server, not inside Claude)
-        "<script>if('serviceWorker' in navigator && /github\\.io$/.test(location.hostname)) addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>\n"
+        "<script>if('serviceWorker' in navigator && /(github\\.io|chessstrategy\\.org)$/.test(location.hostname)) addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>\n"
 
         '<!-- Built from app/index.html by scripts/build-site.py: edit the app, not this file. -->\n'
         '</head>\n<body>\n' + app + '\n</body>\n</html>\n')

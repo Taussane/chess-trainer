@@ -21,7 +21,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Chess Strategy">
-<script>if('serviceWorker' in navigator && /github\.io$/.test(location.hostname)) addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
+<script>if('serviceWorker' in navigator && /(github\.io|chessstrategy\.org)$/.test(location.hostname)) addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 <!-- Built from app/index.html by scripts/build-site.py: edit the app, not this file. -->
 </head>
 <body>
@@ -6212,7 +6212,7 @@ function renderSettings(){
 // in small batches: a visit opened, a position finished (exercise, score, masters or own game, in the
 // routine or not), and the own games found. With a random device id kept in this browser and a random
 // id for this visit; never the account or a name. See privacy.html and GET /api/metrics.
-const STATS_ON = ()=>/github\.io$/.test(location.hostname) && !!API_BASE && !isOwner();
+const STATS_ON = ()=>/(github\.io|chessstrategy\.org)$/.test(location.hostname) && !!API_BASE && !isOwner();
 const statId = ()=>Array.from(crypto.getRandomValues(new Uint8Array(12)), b=>b.toString(36).padStart(2, '0')).join('').slice(0, 20);
 const statDid = (()=>{ try{ let d = localStorage.getItem('cst.did'); if(!d){ d = statId(); localStorage.setItem('cst.did', d); } return d; }catch(e){ return statId(); } })();
 const statSid = statId();
