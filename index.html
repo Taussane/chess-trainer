@@ -162,9 +162,10 @@
   .sup-note{color:var(--text-mute); font-size:0.84rem !important;}
   .sup-thanks .sup-share{color:var(--accent); text-decoration-color:var(--accent);}
   .sup-thanks{margin:4px 2px 0; text-align:center; color:var(--text-mute); font-size:0.88rem; line-height:1.5;}
-  /* the home page's Donate badge: Ko-fi's floating button look (smaller), opening our Donate page */
-  .donate-float{position:fixed; left:max(14px, env(safe-area-inset-left)); bottom:max(14px, env(safe-area-inset-bottom)); z-index:20; display:inline-flex; align-items:center; gap:6px; padding:6px 12px 6px 8px; border:none; border-radius:999px; background:#fcbf47; color:#323842; font:inherit; font-size:0.82rem; font-weight:700; box-shadow:0 3px 10px rgba(0,0,0,.35); cursor:pointer;}
-  .donate-float img, .kofi-btn img{width:20px; height:auto;}
+  /* the home page's Donate badge, under the exercises: Ko-fi's button look, opening our Donate page */
+  .home-donate{display:flex; justify-content:center; margin:18px 0 4px;}
+  .donate-badge{display:inline-flex; align-items:center; gap:6px; padding:6px 14px 6px 10px; border:none; border-radius:999px; background:#C9A227; color:#fff; font:inherit; font-size:0.84rem; font-weight:700; cursor:pointer;}
+  .donate-badge img, .kofi-btn img{width:20px; height:auto;}
   .kofi-slot{display:flex; justify-content:center;}
   .kofi-btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; align-self:center; padding:9px 18px; border-radius:999px; background:var(--accent); color:var(--on-accent); font-weight:700; font-size:0.94rem; text-decoration:none; box-shadow:0 2px 6px rgba(0,0,0,.25);}
   .title-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
@@ -4141,8 +4142,8 @@ function renderHome(){
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small></span>
         </button>`; }).join('')}
     </div>
-    ${engineErrorBanner()}
-    <button class="donate-float" id="donateBtn"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>`;
+    <div class="home-donate"><button class="donate-badge" id="donateBtn"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button></div>
+    ${engineErrorBanner()}`;
   app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>setSource(b.dataset.src));
   document.getElementById('donateBtn').onclick = ()=>{ supportFrom = 'home'; screen = 'support'; supportRebuild = true; render(); };
   app.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
