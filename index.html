@@ -160,6 +160,10 @@
   .sup-list{margin:-2px 0 0; padding-left:20px; font-size:0.92rem; line-height:1.55;}
   .sup-btn{align-self:center; min-width:60%; text-align:center; justify-content:center;}
   .sup-note{color:var(--text-mute); font-size:0.84rem !important;}
+  .kofi-wrap{border-radius:12px; overflow:hidden; background:#f9f9f9;}
+  .kofi-wrap iframe{display:block; border:none; width:100%; height:712px; padding:4px; background:#f9f9f9;}
+  .sup-alt{margin:-2px 0 0; text-align:center; font-size:0.84rem;}
+  .sup-alt a{color:var(--text-mute);}
   .sup-thanks .sup-share{color:var(--accent); text-decoration-color:var(--accent);}
   .sup-thanks{margin:4px 2px 0; text-align:center; color:var(--text-mute); font-size:0.88rem; line-height:1.5;}
   .home-donate{display:flex; justify-content:center; margin:18px 0 4px;}
@@ -3941,11 +3945,15 @@ function accountSection(){
           : `<button class="link-btn quiet pf-delete" id="pfDelete">Delete my account</button></div>`}`);
 }
 // ================= Support (donations) =================
-// The page behind the profile's Support link: why the app is free, what donations help with, then Ko-fi
-// (card or PayPal, no account needed; Ko-fi takes no fee on donations).
+// The page behind the Donate links: why the app is free, what donations help with, then Ko-fi's own donation
+// panel embedded (on the website: you give without leaving the app; a link opens Ko-fi itself too). Inside
+// Claude, where the panel can't load, a button opens Ko-fi.
 let supportFrom = 'account';   // where the Donate page goes back to: 'home' or 'account'
 const KOFI_URL = 'https://ko-fi.com/taussane';   // the Ko-fi page (empty: the button says it's coming soon)
+let supportRebuild = true;   // background redraws leave the page (and Ko-fi's panel, mid-donation) alone
 function renderSupport(){
+  if(!supportRebuild && document.querySelector('#app .sup-page')){ const b = document.getElementById('supShare'); if(b) b.textContent = tr(supCopied ? 'Link copied ✓' : 'Share it with a chess friend'); return; }
+  supportRebuild = false;
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="title-row">
@@ -3962,12 +3970,14 @@ function renderSupport(){
           <li>Open source.</li>
         </ul>
         <p>Made by one person. Donations help pay for the server and new features.</p>
-        ${KOFI_URL ? `<a class="btn sup-btn" href="${KOFI_URL}" target="_blank" rel="noopener">Support me on Ko-fi</a>` : `<button class="btn sup-btn" disabled>Ko-fi: coming soon</button>`}
         <p class="sup-note">Once or monthly, by card or PayPal. A gift: it doesn't unlock anything.</p>
+        ${!DIRECT_LICHESS ? `<a class="btn sup-btn" href="${KOFI_URL}" target="_blank" rel="noopener">Support me on Ko-fi</a>` : ''}
       </section>
+      ${DIRECT_LICHESS ? `<div class="kofi-wrap" data-no-i18n><iframe id="kofiframe" src="${KOFI_URL}/?hidefeed=true&widget=true&embed=true&preview=true" title="Ko-fi" loading="lazy"></iframe></div>
+      <p class="sup-alt"><a href="${KOFI_URL}" target="_blank" rel="noopener">Support me on Ko-fi</a></p>` : ''}
       <p class="sup-thanks">Can't give?<br><button class="link-plain sup-share" id="supShare">${supCopied ? 'Link copied ✓' : 'Share it with a chess friend'}</button><br>Thank you!</p>
     </div>`;
-  document.getElementById('homeBtn').onclick = ()=>{ screen = supportFrom; supCopied = false; render(); };
+  document.getElementById('homeBtn').onclick = ()=>{ screen = supportFrom; supCopied = false; supportRebuild = true; render(); };
   document.getElementById('supShare').onclick = shareApp;
 }
 // Sharing the app: the device's own share sheet (apps, messages, copy) where there is one, else the link copied
@@ -4029,7 +4039,7 @@ function renderAccount(){
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('testsBtn', ()=>{ screen = 'tests'; render(); });
   on('installBtn', installApp);
-  on('supportBtn', ()=>{ supportFrom = 'account'; screen = 'support'; render(); });
+  on('supportBtn', ()=>{ supportFrom = 'account'; screen = 'support'; supportRebuild = true; render(); });
   on('settingsBtn', ()=>{ screen = 'settings'; settingsRebuild = true; render(); });
   on('lichessLogin', ()=>lichessLogin()); on('googleLogin', ()=>googleLogin());
   on('pfLogout', logout);
@@ -4123,7 +4133,7 @@ function renderHome(){
     <div class="home-donate"><button class="title-chip donate-chip" id="donateBtn">Donate</button></div>
     ${engineErrorBanner()}`;
   app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>setSource(b.dataset.src));
-  document.getElementById('donateBtn').onclick = ()=>{ supportFrom = 'home'; screen = 'support'; render(); };
+  document.getElementById('donateBtn').onclick = ()=>{ supportFrom = 'home'; screen = 'support'; supportRebuild = true; render(); };
   app.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
   document.getElementById('accountBtn').onclick = ()=>{ screen = 'account'; render(); };
   document.getElementById('routineBtn').onclick = startRoutine;
