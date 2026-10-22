@@ -143,6 +143,8 @@
   .sup-note{color:var(--text-mute); font-size:0.84rem !important;}
   .sup-thanks .sup-share{color:var(--accent); text-decoration-color:var(--accent);}
   .sup-thanks{margin:4px 2px 0; text-align:center; color:var(--text-mute); font-size:0.88rem; line-height:1.5;}
+  .home-donate{display:flex; justify-content:center; margin:18px 0 4px;}
+  .home-donate .title-chip{margin-left:0; color:var(--accent);}
   .title-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
   .test-item{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px 12px; display:flex; flex-direction:column; gap:6px;}
@@ -3922,13 +3924,14 @@ function accountSection(){
 // ================= Support (donations) =================
 // The page behind the profile's Support link: why the app is free, what donations help with, then Ko-fi
 // (card or PayPal, no account needed; Ko-fi takes no fee on donations).
+let supportFrom = 'account';   // where the Donate page goes back to: 'home' or 'account'
 const KOFI_URL = 'https://ko-fi.com/taussane';   // the Ko-fi page (empty: the button says it's coming soon)
 function renderSupport(){
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="title-row">
-      <button class="icon-btn back" id="homeBtn" aria-label="Back to profile">${BACK_ARROW}</button>
-      <h1>Support</h1>
+      <button class="icon-btn back" id="homeBtn" aria-label="${supportFrom==='home' ? 'Back to exercises' : 'Back to profile'}">${BACK_ARROW}</button>
+      <h1>Donate</h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
     <div class="pf-scroll sup-page">
@@ -3945,7 +3948,7 @@ function renderSupport(){
       </section>
       <p class="sup-thanks">Can't give?<br><button class="link-plain sup-share" id="supShare">${supCopied ? 'Link copied ✓' : 'Share it with a chess friend'}</button><br>Thank you!</p>
     </div>`;
-  document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; supCopied = false; render(); };
+  document.getElementById('homeBtn').onclick = ()=>{ screen = supportFrom; supCopied = false; render(); };
   document.getElementById('supShare').onclick = shareApp;
 }
 // Sharing the app: the device's own share sheet (apps, messages, copy) where there is one, else the link copied
@@ -4000,14 +4003,14 @@ function renderAccount(){
       ${prog.html}
       ${positionsSection()}
       ${DIRECT_LICHESS ? accountSection() : gamesFileSection()}
-      <p class="ac-foot"><button class="link-plain install-link" id="supportBtn">Support</button> · ${installLink()}${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
+      <p class="ac-foot"><button class="link-plain install-link" id="supportBtn">Donate</button> · ${installLink()}${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; render(); };
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('testsBtn', ()=>{ screen = 'tests'; render(); });
   on('installBtn', installApp);
-  on('supportBtn', ()=>{ screen = 'support'; render(); });
+  on('supportBtn', ()=>{ supportFrom = 'account'; screen = 'support'; render(); });
   on('settingsBtn', ()=>{ screen = 'settings'; settingsRebuild = true; render(); });
   on('lichessLogin', ()=>lichessLogin()); on('googleLogin', ()=>googleLogin());
   on('pfLogout', logout);
@@ -4098,8 +4101,10 @@ function renderHome(){
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small></span>
         </button>`; }).join('')}
     </div>
+    <div class="home-donate"><button class="title-chip donate-chip" id="donateBtn">Donate</button></div>
     ${engineErrorBanner()}`;
   app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>setSource(b.dataset.src));
+  document.getElementById('donateBtn').onclick = ()=>{ supportFrom = 'home'; screen = 'support'; render(); };
   app.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
   document.getElementById('accountBtn').onclick = ()=>{ screen = 'account'; render(); };
   document.getElementById('routineBtn').onclick = startRoutine;
@@ -5990,7 +5995,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Link copied ✓": "Lien copié ✓",
 "Thank you!": "Merci !",
 "Support me on Ko-fi": "Soutenez-moi sur Ko-fi",
-"Free chess strategy training on master games and your own.": "Entraînement gratuit à la stratégie aux échecs, sur des parties de maîtres et les vôtres."
+"Free chess strategy training on master games and your own.": "Entraînement gratuit à la stratégie aux échecs, sur des parties de maîtres et les vôtres.",
+"Donate": "Faire un don"
 }/*END I18N_FR*/));
 const I18N_FR_RE = [
   [/^(\d+)\. White to play$/, '$1. Aux Blancs de jouer'],
