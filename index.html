@@ -25,7 +25,7 @@
 <!-- Built from app/index.html by scripts/build-site.py: edit the app, not this file. -->
 </head>
 <body>
-<title>ChessStrategy.org</title>
+<title>ChessStrategy.org · Chess strategy trainer</title>
 <style>
   /* Layout: one narrow column, home page of three exercise cards, each exercise = position bar + board + one panel. */
   :root{
@@ -6128,7 +6128,7 @@ function setLanguage(){
   LANG = settings.lang || auto;
   localPieces = LOCAL_PIECES[LANG] || null;
   document.documentElement.lang = LANG;
-  document.title = 'ChessStrategy.org';
+  document.title = LANG==='fr' ? 'ChessStrategy.org · Entraînement stratégique aux échecs' : 'ChessStrategy.org · Chess strategy trainer';
   i18nObserver.disconnect();
   if(LANG==='fr'){ translateNode(document.body); i18nObserver.observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:I18N_ATTRS }); }
 }
