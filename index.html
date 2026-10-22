@@ -160,8 +160,8 @@
   .sup-list{margin:-2px 0 0; padding-left:20px; font-size:0.92rem; line-height:1.55;}
   .sup-btn{align-self:center; min-width:60%; text-align:center; justify-content:center;}
   .sup-note{color:var(--text-mute); font-size:0.84rem !important;}
-  .kofi-wrap{border-radius:12px; overflow:hidden; background:#f9f9f9;}
-  .kofi-wrap iframe{display:block; border:none; width:100%; height:712px; padding:4px; background:#f9f9f9;}
+  .kofi-wrap{border-radius:12px; overflow:hidden; background:var(--panel); border:1px solid var(--border);}
+  .kofi-wrap iframe{display:block; border:none; width:100%; height:min(640px, calc(100dvh - 140px)); background:var(--panel);}   /* (Ko-fi's page can't tell ours its height: as tall as the screen allows, it scrolls inside) */
   .sup-alt{margin:-2px 0 0; text-align:center; font-size:0.84rem;}
   .sup-alt a{color:var(--text-mute);}
   .sup-thanks .sup-share{color:var(--accent); text-decoration-color:var(--accent);}
@@ -3970,7 +3970,6 @@ function renderSupport(){
           <li>Open source.</li>
         </ul>
         <p>Made by one person. Donations help pay for the server and new features.</p>
-        <p class="sup-note">Once or monthly, by card or PayPal. A gift: it doesn't unlock anything.</p>
         ${!DIRECT_LICHESS ? `<a class="btn sup-btn" href="${KOFI_URL}" target="_blank" rel="noopener">Support me on Ko-fi</a>` : ''}
       </section>
       ${DIRECT_LICHESS ? `<div class="kofi-wrap" data-no-i18n><iframe id="kofiframe" src="${KOFI_URL}/?hidefeed=true&widget=true&embed=true&preview=true" title="Ko-fi" loading="lazy"></iframe></div>
@@ -5860,7 +5859,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Open source.": "Code libre.",
 "Made by one person. Donations help pay for the server and new features.": "Fait par une seule personne. Les dons aident à payer le serveur et les nouveautés.",
 "Ko-fi: coming soon": "Ko-fi : bientôt disponible",
-"Once or monthly, by card or PayPal. A gift: it doesn't unlock anything.": "Une fois ou chaque mois, par carte ou PayPal. Un cadeau : ça ne débloque rien.",
 "Last move": "Dernier coup",
 "Move notation": "Notation des coups",
 "International": "Internationale",
