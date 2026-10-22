@@ -5,3 +5,5 @@ __pycache__/
 tests/shots/
 finder/.cache/
 .wrangler/
+masters-work/
+masters-searches.jsonl
