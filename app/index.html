@@ -3998,7 +3998,7 @@ function kofiButton(){
 const APP_URL = 'https://chessstrategy.org/';
 let supCopied = false;
 async function shareApp(){
-  const data = { title: 'Chess Strategy', text: tr('Free chess strategy training on master games and your own.'), url: APP_URL };
+  const data = { title: 'ChessStrategy.org', text: tr('Free chess strategy training on master games and your own.'), url: APP_URL };
   if(navigator.share){ try{ await navigator.share(data); }catch(e){} return; }   // (closing the sheet is not an error worth showing)
   copyAppLink();
 }

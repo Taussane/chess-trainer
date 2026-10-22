@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#12161B">
 <meta name="description" content="Chess strategy training on positions from master games and your own Lichess and Chess.com games.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Chess Strategy">
+<meta property="og:title" content="ChessStrategy.org">
 <meta property="og:description" content="Free chess strategy training on positions from master games and your own Lichess and Chess.com games.">
 <meta property="og:url" content="https://chessstrategy.org/">
 <meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">
@@ -4025,7 +4025,7 @@ function kofiButton(){
 const APP_URL = 'https://chessstrategy.org/';
 let supCopied = false;
 async function shareApp(){
-  const data = { title: 'Chess Strategy', text: tr('Free chess strategy training on master games and your own.'), url: APP_URL };
+  const data = { title: 'ChessStrategy.org', text: tr('Free chess strategy training on master games and your own.'), url: APP_URL };
   if(navigator.share){ try{ await navigator.share(data); }catch(e){} return; }   // (closing the sheet is not an error worth showing)
   copyAppLink();
 }
