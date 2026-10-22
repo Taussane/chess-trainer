@@ -106,8 +106,9 @@
   /* Home */
   .home-head{margin:4px 0 18px;}
   .home-top{display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0 0 8px;}
-  .home-top h1{margin:0; white-space:nowrap;}
-  .home-top .acct-chip{min-width:0; max-width:none;}
+  .home-head .home-top h1{margin:0; white-space:nowrap; font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-weight:700; letter-spacing:-0.01em; font-size:1.45rem;}
+  .home-top h1 .tld{color:var(--accent); font-size:0.6em; font-weight:600;}
+  .home-top .acct-chip{flex-shrink:0; max-width:36%;}
   .acct-chip{display:inline-flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:5px 12px 5px 6px; font:inherit; font-size:0.86rem; font-weight:600; cursor:pointer; max-width:60%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .acct-dot .pc{width:100%; height:100%; flex:none; margin-top:3%;}   /* the white king of the board, in the yellow circle */
   .acct-dot.big{width:44px; height:44px; font-size:1.2rem;}
@@ -4144,7 +4145,7 @@ function renderHome(){
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="home-head">
-      <div class="home-top"><h1 data-no-i18n>Chess Strategy</h1><button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span>${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</button></div>
+      <div class="home-top"><h1 data-no-i18n>Chess Strategy<span class="tld">.org</span></h1><button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span>${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</button></div>
       ${(DIRECT_LICHESS ? !signedIn() : !results.length) ? `<p>Train your strategy beyond tactics puzzles: gauge the imbalances, evaluate the position, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
     ${routineCard()}
