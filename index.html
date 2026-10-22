@@ -168,6 +168,17 @@
   .donate-badge img, .kofi-btn img{width:20px; height:auto;}
   .kofi-slot{display:flex; justify-content:center;}
   .kofi-btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; align-self:center; padding:9px 18px; border-radius:999px; background:var(--accent); color:var(--on-accent); font-weight:700; font-size:0.94rem; text-decoration:none; box-shadow:0 2px 6px rgba(0,0,0,.25);}
+  .mx-page .seg{margin-bottom:2px;}
+  .mx-tiles{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;}
+  .mx-tile{display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 0;}
+  .mx-tile b{font-size:1.35rem; font-family:var(--font-display);} .mx-tile small{color:var(--text-mute); font-size:0.74rem; text-align:center;}
+  .mx-chart{width:100%; height:auto; display:block;}
+  .mx-legend{display:flex; flex-wrap:wrap; gap:12px; font-size:0.78rem; color:var(--text-mute);}
+  .mx-legend i{display:inline-block; width:10px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle;}
+  .mx-table{width:100%; border-collapse:collapse; font-size:0.86rem;} .mx-table th{color:var(--text-mute); font-weight:500; text-align:right; padding:4px 2px;}
+  .mx-table td{text-align:right; padding:5px 2px; border-top:1px solid var(--border);} .mx-table td:first-child, .mx-table th:first-child{text-align:left;}
+  .mx-lines > div{display:flex; justify-content:space-between; gap:12px; font-size:0.88rem;} .mx-lines span{color:var(--text-mute);} .mx-lines b{font-weight:600; text-align:right;}
+  .mx-note{margin:0; color:var(--text-mute); font-size:0.8rem; line-height:1.45;}
   .title-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
   .test-item{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px 12px; display:flex; flex-direction:column; gap:6px;}
@@ -3828,6 +3839,7 @@ function recordResult(s, a, acc){
   // average at the time, so the position is on your missed list until played well again.
   const r = { a, acc: Math.round(acc), ts: Date.now(), src: pos().gameId ? 'mine' : 'masters', key: pos().key, miss: before.level!=null && acc < before.level };
   results.push(r);
+  stat('pos', { a, acc: r.acc, src: r.src, n1: routine ? 1 : 0 });   // (anonymous usage count)
   if(resultsDb) resultsDb.add(r).catch(()=>{});
   saveLocal();
   const after = levelNow(a);
@@ -4044,12 +4056,13 @@ function renderAccount(){
       ${prog.html}
       ${positionsSection()}
       ${DIRECT_LICHESS ? accountSection() : gamesFileSection()}
-      <p class="ac-foot">${installLink()}${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
+      <p class="ac-foot">${installLink()}${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button> · <button class="link-plain" id="metricsBtn">Metrics</button>` : ''}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; render(); };
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('testsBtn', ()=>{ screen = 'tests'; render(); });
+  on('metricsBtn', ()=>{ screen = 'metrics'; loadMetrics(); });
   on('installBtn', installApp);
   on('settingsBtn', ()=>{ screen = 'settings'; settingsRebuild = true; render(); });
   on('lichessLogin', ()=>lichessLogin()); on('googleLogin', ()=>googleLogin());
@@ -4754,6 +4767,7 @@ function onOwnPositionsChanged(){
   myPositions = myGames.flatMap(g=>(g.positions||[]).filter(p=>Array.isArray(p.acts)))
     .map(p=>({ ...p, last: p.last ? { squares:p.last } : null }));
   myPosVersion++;
+  statOwnGames();
   refreshPools();
   if(onProfile() || screen==='home') render();
   else if(ACTIVITIES.includes(screen) && curPos && st(screen).checked){ const n = document.getElementById('nextPos'); if(n && n.disabled) render(); }
@@ -5553,7 +5567,7 @@ function render(){
   renderScreen();
   shownScreen = screen;
   // pages slide: in from the right going deeper (home → a page, profile → settings), from the left coming back
-  const sub = x=>x==='settings' || x==='support', settingsStep = (sub(from) && onProfile()) || (sub(screen) && ['account', 'progress', 'mygames'].includes(from));
+  const sub = x=>x==='settings' || x==='support' || x==='metrics', settingsStep = (sub(from) && onProfile()) || (sub(screen) && ['account', 'progress', 'mygames'].includes(from));
   if(from && from!==screen && (from==='home' || screen==='home' || settingsStep)){
     const app = document.getElementById('app'), cls = screen==='home' || sub(from) ? 'page-back' : 'page-fwd';
     app.classList.remove('page-fwd', 'page-back'); void app.offsetWidth; app.classList.add(cls);
@@ -6181,6 +6195,118 @@ function renderSettings(){
     else settings.notation = SET_DEFAULT.notation;
     applySettings(); saveSettings(); rebuild(); };
 }
+// ================= Usage counts (anonymous) and the dashboard =================
+// The website (not the tests, not inside Claude, not the owner's own play) tells the account server,
+// in small batches: a visit opened, a position finished (exercise, score, masters or own game, in the
+// routine or not), and the own games found. With a random device id kept in this browser and a random
+// id for this visit; never the account or a name. See privacy.html and GET /api/metrics.
+const STATS_ON = ()=>/github\.io$/.test(location.hostname) && !!API_BASE && !isOwner();
+const statId = ()=>Array.from(crypto.getRandomValues(new Uint8Array(12)), b=>b.toString(36).padStart(2, '0')).join('').slice(0, 20);
+const statDid = (()=>{ try{ let d = localStorage.getItem('cst.did'); if(!d){ d = statId(); localStorage.setItem('cst.did', d); } return d; }catch(e){ return statId(); } })();
+const statSid = statId();
+let statQueue = [], statTimer = null, statGamesTimer = null;
+function statCtx(){ const a = signedIn(); return { auth: !a ? 'guest' : a.site==='lichess' ? 'lichess' : 'google', cc: chesscomName ? 1 : 0, lang: LANG, app: runningAsApp() ? 1 : 0 }; }
+function statFlush(){
+  clearTimeout(statTimer); statTimer = null;
+  if(!statQueue.length) return;
+  const body = JSON.stringify({ did: statDid, sid: statSid, ctx: statCtx(), ev: statQueue.splice(0) });
+  try{ if(!(navigator.sendBeacon && navigator.sendBeacon(API_BASE + '/api/ev', new Blob([body], { type:'text/plain' })))) fetch(API_BASE + '/api/ev', { method:'POST', body, keepalive:true }).catch(()=>{}); }catch(e){}
+}
+function stat(k, o){
+  if(!STATS_ON()) return;
+  statQueue.push({ k, ts: Date.now(), ...(o || {}) });
+  if(!statTimer) statTimer = setTimeout(statFlush, 5000);
+}
+addEventListener('pagehide', statFlush);
+addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') statFlush(); });
+// Own games: their count and the positions found in them, once a visit, when they've settled.
+function statOwnGames(){
+  clearTimeout(statGamesTimer);
+  statGamesTimer = setTimeout(()=>{ if(myGames.length) stat('games', { n1: myGames.length, n2: myPositions.length }); }, 30000);
+}
+
+// The dashboard (the owner's only: Test positions' neighbour in the profile).
+let metricsData = null, metricsErr = '', metricsDays = 30;
+async function loadMetrics(){
+  metricsErr = ''; metricsData = null; render();
+  try{ metricsData = await serverCall(signedIn(), 'GET', '/api/metrics?days=' + metricsDays); }catch(e){ metricsErr = e.message; }
+  if(screen==='metrics') render();
+}
+function metricsChart(rows, series){   // small line chart: one line per series [key, colour, label]
+  const W = 340, H = 120, P = 18, n = rows.length, max = Math.max(1, ...rows.flatMap(r=>series.map(([k])=>r[k])));
+  const x = i=>P + (n<=1 ? 0 : i * (W - 2*P) / (n - 1)), y = v=>H - P - v * (H - 2*P) / max;
+  const lines = series.map(([k, c])=>`<path d="${rows.map((r, i)=>(i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(r[k]).toFixed(1)).join('')}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" class="mx-chart" role="img" aria-label="${series.map(s=>s[2]).join(', ')}">
+    <line x1="${P}" x2="${W-P}" y1="${H-P}" y2="${H-P}" stroke="var(--border)"/><text x="${P}" y="12" font-size="10" fill="var(--text-mute)">${max}</text>
+    <text x="${P}" y="${H-4}" font-size="10" fill="var(--text-mute)">${rows[0] ? rows[0].day.slice(5) : ''}</text><text x="${W-P}" y="${H-4}" font-size="10" fill="var(--text-mute)" text-anchor="end">${rows[n-1] ? rows[n-1].day.slice(5) : ''}</text>
+    ${lines}</svg><div class="mx-legend">${series.map(([, c, l])=>`<span><i style="background:${c}"></i>${l}</span>`).join('')}</div>`;
+}
+function renderMetrics(){
+  const app = document.getElementById('app'), d = metricsData, pc = (a, b)=>b ? Math.round(a / b * 100) + '%' : '—';
+  const tile = (v, l)=>`<div class="mx-tile"><b>${v}</b><small>${l}</small></div>`;
+  const sum = k=>d ? d.daily.reduce((s, r)=>s + r[k], 0) : 0;
+  let body = '';
+  if(metricsErr) body = `<p class="mg-status">Couldn't load the figures: ${escHtml(metricsErr)}</p>`;
+  else if(!d) body = `<p class="mg-status mg-loading">Loading…</p>`;
+  else {
+    const totPos = d.exercises.reduce((s, x)=>s + x.n, 0), dev = Object.values(d.devices.auth).reduce((s, n)=>s + n, 0);
+    const shares = o=>Object.entries(o).sort((a, b)=>b[1] - a[1]).map(([k, n])=>`${escHtml(k)} ${pc(n, dev)}`).join(' · ') || '—';
+    body = `
+      <section class="pf-card"><div class="mx-tiles">
+        ${tile(d.active.day, 'active today')}${tile(d.active.week, 'active 7 days')}${tile(d.active.month, 'active 30 days')}
+        ${tile(sum('newDevices'), 'new devices')}${tile(sum('visits'), 'visits')}${tile(sum('positions'), 'positions')}
+      </div></section>
+      <h2 class="pf-h">Every day</h2>
+      <section class="pf-card">${metricsChart(d.daily, [['devices', 'var(--accent)', 'Active devices'], ['newDevices', 'var(--cyan-arrow)', 'New devices'], ['newAccounts', 'var(--pick1)', 'New accounts']])}</section>
+      <section class="pf-card">${metricsChart(d.daily, [['positions', 'var(--accent)', 'Positions'], ['visits', 'var(--cyan-arrow)', 'Visits']])}</section>
+      <h2 class="pf-h">Exercises</h2>
+      <section class="pf-card"><table class="mx-table"><thead><tr><th></th><th>Played</th><th>Share</th><th>Avg</th><th>&lt;50</th><th>≥80</th></tr></thead><tbody>
+        ${d.exercises.map(x=>`<tr><td>${ACT_SHORT[x.a] || x.a}</td><td>${x.n}</td><td>${pc(x.n, totPos)}</td><td>${x.avg ?? '—'}%</td><td>${pc(x.low, x.n)}</td><td>${pc(x.high, x.n)}</td></tr>`).join('') || '<tr><td colspan="6">No positions yet</td></tr>'}
+      </tbody></table><p class="mx-note">Avg: average accuracy. &lt;50 / ≥80: share of positions scored below 50% (hard) or 80% and more (easy).</p></section>
+      <h2 class="pf-h">Visits</h2>
+      <section class="pf-card mx-lines">
+        <div><span>Positions per visit</span><b>${d.visits.positionsPerVisit}</b></div>
+        <div><span>Exercises per visit</span><b>${d.visits.exercisesPerVisit}</b></div>
+        <div><span>Visits with play</span><b>${pc(d.visits.playing, d.visits.n)}</b></div>
+        <div><span>Master / own positions</span><b>${pc(d.sources.masters || 0, totPos)} / ${pc(d.sources.mine || 0, totPos)}</b></div>
+        <div><span>In the daily routine</span><b>${pc(d.routine.positions, d.routine.of)}</b></div>
+      </section>
+      <h2 class="pf-h">Devices (${dev})</h2>
+      <section class="pf-card mx-lines">
+        <div><span>Logged in</span><b>${shares(d.devices.auth)}</b></div>
+        <div><span>Chess.com connected</span><b>${pc(d.devices.chesscom['1'] || 0, dev)}</b></div>
+        <div><span>Language</span><b>${shares(d.devices.lang)}</b></div>
+        <div><span>Installed app</span><b>${pc(d.devices.app['1'] || 0, dev)}</b></div>
+      </section>
+      <h2 class="pf-h">Own games</h2>
+      <section class="pf-card mx-lines">
+        <div><span>Devices with own games</span><b>${d.ownGames.devices}</b></div>
+        <div><span>Games / positions found</span><b>${d.ownGames.games} / ${d.ownGames.positions}</b></div>
+        <div><span>Positions per game</span><b>${d.ownGames.positionsPerGame}</b></div>
+      </section>
+      <h2 class="pf-h">Accounts (all time)</h2>
+      <section class="pf-card mx-lines">
+        <div><span>Accounts</span><b>${d.accounts.total} (${d.accounts.recent} in ${d.days} days)</b></div>
+        <div><span>Lichess / Google</span><b>${d.accounts.bySite.lichess || 0} / ${d.accounts.bySite.google || 0}</b></div>
+        <div><span>Chess.com connected</span><b>${d.accounts.chesscom}</b></div>
+      </section>
+      <h2 class="pf-h">Donations</h2>
+      <section class="pf-card"><p class="mx-note">Not connected yet: Ko-fi donations can be added from Stripe.</p></section>
+      <p class="mx-note">Updated ${new Date(d.generated).toLocaleString(dateLoc())}. Counts start when this version went live; your own play isn't counted.</p>`;
+  }
+  app.innerHTML = `
+    <div class="title-row">
+      <button class="icon-btn back" id="homeBtn" aria-label="Back to profile">${BACK_ARROW}</button>
+      <h1>Metrics</h1>
+      <span class="title-spacer" aria-hidden="true"></span>
+    </div>
+    <div class="pf-scroll mx-page" data-no-i18n>
+      <div class="seg seg-sm" role="radiogroup" aria-label="Period">${[7, 30, 90].map(n=>`<button class="seg-btn${metricsDays===n ? ' active' : ''}" data-days="${n}">${n} days</button>`).join('')}</div>
+      ${body}
+    </div>`;
+  document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
+  app.querySelectorAll('[data-days]').forEach(b=>b.onclick = ()=>{ metricsDays = +b.dataset.days; loadMetrics(); });
+}
 function renderScreen(){
   syncPos();
   const wrap = document.querySelector('.wrap');
@@ -6190,6 +6316,7 @@ function renderScreen(){
   else if(screen==='tests') renderTests();
   else if(screen==='settings') renderSettings();
   else if(screen==='support') renderSupport();
+  else if(screen==='metrics') renderMetrics();
   else if(screen==='analysis') renderAnalysis();
   else if(screen==='imbalances') renderImbalances();
   else if(screen==='candidates') renderCandidates();
@@ -6197,6 +6324,7 @@ function renderScreen(){
 }
 
 render();
+stat('open');
 initEngine();
 (async()=>{
   if(DIRECT_LICHESS){ await finishLichessLogin(); await finishGoogleLogin(); }   // back from lichess.org: signed in before anything loads

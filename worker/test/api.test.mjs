@@ -169,3 +169,35 @@ test('linking: a Google account connects Lichess; an existing Lichess account is
   assert.equal((await call(env, 'POST', '/api/link/google', { body: { idToken: 'x' } })).status, 404);
   assert.equal((await call(env, 'DELETE', '/api/link/lichess', { token: 'tok-other' })).status, 404);
 });
+
+test('usage counts: anonymous events from this site only; the metrics for the owner only', async () => {
+  const env = makeEnv();
+  const ev = (body, origin = ORIGIN) => call(env, 'POST', '/api/ev', { token: null, body, origin });
+  const now = Date.now();
+  assert.equal((await ev({ did: 'dev00001', sid: 'vis00001', ev: [{ k: 'open' }] }, 'https://evil.example')).status, 403, 'other sites refused');
+  assert.equal((await ev({ did: 'x', sid: 'vis00001', ev: [] })).status, 400, 'bad ids refused');
+  assert.equal((await ev({ did: 'dev00001', sid: 'vis00001', ctx: { auth: 'lichess', cc: 1, lang: 'fr', app: 1 },
+    ev: [{ k: 'open', ts: now }, { k: 'pos', a: 'analysis', acc: 80, src: 'masters', n1: 1, ts: now }, { k: 'pos', a: 'final', acc: 40, src: 'mine', ts: now },
+         { k: 'games', n1: 10, n2: 25, ts: now }, { k: 'nonsense' }] })).status, 200);
+  assert.equal((await ev({ did: 'dev00002', sid: 'vis00002', ctx: { auth: 'guest', lang: 'en' }, ev: [{ k: 'open' }, { k: 'pos', a: 'analysis', acc: 60, src: 'masters' }] })).status, 200);
+  const rows = env.DB.raw.prepare('SELECT * FROM events').all();
+  assert.equal(rows.length, 6, 'unknown kinds dropped');
+  assert.ok(!JSON.stringify(rows).match(/taussane|tok-/i), 'no account or name in the counts');
+  // metrics: the owner (Taussane on Lichess) only
+  await call(env, 'GET', '/api/me', { token: 'tok-other' });
+  assert.equal((await call(env, 'GET', '/api/metrics', { token: 'tok-other' })).status, 403);
+  const m = await j(await call(env, 'GET', '/api/metrics?days=30'));
+  assert.equal(m.status, 200);
+  assert.equal(m.body.active.day, 2);
+  assert.equal(m.body.daily.length, 30);
+  assert.equal(m.body.daily[29].positions, 3);
+  assert.equal(m.body.daily[29].newDevices, 2);
+  const an = m.body.exercises.find(x => x.a === 'analysis');
+  assert.deepEqual([an.n, an.avg, an.devices], [2, 70, 2]);
+  assert.deepEqual(m.body.sources, { masters: 2, mine: 1 });
+  assert.deepEqual(m.body.routine, { positions: 1, of: 3 });
+  assert.deepEqual(m.body.devices.auth, { lichess: 1, guest: 1 });
+  assert.deepEqual(m.body.ownGames, { devices: 1, games: 10, positions: 25, positionsPerGame: 2.5 });
+  assert.equal(m.body.visits.positionsPerVisit, 1.5);
+  assert.equal(m.body.accounts.total, 2);
+});

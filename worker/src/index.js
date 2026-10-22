@@ -27,6 +27,8 @@
 //   GET    /api/chesscom/games?user=&since=&max=  (max: default 100, at most 200)
 //                                       their newest games played after `since` (ms), as PGN text:
 //                                       live games only (no daily, no variants), newest first
+//   POST   /api/ev  {did, sid, ctx, ev:[…]}  anonymous usage counts from this site (no sign-in; see events)
+//   GET    /api/metrics?days=           the usage dashboard's figures (the owner's account only)
 //   DELETE /api/session                 forget this sign-in here (log out)
 //   DELETE /api/account                 delete the account and everything in it
 
@@ -78,6 +80,7 @@ const fail = (status, message) => Object.assign(new Error(message), { status });
 async function route(req, env) {
   const url = new URL(req.url), path = url.pathname.replace(/\/+$/, ''), m = req.method;
   if (path === '/api/health') return json({ ok: true });
+  if (m === 'POST' && path === '/api/ev') return usageEvents(req, env);
   if (m === 'POST' && path === '/api/login/google') return googleLogin(env, (await body(req)).idToken);
   if (m === 'GET' && path === '/api/chesscom/player') {   // public data: no sign-in needed (also before logging in)
     const user = ccUser(url);
@@ -163,6 +166,12 @@ async function route(req, env) {
       await DB.prepare('INSERT INTO meta (account_id, name, data) VALUES (?, ?, ?) ON CONFLICT (account_id, name) DO UPDATE SET data = excluded.data').bind(account, mm[1], data).run();
       return json({ ok: true });
     }
+  }
+  if (m === 'GET' && path === '/api/metrics') {
+    const owners = String(env.OWNERS || 'taussane').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+    const o = await DB.prepare(`SELECT 1 FROM connections WHERE account_id = ? AND site = 'lichess' AND site_user_id IN (${owners.map(() => '?').join(',')})`).bind(account, ...owners).first();
+    if (!o) throw fail(403, 'not allowed');
+    return json(await metrics(env, Math.max(1, Math.min(400, Number(url.searchParams.get('days')) || 90))));
   }
   if (m === 'POST' && path === '/api/link/lichess') {
     const b = await body(req);
@@ -326,6 +335,81 @@ async function ccGames(user, since, max) {
   }
   games.sort((x, y) => playedAt(y) - playedAt(x));
   return games.slice(0, max).join('\n\n') + (games.length ? '\n' : '');
+}
+
+// ---- Usage counts (anonymous) ----
+// The website sends small batches of events: a visit opened, a position finished (exercise, score,
+// masters or own game, in the routine or not), the own games found. Each carries a random device id
+// and visit id, never an account or a name. Kept 13 months.
+const EV_KINDS = ['open', 'pos', 'games'], EV_ACTS = ['imbalances', 'analysis', 'candidates', 'final'], KEEP_DAYS = 400;
+let eventsReady = false;
+async function ensureEvents(env) {
+  if (eventsReady) return;
+  await env.DB.batch([
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS events (ts INTEGER NOT NULL, day TEXT NOT NULL, did TEXT NOT NULL, sid TEXT NOT NULL, k TEXT NOT NULL, a TEXT, acc INTEGER, src TEXT, auth TEXT, cc INTEGER, lang TEXT, app INTEGER, n1 INTEGER, n2 INTEGER)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS events_day ON events(day)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS events_did ON events(did)'),
+  ]);
+  eventsReady = true;
+}
+async function usageEvents(req, env) {
+  const allowed = String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (!allowed.includes(req.headers.get('Origin') || '')) throw fail(403, 'not from this site');
+  const b = await body(req), id = x => typeof x === 'string' && /^[a-z0-9]{8,40}$/i.test(x);
+  if (!id(b.did) || !id(b.sid) || !Array.isArray(b.ev) || b.ev.length > 30) throw fail(400, 'bad events');
+  const c = b.ctx || {}, auth = ['guest', 'lichess', 'google'].includes(c.auth) ? c.auth : 'guest', lang = ['en', 'fr'].includes(c.lang) ? c.lang : null;
+  const int = (x, lo, hi) => Number.isFinite(x) ? Math.max(lo, Math.min(hi, Math.round(x))) : null, now = Date.now();
+  await ensureEvents(env);
+  const stmts = [];
+  for (const e of b.ev) {
+    if (!e || !EV_KINDS.includes(e.k)) continue;
+    const ts = int(e.ts, now - DAY, now) ?? now;
+    stmts.push(env.DB.prepare('INSERT INTO events (ts, day, did, sid, k, a, acc, src, auth, cc, lang, app, n1, n2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(
+      ts, new Date(ts).toISOString().slice(0, 10), b.did, b.sid, e.k, EV_ACTS.includes(e.a) ? e.a : null, int(e.acc, 0, 100),
+      ['masters', 'mine'].includes(e.src) ? e.src : null, auth, c.cc ? 1 : 0, lang, c.app ? 1 : 0, int(e.n1, 0, 1e6), int(e.n2, 0, 1e6)));
+  }
+  if (Math.random() < 0.01) stmts.push(env.DB.prepare('DELETE FROM events WHERE ts < ?').bind(now - KEEP_DAYS * DAY));   // now and then: the oldest go
+  if (stmts.length) await env.DB.batch(stmts);
+  return json({ ok: true, n: stmts.length });
+}
+// The dashboard's figures over the last `days` days: visits, devices, positions, exercises, sources,
+// logins, languages, own games; plus the accounts (all time).
+async function metrics(env, days) {
+  await ensureEvents(env);
+  const DB = env.DB, day = n => new Date(Date.now() - n * DAY).toISOString().slice(0, 10), since = day(days - 1);
+  const all = async (sql, ...a) => (await DB.prepare(sql).bind(...a).all()).results;
+  const one = async (sql, ...a) => await DB.prepare(sql).bind(...a).first();
+  const daily = await all(`SELECT day, COUNT(DISTINCT did) devices, COUNT(DISTINCT sid) visits, SUM(k = 'pos') positions FROM events WHERE day >= ? GROUP BY day ORDER BY day`, since);
+  const fresh = await all(`SELECT first AS day, COUNT(*) n FROM (SELECT did, MIN(day) first FROM events GROUP BY did) WHERE first >= ? GROUP BY first`, since);
+  const newBy = Object.fromEntries(fresh.map(r => [r.day, r.n]));
+  const active = async n => (await one('SELECT COUNT(DISTINCT did) n FROM events WHERE day >= ?', day(n - 1))).n;
+  const acts = await all(`SELECT a, COUNT(*) n, ROUND(AVG(acc), 1) avg, SUM(acc < 50) low, SUM(acc >= 80) high, COUNT(DISTINCT did) devices FROM events WHERE k = 'pos' AND a IS NOT NULL AND day >= ? GROUP BY a ORDER BY n DESC`, since);
+  const src = await all(`SELECT src, COUNT(*) n FROM events WHERE k = 'pos' AND day >= ? GROUP BY src`, since);
+  const routine = await one(`SELECT SUM(n1 = 1) r, COUNT(*) n FROM events WHERE k = 'pos' AND day >= ?`, since);
+  const visits = await one(`SELECT COUNT(*) visits, ROUND(AVG(p), 2) positions, ROUND(AVG(x), 2) exercises, SUM(p > 0) playing FROM (SELECT sid, SUM(k = 'pos') p, COUNT(DISTINCT a) x FROM events WHERE day >= ? GROUP BY sid)`, since);
+  // each device as last seen in the period (SQLite: the bare columns come from the row with MAX(ts))
+  const devs = await all(`SELECT did, auth, cc, lang, app, MAX(ts) ts FROM events WHERE day >= ? GROUP BY did`, since);
+  const share = key => devs.reduce((o, d) => (o[d[key] ?? '?'] = (o[d[key] ?? '?'] || 0) + 1, o), {});
+  const games = await all(`SELECT did, n1, n2, MAX(ts) ts FROM events WHERE k = 'games' AND day >= ? GROUP BY did`, since);
+  const g = games.reduce((o, x) => ({ devices: o.devices + 1, games: o.games + (x.n1 || 0), positions: o.positions + (x.n2 || 0) }), { devices: 0, games: 0, positions: 0 });
+  const accounts = await one('SELECT COUNT(*) n, SUM(created_at >= ?) recent FROM accounts', Date.now() - days * DAY);
+  const bySite = Object.fromEntries((await all('SELECT site, COUNT(DISTINCT account_id) n FROM connections GROUP BY site')).map(r => [r.site, r.n]));
+  const cc = await one(`SELECT COUNT(*) n FROM meta WHERE name = 'chesscom' AND data LIKE '%"username":"%' AND data NOT LIKE '%"username":""%'`);
+  const newAccounts = await all(`SELECT strftime('%Y-%m-%d', created_at / 1000, 'unixepoch') day, COUNT(*) n FROM accounts WHERE created_at >= ? GROUP BY day`, Date.now() - days * DAY);
+  const accBy = Object.fromEntries(newAccounts.map(r => [r.day, r.n]));
+  const byDay = Object.fromEntries(daily.map(r => [r.day, r]));
+  return {
+    generated: Date.now(), days,
+    daily: Array.from({ length: days }, (_, i) => day(days - 1 - i)).map(d => ({ day: d, devices: byDay[d] ? byDay[d].devices : 0, newDevices: newBy[d] || 0,
+      visits: byDay[d] ? byDay[d].visits : 0, positions: byDay[d] ? byDay[d].positions : 0, newAccounts: accBy[d] || 0 })),
+    active: { day: await active(1), week: await active(7), month: await active(30), period: devs.length },
+    visits: { n: visits.visits || 0, playing: visits.playing || 0, positionsPerVisit: visits.positions || 0, exercisesPerVisit: visits.exercises || 0 },
+    exercises: acts, sources: Object.fromEntries(src.map(r => [r.src || '?', r.n])),
+    routine: { positions: routine.r || 0, of: routine.n || 0 },
+    devices: { auth: share('auth'), chesscom: share('cc'), lang: share('lang'), app: share('app') },
+    ownGames: { ...g, positionsPerGame: g.games ? Math.round(g.positions / g.games * 100) / 100 : 0 },
+    accounts: { total: accounts.n || 0, recent: accounts.recent || 0, bySite, chesscom: cc.n || 0 },
+  };
 }
 
 async function body(req) {
