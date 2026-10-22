@@ -1,4 +1,4 @@
-<title>Chess Strategy</title>
+<title>ChessStrategy.org</title>
 <style>
   /* Layout: one narrow column, home page of three exercise cards, each exercise = position bar + board + one panel. */
   :root{
@@ -6101,7 +6101,7 @@ function setLanguage(){
   LANG = settings.lang || auto;
   localPieces = LOCAL_PIECES[LANG] || null;
   document.documentElement.lang = LANG;
-  document.title = 'Chess Strategy';
+  document.title = 'ChessStrategy.org';
   i18nObserver.disconnect();
   if(LANG==='fr'){ translateNode(document.body); i18nObserver.observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:I18N_ATTRS }); }
 }

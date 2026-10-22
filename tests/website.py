@@ -27,7 +27,7 @@ async def main():
         await pg.goto('https://site.test/'); await pg.wait_for_timeout(400)
         st = await pg.evaluate("[document.compatMode, !!document.querySelector('meta[name=viewport]'), document.title, typeof window.claude, document.documentElement.scrollWidth <= innerWidth]")
         print('page:', st)
-        if st != ['CSS1Compat', True, 'Chess Strategy', 'undefined', True]: fails.append(f'page setup: {st}')
+        if st != ['CSS1Compat', True, 'ChessStrategy.org', 'undefined', True]: fails.append(f'page setup: {st}')
         await pg.evaluate("(()=>{"+T.FAKE+" render(); })()")
         await pg.click('#accountBtn')
         if await pg.query_selector('#exportLink'): fails.append('the website still shows the download steps')
