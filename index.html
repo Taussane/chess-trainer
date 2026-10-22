@@ -164,8 +164,7 @@
   .kofi-wrap iframe{display:block; border:none; width:100%; height:680px; background:var(--panel);}   /* (Ko-fi's page can't tell ours its height: set by hand) */
   .sup-thanks .sup-share{color:var(--accent); text-decoration-color:var(--accent);}
   .sup-thanks{margin:4px 2px 0; text-align:center; color:var(--text-mute); font-size:0.88rem; line-height:1.5;}
-  .home-donate{display:flex; justify-content:center; margin:18px 0 4px;}
-  .home-donate .title-chip{margin-left:0; color:var(--accent);}
+  body:not(.kofi-on) [class*="floatingchat"], body:not(.kofi-on) [id*="kofi-widget-overlay"], body:not(.kofi-on) [class*="floating-chat"]{display:none !important;}   /* Ko-fi's button: home page only */
   .title-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
   .test-item{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px 12px; display:flex; flex-direction:column; gap:6px;}
@@ -3946,6 +3945,22 @@ function accountSection(){
 // The page behind the Donate links: why the app is free, what donations help with, then Ko-fi's own donation
 // panel embedded (on the website: you give without leaving the app; a link opens Ko-fi itself too). Inside
 // Claude, where the panel can't load, a button opens Ko-fi.
+// Ko-fi's own floating "Support me" button (its overlay donation panel), on the home page only, on the
+// website only: the script is loaded the first time the home page shows; elsewhere its button is hidden.
+let kofiLoaded = false;
+function kofiFloating(show){
+  document.body.classList.toggle('kofi-on', !!show);
+  if(!show || kofiLoaded || !DIRECT_LICHESS) return;
+  kofiLoaded = true;
+  const sc = document.createElement('script');
+  sc.src = 'https://storage.ko-fi.com/cdn/scripts/overlay-widget.js';
+  sc.onload = ()=>{ try{ kofiWidgetOverlay.draw('taussane', {
+    'type': 'floating-chat',
+    'floating-chat.donateButton.text': tr('Support me'),
+    'floating-chat.donateButton.background-color': '#fcbf47',
+    'floating-chat.donateButton.text-color': '#323842' }); }catch(e){} };
+  document.head.appendChild(sc);
+}
 let supportFrom = 'account';   // where the Donate page goes back to: 'home' or 'account'
 const KOFI_URL = 'https://ko-fi.com/taussane';   // the Ko-fi page (empty: the button says it's coming soon)
 let supportRebuild = true;   // background redraws leave the page (and Ko-fi's panel, mid-donation) alone
@@ -4126,10 +4141,8 @@ function renderHome(){
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small></span>
         </button>`; }).join('')}
     </div>
-    <div class="home-donate"><button class="title-chip donate-chip" id="donateBtn">Donate</button></div>
     ${engineErrorBanner()}`;
   app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>setSource(b.dataset.src));
-  document.getElementById('donateBtn').onclick = ()=>{ supportFrom = 'home'; screen = 'support'; supportRebuild = true; render(); };
   app.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
   document.getElementById('accountBtn').onclick = ()=>{ screen = 'account'; render(); };
   document.getElementById('routineBtn').onclick = startRoutine;
@@ -6020,7 +6033,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Free chess strategy training on master games and your own.": "Entraînement gratuit à la stratégie aux échecs, sur des parties de maîtres et les vôtres.",
 "Donate": "Faire un don",
 "Tap an imbalance to see it on the board, then the '?' button for how it's counted.": "Touchez un déséquilibre pour le voir sur l'échiquier, puis le bouton « ? » pour savoir comment il se compte.",
-"Tap a line to see its imbalance on the board, then the '?' button for how it's counted.": "Touchez une ligne pour voir son déséquilibre sur l'échiquier, puis le bouton « ? » pour savoir comment il se compte."
+"Tap a line to see its imbalance on the board, then the '?' button for how it's counted.": "Touchez une ligne pour voir son déséquilibre sur l'échiquier, puis le bouton « ? » pour savoir comment il se compte.",
+"Support me": "Soutenez-moi"
 }/*END I18N_FR*/));
 const I18N_FR_RE = [
   [/^(\d+)\. White to play$/, '$1. Aux Blancs de jouer'],
@@ -6168,6 +6182,7 @@ function renderSettings(){
 }
 function renderScreen(){
   syncPos();
+  kofiFloating(screen==='home');
   const wrap = document.querySelector('.wrap');
   wrap.classList.toggle('ex', ACTIVITIES.includes(screen));
   if(screen==='home') renderHome();
