@@ -1,4 +1,4 @@
-# Chess Strategy Trainer
+# Chess Strategy
 
 A mobile-first chess trainer with four exercises, in the order a player thinks: **Imbalance reading** (who has the edge in material, pawns, space, activity, king safety and threats), **Position evaluation**, **Candidate moves** and **Move selection**. Free and open: positions from master games, and from your own Lichess and Chess.com games.
 

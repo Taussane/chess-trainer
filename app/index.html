@@ -1,4 +1,4 @@
-<title>Chess Strategy Trainer</title>
+<title>Chess Strategy</title>
 <style>
   /* Layout: one narrow column, home page of three exercise cards, each exercise = position bar + board + one panel. */
   :root{
@@ -3993,7 +3993,7 @@ function kofiButton(){
 const APP_URL = 'https://taussane.github.io/chess-trainer/';
 let supCopied = false;
 async function shareApp(){
-  const data = { title: tr('Chess Strategy Trainer'), text: tr('Free chess strategy training on master games and your own.'), url: APP_URL };
+  const data = { title: 'Chess Strategy', text: tr('Free chess strategy training on master games and your own.'), url: APP_URL };
   if(navigator.share){ try{ await navigator.share(data); }catch(e){} return; }   // (closing the sheet is not an error worth showing)
   copyAppLink();
 }
@@ -4116,7 +4116,7 @@ function renderHome(){
   app.innerHTML = `
     <div class="home-head">
       <div class="home-top"><button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span>${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</button></div>
-      <h1>Chess Strategy Trainer</h1>
+      <h1 data-no-i18n>Chess Strategy</h1>
       ${(DIRECT_LICHESS ? !signedIn() : !results.length) ? `<p>Train your strategy beyond tactics puzzles: gauge the imbalances, evaluate the position, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
     ${routineCard()}
@@ -5639,7 +5639,6 @@ const dateLoc = ()=>typeof LANG!=='undefined' && LANG==='fr' ? 'fr-CA' : undefin
 // marked data-no-i18n (and their children) are left alone: moves, names.
 var LANG = 'en';   // (var: read by dateLoc before this line runs, at worst)
 const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
-"Chess Strategy Trainer": "Entraîneur de stratégie aux échecs",
 "Back to exercises": "Retour aux exercices",
 "Back to profile": "Retour au profil",
 "How this exercise works": "Comment fonctionne cet exercice",
@@ -6098,7 +6097,7 @@ function setLanguage(){
   LANG = settings.lang || auto;
   localPieces = LOCAL_PIECES[LANG] || null;
   document.documentElement.lang = LANG;
-  document.title = LANG==='fr' ? 'Entraîneur de stratégie aux échecs' : 'Chess Strategy Trainer';
+  document.title = 'Chess Strategy';
   i18nObserver.disconnect();
   if(LANG==='fr'){ translateNode(document.body); i18nObserver.observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:I18N_ATTRS }); }
 }

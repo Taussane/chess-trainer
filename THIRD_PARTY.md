@@ -1,6 +1,6 @@
 # Third-party notices
 
-Chess Strategy Trainer is licensed under the GNU Affero General Public License v3.0 (see `LICENSE`). It uses or adapts the following, under their own licences.
+Chess Strategy is licensed under the GNU Affero General Public License v3.0 (see `LICENSE`). It uses or adapts the following, under their own licences.
 
 ## chess.js 0.12.1
 

@@ -12,7 +12,7 @@ page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="description" content="Chess strategy training on positions from master games and your own Lichess and Chess.com games.">\n'
         # link previews (Open Graph, X/Twitter): icons/og-image.png, 1200x630
         '<meta property="og:type" content="website">\n'
-        '<meta property="og:title" content="Chess Strategy Trainer">\n'
+        '<meta property="og:title" content="Chess Strategy">\n'
         '<meta property="og:description" content="Free chess strategy training on positions from master games and your own Lichess and Chess.com games.">\n'
         '<meta property="og:url" content="https://taussane.github.io/chess-trainer/">\n'
         '<meta property="og:image" content="https://taussane.github.io/chess-trainer/icons/og-image.png">\n'
