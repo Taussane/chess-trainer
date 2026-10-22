@@ -4044,14 +4044,13 @@ function renderAccount(){
       ${prog.html}
       ${positionsSection()}
       ${DIRECT_LICHESS ? accountSection() : gamesFileSection()}
-      <p class="ac-foot"><button class="link-plain install-link" id="supportBtn">Donate</button> · ${installLink()}${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
+      <p class="ac-foot">${installLink()}${DIRECT_LICHESS ? `<a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; render(); };
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('testsBtn', ()=>{ screen = 'tests'; render(); });
   on('installBtn', installApp);
-  on('supportBtn', ()=>{ supportFrom = 'account'; screen = 'support'; supportRebuild = true; render(); });
   on('settingsBtn', ()=>{ screen = 'settings'; settingsRebuild = true; render(); });
   on('lichessLogin', ()=>lichessLogin()); on('googleLogin', ()=>googleLogin());
   on('pfLogout', logout);
