@@ -3960,20 +3960,20 @@ function renderSupport(){
           <li>Open source.</li>
         </ul>
         <p>Made by one person. Donations help pay for the server and new features.</p>
-        ${KOFI_URL ? `<a class="btn sup-btn" href="${KOFI_URL}" target="_blank" rel="noopener">Buy me a knight on Ko-fi</a>` : `<button class="btn sup-btn" disabled>Ko-fi: coming soon</button>`}
+        ${KOFI_URL ? `<a class="btn sup-btn" href="${KOFI_URL}" target="_blank" rel="noopener">Support me on Ko-fi</a>` : `<button class="btn sup-btn" disabled>Ko-fi: coming soon</button>`}
         <p class="sup-note">Once or monthly, by card or PayPal. A gift: it doesn't unlock anything.</p>
       </section>
-      <p class="sup-thanks">Can't give?<br><button class="link-plain sup-share" id="supShare">Share it with a chess friend</button> · <button class="link-plain sup-share" id="supCopy">${supCopied ? 'Link copied ✓' : 'Copy link'}</button><br>Thank you!</p>
+      <p class="sup-thanks">Can't give?<br><button class="link-plain sup-share" id="supShare">${supCopied ? 'Link copied ✓' : 'Share it with a chess friend'}</button><br>Thank you!</p>
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; supCopied = false; render(); };
   document.getElementById('supShare').onclick = shareApp;
-  document.getElementById('supCopy').onclick = copyAppLink;
 }
-// Sharing the app: the device's own share sheet (apps, messages, copy) where there is one, else the link copied.
+// Sharing the app: the device's own share sheet (apps, messages, copy) where there is one, else the link copied
+// (the link then reads "Link copied ✓" for a moment).
 const APP_URL = 'https://taussane.github.io/chess-trainer/';
 let supCopied = false;
 async function shareApp(){
-  const data = { title: tr('Chess Strategy Trainer'), text: tr('Free chess strategy training on master games and your own. No ads.'), url: APP_URL };
+  const data = { title: tr('Chess Strategy Trainer'), text: tr('Free chess strategy training on master games and your own.'), url: APP_URL };
   if(navigator.share){ try{ await navigator.share(data); }catch(e){} return; }   // (closing the sheet is not an error worth showing)
   copyAppLink();
 }
@@ -5845,7 +5845,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Your data is never sold.": "Vos données ne sont jamais vendues.",
 "Open source.": "Code libre.",
 "Made by one person. Donations help pay for the server and new features.": "Fait par une seule personne. Les dons aident à payer le serveur et les nouveautés.",
-"Buy me a knight on Ko-fi": "Offrez-moi un cavalier",
 "Ko-fi: coming soon": "Ko-fi : bientôt disponible",
 "Once or monthly, by card or PayPal. A gift: it doesn't unlock anything.": "Une fois ou chaque mois, par carte ou PayPal. Un cadeau : ça ne débloque rien.",
 "Last move": "Dernier coup",
@@ -6008,10 +6007,10 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "In Safari, tap Share, then Add to Home Screen.": "Dans Safari, touchez Partager, puis Sur l'écran d'accueil.",
 "Can't give?": "Pas en mesure de donner ?",
 "Share it with a chess friend": "Partagez-le avec un ami joueur",
-"Copy link": "Copier le lien",
 "Link copied ✓": "Lien copié ✓",
 "Thank you!": "Merci !",
-"Free chess strategy training on master games and your own. No ads.": "Entraînement gratuit à la stratégie aux échecs, sur des parties de maîtres et les vôtres. Sans pub."
+"Support me on Ko-fi": "Soutenez-moi sur Ko-fi",
+"Free chess strategy training on master games and your own.": "Entraînement gratuit à la stratégie aux échecs, sur des parties de maîtres et les vôtres."
 }/*END I18N_FR*/));
 const I18N_FR_RE = [
   [/^(\d+)\. White to play$/, '$1. Aux Blancs de jouer'],
