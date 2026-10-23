@@ -5171,9 +5171,11 @@ function renderAnalysis(){
   const score = truth ? { base:100, final: evalAccuracyPct(s.guess, truth.pct) } : null;   // the accuracy counts down from 100%
   if(truth && s.animT==null){ recordResult(s, 'analysis', score.final); startReveal(p, s, truth, score); prefetchNext(); }
   const t = truth ? easeOut(s.animT ?? 1) : 0;
-  const done = !!truth && (s.animT ?? 1) >= 1;
+  // The end of the review (buttons, average, plans) comes once the reveal is over AND the plans are in, all together.
+  const revealed = !!truth && (s.animT ?? 1) >= 1, aspE = revealed ? aspectsEntry(p.fen) : null;
+  const done = revealed && aspE.status==='done';
   // The review also suggests a plan, from the imbalances (tap a line to see its imbalance on the board): not scored.
-  const asp = done ? aspectsEntry(p.fen) : null, aspVals = asp && asp.status==='done' ? asp.data : null;
+  const asp = aspE, aspVals = done ? asp.data : null;
   const barPct = truth ? s.guess + (truth.pct - s.guess)*t : s.guess;
   const bar = s.checked
     ? evalBarHtml(barPct, done ? fmtBarScore(truth.info) : truth ? fmtGuess(barPct) : '…', s.guess, false)
@@ -5184,13 +5186,17 @@ function renderAnalysis(){
     ${boardHtml(true, bar)}
     ${stackedPanel(`
       ${s.checked ? `
-        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(score.base + (score.final - score.base)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
+        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(score.base + (score.final - score.base)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, false)}</div>
         ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, s.justDone, false, p.fen) : planHtml(null, null, false, true)}
-        <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
+        <div class="actions-row split${done ? '' : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Drag the evaluation bar to where you think it sits.</p>
         <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' || (!s.barMoved && hintsOn('analysis')) ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
+  if(s.checked){
+    fadeOnce(s, 'score', reviewPart('.score'));   // the accuracy, as the review opens
+    if(done){ fadeOnce(s, 'plan', reviewPart('.aspects.plan')); fadeOnce(s, 'level', reviewPart('.level')); fadeOnce(s, 'end', reviewPart('.actions-row')); }   // then the plans, the average and the buttons together
+  }
   if(aspVals) wireAspectView(p, s);
   if(!s.checked){
     setupGauge(s);
@@ -5371,6 +5377,7 @@ function renderCandidates(){
         ghostCandidates(), engineErrorBanner())}`;
     renderBoard(document.getElementById('board'), bs, p.last);
     drawArrows(document.getElementById('arrows'), arrowList, 'ac_');
+    fadeOnce(s, 'score', reviewPart('.score')); fadeOnce(s, 'mine', reviewPart('.review-col'));   // the accuracy and your moves, as the review opens
     document.querySelectorAll('.col-toggle').forEach(b=>b.onclick = ()=>{
       if(b.dataset.toggle==='mine') s.showMine = !showMine; else s.showTop = !showTop;
       render();
@@ -5530,6 +5537,14 @@ function timedFade(el, delay, elapsed, dur, kind, easing){
   const done = ev=>{ if(ev.target!==el) return; el.style.animation = ''; el.removeEventListener('animationend', done); };
   el.addEventListener('animationend', done);
 }
+// A review's parts fading in once, each from the moment it first shows (s.fades[key]), whatever redraws come.
+function fadeOnce(s, key, el, delay){
+  if(!el) return;
+  s.fades = s.fades || {};
+  if(s.fades[key]==null) s.fades[key] = performance.now();
+  timedFade(el, delay || 0, performance.now() - s.fades[key], SLIDE_MS, 'fadeIn');
+}
+const reviewPart = sel=>document.querySelector('#app .layer:not(.ghost) ' + sel);
 const SLIDE_MS = 350;   // = .fade-in, the Position evaluation recap/buttons fade-and-rise
 // Question screens of Position evaluation and Candidate moves: the instruction and Check button fade
 // and rise in together, once per position, as soon as the screen opens.
@@ -5597,6 +5612,7 @@ function renderFinal(){
         <div class="actions-row split${s.revDone ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`, ghostFinal(), engineErrorBanner())}`;
     renderBoard(document.getElementById('board'), bs, p.last);
     drawArrows(document.getElementById('arrows'), rows, 'af_');
+    fadeOnce(s, 'score', reviewPart('.score'));   // "— Evaluating…", as the review opens
     wireCommon('final', true);
     s.justDone = false;
     if(ready && !s.revDone){
