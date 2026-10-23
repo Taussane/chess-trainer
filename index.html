@@ -5777,14 +5777,19 @@ function render(){
 // The phone's back button (and the browser's): one history entry stands for "inside a page"; going back
 // does what the page's own back arrow does (an exercise or the profile: home; settings: the profile...),
 // or first closes the grades' scale if it's open. On the home page, back leaves the site as usual.
+let historyPushed = false;   // the entry was added by this page load (a reload keeps history.state, not our entry's meaning)
 function syncHistory(){
   try{
     const deep = !!(history.state && history.state.cstDeep);
-    if(screen!=='home' && !deep) history.pushState({ cstDeep:1 }, '');
-    else if(screen==='home' && deep) history.back();   // back home by the arrow: the entry goes too
+    if(screen!=='home' && !deep){ history.pushState({ cstDeep:1 }, ''); historyPushed = true; }
+    else if(screen==='home' && deep){
+      if(historyPushed){ historyPushed = false; history.back(); }   // back home by the arrow: the entry goes too
+      else history.replaceState(null, '');   // after a reload: never step back out of the site
+    }
   }catch(e){}
 }
 window.addEventListener('popstate', ()=>{
+  historyPushed = false;   // the entry is gone
   if(screen==='home') return;
   if(aspPicker){ closeAspPicker(); syncHistory(); return; }
   const b = document.getElementById('homeBtn');
