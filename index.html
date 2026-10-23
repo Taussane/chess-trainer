@@ -5301,7 +5301,7 @@ function renderImbalances(){
   if(s.checked) fadeOnce(s, 'score', reviewPart('.score'));   // the accuracy, as the review opens
   if(done) wireAspectView(p, s);
   if(!s.checked){
-    introFade(s, ['imbPrompt', 'aspInput', 'imbCheckRow']);
+    introFade(s, ['imbPrompt', 'imbCheckRow']);   // the grades themselves are there at once
     wireAspectsInput(s);
     document.getElementById('check').onclick = ()=>{ closeAspPicker(); s.checked = true; s.justDone = false; aspectsEntry(p.fen); render(); };
   }
