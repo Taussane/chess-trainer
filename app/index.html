@@ -433,7 +433,10 @@
   @keyframes liftPulse{0%,100%{background:transparent; box-shadow:none; transform:none;} 29.4%{background:var(--panel-2); box-shadow:0 6px 18px var(--shadow); transform:translateY(-2px);}}
   @keyframes aspPulse{0%,100%{border-color:var(--border); box-shadow:none;} 29.4%{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}}   /* lights up in 0.5 s, fades out over 1.2 s */
   @media (prefers-reduced-motion: reduce){ .hinting .pulse-now, .hinting .pulse-now::before{animation-duration:1ms !important;} }
-  .score{display:flex; align-items:baseline; gap:8px; margin-bottom:12px;}
+  .score{display:flex; align-items:baseline; gap:8px; margin-bottom:12px; position:relative;}
+  .depth-btn{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:42px; padding:3px 8px 2px; border:1px solid var(--border); border-radius:8px; background:var(--panel-2); color:var(--text); font:inherit; line-height:1; cursor:pointer;}
+  .depth-btn b{font-size:1rem; font-weight:700;} .depth-btn small{font-size:0.62rem; color:var(--text-mute); margin-top:2px; letter-spacing:.03em;}
+  .depth-note{position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:5; margin:0; padding:8px 10px; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 18px var(--shadow); font-size:0.8rem; line-height:1.4; color:var(--text-mute); text-align:center;}   /* over the review, nothing moves */
   .score-num{font-family:var(--font-display); font-size:1.7rem; line-height:1; font-variant-numeric:tabular-nums;}
   .score-label{color:var(--text-mute); font-size:0.86rem;}
 
@@ -1415,6 +1418,8 @@ let bgQueue = [];        // {fen, searchmoves, multipv, movetime, resolve}: back
 let sfBusy = false;
 let sfCurrentResolve = null;
 let sfCurrentLines = {}; // rank (1..N) -> {cp, mate, uci} for the search currently in flight
+let sfCurrentDepth = 0;  // the deepest full pass of that search (its best line's depth): shown in the reviews
+let sfVersion = 'SF19';  // the engine running: Stockfish 19 lite, or Stockfish 10 as the last resort
 
 // fetch() to either CDN is blocked in this sandbox (confirmed: both attempts failed before
 // even reaching the Worker), so the engine source text can't be fetched from page JS and
@@ -1472,7 +1477,7 @@ function attemptEngineLoad(i){
         sfWorker = worker;
         sfWorker.onmessage = onEngineMessage;
         sfWorker.onerror = ()=>{ failEngine('stopped'); };
-        sfState = 'ready'; sfLastError = null;
+        sfState = 'ready'; sfLastError = null; sfVersion = url.includes(SF19_JS) ? 'SF19' : 'SF10';
         render(); pumpEngineQueue(); if(myGamesLoaded) myBackground();
       }
     });
@@ -1497,6 +1502,8 @@ function onEngineMessage(e){
       const mateM = line.match(/score mate (-?\d+)/);
       const cpM = line.match(/score cp (-?\d+)/);
       const pvM = line.match(/ pv (\S+)/); // first move of that line's principal variation
+      const dM = line.match(/ depth (\d+)/);
+      if(dM && rank===1 && !/ (upper|lower)bound/.test(line)) sfCurrentDepth = Math.max(sfCurrentDepth, +dM[1]);
       sfCurrentLines[rank] = {
         cp: mateM ? null : (cpM ? parseInt(cpM[1],10) : null),
         mate: mateM ? parseInt(mateM[1],10) : null,
@@ -1518,8 +1525,8 @@ function onEngineMessage(e){
       // of which label the engine happened to leave it under, rather than trusting a rank
       // number that only holds once every line has finished converging.
       const lines = collected.slice().sort((a,b)=> winPercent(b.cp,b.mate) - winPercent(a.cp,a.mate));
-      const result = lines.length ? { lines, bestUci } : FAILED;
-      sfCurrentLines = {};
+      const result = lines.length ? { lines, bestUci, depth: sfCurrentDepth || null } : FAILED;
+      sfCurrentLines = {}; sfCurrentDepth = 0;
       const resolve = sfCurrentResolve;
       sfBusy = false; sfCurrentResolve = null;
       if(resolve) resolve(result);
@@ -3937,7 +3944,7 @@ function recordResult(s, a, acc){
   // average at the time, so the position is on your missed list until played well again.
   const r = { a, acc: Math.round(acc), ts: Date.now(), src: pos().gameId ? 'mine' : 'masters', key: pos().key, miss: before.level!=null && acc < before.level };
   results.push(r);
-  stat('pos', { a, acc: r.acc, src: r.src, n1: routine ? 1 : 0 });   // (anonymous usage count)
+  stat('pos', { a, acc: r.acc, src: r.src, n1: routine ? 1 : 0, n2: a!=='imbalances' && reviewDepth ? reviewDepth : 0 });   // (anonymous usage count; n2: the search's depth)
   if(resultsDb) resultsDb.add(r).catch(()=>{});
   saveLocal();
   const after = levelNow(a);
@@ -5216,7 +5223,7 @@ function renderAnalysis(){
     ${boardHtml(true, bar)}
     ${stackedPanel(`
       ${s.checked ? `
-        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(score.base + (score.final - score.base)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, false)}</div>
+        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(score.base + (score.final - score.base)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, false)}${depthBtnHtml(disc, done, false)}${depthNoteHtml(s, disc)}</div>
         ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, s.justDone, false, p.fen) : planHtml(null, null, false, true)}
         <div class="actions-row split${done ? '' : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
@@ -5225,7 +5232,8 @@ function renderAnalysis(){
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(s.checked){
     fadeOnce(s, 'score', reviewPart('.score'));   // the accuracy, as the review opens
-    if(done){ fadeOnce(s, 'plan', reviewPart('.aspects.plan')); fadeOnce(s, 'level', reviewPart('.level')); fadeOnce(s, 'end', reviewPart('.actions-row')); }   // then the plans, the average and the buttons together
+    if(done){ fadeOnce(s, 'plan', reviewPart('.aspects.plan')); fadeOnce(s, 'level', reviewPart('.level')); fadeOnce(s, 'end', reviewPart('.actions-row')); fadeOnce(s, 'depth', reviewPart('#depthBtn')); }   // then the plans, the average, the buttons and the depth together
+    wireDepthBtn(s);
   }
   if(aspVals) wireAspectView(p, s);
   if(!s.checked){
@@ -5398,7 +5406,7 @@ function renderCandidates(){
       ${posBar()}
       ${boardHtml(false)}
       ${stackedPanel(`
-        <div class="score"><span class="score-num" id="candAcc">${s.countDone ? pctOrDash(acc) : s.countStarted ? '0%' : '—'}</span><span class="score-label" id="candAccLabel">${failed ? 'Engine unavailable' : s.countStarted || s.countDone ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.countDone, s.justCounted)}</div>
+        <div class="score"><span class="score-num" id="candAcc">${s.countDone ? pctOrDash(acc) : s.countStarted ? '0%' : '—'}</span><span class="score-label" id="candAccLabel">${failed ? 'Engine unavailable' : s.countStarted || s.countDone ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.countDone, s.justCounted)}${depthBtnHtml(ev, s.countDone, s.justCounted)}${depthNoteHtml(s, ev)}</div>
         <div class="review-cols">
           ${col('Your moves', 'mine', showMine, mine, '')}
           ${col('Top moves', 'top', showTop, top, failed ? 'Unavailable' : 'Evaluating…')}
@@ -5408,6 +5416,7 @@ function renderCandidates(){
     renderBoard(document.getElementById('board'), bs, p.last);
     drawArrows(document.getElementById('arrows'), arrowList, 'ac_');
     fadeOnce(s, 'score', reviewPart('.score')); fadeOnce(s, 'mine', reviewPart('.review-col'));   // the accuracy and your moves, as the review opens
+    wireDepthBtn(s);
     document.querySelectorAll('.col-toggle').forEach(b=>b.onclick = ()=>{
       if(b.dataset.toggle==='mine') s.showMine = !showMine; else s.showTop = !showTop;
       render();
@@ -5567,6 +5576,27 @@ function timedFade(el, delay, elapsed, dur, kind, easing){
   const done = ev=>{ if(ev.target!==el) return; el.style.animation = ''; el.removeEventListener('animationend', done); };
   el.addEventListener('animationend', done);
 }
+// The review's engine button: the depth its search reached, the engine below (tap: what it means).
+let reviewDepth = null;   // the open review's depth (for the anonymous usage counts)
+function depthBtnHtml(ev, show, fade){
+  const d = ev && !evalFailed(ev) ? ev.depth : null;
+  reviewDepth = d;
+  if(!d) return '';
+  return `<button class="depth-btn${fade ? ' fade-in' : ''}" id="depthBtn" style="${show ? '' : 'visibility:hidden'}" aria-label="${sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10'}, depth ${d}"><b>${d}</b><small>${sfVersion}</small></button>`;
+}
+function depthNoteHtml(s, ev){
+  const d = ev && !evalFailed(ev) ? ev.depth : null;
+  if(!s.depthNote || !d) return '';
+  const v = sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10', t = String(OWN.checkMs/1000);
+  return `<p class="depth-note" data-no-i18n>${LANG==='fr'
+    ? `${v}${sfVersion==='SF19' ? ' (version allégée, dans votre navigateur)' : ' (dans votre navigateur)'} a cherché ${t.replace('.', ',')} s, jusqu'à la profondeur ${d}. Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer.`
+    : `${v}${sfVersion==='SF19' ? ' (lite, in your browser)' : ' (in your browser)'} searched for ${t} s, to depth ${d}. Lichess analyses deeper on its servers, so its numbers can differ a little.`}</p>`;
+}
+function wireDepthBtn(s){
+  const b = document.getElementById('depthBtn'); if(!b) return;
+  b.onclick = e=>{ e.stopPropagation(); s.depthNote = !s.depthNote; render(); };
+  if(s.depthNote) setTimeout(()=>document.addEventListener('click', ()=>{ if(s.depthNote){ s.depthNote = false; render(); } }, { once:true }), 0);   // a tap anywhere closes it
+}
 // A review's parts fading in once, each from the moment it first shows (s.fades[key]), whatever redraws come.
 function fadeOnce(s, key, el, delay){
   if(!el) return;
@@ -5637,12 +5667,13 @@ function renderFinal(){
       ${posBar()}
       ${boardHtml(false)}
       ${stackedPanel(`
-        <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'Engine unavailable' : counting ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}</div>
+        <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'Engine unavailable' : counting ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}${depthBtnHtml(ev, s.revDone, s.justDone)}${depthNoteHtml(s, ev)}</div>
         <div id="reviewRows" class="rev-list">${rows.map(reviewRowHtml).join('')}</div>
         <div class="actions-row split${s.revDone ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`, ghostFinal(), engineErrorBanner())}`;
     renderBoard(document.getElementById('board'), bs, p.last);
     drawArrows(document.getElementById('arrows'), rows, 'af_');
     fadeOnce(s, 'score', reviewPart('.score'));   // "— Evaluating…", as the review opens
+    wireDepthBtn(s);
     wireCommon('final', true);
     s.justDone = false;
     if(ready && !s.revDone){
@@ -6276,7 +6307,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Ponder each strategic aspect.": "Examinez chaque aspect stratégique.",
 "Gauge the overall position.": "Évaluez la position dans son ensemble.",
 "Identify the most promising moves.": "Repérez les coups les plus prometteurs.",
-"Decide what you should play.": "Décidez ce que vous devriez jouer."
+"Decide what you should play.": "Décidez ce que vous devriez jouer.",
+"Lichess analyses deeper on its servers, so its numbers can differ a little.": "Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer."
 }/*END I18N_FR*/));
 const I18N_FR_RE = [
   [/^(\d+)\. White to play$/, '$1. Aux Blancs de jouer'],
