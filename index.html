@@ -2064,7 +2064,8 @@ function sourcePool(a, src){
 // not tried in the past week; together they get REPLAY_SHARE of the picks. A missed position is
 // only offered through Replay; got right, it goes back to the core list's end, or, for one of
 // your games that has left the core list (your last CORE_GAMES games), is never offered again.
-// A new player's start: the hints show for their first HINT_ANSWERS answers of each exercise, and their first
+// A new player's start: the tutorial, their first HINT_ANSWERS answers of each exercise, shows the hints and
+// has Check wait for a first move of the answer; the onboarding, their first
 // FIRST_POSITIONS master positions of each come from clear, representative ones (STARTERS, written by
 // scripts/starters.py): Imbalance reading with 3+ imbalances not "=", Position evaluation not close to
 // balanced, Candidate moves with 3+ good moves; the side ahead alternates where it's known.
@@ -2370,11 +2371,11 @@ function finalMoves(p){
   const ucis = pickFinalUcis(p, src);
   if(!ucis.length) return FAILED;
   const list = ucis.map(u=>({ id:u, uci:u, from:u.slice(0,2), to:u.slice(2,4), san:sanForUci(p.fen, u), historical: u===p.hist.uci }));
-  // ...and never already in the right order (by the search the moves were picked from): at least two
-  // moves out of place, so there's always something to do.
+  // ...and, during onboarding (the first positions), never already in the right order (by the search the
+  // moves were picked from): at least two moves out of place, so there's always something to do.
   const right = ucis.slice().sort((a,b)=>{ const la = src.lines.find(l=>l.uci===a), lb = src.lines.find(l=>l.uci===b); return (lb ? winPercent(lb.cp, lb.mate) : 0) - (la ? winPercent(la.cp, la.mate) : 0); }).join(',');
   let order = stableShuffleByIds('final'+ctx('final')+p.key, list.map(m=>m.id));
-  for(let k=1; k<8 && order.join(',')===right; k++) order = stableShuffleByIds('final'+ctx('final')+p.key+'|'+k, list.map(m=>m.id));
+  for(let k=1; k<8 && answeredIn('final') < FIRST_POSITIONS && order.join(',')===right; k++) order = stableShuffleByIds('final'+ctx('final')+p.key+'|'+k, list.map(m=>m.id));
   return order.map((id,i)=>({ ...list.find(m=>m.id===id), color: allCols[i] }));
 }
 // The four moves: the best move; the game move; then, down the top 5, moves whose grade isn't
@@ -3216,11 +3217,12 @@ function setAspect(s, key, l){
   const b = document.querySelector(`.asp-pick[data-asp="${key}"]`);
   if(b){ b.className = `asp-badge ${levelCls(s.asp[key])} asp-pick${aspPicker && aspPicker.key===key ? ' editing' : ''}`; b.textContent = SIGNS(s.asp[key]); b.setAttribute('aria-label', `${ASPECTS.find(x=>x.key===key).name}: ${SIGNS(s.asp[key])}`); }
   if(aspPicker && aspPicker.key===key) aspPicker.el.querySelectorAll('[data-l]').forEach(o=>o.classList.toggle('on', +o.dataset.l===s.asp[key]));
-  const chk = document.getElementById('check'); if(chk && sfState!=='error') chk.disabled = !aspAnyGraded(s);
+  const chk = document.getElementById('check'); if(chk && sfState!=='error') chk.disabled = aspCheckWaits(s);
   if(!s.aspTouched){ s.aspTouched = true; hintStop(); }
 }
-// Check waits for a first grade other than "=".
+// In the tutorial (the first answers, while the hints show), Check waits for a first grade other than "=".
 const aspAnyGraded = s=>Object.values(s.asp || {}).some(l=>l);
+const aspCheckWaits = s=>hintsOn('imbalances') && !aspAnyGraded(s);
 function openAspPicker(s, key){
   closeAspPicker();
   const box = document.getElementById('aspInput'), badge = box && box.querySelector(`.asp-pick[data-asp="${key}"]`);
@@ -5196,7 +5198,7 @@ function renderAnalysis(){
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Drag the evaluation bar to where you think it sits.</p>
-        <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' || !s.barMoved ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
+        <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' || (!s.barMoved && hintsOn('analysis')) ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(aspVals) wireAspectView(p, s);
   if(!s.checked){
@@ -5231,7 +5233,7 @@ function renderImbalances(){
       : `
         <p class="prompt" id="imbPrompt">Grade each positional imbalance.</p>
         ${aspectsInputHtml(s)}
-        <div class="actions-row" id="imbCheckRow"><button class="btn" id="check" ${sfState==='error' || !aspAnyGraded(s) ? 'disabled' : ''}>Check</button></div>`}`, GHOST_IMBALANCES, engineErrorBanner())}`;
+        <div class="actions-row" id="imbCheckRow"><button class="btn" id="check" ${sfState==='error' || aspCheckWaits(s) ? 'disabled' : ''}>Check</button></div>`}`, GHOST_IMBALANCES, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(done) wireAspectView(p, s);
   if(!s.checked){
@@ -5640,7 +5642,7 @@ function renderFinal(){
     ${stackedPanel(`
       <p class="prompt top" id="finalHint">Order the moves, best first.</p>
       <div id="ranked"></div>
-      <div class="actions-row" id="finalCheckRow"><button class="btn" id="check" ${sfState==='error' || !s.swapped ? 'disabled' : ''}>Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
+      <div class="actions-row" id="finalCheckRow"><button class="btn" id="check" ${sfState==='error' || (!s.swapped && hintsOn('final')) ? 'disabled' : ''}>Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), bs, p.last);
   drawArrows(document.getElementById('arrows'), ordered, 'ar_');
   const rankedEl = document.getElementById('ranked');
