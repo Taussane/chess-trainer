@@ -2,8 +2,7 @@
 # engine (Stockfish 19 lite, 1.2 s, in the page) and Stockfish 10's static evaluation (staticEval) are
 # 2 squares of the bar apart or more (tactics take the evaluation away from them), where Stockfish gives no breakdown,
 # where the six grades added up lean one way while the engine has the other side a pawn or more better,
-# or where one criterion says ++ (or −−) while Stockfish's own term for it is clearly the other way,
-# or where every imbalance is "=" (nothing to grade).
+# or where one criterion says ++ (or −−) while Stockfish's own term for it is clearly the other way.
 # Writes the list into app/index.html (/*IMBALANCE_SKIP*/) and prints, for each imbalance, the
 # thresholds that would split the remaining positions 40% = / 40% + or − / 20% ++ or −− (the levels
 # in ASPECTS are set from them by hand).
@@ -33,9 +32,7 @@ JS = r"""async ()=>{
     // or one criterion at ++ (or −−) while Stockfish's own term for it is clearly the other way (past its old ++ line)
     const raw = parseAspects(sfTableLines(p.fen), p.fen), OLD = { material:2, pawns:0.6, space:0.4, activity:0.618, king:1.162, threats:0.267 };
     const jarring = !!raw && ASPECTS.some(x=>{ if(d.off.includes(x.key) || (x.key==='king' && isEndgame(p.fen))) return false; const l = aspectLevel(d[x.key], x.key); return Math.abs(l)===2 && Math.sign(l)!==Math.sign(raw[x.key]) && Math.abs(raw[x.key]) >= OLD[x.key]; });
-    // or every imbalance "=": nothing to grade (the app's Check waits for a first grade)
-    const allEq = ASPECTS.every(x=>d.off.includes(x.key) || aspectLevel(d[x.key], x.key)===0);
-    out.push({ key: p.key, far: !!d.special || st==null || Math.abs(wp(sum) - wp(cp)) >= 25 || misleads || jarring || allEq, off: d.off.slice(), vals: Object.fromEntries(ASPECTS.map(x=>[x.key, d[x.key]])) });
+    out.push({ key: p.key, far: !!d.special || st==null || Math.abs(wp(sum) - wp(cp)) >= 25 || misleads || jarring, off: d.off.slice(), vals: Object.fromEntries(ASPECTS.map(x=>[x.key, d[x.key]])) });
   }
   return out;
 }"""
