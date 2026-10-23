@@ -1449,7 +1449,8 @@ let sfCurrentLines = {}; // rank (1..N) -> {cp, mate, uci} for the search curren
 let sfCurrentDepth = 0;  // the deepest full pass of that search (its best line's depth): shown in the reviews
 let sfCurrentFen = null; // the position being searched (a review shows its depth live while it waits for it)
 const liveDepth = {};    // position -> the deepest pass any search of it reached (the live badge)
-const LIVE_DEPTH = 20, LIVE_CAP_MS = 8000;   // the exercises' searches: depth 20, at most 8 s (the depth reached is shown)
+const LIVE_DEPTH = 20, LIVE_CAP_MS = 10000, REVIEW_CAP_MS = 3000;   // the exercises' searches: depth 20, at most 10 s ahead of time, 3 s once its review is waiting (the depth reached is shown)
+let reviewFen = null;   // the position whose review is open (its search is cut short at REVIEW_CAP_MS)
 let sfStartedAt = 0, sfCurrentJob = null;
 // A long search for a position prepared in advance gives way when the open position needs the engine:
 // it's stopped (its partial result dropped) and searched again afterwards.
@@ -1617,7 +1618,8 @@ function pumpEngineQueue(){
   // side-to-move perspective — same kind of query as an unrestricted one, just narrowed.
   // An exercise's own search goes to depth LIVE_DEPTH (or stops at LIVE_CAP_MS); background work and the
   // position finders give a time instead (job.movetime).
-  sfWorker.postMessage((job.movetime ? 'go movetime '+job.movetime : 'go depth '+LIVE_DEPTH+' movetime '+LIVE_CAP_MS)+(searchmoves ? ' searchmoves '+searchmoves : ''));
+  job.cap = job.movetime || (fen===reviewFen ? REVIEW_CAP_MS : LIVE_CAP_MS);
+  sfWorker.postMessage((job.movetime ? 'go movetime '+job.movetime : 'go depth '+LIVE_DEPTH+' movetime '+job.cap)+(searchmoves ? ' searchmoves '+searchmoves : ''));
   sfStartedAt = performance.now();
   // Watchdog: a search that hasn't answered 5 s after its time is told to stop; 5 s after that,
   // the engine counts as failed (instead of every exercise waiting forever).
@@ -1626,7 +1628,7 @@ function pumpEngineQueue(){
     if(sfCurrentResolve!==resolve) return;
     try{ sfWorker.postMessage('stop'); }catch(e){}
     sfWatch = setTimeout(()=>{ if(sfCurrentResolve===resolve) failEngine('stopped'); }, 5000);
-  }, (job.movetime || LIVE_CAP_MS) + 5000);
+  }, job.cap + 5000);
 }
 // Background search (scanning your games): same result shape as engineEval, but queued behind
 // every exercise search. opts: {multipv, movetime, searchmoves}.
@@ -5650,10 +5652,10 @@ function depthBtnHtml(ev, fen){
 function depthNoteHtml(s, ev, fen){
   const d = shownDepth(ev, fen);
   if(!s.depthNote || !d) return '';
-  const v = sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10', capped = d < LIVE_DEPTH;
+  const v = sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10', capped = d < LIVE_DEPTH, secs = ev.ms ? String(Math.round(ev.ms/100)/10) : null;
   return `<p class="depth-note" data-no-i18n>${LANG==='fr'
-    ? `${v}${sfVersion==='SF19' ? ' (version allégée, dans votre navigateur)' : ' (dans votre navigateur)'} a cherché jusqu'à la profondeur ${d}${capped ? ` (arrêt à ${LIVE_CAP_MS/1000} s)` : ''}. Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer.`
-    : `${v}${sfVersion==='SF19' ? ' (lite, in your browser)' : ' (in your browser)'} searched to depth ${d}${capped ? ` (stopped at ${LIVE_CAP_MS/1000} s)` : ''}. Lichess analyses deeper on its servers, so its numbers can differ a little.`}</p>`;
+    ? `${v}${sfVersion==='SF19' ? ' (version allégée, dans votre navigateur)' : ' (dans votre navigateur)'} a cherché jusqu'à la profondeur ${d}${capped && secs ? ` (arrêtée après ${secs.replace('.', ',')} s)` : ''}. Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer.`
+    : `${v}${sfVersion==='SF19' ? ' (lite, in your browser)' : ' (in your browser)'} searched to depth ${d}${capped && secs ? ` (stopped after ${secs} s)` : ''}. Lichess analyses deeper on its servers, so its numbers can differ a little.`}</p>`;
 }
 function wireDepthBtn(s){
   const b = document.getElementById('depthBtn'); if(!b) return;
@@ -5840,6 +5842,17 @@ function render(){
   if(focus){ const el = document.getElementById(focus.id); if(el){ el.focus(); try{ el.setSelectionRange(focus.a, focus.b); }catch(e){} } }
   keepFades();
   syncHistory();
+  reviewOpened();
+}
+// A review just opened: its position's search, if still going (prepared ahead, up to 10 s), stops within 3 s of now.
+function reviewOpened(){
+  const fen = ACTIVITIES.includes(screen) && curPos && store[ctx(screen)] && store[ctx(screen)][curPos.key] && store[ctx(screen)][curPos.key].checked ? curPos.fen : null;
+  if(fen===reviewFen) return;
+  reviewFen = fen;
+  const j = sfCurrentJob;
+  if(fen && j && !j.movetime && j.fen===fen){
+    setTimeout(()=>{ if(sfCurrentJob===j){ try{ sfWorker.postMessage('stop'); }catch(e){} } }, REVIEW_CAP_MS);
+  }
 }
 // The phone's back button (and the browser's): one history entry stands for "inside a page"; going back
 // does what the page's own back arrow does (an exercise or the profile: home; settings: the profile...),
