@@ -4134,7 +4134,7 @@ function renderHome(){
       ${[['imbalances',ACT_GLYPHS.imbalances,'Ponder each strategic aspect.'],
          ['analysis',ACT_GLYPHS.analysis,'Gauge the overall position.'],
          ['candidates',ACT_GLYPHS.candidates,'Identify the most promising moves.'],
-         ['final',ACT_GLYPHS.final,'Decide what you would play.']].map(([a, glyph, desc])=>{
+         ['final',ACT_GLYPHS.final,'Decide what you should play.']].map(([a, glyph, desc])=>{
         const L = levelNow(a), open = canOpen(a, false);
         if(!open) desc = waitText(a, false);
         return `<button class="card" data-go="${a}" ${open ? '' : 'disabled'}>
@@ -6042,7 +6042,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Ponder each strategic aspect.": "Examinez chaque aspect stratégique.",
 "Gauge the overall position.": "Évaluez la position dans son ensemble.",
 "Identify the most promising moves.": "Repérez les coups les plus prometteurs.",
-"Decide what you would play.": "Décidez ce que vous joueriez."
+"Decide what you should play.": "Décidez ce que vous devriez jouer."
 }/*END I18N_FR*/));
 const I18N_FR_RE = [
   [/^(\d+)\. White to play$/, '$1. Aux Blancs de jouer'],
