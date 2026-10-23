@@ -426,9 +426,8 @@
   .evalbar-cursor.handle::before{transform-origin:50% 100%;} .evalbar-cursor.handle::after{transform-origin:50% 0;}
   .hinting .evalbar-cursor.pulse-now::before, .hinting .evalbar-cursor.pulse-now::after{animation:handleGrow var(--hint-anim);}
   @keyframes handleGrow{0%,100%{transform:translateX(-50%) scale(1);} 29.4%{transform:translateX(-50%) scale(1.7);}}
-  /* a ring around the piece, drawn like the review's marks (Imbalance reading): the side's colour, a soft shadow */
-  .hinting .sq.pulse-now::after{content:""; position:absolute; inset:6.67%; border:0.833cqw solid #F7F3EA; border-radius:50%; filter:drop-shadow(0 0.31cqw 0.37cqw rgba(0,0,0,.6)); pointer-events:none; z-index:1; animation:tintPulse var(--hint-anim);}
-  .hinting[data-hint-side="b"] .sq.pulse-now::after{border-color:#2E2A26;}
+  /* a yellow ring around the piece, drawn like the review's marks (Imbalance reading): same size, line, soft shadow */
+  .hinting .sq.pulse-now::after{content:""; position:absolute; inset:6.67%; border:0.833cqw solid var(--accent); border-radius:50%; filter:drop-shadow(0 0.31cqw 0.37cqw rgba(0,0,0,.6)); pointer-events:none; z-index:1; animation:tintPulse var(--hint-anim);}
   @keyframes tintPulse{0%,100%{opacity:0;} 29.4%{opacity:1;}}
   .hinting .rate-row.pulse-now{position:relative; z-index:1; border-radius:6px; animation:liftPulse var(--hint-anim);}   /* as if picked up */
   @keyframes liftPulse{0%,100%{background:transparent; box-shadow:none; transform:none;} 29.4%{background:var(--panel-2); box-shadow:0 6px 18px var(--shadow); transform:translateY(-2px);}}
@@ -5389,7 +5388,7 @@ function renderCandidates(){
   // The hint until the board is first touched: a ring pulses around one piece of the side to play at a
   // time, any piece that can move, at random (never a hint at the good moves).
   const boardEl = document.getElementById('board'), hinting = !s.boardTouched && !s.picks.length;
-  boardEl.classList.toggle('hinting', hinting); boardEl.dataset.hintSide = side;
+  boardEl.classList.toggle('hinting', hinting);
   if(hinting){ const from = new Set(chess.moves({ verbose:true }).map(m=>m.from)); boardEl.querySelectorAll('.sq').forEach(q=>{ if(from.has(q.dataset.sq)) q.dataset.hint = q.dataset.sq; }); hintStart(); }
   if(promoPending) showPromotionPicker(chess, addPick);
   const listEl = document.getElementById('moveList');
