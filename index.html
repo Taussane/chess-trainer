@@ -312,9 +312,9 @@
   .sq.light{background:var(--board-light);}
   .sq.dark{background:var(--board-dark);}
   .coord{position:absolute; font-size:3cqw; font-weight:600; line-height:1; pointer-events:none; z-index:1;}
-  .coord-f{right:2px; bottom:1px;} .coord-r{left:2px; top:2px;}
+  .coord-f{left:2px; bottom:1px;} .coord-r{right:2px; top:2px;}
   .sq.light .coord{color:var(--board-dark);} .sq.dark .coord{color:var(--board-light);}
-  .set-page .board-outer{max-width:360px;}
+  .set-page .board-outer{max-width:min(360px, max(160px, 100dvh - 490px));}   /* the whole page fits the screen (Arrows, the tallest tab, included) */
   .fig{font-size:1.25em; line-height:0; vertical-align:-0.06em;}
   .set-preview{display:flex; flex-direction:column; gap:8px;}
   .set-chips{display:flex; justify-content:center; gap:16px;}
@@ -1785,9 +1785,9 @@ function renderBoard(container, boardOverride, lastOverride, opts){
       if(opts.selectedSq===sq) div.className += ' selected';
       if(checkSq===sq) div.className += ' check';
       if(destSet.has(sq)) div.className += bs[sq] ? ' dest-capture' : ' dest';
-      if(settings.coords){   // coordinates: files along the bottom edge, ranks along the left one
+      if(settings.coords){   // coordinates: files along the bottom edge (bottom left of each square), ranks along the right one (top right)
         if(row===7){ const c = document.createElement('span'); c.className = 'coord coord-f'; c.textContent = FILES[f]; div.appendChild(c); }
-        if(col===0){ const c = document.createElement('span'); c.className = 'coord coord-r'; c.textContent = rank; div.appendChild(c); }
+        if(col===7){ const c = document.createElement('span'); c.className = 'coord coord-r'; c.textContent = rank; div.appendChild(c); }
       }
       const p = bs[sq];
       if(p){
