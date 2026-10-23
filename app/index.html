@@ -5224,7 +5224,7 @@ function renderAnalysis(){
     ${stackedPanel(`
       ${s.checked ? `
         <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(score.base + (score.final - score.base)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, false)}${depthBtnHtml(disc, done, false)}${depthNoteHtml(s, disc)}</div>
-        ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, s.justDone, false, p.fen) : planHtml(null, null, false, true)}
+        ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, false, false, p.fen) : planHtml(null, null, false, true)}
         <div class="actions-row split${done ? '' : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Drag the evaluation bar to where you think it sits.</p>
@@ -5270,6 +5270,7 @@ function renderImbalances(){
         ${aspectsInputHtml(s)}
         <div class="actions-row" id="imbCheckRow"><button class="btn" id="check" ${sfState==='error' || aspCheckWaits(s) ? 'disabled' : ''}>Check</button></div>`}`, GHOST_IMBALANCES, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
+  if(s.checked) fadeOnce(s, 'score', reviewPart('.score'));   // the accuracy, as the review opens
   if(done) wireAspectView(p, s);
   if(!s.checked){
     introFade(s, ['imbPrompt', 'aspInput', 'imbCheckRow']);
@@ -5415,7 +5416,8 @@ function renderCandidates(){
         ghostCandidates(), engineErrorBanner())}`;
     renderBoard(document.getElementById('board'), bs, p.last);
     drawArrows(document.getElementById('arrows'), arrowList, 'ac_');
-    fadeOnce(s, 'score', reviewPart('.score')); fadeOnce(s, 'mine', reviewPart('.review-col'));   // the accuracy and your moves, as the review opens
+    fadeOnce(s, 'score', reviewPart('.score'));   // the accuracy and both lists, as the review opens
+    document.querySelectorAll('#app .layer:not(.ghost) .review-col').forEach((c, i)=>fadeOnce(s, 'col' + i, c));
     wireDepthBtn(s);
     document.querySelectorAll('.col-toggle').forEach(b=>b.onclick = ()=>{
       if(b.dataset.toggle==='mine') s.showMine = !showMine; else s.showTop = !showTop;
