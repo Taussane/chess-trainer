@@ -39,10 +39,12 @@ module.exports = {
 
   FINAL: {
     topN: 5,                       // moves are picked from the top 5 (+ the game move); the app re-picks them at runtime by the same rule
-    // The four moves must be spread: the worst loses 18+ points (15, plus a 3-point margin) and ranking
-    // them at random scores 57% or less on average (60, minus a 3-point margin). The grades themselves
-    // no longer decide (exact grade lines flip too easily between two searches).
-    worstMinDrop: 18,
+    // The four moves must be spread: the worst loses 13+ points of winning chances (a clearly bad move;
+    // judged in ONE search of the four moves, as the exercise grades them, which finds bad moves a bit less
+    // bad than the top-5 search: 18 kept too few positions) and ranking them at random scores 57% or less
+    // on average (60, minus a 3-point margin). The grades themselves no longer decide (exact grade lines
+    // flip too easily between two searches).
+    worstMinDrop: 13,
     maxRandomAccuracy: 57,         // average accuracy of all 24 orders must be at most this
     spacingPlies: 2,               // 2 half-moves between kept positions from the same game
     weights: [0.5, 0.3, 0.2],      // the app's scoring rule (best remaining move, Dubious cap)
