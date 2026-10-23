@@ -27,6 +27,7 @@ for(const a of ['imbalances','analysis','candidates','final']){
   await sample(a+' question', 3500);
   // answer and check: the review's reveal
   await p.evaluate((a)=>{const s=st(a);if(a==='imbalances'){s.asp.material=1;s.aspTouched=true}if(a==='analysis')s.barMoved=true;if(a==='final')s.swapped=true;if(a==='candidates'){const c=new Chess(pos().fen);const m=c.moves({verbose:true})[0];s.picks.push({id:'c_'+m.from+m.to,san:m.san,from:m.from,to:m.to,uci:m.from+m.to+(m.promotion||''),slot:0})}render();},a);
+  await p.waitForFunction(()=>!!document.getElementById('check'), null, { timeout: 30000 });   // Move selection's moves wait for the position's search (up to 8 s)
   await p.waitForTimeout(300);await p.evaluate(()=>document.getElementById('check').click());
   await sample(a+' review', 5000);
 }
