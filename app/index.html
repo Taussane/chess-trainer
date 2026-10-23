@@ -3112,26 +3112,29 @@ let aspPicker = null;   // {key, el, sliding}: the scale open under a badge
 // Each question's hint until its first touch: one element at a time (data-hint, inside the element with
 // the class "hinting"), picked at random, never twice in a row, pulses once; then a pause and another.
 // The pulsing element and its start are kept here, so a redraw carries on with it (hintApply).
-const hint = { key:null, at:0, timer:null }, HINT_CYCLE = 3700;   // 1.7 s pulse + 2 s pause
+const hint = { key:null, at:0, timer:null, owner:null }, HINT_PULSE = 1700, HINT_CYCLE = 3700;   // 1.7 s pulse + 2 s pause
 function hintTick(){
   clearTimeout(hint.timer); hint.timer = null;
   const box = document.querySelector('#app .hinting');
   if(!box){ hint.key = null; return; }
   const keys = [...new Set([...box.querySelectorAll('[data-hint]')].map(e=>e.dataset.hint))], others = keys.filter(k=>k!==hint.key), from = others.length ? others : keys;
   hint.key = from[Math.floor(Math.random() * from.length)] || null; hint.at = performance.now();
+  document.querySelectorAll('#app .pulse-now').forEach(e=>e.classList.remove('pulse-now')); void document.body.offsetWidth;   // the same one again (a single handle): its pulse starts over
   hintApply();
   hint.timer = setTimeout(hintTick, HINT_CYCLE);
 }
 function hintApply(){
   document.querySelectorAll('#app .pulse-now').forEach(e=>{ if(e.dataset.hint!==hint.key) e.classList.remove('pulse-now'); });
-  if(!hint.key) return;
-  document.querySelectorAll('#app .hinting [data-hint]').forEach(e=>{ if(e.dataset.hint!==hint.key) return; e.style.setProperty('--hint-delay', Math.round(hint.at - performance.now()) + 'ms'); e.classList.add('pulse-now'); });
+  const since = performance.now() - hint.at;
+  if(!hint.key || since >= HINT_PULSE) return;   // its pulse over (the pause): a rebuilt element stays still
+  document.querySelectorAll('#app .hinting [data-hint]').forEach(e=>{ if(e.dataset.hint!==hint.key) return; e.style.setProperty('--hint-delay', Math.round(-since) + 'ms'); e.classList.add('pulse-now'); });
 }
 // After each redraw of a question that hints: starts the cycle (after `wait` ms), or carries on with it.
 function hintStart(wait){
   if(!document.querySelector('#app .hinting')) return;
-  if(hint.timer){ hintApply(); return; }
-  hint.key = null; hint.timer = setTimeout(hintTick, wait ?? 600);
+  const owner = screen + '|' + (pos() ? pos().key : '');   // a cycle belongs to one question: a new one starts afresh
+  if(hint.timer && hint.owner===owner){ hintApply(); return; }
+  clearTimeout(hint.timer); hint.owner = owner; hint.key = null; hint.timer = setTimeout(hintTick, wait ?? 600);
 }
 // The first touch: no more hint on this question.
 function hintStop(){
