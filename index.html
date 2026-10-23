@@ -5843,6 +5843,7 @@ function render(){
   keepFades();
   syncHistory();
   reviewOpened();
+  if(sfBusy) preemptForOpen();   // a position opened whose search was queued earlier (prepared ahead): it goes now
 }
 // A review just opened: its position's search, if still going (prepared ahead, up to 10 s), stops within 3 s of now.
 function reviewOpened(){
