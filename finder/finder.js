@@ -107,11 +107,10 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
       const gmLine = cand.find(l=>l.uci===gmUci);
       if(!gmLine){ tally(stats.final, 'rejected: search lost the game move'); return null; }
       const cBest = winPct(cand[0].cp, cand[0].mate), cDrop = l=>cBest - winPct(l.cp, l.mate);
-      if(new Set(cand.map(l=>gradeOf(cDrop(l)))).size < R.FINAL.minGrades){ tally(stats.final, 'rejected: fewer than 3 grades'); return null; }
       const picks = [cand[0]]; if(gmLine!==cand[0]) picks.push(gmLine);
       const have = ()=>picks.map(l=>gradeOf(cDrop(l)));
       for(const l of cand){ if(picks.length>=4) break; if(!picks.includes(l) && !have().includes(gradeOf(cDrop(l)))) picks.push(l); }
-      const BAD = R.FINAL.uniqueGrades;
+      const BAD = ['Dubious', 'Mistake', 'Blunder'];   // the app's pick: at most one move per bad grade when the top 5 allow it
       while(picks.length<4){
         const rest = cand.filter(l=>!picks.includes(l) && !(BAD.includes(gradeOf(cDrop(l))) && have().includes(gradeOf(cDrop(l))))); if(!rest.length) break;
         const count = g=>have().filter(x=>x===g).length;
@@ -123,17 +122,17 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
       const cp = {}; four.forEach(l=>{ cp[l.uci] = moverScore(l); });
       if(Object.keys(cp).length<4){ tally(stats.final, 'rejected: search lost a move'); return null; }
       const b4 = winPct(four[0].cp, four[0].mate), g4 = four.map(l=>gradeOf(b4 - winPct(l.cp, l.mate)));
-      if(new Set(g4).size < R.FINAL.minGrades){ tally(stats.final, 'rejected: fewer than 3 grades among the 4 shown'); return null; }
-      if(BAD.some(g=>g4.filter(x=>x===g).length > 1)){ tally(stats.final, 'rejected: two moves of the same bad grade'); return null; }
+      const worst = Math.max(...four.map(l=>b4 - winPct(l.cp, l.mate)));
+      if(worst < R.FINAL.worstMinDrop){ tally(stats.final, 'rejected: moves too close (worst loses under '+R.FINAL.worstMinDrop+')'); return null; }
       const rnd = randomAccuracy(cp);
-      if(rnd > R.FINAL.maxRandomAccuracy){ tally(stats.final, 'rejected: random order scores > 60%'); return null; }
+      if(rnd > R.FINAL.maxRandomAccuracy){ tally(stats.final, 'rejected: random order scores > '+R.FINAL.maxRandomAccuracy+'%'); return null; }
       return { final:{ moves: picks.map(l=>l.uci) }, metrics:{ randomAccuracy: Math.round(rnd), grades: g4, gameMoveGrade: gradeOf(cDrop(gmLine)) } };
     }
     for(const [ply, e] of Object.entries(elig)) items.push({ ...base(+ply), options:e.options, anchor:anchors.has(+ply), metrics:e.metrics, final:e.final });
   }
 
   // ----- Each exercise keeps every position it qualifies for (within its spacing).
-  const chosen = L.choosePools(items, { analysis:R.ANALYSIS.spacingPlies, candidates:R.CANDIDATES.spacingPlies, final:0 });
+  const chosen = L.choosePools(items, { analysis:R.ANALYSIS.spacingPlies, candidates:R.CANDIDATES.spacingPlies, final:R.FINAL.spacingPlies });
   const pools = { analysis:[], candidates:[], final:[] };
   for(const act of Object.keys(chosen)) for(const it of chosen[act]){
     const { options, anchor, act:_, metrics, final, ...entry } = it;
@@ -145,11 +144,11 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
   }
   Object.values(pools).forEach(list=>list.sort((a,b)=>a.game.localeCompare(b.game, undefined, {numeric:true}) || a.ply-b.ply));
   stats.multi = items.filter(it=>it.options.size>1).length;
-  const out = { version:R.VERSION, engine:engineName+', depth '+R.ENGINE.depth, generated:new Date().toISOString(), pools };
+  const out = { version:R.VERSION, engine:engineName+(R.ENGINE.movetime ? ', '+R.ENGINE.movetime/1000+' s' : ', depth '+R.ENGINE.depth), generated:new Date().toISOString(), pools };
   fs.mkdirSync(outDir, {recursive:true});
   fs.writeFileSync(path.join(outDir,'pools.json'), JSON.stringify(out, null, 1));
   fs.writeFileSync(path.join(outDir,'stats.json'), JSON.stringify(stats, null, 1));
   const st = L.stats(); process.stderr.write(`searches: ${st.searched} new, ${st.reused} reused from the cache\n`);
   console.log(JSON.stringify({ counts: Object.fromEntries(Object.entries(pools).map(([k,v])=>[k,v.length])), eligible: stats.eligible }, null, 1));
-  L.send('quit');
+  await L.stop();
 })();

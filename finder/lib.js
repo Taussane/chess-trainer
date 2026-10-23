@@ -20,25 +20,58 @@ function mainline(g){
   return out.split(/\s+/).filter(t=>t && !/^(1-0|0-1|1\/2-1\/2|\*)$/.test(t));
 }
 
-// ---------- Engine (UCI) ----------
-const SF = process.env.STOCKFISH || path.join(__dirname, '../engine/stockfish');
-const sf = spawn(SF); let buf = '', waiter = null;
-sf.stdout.on('data', d=>{ buf += d; if(waiter && buf.includes(waiter.t)){ const w = waiter; waiter = null; const o = buf; buf = ''; w.r(o); } });
+// ---------- Engine ----------
+// Two engines, chosen by the rules (R.ENGINE):
+//  - movetime set: the APP's own engine (Stockfish 19 lite, single-threaded WebAssembly), run in a
+//    headless browser on the built site, searching for that long, exactly as the app does for a
+//    player's own games: one calibration for the master games and your games.
+//  - depth set: native Stockfish (engine/stockfish, or STOCKFISH=/path), to a fixed depth.
+const APP_ENGINE = !!R.ENGINE.movetime;
+let engineName = null, page = null, browser = null, server = null;
+let sf = null, buf = '', waiter = null;
 const send = s=>sf.stdin.write(s+'\n');
 const until = t=>new Promise(r=>{ waiter = {t, r}; if(buf.includes(t)){ waiter = null; const o = buf; buf = ''; r(o); } });
-// Starts the engine with the rules' settings; every finder script calls this first. The engine's
-// name goes into every saved search's key, so results from another engine are never reused.
-let engineName = null;
+// Starts the engine; every finder script calls this first. The engine's name goes into every saved
+// search's key, so results from another engine (or other settings) are never reused.
 async function start(){
+  if(APP_ENGINE) return startApp();
+  sf = spawn(process.env.STOCKFISH || path.join(__dirname, '../engine/stockfish'));
+  sf.stdout.on('data', d=>{ buf += d; if(waiter && buf.includes(waiter.t)){ const w = waiter; waiter = null; const o = buf; buf = ''; w.r(o); } });
   send('uci'); const id = await until('uciok');
   engineName = ((id.match(/id name (.+)/)||[])[1] || 'unknown').trim();
   send('setoption name Threads value '+R.ENGINE.threads); send('setoption name Hash value '+R.ENGINE.hash);
   send('isready'); await until('readyok');
   return engineName;
 }
+async function startApp(){
+  const { chromium } = require('playwright');
+  const root = path.join(__dirname, '..'), port = 8700 + Math.floor(Math.random()*90);
+  server = spawn('python3', ['-m', 'http.server', String(port)], { cwd:root, stdio:'ignore' });
+  await new Promise(r=>setTimeout(r, 800));
+  browser = await chromium.launch(); page = await browser.newPage();
+  const cj = fs.readFileSync(path.join(root, 'vendor/chess.js/chess.js'), 'utf8');
+  await page.route('**/*', r=>{ const u = r.request().url();
+    if(u.startsWith('http://localhost')) return r.continue();
+    if(u.includes('chess.js')) return r.fulfill({ body:cj, contentType:'application/javascript' });
+    return r.abort(); });
+  await page.goto(`http://localhost:${port}/index.html`);
+  await page.waitForFunction(()=>typeof sfState!=='undefined' && sfState==='ready', null, { timeout:60000 });
+  engineName = 'Stockfish 19 lite (app)';
+  const stop = ()=>{ try{ server.kill(); }catch(e){} };
+  process.on('exit', stop); process.on('SIGINT', ()=>{ stop(); process.exit(1); });
+  return engineName;
+}
+async function stop(){ if(browser) await browser.close(); if(server) server.kill(); if(sf) sf.kill(); }
 const winPct = (cp, mate)=> mate!=null ? (mate>0 ? 100 : 0) : 50 + 50*(2/(1+Math.exp(-0.00368208*cp)) - 1);
 const moverScore = l=> l.mate!=null ? (l.mate>0 ? 1000 : -1000) : Math.max(-1000, Math.min(1000, l.cp));
 async function search(fen, searchmoves){
+  if(APP_ENGINE){
+    const mpv = searchmoves ? searchmoves.length : R.ENGINE.multipv;
+    const r = await page.evaluate(({fen, mpv, sm, mt})=>new Promise(res=>{ sfQueue.push({ fen, multipv:mpv, searchmoves:sm, movetime:mt, resolve:res }); pumpEngineQueue(); }),
+      { fen, mpv, sm: searchmoves ? searchmoves.join(' ') : undefined, mt: R.ENGINE.movetime });
+    if(!r || r.failed || !r.lines.length) throw new Error('the app engine failed on '+fen);
+    return r.lines.map(l=>({ cp:l.cp, mate:l.mate, uci:l.uci }));   // best first (the app sorts them)
+  }
   const mpv = searchmoves ? searchmoves.length : R.ENGINE.multipv;
   send('setoption name MultiPV value '+mpv); send('position fen '+fen);
   send('go depth '+R.ENGINE.depth + (searchmoves ? ' searchmoves '+searchmoves.join(' ') : ''));
@@ -62,7 +95,7 @@ if(fs.existsSync(CACHE_FILE)) fs.readFileSync(CACHE_FILE,'utf8').split('\n').for
 let searched = 0, reused = 0;
 async function analyse(fen, searchmoves){
   if(!engineName) throw new Error('call start() before analysing');
-  const k = [engineName, R.ENGINE.depth, searchmoves ? searchmoves.length : R.ENGINE.multipv, fen, (searchmoves||[]).join(' ')].join('|');
+  const k = [engineName, APP_ENGINE ? 'mt'+R.ENGINE.movetime : R.ENGINE.depth, searchmoves ? searchmoves.length : R.ENGINE.multipv, fen, (searchmoves||[]).join(' ')].join('|');
   if(cache.has(k)){ reused++; return cache.get(k); }
   const v = await search(fen, searchmoves); searched++;
   cache.set(k, v); fs.appendFileSync(CACHE_FILE, JSON.stringify([k,v])+'\n');
@@ -144,4 +177,4 @@ function choosePools(items, spacing){
 }
 
 module.exports = { fs, path, Chess, R, splitGames, header, mainline, send, until, winPct, moverScore, analyse, lines,
-  stats: ()=>({ searched, reused }), pieces, materialDiff, divide, gradeOf, rankAccuracy, randomAccuracy, posKey, choosePools, start };
+  stats: ()=>({ searched, reused }), pieces, materialDiff, divide, gradeOf, rankAccuracy, randomAccuracy, posKey, choosePools, start, stop };

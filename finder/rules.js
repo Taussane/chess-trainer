@@ -1,9 +1,11 @@
 // Position finder rules — every threshold the finder uses, and nothing else.
 // Mirrors the "Position finder rules" doc. Change a rule here (and in the doc), bump VERSION.
 module.exports = {
-  VERSION: '2026-10-10.1',
+  VERSION: '2026-10-22.1',
 
-  ENGINE: { depth: 18, multipv: 5, threads: 2, hash: 256 },
+  // The app's own engine (Stockfish 19 lite in the page), 1.2 s per search, as for a player's own games:
+  // one calibration for both (2026-10-22: 1.2 s matches depth 18 as well as 2 s does; safety margins below).
+  ENGINE: { movetime: 1200, multipv: 5 },
 
   // Grades: points of winning chances (Lichess win% curve) below the best move.
   GRADES: [ ['Good', 0], ['Ok', 3], ['Dubious', 10], ['Mistake', 20], ['Blunder', 30] ],
@@ -30,16 +32,19 @@ module.exports = {
   },
 
   CANDIDATES: {
-    trapTopN: 5,                   // at least 1 Dubious-or-worse move among the top 5
-    trapMinDrop: 10,
+    trapTopN: 5,                   // a trap among the top 5: a move losing 12+ points of winning chances
+    trapMinDrop: 12,               // (10 = Dubious, plus a 2-point margin: the live search can differ a little)
     spacingPlies: 7,               // 7 half-moves between kept positions from the same game
   },
 
   FINAL: {
     topN: 5,                       // moves are picked from the top 5 (+ the game move); the app re-picks them at runtime by the same rule
-    minGrades: 3,                  // at least 3 different grades among top 5 + game move
-    uniqueGrades: ['Dubious', 'Mistake', 'Blunder'],   // at most one of the four moves per bad grade
-    maxRandomAccuracy: 60,         // average accuracy of all 24 orders must be at most this
+    // The four moves must be spread: the worst loses 18+ points (15, plus a 3-point margin) and ranking
+    // them at random scores 57% or less on average (60, minus a 3-point margin). The grades themselves
+    // no longer decide (exact grade lines flip too easily between two searches).
+    worstMinDrop: 18,
+    maxRandomAccuracy: 57,         // average accuracy of all 24 orders must be at most this
+    spacingPlies: 2,               // 2 half-moves between kept positions from the same game
     weights: [0.5, 0.3, 0.2],      // the app's scoring rule (best remaining move, Dubious cap)
   },
 };

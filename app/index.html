@@ -4158,7 +4158,8 @@ function renderHome(){
 // positions for the three exercises:
 //  - Candidate moves and Move selection: the position just before a move of yours that lost 10+
 //    points of winning chances (Dubious or worse); your move is the game move. Each mistake goes
-//    into both (Move selection only with at least 4 legal moves).
+//    into Candidate moves, and into Move selection when it has at least 4 legal moves and its four
+//    moves are spread enough to rank (finalSpreadOk, the same rule as the master positions').
 //  - Position evaluation: like the master games (middlegame and endgame starts, then positions at
 //    least 7 half-moves from those kept), draws included, never a mistake position.
 // Games Lichess has already analysed carry an evaluation for every move, trusted as it is: their
@@ -4169,6 +4170,8 @@ const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacingPlies:7,
               candidatesMinLegal:2, finalMinLegal:4, scanMs:300, maxGamesPerUpload:200,
               flagDrop:7,        // quick evaluations flag a likely mistake from 7 points (the check then needs 10)
               checkMs:1200 };    // the check: the app's usual search (top 5, then your move with them)
+// Move selection's spread rule (see finalSpreadOk), the same as the master positions' (finder/rules.js).
+const FINAL_RULE = { worstMinDrop:18, maxRandomAccuracy:57 };
 const SPEED_NAMES = { ultraBullet:'UltraBullet', bullet:'Bullet', blitz:'Blitz', rapid:'Rapid', classical:'Classical', correspondence:'Correspondence' };
 let myGames = [];              // {id, white, black, me, year, speed, result, sans, evals|null, status, positions}
 let myName = '';
@@ -4633,9 +4636,9 @@ function winForMover(e, turn){
 function lichessEvals(g){ return !!g.evals && (g.evalBy ? g.evalBy==='lichess' : siteOf(g)!=='chesscom'); }
 // What a game's positions depend on: when none of it changed, the positions found before are kept
 // (finding them takes time; at load, for a few hundred games, it would freeze the page).
-const OWN_SIG = JSON.stringify(OWN) + '|2';
+const OWN_SIG = JSON.stringify(OWN) + JSON.stringify(FINAL_RULE) + '|3';
 const posSig = g=>[OWN_SIG, g.me, g.sans.length, g.evals ? g.evals.length : 0, g.evalBy || '', g.site || '', g.verified ? 1 : 0,
-  JSON.stringify(g.checks || {}), JSON.stringify(g.finals || {})].join('|');
+  JSON.stringify(g.checks || {}), JSON.stringify(g.finalOk || {})].join('|');
 const positionsUpToDate = g=>Array.isArray(g.positions) && g.posSig===posSig(g);
 function extractOwnPositions(g){
   extractOwnPositions0(g); g.posSig = posSig(g);
@@ -4669,12 +4672,12 @@ function extractOwnPositions0(g){
     if(turn===g.me && nLegal >= OWN.candidatesMinLegal && ply>0 && lichessEvals(g)){
       // Lichess's analysis is trusted as it is: a move that lost 10+ points is a mistake at once
       // (Candidate moves); any other move can be a Position evaluation position. Move selection waits
-      // only for the app's top-5 search, which must give four moves to rank (g.finals).
+      // only for the app's searches: four moves to rank, spread enough (finalSpreadOk; g.finalOk).
       const before = winForMover(g.evals[ply-1], turn), after = winForMover(g.evals[ply], turn);
       const quick = before!=null && after!=null ? before - after : null;
       if(quick!=null && quick >= OWN.mistakeDrop){
-        const canFinal = nLegal >= OWN.finalMinLegal, ready = g.finals && g.finals[ply]!=null ? g.finals[ply] : null;
-        const final = canFinal && ready!=null && ready >= 4;
+        const canFinal = nLegal >= OWN.finalMinLegal, ready = g.finalOk && g.finalOk[ply]!=null ? g.finalOk[ply] : null;
+        const final = canFinal && ready===1;
         out.push(entry(ply, final ? ['candidates','final'] : ['candidates'], { drop: Math.round(quick), ...(canFinal && ready==null ? { pending:true, prep:'final' } : {}) }));
         continue;
       }
@@ -4684,7 +4687,9 @@ function extractOwnPositions0(g){
       const quick = before!=null && after!=null ? before - after : null;
       const drop = checked!=null ? checked : g.verified ? quick : null;
       if(drop!=null && drop >= OWN.mistakeDrop){
-        out.push(entry(ply, nLegal >= OWN.finalMinLegal ? ['candidates','final'] : ['candidates'], { drop: Math.round(drop) }));
+        // Move selection too once its searches say the four moves are spread enough (g.finalOk), as for Lichess's games.
+        const canFinal = nLegal >= OWN.finalMinLegal, ready = g.finalOk && g.finalOk[ply]!=null ? g.finalOk[ply] : null;
+        out.push(entry(ply, canFinal && ready===1 ? ['candidates','final'] : ['candidates'], { drop: Math.round(drop), ...(canFinal && ready==null ? { pending:true, prep:'final' } : {}) }));
         continue;   // a mistake position is never a Position evaluation position
       }
       if(drop==null && quick!=null && quick >= OWN.flagDrop){ out.push(entry(ply, [], { pending:true })); continue; }
@@ -4781,7 +4786,7 @@ async function myBackground(){
         catch(e){ r = 0; }   // a position that can't be checked is left out
         if(r==null){ myTried.delete(p.key); retry = true; break; }
         const g = currentGame(g1.id); if(!g) continue;
-        if(p.prep==='final') (g.finals = g.finals || {})[p.ply] = r;
+        if(p.prep==='final') (g.finalOk = g.finalOk || {})[p.ply] = r;
         else (g.checks = g.checks || {})[p.ply] = r;
         extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged(); continue;
       }
@@ -4817,22 +4822,44 @@ async function checkMistake(p){
   const drop = gm ? winPercent(lines[0].cp, lines[0].mate) - winPercent(gm.cp, gm.mate) : 0;
   return Math.round(drop*10)/10;
 }
-// Move selection for a mistake Lichess found: the app's usual top-5 search (with your move, if it
-// isn't in the top 5), kept for the exercise, which then opens without waiting. Returns how many
-// moves there are to rank (Move selection needs four).
+// Move selection for a mistake: the app's usual top-5 search (with your move, if it isn't in the
+// top 5; reused when the check just made it), then ONE search of the four moves the exercise will
+// show, both kept for the exercise, which then opens without waiting and grades with these very
+// searches (so a position kept here never turns out otherwise later). Returns 1 if the four moves
+// are spread enough (finalSpreadOk), 0 if not, null if the engine failed (tried again later).
 async function prepFinal(p){
-  const disc = await bgEval(p.fen, { multipv:DISCOVERY_MULTIPV, movetime:OWN.checkMs });
+  const known = fenEvalStore[p.fen] && fenEvalStore[p.fen].status==='done' ? fenEvalStore[p.fen].data : null;
+  const disc = known || await bgEval(p.fen, { multipv:DISCOVERY_MULTIPV, movetime:OWN.checkMs });
   if(evalFailed(disc) || !disc.lines.length) return null;
   if(!fenEvalStore[p.fen]) fenEvalStore[p.fen] = { status:'done', data:disc };
   let src = disc;
   if(!disc.lines.some(l=>l.uci===p.hist.uci)){
     const ucis = Array.from(new Set(disc.lines.slice(0, DISCOVERY_MULTIPV).map(l=>l.uci).filter(Boolean).concat(p.hist.uci)));
-    src = await bgEval(p.fen, { searchmoves: ucis.join(' ') });
-    if(evalFailed(src) || !src.lines.length) return null;
     const key = p.fen+'|pool:'+ucis.slice().sort().join(',');
+    src = poolEvalStore[key] && poolEvalStore[key].status==='done' ? poolEvalStore[key].data : await bgEval(p.fen, { searchmoves: ucis.join(' ') });
+    if(evalFailed(src) || !src.lines.length) return null;
     if(!poolEvalStore[key]) poolEvalStore[key] = { status:'done', data:src };
   }
-  return pickFinalUcis(p, src).length;
+  const four = pickFinalUcis(p, src);
+  if(four.length < 4) return 0;
+  const key4 = p.fen+'|pool:'+four.slice().sort().join(',');
+  const done = poolEvalStore[key4] && poolEvalStore[key4].status==='done' ? poolEvalStore[key4].data : await bgEval(p.fen, { searchmoves: four.join(' ') });
+  if(evalFailed(done) || done.lines.length < 4) return null;
+  if(!poolEvalStore[key4]) poolEvalStore[key4] = { status:'done', data:done };
+  return finalSpreadOk(done.lines, four) ? 1 : 0;
+}
+// Move selection's rule, the same as the master positions' (finder/rules.js, FINAL): the four moves
+// are spread enough to be worth ranking — the worst loses 18+ points of winning chances, and
+// ranking them at random scores 57% or less on average (both with a 3-point safety margin).
+function finalSpreadOk(lines, ucis){
+  const ls = ucis.map(u=>lines.find(l=>l.uci===u));
+  if(ls.length < 4 || ls.some(l=>!l)) return false;
+  const best = Math.max(...ls.map(l=>winPercent(l.cp, l.mate)));
+  if(Math.max(...ls.map(l=>best - winPercent(l.cp, l.mate))) < FINAL_RULE.worstMinDrop) return false;
+  const cp = Object.fromEntries(ls.map(l=>[l.uci, moverScore(l)]));
+  const perms = a=>a.length<2 ? [a] : a.flatMap((x,i)=>perms([...a.slice(0,i), ...a.slice(i+1)]).map(q=>[x, ...q]));
+  const all = perms(ucis);
+  return all.reduce((t,o)=>t + rankAccuracyPct(o, cp), 0) / all.length <= FINAL_RULE.maxRandomAccuracy;
 }
 // One quick search before and after each of your moves, for a game Lichess hasn't analysed:
 // enough to spot a move that lost 10+ points of winning chances.

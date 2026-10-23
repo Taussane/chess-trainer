@@ -104,5 +104,5 @@ const OWN = { candidatesMinLegal:2, finalMinLegal:4, mistakeDrop:10 };
   fs.writeFileSync(path.join(outDir,'stats.json'), JSON.stringify(stats, null, 1));
   const st = L.stats(); process.stderr.write(`searches: ${st.searched} new, ${st.reused} reused from the cache\n`);
   console.log(JSON.stringify({ counts, mistakes: stats.mistakes, analysis: stats.analysis, skipped: stats.skipped }, null, 1));
-  L.send('quit');
+  await L.stop();
 })();
