@@ -447,8 +447,8 @@
   .asp-pick.editing{box-shadow:0 0 0 2px var(--dubious);}
   /* Until you tap a first grade: one grade at a time, picked at random, pulses once (a yellow border on and
      off), then a pause, then another (aspPulseTick), to show where to start */
-  #aspInput.asp-pulse .asp-pick.pulse-now{animation:aspPulse 1s ease-in-out 1 both;}
-  @keyframes aspPulse{0%,100%{border-color:var(--border); box-shadow:none;} 50%{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}}
+  #aspInput.asp-pulse .asp-pick.pulse-now{animation:aspPulse 1.5s ease-in-out 1 both;}
+  @keyframes aspPulse{0%,100%{border-color:var(--border); box-shadow:none;} 33%{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}}   /* lights up in 0.5 s, fades out over 1 s */
   @media (prefers-reduced-motion: reduce){ #aspInput.asp-pulse .asp-pick.pulse-now{animation:none; border-color:var(--accent);} }
   .score{display:flex; align-items:baseline; gap:8px; margin-bottom:12px;}
   .score-num{font-family:var(--font-display); font-size:1.7rem; line-height:1; font-variant-numeric:tabular-nums;}
@@ -3128,7 +3128,7 @@ function aspectsInputHtml(s, hidden){
     </div>`;
 }
 let aspPicker = null;   // {key, el, sliding}: the scale open under a badge
-// The question's hint until a first grade is tapped: one grade pulses (1 s), a pause (1.2 s), then
+// The question's hint until a first grade is tapped: one grade pulses (0.5 s on, 1 s fading out), a pause (1.2 s), then
 // another one at random. The pulsing grade and its start are kept here, so a redraw carries on with it.
 const aspPulse = { key:null, at:0, timer:null };
 function aspPulseTick(){
@@ -3138,7 +3138,7 @@ function aspPulseTick(){
   const keys = [...box.querySelectorAll('.asp-pick:not(.off)')].map(b=>b.dataset.asp).filter(k=>k && k!==aspPulse.key);
   aspPulse.key = keys[Math.floor(Math.random() * keys.length)] || null; aspPulse.at = performance.now();
   box.querySelectorAll('.asp-pick').forEach(b=>{ b.classList.toggle('pulse-now', b.dataset.asp===aspPulse.key); b.style.animationDelay = ''; });
-  aspPulse.timer = setTimeout(aspPulseTick, 2200);
+  aspPulse.timer = setTimeout(aspPulseTick, 2700);
 }
 function closeAspPicker(){ if(aspPicker){ aspPicker.el.remove(); aspPicker.badge && aspPicker.badge.classList.remove('editing'); aspPicker = null; } }
 // The scale covers the row above it: once it closes on lift, the click that follows would land on
