@@ -30,5 +30,18 @@ for(const a of ['imbalances','analysis','candidates','final']){
   await p.waitForTimeout(300);await p.evaluate(()=>document.getElementById('check').click());
   await sample(a+' review', 5000);
 }
+// Dragging a move in Move selection while the page redraws every 100 ms: the drag follows the finger
+// to the end and the order changes (redraws wait until it's let go).
+await p.evaluate(()=>{screen='home';render()}); await p.click('.card[data-go="final"]'); await p.waitForTimeout(3500);
+await p.evaluate(()=>{ window.__iv = setInterval(()=>render(), 100); });
+const before = await p.evaluate(()=>st('final').order.slice());
+const r1 = await (await p.$$('#ranked .rate-row'))[0].boundingBox();
+await p.mouse.move(r1.x + r1.width/2, r1.y + r1.height/2); await p.mouse.down();
+let lost = 0;
+for(let i=1; i<=12; i++){ await p.mouse.move(r1.x + r1.width/2, r1.y + r1.height/2 + i*8); await p.waitForTimeout(60); if(!await p.evaluate(()=>!!document.querySelector('#ranked .rate-row.dragging'))) lost++; }
+await p.mouse.up(); await p.waitForTimeout(300);
+const after = await p.evaluate(()=>[st('final').order.slice(), document.getElementById('check').disabled]);
+await p.evaluate(()=>clearInterval(__iv));
+if(lost || JSON.stringify(after[0])===JSON.stringify(before) || after[1]){ console.log('drag under redraws FAIL', lost, JSON.stringify(after)); failed=true; } else console.log('drag under redraws ok');
 if(errs.length){ console.log('FAIL page errors', errs); failed=true; }
 await b.close(); server.kill(); console.log(failed ? 'FAIL' : 'ok'); process.exit(failed ? 1 : 0);})();

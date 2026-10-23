@@ -1955,6 +1955,7 @@ function wireDragReorder(listEl, orderArr, onDrop){
     row.style.touchAction = 'none';
     row.addEventListener('pointerdown', e=>{
       if(parseFloat(getComputedStyle(row).opacity) < 0.5) return;   // still fading in: not grabbable yet
+      holdRender();
       dragRow = row; startIndex = i; hoverIndex = i; startY = e.clientY;
       row.setPointerCapture(e.pointerId);
       row.classList.add('dragging');
@@ -3184,7 +3185,7 @@ function openAspPicker(s, key){
   aspPicker = { key, el, sliding:false, badge };
   badge.classList.add('editing');
   const levelAt = e=>{ const o = document.elementFromPoint(e.clientX, e.clientY); return o && o.dataset && o.dataset.l!=null && el.contains(o) ? +o.dataset.l : null; };
-  el.addEventListener('pointerdown', e=>{ aspPicker.sliding = true; const l = levelAt(e); if(l!=null) setAspect(s, key, l); e.preventDefault(); });
+  el.addEventListener('pointerdown', e=>{ holdRender(); aspPicker.sliding = true; const l = levelAt(e); if(l!=null) setAspect(s, key, l); e.preventDefault(); });
   el.addEventListener('pointermove', e=>{ if(!aspPicker || !aspPicker.sliding) return; const l = levelAt(e); if(l!=null) setAspect(s, key, l); });
   el.addEventListener('pointerup', e=>{ const l = levelAt(e); if(l!=null) setAspect(s, key, l); closeAspPicker(); swallowNextClick(); });
   el.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeAspPicker(); badge.focus(); } });
@@ -5229,7 +5230,7 @@ function setupGauge(s){
   update(s.guess);
   // The first touch of the bar: the hint stops and Check wakes up (the answer can be "equal", so touching is enough).
   const touched = ()=>{ if(s.barMoved) return; s.barMoved = true; hintStop(); const c = document.getElementById('check'); if(c && sfState!=='error') c.disabled = false; };
-  bar.parentElement.addEventListener('pointerdown', e=>{ touched(); gaugeDragging = true; update(gaugePos(e)); e.preventDefault(); });
+  bar.parentElement.addEventListener('pointerdown', e=>{ touched(); holdRender(); gaugeDragging = true; update(gaugePos(e)); e.preventDefault(); });
   bar.addEventListener('keydown', e=>{
     if(e.key==='ArrowUp' || e.key==='ArrowDown') touched();
     const step = e.shiftKey ? 10 : 2;
@@ -5618,7 +5619,14 @@ function renderFinal(){
 }
 
 let shownScreen = null;   // the screen drawn last (for the page transitions)
+// While a finger drags something (a move being ranked, the evaluation bar, the grades' scale), the page
+// isn't rebuilt under it: background redraws wait, and one redraw follows when it's let go.
+let renderHeld = false, renderWaiting = false;
+function holdRender(){ renderHeld = true; }
+const releaseRender = ()=>{ if(!renderHeld) return; renderHeld = false; if(renderWaiting){ renderWaiting = false; setTimeout(render, 0); } };
+document.addEventListener('pointerup', releaseRender, true); document.addEventListener('pointercancel', releaseRender, true);
 function render(){
+  if(renderHeld){ renderWaiting = true; return; }
   // The page is redrawn often (e.g. while your games are analysed): text being typed, and the
   // focus and cursor in it, carry over to the redrawn page.
   const typed = [...document.querySelectorAll('input[type=text][id], textarea[id]')].map(el=>({ id: el.id, value: el.value }));
