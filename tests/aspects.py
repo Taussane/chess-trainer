@@ -200,7 +200,7 @@ async def main():
         # counted pawn's points in its corner, Passed and Connected with their rank stacked under, each king its side's total
         isl = await pg.evaluate("""(()=>{ const f = 'r4rk1/4bppp/p3bn2/3p4/N7/3BB3/PP3PPP/R3R1K1 w - - 3 16', g = '2r3k1/2p3p1/1p6/3PP2p/P7/2P2P2/2P1PP2/3R2K1 w - - 0 30';
           return [adaptAspects(parseAspects(sfTableLines(f), f), f).pawns, aspectMarks(f, 'pawns').nums.map(n=>n.sq+n.c+n.n).sort().join(' '), aspectMarks(g, 'pawns').nums.map(n=>n.sq+n.c+n.n).sort().join(' ')]; })()""")
-        if isl != [-1, 'a6b−1 d5b+2 g8bTotal +1', 'a4w−1 c3w−1 c7b−1 d5w+2 e5w+4 g1wTotal +4 g8bTotal +1 h5b+2']: fails.append(f'pawn points: {isl}')
+        if isl != [-1, 'a6b−1 d5b+2 g1wTotal +0 g8bTotal +1', 'a4w−1 c3w−1 c7b−1 d5w+2 e5w+4 g1wTotal +4 g8bTotal +1 h5b+2']: fails.append(f'pawn points: {isl}')
         # our adaptations, on one position: Activity loses the kings' middlegame squares and the pieces' distance
         # to their king (both to King safety) and the trapped rook while castling is possible; King safety also
         # takes the shelter where the king stands and drops the attacks on the king's wing; threats by the side
@@ -279,7 +279,7 @@ async def main():
             spaceFew: M('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 'space').t,
             knight: M('4k3/8/8/8/8/8/8/1N2K3 w - - 0 1', 'activity').n,
           }; })()""")
-        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2w d5b g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b1+3 e1Total +3'}
+        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2w d5b g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b1+3 e1Total +3 e8Total +0'}
         for k, v in want.items():
             if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
         # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (the move's arrow, no rings)
