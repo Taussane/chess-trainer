@@ -1447,6 +1447,8 @@ let sfBusy = false;
 let sfCurrentResolve = null;
 let sfCurrentLines = {}; // rank (1..N) -> {cp, mate, uci} for the search currently in flight
 let sfCurrentDepth = 0;  // the deepest full pass of that search (its best line's depth): shown in the reviews
+let sfCurrentFen = null; // the position being searched (a review shows its depth live while it waits for it)
+const liveDepth = {};    // position -> the deepest pass any search of it reached (the live badge)
 let sfVersion = 'SF19';  // the engine running: Stockfish 19 lite, or Stockfish 10 as the last resort
 
 // fetch() to either CDN is blocked in this sandbox (confirmed: both attempts failed before
@@ -1531,7 +1533,12 @@ function onEngineMessage(e){
       const cpM = line.match(/score cp (-?\d+)/);
       const pvM = line.match(/ pv (\S+)/); // first move of that line's principal variation
       const dM = line.match(/ depth (\d+)/);
-      if(dM && rank===1 && !/ (upper|lower)bound/.test(line)) sfCurrentDepth = Math.max(sfCurrentDepth, +dM[1]);
+      if(dM && rank===1 && !/ (upper|lower)bound/.test(line) && +dM[1] > sfCurrentDepth){
+        sfCurrentDepth = +dM[1];
+        const b = document.getElementById('depthBtn');   // a review waiting for this very search: its depth climbs as it goes
+        if(sfCurrentDepth > (liveDepth[sfCurrentFen] || 0)) liveDepth[sfCurrentFen] = sfCurrentDepth;   // the deepest so far for this position: never down (a review can need two searches)
+        if(b && b.dataset.live===sfCurrentFen) b.querySelector('b').textContent = liveDepth[sfCurrentFen];
+      }
       sfCurrentLines[rank] = {
         cp: mateM ? null : (cpM ? parseInt(cpM[1],10) : null),
         mate: mateM ? parseInt(mateM[1],10) : null,
@@ -1554,7 +1561,7 @@ function onEngineMessage(e){
       // number that only holds once every line has finished converging.
       const lines = collected.slice().sort((a,b)=> winPercent(b.cp,b.mate) - winPercent(a.cp,a.mate));
       const result = lines.length ? { lines, bestUci, depth: sfCurrentDepth || null } : FAILED;
-      sfCurrentLines = {}; sfCurrentDepth = 0;
+      sfCurrentLines = {}; sfCurrentDepth = 0; sfCurrentFen = null;
       const resolve = sfCurrentResolve;
       sfBusy = false; sfCurrentResolve = null;
       if(resolve) resolve(result);
@@ -1584,7 +1591,7 @@ function pumpEngineQueue(){
   const job = sfQueue.length ? sfQueue.shift() : bgQueue.length ? bgQueue.shift() : null;
   if(!job) return;
   const {fen, searchmoves, resolve} = job;
-  sfBusy = true; sfCurrentResolve = resolve; sfCurrentLines = {};
+  sfBusy = true; sfCurrentResolve = resolve; sfCurrentLines = {}; sfCurrentDepth = 0; sfCurrentFen = fen;
   // One ranked line per restricted move (so every move in a combined search gets its own
   // comparable score), or the top DISCOVERY_MULTIPV lines for an unrestricted search.
   const mpv = searchmoves ? searchmoves.split(' ').length : (job.multipv || DISCOVERY_MULTIPV);
@@ -3441,7 +3448,7 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
     for(const x of out.circles){ const v = POINTS[m[x.sq].t] + (pairOn[x.c]===x.sq ? 0.5 : 0); extra[x.c] += v; out.nums.push({ sq: x.sq, n: '+' + v, c: x.c }); if(pairOn[x.c]===x.sq) out.labels.push({ sq: x.sq, c: x.c, text:'Pair' }); }
     for(const c of ['w','b']){
       const k = pieces(c).find(sq=>m[sq].t==='k');
-      if(k && extra[c]) out.nums.push({ sq: k, n: 'Total +' + extra[c], c });
+      if(k) out.nums.push({ sq: k, n: 'Total +' + (extra[c] || 0), c });   // Total +0 too, on every criterion
     }
   }
   if(key==='pawns'){
@@ -3460,7 +3467,7 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
         if(protector && mine.some(o=>o!==sq && o[0]===sq[0] && relRank(o, c) < relRank(sq, c))) out.arrows.push({ from: protector, to: sq, c });   // doubled but protected: not penalised
       }
       const k = pieces(c).find(sq=>m[sq].t==='k');
-      if(k && pp[c]) out.nums.push({ sq: k, n: 'Total ' + (pp[c] > 0 ? '+' : '−') + Math.abs(pp[c]), c });
+      if(k) out.nums.push({ sq: k, n: 'Total ' + (pp[c] < 0 ? '−' : '+') + Math.abs(pp[c] || 0), c });
     }
   }
   if(key==='space'){
@@ -3476,7 +3483,7 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
         x.squares.forEach(t=>out.circles.push({ sq: t, c: x.c }));   // each pawn and free square counted, ringed
         for(const t of x.taken) t.by.forEach(a=>{ if(!out.arrows.some(y=>y.from===a && y.to===t.sq)) out.arrows.push({ from: a, to: t.sq, c: other(x.c) }); });
       }
-      for(const c of ['w','b']){ const k = pieces(c).find(sq=>m[sq].t==='k'); if(k && sp[c]) out.nums.push({ sq: k, n: 'Total +' + sp[c], c }); }
+      for(const c of ['w','b']){ const k = pieces(c).find(sq=>m[sq].t==='k'); if(k) out.nums.push({ sq: k, n: 'Total +' + (sp[c] || 0), c }); }
     }
   }
   if(key==='activity'){
@@ -3497,7 +3504,7 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
       const l = out.labels.find(y=>y.sq===x.sq && y.c===x.c);   // a second bonus on the same piece (Advanced and Open): stacked
       if(l){ if(x.text==='Advanced'){ l.sub = l.text; l.text = x.text; } else l.sub = x.text; } else out.labels.push({ sq: x.sq, c: x.c, text: x.text });
     }
-    for(const c of ['w','b']){ const k = pieces(c).find(sq=>m[sq].t==='k'), v = Math.round(tot[c] * 10) / 10; if(k && v) out.nums.push({ sq: k, n: 'Total ' + fmtPts(v), c }); }
+    for(const c of ['w','b']){ const k = pieces(c).find(sq=>m[sq].t==='k'), v = Math.round(tot[c] * 10) / 10; if(k) out.nums.push({ sq: k, n: 'Total ' + (v ? fmtPts(v) : '+0'), c }); }
   }
   if(key==='king' && isEndgame(fen)){
     // King activity (kingActivityPoints): the centre's three rings (dashed, each side's half in its colour,
@@ -3536,7 +3543,7 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
       }
       out.nums.push({ sq: sd.k, n: 'Total ' + (sd.points ? fmtPts(sd.points) : '+0'), c, tap: true });   // Total +0 too, as for King activity (tap the king: its side alone)
     }
-    if(!out.circles.length && !out.arrows.length){ out.zones = []; out.nums = []; }
+    if(!out.circles.length && !out.arrows.length) out.zones = [];   // (the totals stay: Total +0 on both kings)
   }
   // a mate found by the search: the mating move, outlined in red, under King safety
   const mt = aspectsStore[fen] && aspectsStore[fen].data && aspectsStore[fen].data.mate;
@@ -3630,7 +3637,7 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
   if(key==='threats'){
     // Other threats in points (threatsPoints): on each king, its side's total
     const tp = threatsPointsFrom(fen, out);
-    for(const c of ['w','b']){ const k = pieces(c).find(sq=>m[sq].t==='k'); if(k && tp[c]) out.nums.push({ sq: k, n: 'Total +' + tp[c] + (tp.mul[c] > 1 ? ' ×2' : ''), c }); }
+    for(const c of ['w','b']){ const k = pieces(c).find(sq=>m[sq].t==='k'); if(k) out.nums.push({ sq: k, n: 'Total +' + (tp[c] || 0) + (tp.mul[c] > 1 ? ' ×2' : ''), c }); }
   }
   // One label per piece: Hanging / Losing over Pinned, Pinned over the rest (e.g. Outpost). A dropped
   // label's ring goes with it when its colour differs from the kept one's.
@@ -5251,7 +5258,7 @@ function renderAnalysis(){
     ${boardHtml(true, bar)}
     ${stackedPanel(`
       ${s.checked ? `
-        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(score.base + (score.final - score.base)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, false)}${depthBtnHtml(disc, done, false)}${depthNoteHtml(s, disc)}</div>
+        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(score.base + (score.final - score.base)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, false)}${depthBtnHtml(disc, p.fen)}${depthNoteHtml(s, disc)}</div>
         ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, false, false, p.fen) : planHtml(null, null, false, true)}
         <div class="actions-row split${done ? '' : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
@@ -5260,7 +5267,7 @@ function renderAnalysis(){
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(s.checked){
     fadeOnce(s, 'score', reviewPart('.score'));   // the accuracy, as the review opens
-    if(done){ fadeOnce(s, 'plan', reviewPart('.aspects.plan')); fadeOnce(s, 'level', reviewPart('.level')); fadeOnce(s, 'end', reviewPart('.actions-row')); fadeOnce(s, 'depth', reviewPart('#depthBtn')); }   // then the plans, the average, the buttons and the depth together
+    if(done){ fadeOnce(s, 'plan', reviewPart('.aspects.plan')); fadeOnce(s, 'level', reviewPart('.level')); fadeOnce(s, 'end', reviewPart('.actions-row')); }   // then the plans, the average and the buttons together
     wireDepthBtn(s);
   }
   if(aspVals) wireAspectView(p, s);
@@ -5435,7 +5442,7 @@ function renderCandidates(){
       ${posBar()}
       ${boardHtml(false)}
       ${stackedPanel(`
-        <div class="score"><span class="score-num" id="candAcc">${s.countDone ? pctOrDash(acc) : s.countStarted ? '0%' : '—'}</span><span class="score-label" id="candAccLabel">${failed ? 'Engine unavailable' : s.countStarted || s.countDone ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.countDone, s.justCounted)}${depthBtnHtml(ev, s.countDone, s.justCounted)}${depthNoteHtml(s, ev)}</div>
+        <div class="score"><span class="score-num" id="candAcc">${s.countDone ? pctOrDash(acc) : s.countStarted ? '0%' : '—'}</span><span class="score-label" id="candAccLabel">${failed ? 'Engine unavailable' : s.countStarted || s.countDone ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.countDone, s.justCounted)}${depthBtnHtml(ev0, p.fen)}${depthNoteHtml(s, ev)}</div>
         <div class="review-cols">
           ${col('Your moves', 'mine', showMine, mine, '')}
           ${col('Top moves', 'top', showTop, top, failed ? 'Unavailable' : 'Evaluating…')}
@@ -5608,11 +5615,13 @@ function timedFade(el, delay, elapsed, dur, kind, easing){
 }
 // The review's engine button: the depth its search reached, the engine below (tap: what it means).
 let reviewDepth = null;   // the open review's depth (for the anonymous usage counts)
-function depthBtnHtml(ev, show, fade){
-  const d = ev && !evalFailed(ev) ? ev.depth : null;
+function depthBtnHtml(ev, fen){
+  if(evalFailed(ev)){ reviewDepth = null; return ''; }
+  const d = ev ? Math.max(ev.depth || 0, liveDepth[fen] || 0) || null : null, live = !ev;   // live: still searching, the depth climbs (onEngineMessage); done: the deepest of the review's searches
   reviewDepth = d;
-  if(!d) return '';
-  return `<button class="depth-btn${fade ? ' fade-in' : ''}" id="depthBtn" style="${show ? '' : 'visibility:hidden'}" aria-label="${sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10'}, depth ${d}"><b>${d}</b><small>${sfVersion}</small></button>`;
+  if(!live && !d) return '';
+  const now = live ? (liveDepth[fen] || '…') : d;
+  return `<button class="depth-btn" id="depthBtn"${live ? ` data-live="${fen}"` : ''} aria-label="${sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10'}${live ? ', searching' : ', depth ' + d}"><b>${now}</b><small>${sfVersion}</small></button>`;
 }
 function depthNoteHtml(s, ev){
   const d = ev && !evalFailed(ev) ? ev.depth : null;
@@ -5697,7 +5706,7 @@ function renderFinal(){
       ${posBar()}
       ${boardHtml(false)}
       ${stackedPanel(`
-        <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'Engine unavailable' : counting ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}${depthBtnHtml(ev, s.revDone, s.justDone)}${depthNoteHtml(s, ev)}</div>
+        <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'Engine unavailable' : counting ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}${depthBtnHtml(ev0, p.fen)}${depthNoteHtml(s, ev)}</div>
         <div id="reviewRows" class="rev-list">${rows.map(reviewRowHtml).join('')}</div>
         <div class="actions-row split${s.revDone ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`, ghostFinal(), engineErrorBanner())}`;
     renderBoard(document.getElementById('board'), bs, p.last);
