@@ -29,7 +29,7 @@ async def main():
         # (all six criteria in play, whatever position comes up: Space counted)
         await pg.evaluate("""t=>{ window._spaceCounts = spaceCounts; spaceCounts = ()=>true; engineAspects = fen=>Promise.resolve(t.split('\\n')); aspectsStore = {}; render(); }""", TABLE)
         prompt = await pg.text_content('#imbPrompt')
-        if prompt != 'Gauge each positional imbalance.': fails.append(f'prompt: {prompt}')
+        if prompt != 'Grade each positional imbalance.': fails.append(f'prompt: {prompt}')
         if await pg.query_selector('#evalBar'): fails.append('Imbalance reading has no evaluation bar')
         start = await pg.evaluate("[...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' ')")
         if start != '= = = = = =': fails.append(f'imbalances should start at =: {start}')

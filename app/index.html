@@ -3392,9 +3392,9 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
         if(x.check) out.arrows.push({ from: x.sq, to: pick(x.to), c: them, outline: 'y' });   // able to check: outlined in yellow, to its checking square (still −1)
         else out.arrows.push({ from: x.sq, to: pick(x.hits), c: them });
       }
-      if(sd.points) out.nums.push({ sq: sd.k, n: 'Total ' + fmtPts(sd.points), c, tap: true });   // (tap the king: its side alone)
+      out.nums.push({ sq: sd.k, n: 'Total ' + (sd.points ? fmtPts(sd.points) : '+0'), c, tap: true });   // Total +0 too, as for King activity (tap the king: its side alone)
     }
-    if(!out.circles.length && !out.arrows.length) out.zones = [];
+    if(!out.circles.length && !out.arrows.length){ out.zones = []; out.nums = []; }
   }
   // a mate found by the search: the mating move, outlined in red, under King safety
   const mt = aspectsStore[fen] && aspectsStore[fen].data && aspectsStore[fen].data.mate;
@@ -3582,7 +3582,7 @@ const GHOST_ANALYSIS = [
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planHtml(null, null, false, true)}${GHOST_ACTIONS}`,
 ];
 const GHOST_IMBALANCES = [
-  `<p class="prompt">Gauge each positional imbalance.</p>${aspectsInputHtml(null, true)}<div class="actions-row"><span class="btn">Check</span></div>`,
+  `<p class="prompt">Grade each positional imbalance.</p>${aspectsInputHtml(null, true)}<div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, 0, true)}${GHOST_ACTIONS}`,
 ];
 function ghostCandidates(){
@@ -5113,7 +5113,7 @@ function renderImbalances(){
         ${aspectsGridHtml(vals, s.asp, s.aspShown || 0, false, s.aspView, done && p.fen)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
-        <p class="prompt" id="imbPrompt">Gauge each positional imbalance.</p>
+        <p class="prompt" id="imbPrompt">Grade each positional imbalance.</p>
         ${aspectsInputHtml(s)}
         <div class="actions-row" id="imbCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_IMBALANCES, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
@@ -5712,7 +5712,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Finding positions in your games…": "Recherche de positions dans vos parties…",
 "No positions yet": "Pas encore de positions",
 "All played today": "Toutes jouées aujourd'hui",
-"Gauge each positional imbalance.": "Jaugez chaque déséquilibre positionnel.",
+"Grade each positional imbalance.": "Notez chaque déséquilibre positionnel.",
 "Drag the evaluation bar to where you think it sits.": "Placez la barre d'évaluation là où vous pensez qu'elle se situe.",
 "Your evaluation": "Votre évaluation",
 "Static": "Statique",
