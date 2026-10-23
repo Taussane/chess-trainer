@@ -458,6 +458,7 @@
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
   .actions-row.pending{visibility:hidden;}
   .fade-in{animation:fadeIn .35s ease-out both;}
+  #app.redrawing *, #app.redrawing *::before, #app.redrawing *::after{transition:none !important;}
   @keyframes hidden{from,to{opacity:0;}}
   @keyframes rowIn{from{opacity:0;}}
   @keyframes fadeIn{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
@@ -3120,7 +3121,7 @@ function aspectsInputHtml(s, hidden){
       ? `<span class="asp-badge eq asp-pick">=</span>`
       : off
       ? `<button class="asp-badge off asp-pick" data-asp="${x.key}" data-off="1" aria-label="${aspNameText(x, fen)}: not counted here" aria-haspopup="true">·</button>`
-      : `<button class="asp-badge ${levelCls(l)} asp-pick" data-asp="${x.key}" aria-label="${aspNameText(x, fen)}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
+      : `<button class="asp-badge ${levelCls(l)} asp-pick${aspPicker && aspPicker.key===x.key ? ' editing' : ''}" data-asp="${x.key}" aria-label="${aspNameText(x, fen)}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
   return `<div class="aspects asp-input${!hidden && s && !s.aspTouched ? ' asp-pulse' : ''}"${hidden ? '' : ' id="aspInput"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
     </div>`;
@@ -5589,7 +5590,11 @@ function render(){
   // focus and cursor in it, carry over to the redrawn page.
   const typed = [...document.querySelectorAll('input[type=text][id], textarea[id]')].map(el=>({ id: el.id, value: el.value }));
   const act = document.activeElement, focus = act && act.id && /^(INPUT|TEXTAREA)$/.test(act.tagName) ? { id: act.id, a: act.selectionStart, b: act.selectionEnd } : null;
-  const from = shownScreen;
+  const from = shownScreen, appEl = document.getElementById('app');
+  // Elements rebuilt by a redraw must not play their transitions (a badge's highlight coming back would
+  // fade in again each time): transitions are off while the new page settles, two frames.
+  appEl.classList.add('redrawing'); clearTimeout(render.settle);
+  render.settle = setTimeout(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>appEl.classList.remove('redrawing'))), 0);
   renderScreen();
   shownScreen = screen;
   // pages slide: in from the right going deeper (home → a page, profile → settings), from the left coming back
