@@ -4131,10 +4131,10 @@ function renderHome(){
         return `<button class="seg-btn${k===source?' active':''}" role="radio" aria-checked="${k===source}" data-src="${k}" ${off ? 'disabled title="No positions from your games yet"' : ''}>${k==='mine' && LANG==='fr' ? '<span data-no-i18n>Miennes</span>' : v}</button>`; }).join('')}</div>
     </div>
     <div class="cards">
-      ${[['imbalances',ACT_GLYPHS.imbalances,'Who has the edge, aspect by aspect?'],
-         ['analysis',ACT_GLYPHS.analysis,"Who's better, and by how much?"],
-         ['candidates',ACT_GLYPHS.candidates,'Find the strongest moves.'],
-         ['final',ACT_GLYPHS.final,'Rank four moves, best to worst.']].map(([a, glyph, desc])=>{
+      ${[['imbalances',ACT_GLYPHS.imbalances,'Ponder each strategic aspect.'],
+         ['analysis',ACT_GLYPHS.analysis,'Gauge the overall position.'],
+         ['candidates',ACT_GLYPHS.candidates,'Identify the most promising moves.'],
+         ['final',ACT_GLYPHS.final,'Decide what you would play.']].map(([a, glyph, desc])=>{
         const L = levelNow(a), open = canOpen(a, false);
         if(!open) desc = waitText(a, false);
         return `<button class="card" data-go="${a}" ${open ? '' : 'disabled'}>
@@ -6038,7 +6038,11 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Tap an imbalance to see it on the board, then the '?' button for how it's counted.": "Touchez un déséquilibre pour le voir sur l'échiquier, puis le bouton « ? » pour savoir comment il se compte.",
 "Tap a line to see its imbalance on the board, then the '?' button for how it's counted.": "Touchez une ligne pour voir son déséquilibre sur l'échiquier, puis le bouton « ? » pour savoir comment il se compte.",
 "Support me": "Soutenez-moi",
-"Feedback": "Commentaires"
+"Feedback": "Commentaires",
+"Ponder each strategic aspect.": "Examinez chaque aspect stratégique.",
+"Gauge the overall position.": "Évaluez la position dans son ensemble.",
+"Identify the most promising moves.": "Repérez les coups les plus prometteurs.",
+"Decide what you would play.": "Décidez ce que vous joueriez."
 }/*END I18N_FR*/));
 const I18N_FR_RE = [
   [/^(\d+)\. White to play$/, '$1. Aux Blancs de jouer'],
