@@ -1450,7 +1450,15 @@ let sfCurrentDepth = 0;  // the deepest full pass of that search (its best line'
 let sfCurrentFen = null; // the position being searched (a review shows its depth live while it waits for it)
 const liveDepth = {};    // position -> the deepest pass any search of it reached (the live badge)
 const LIVE_DEPTH = 20, LIVE_CAP_MS = 8000;   // the exercises' searches: depth 20, at most 8 s (the depth reached is shown)
-let sfStartedAt = 0;
+let sfStartedAt = 0, sfCurrentJob = null;
+// A long search for a position prepared in advance gives way when the open position needs the engine:
+// it's stopped (its partial result dropped) and searched again afterwards.
+function preemptForOpen(){
+  const j = sfCurrentJob, cur = typeof curPos!=='undefined' && curPos && ACTIVITIES.includes(screen) ? curPos.fen : null;
+  if(!j || j.movetime || j.preempted || !cur || j.fen===cur || !sfQueue.some(q=>q.fen===cur)) return;
+  j.preempted = true;
+  try{ sfWorker.postMessage('stop'); }catch(e){}
+}
 let sfVersion = 'SF19';  // the engine running: Stockfish 19 lite, or Stockfish 10 as the last resort
 
 // fetch() to either CDN is blocked in this sandbox (confirmed: both attempts failed before
@@ -1564,8 +1572,9 @@ function onEngineMessage(e){
       const lines = collected.slice().sort((a,b)=> winPercent(b.cp,b.mate) - winPercent(a.cp,a.mate));
       const result = lines.length ? { lines, bestUci, depth: sfCurrentDepth || null, ms: Math.round(performance.now() - sfStartedAt) } : FAILED;
       sfCurrentLines = {}; sfCurrentDepth = 0; sfCurrentFen = null;
-      const resolve = sfCurrentResolve;
-      sfBusy = false; sfCurrentResolve = null;
+      const resolve = sfCurrentResolve, job = sfCurrentJob;
+      sfBusy = false; sfCurrentResolve = null; sfCurrentJob = null;
+      if(job && job.preempted){ job.preempted = false; sfQueue.push(job); pumpEngineQueue(); return; }   // stopped for the open position: searched again later, in full
       if(resolve) resolve(result);
       pumpEngineQueue();
     }
@@ -1587,15 +1596,17 @@ function failEngine(reason){
 }
 const evalFailed = d => !!(d && d.failed);
 function pumpEngineQueue(){
-  if(sfBusy || sfState!=='ready' || !sfWorker) return;
+  if(sfBusy){ preemptForOpen(); return; }
+  if(sfState!=='ready' || !sfWorker) return;
   // An exercise's search always goes first; background work only fills idle time, one short
   // search at a time, so a waiting review is never more than one quick search away.
   // The open position's own searches before positions prepared in advance (each can take seconds).
   const cur = typeof curPos!=='undefined' && curPos && ACTIVITIES.includes(screen) ? curPos.fen : null;
-  const mine = cur ? sfQueue.findIndex(j=>j.fen===cur) : -1;
+  const mine = cur ? sfQueue.findIndex(j=>j.fen===cur && j.movetime) >= 0 ? sfQueue.findIndex(j=>j.fen===cur && j.movetime) : sfQueue.findIndex(j=>j.fen===cur) : -1;   // its quick ones (Imbalance reading's mate check) first
   const job = mine>0 ? sfQueue.splice(mine, 1)[0] : sfQueue.length ? sfQueue.shift() : bgQueue.length ? bgQueue.shift() : null;
   if(!job) return;
   const {fen, searchmoves, resolve} = job;
+  sfCurrentJob = job;
   sfBusy = true; sfCurrentResolve = resolve; sfCurrentLines = {}; sfCurrentDepth = 0; sfCurrentFen = fen;
   // One ranked line per restricted move (so every move in a combined search gets its own
   // comparable score), or the top DISCOVERY_MULTIPV lines for an unrestricted search.
@@ -2314,6 +2325,7 @@ function prefetchHome(){
   const ts = [ctx('analysis', false), ctx('final', false)];
   if(routineNext!=='candidates' && routineNext!=='imbalances') ts.push(ctx(routineNext, true));
   ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0) fenEval(posAt(x, i).fen); });
+  { const [x, i] = upcomingFor(ctx('imbalances', false)); if(i>=0) aspectsEntry(posAt(x, i).fen); }   // Imbalance reading's table (and its quick mate check)
 }
 // Moves exercise `a`, on the open track, on to its next position, fresh.
 function advance(a){
