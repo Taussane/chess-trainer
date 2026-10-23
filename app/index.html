@@ -287,7 +287,7 @@
   .coord{position:absolute; font-size:3cqw; font-weight:600; line-height:1; pointer-events:none; z-index:1;}
   .coord-f{left:2px; bottom:1px;} .coord-r{right:2px; top:2px;}
   .sq.light .coord{color:var(--board-dark);} .sq.dark .coord{color:var(--board-light);}
-  .set-page .board-outer{max-width:min(360px, max(160px, 100dvh - 490px));}   /* the whole page fits the screen (Arrows, the tallest tab, included) */
+  .set-page .board-outer{max-width:min(360px, max(160px, 100dvh - 462px));}   /* the whole page fits the screen (Arrows, the tallest tab, included) */
   .fig{font-size:1.25em; line-height:0; vertical-align:-0.06em;}
   .set-preview{display:flex; flex-direction:column; gap:8px;}
   .set-chips{display:flex; justify-content:center; gap:16px;}
@@ -307,7 +307,8 @@
   .set-opt small{color:var(--text-mute); font-size:0.74rem;}
   .set-opt.on{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent);}
   .set-opt:disabled{opacity:.45; cursor:default;}
-  .set-reset{align-self:center; margin:6px auto 0; display:block;}
+  .set-reset{align-self:center; margin:auto auto 0; display:block;}   /* at the bottom, where the exercises' buttons are */
+  .set-page{min-height:calc(100dvh - 68px); padding-bottom:5px;}
   .sq.last::before{content:""; position:absolute; inset:0; background:var(--square-hl);}
   .sq.selected::before{content:""; position:absolute; inset:0; background:var(--square-hl);}
   .sq.check{background-image:radial-gradient(circle at center, rgba(255,40,40,1) 0%, rgba(230,0,0,.85) 28%, rgba(200,0,0,.35) 58%, rgba(170,0,0,0) 80%);}
