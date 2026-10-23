@@ -449,9 +449,12 @@
      once (0.5 s on, 1.2 s fading out), a 2 s pause, then another. The pulse's start carries over redraws (--hint-delay). */
   .hinting .pulse-now{--hint-anim:1.7s ease-in-out var(--hint-delay, 0ms) 1 both;}
   .hinting .asp-pick.pulse-now{animation:aspPulse var(--hint-anim);}
-  .hinting .evalbar-cursor.pulse-now{animation:handlePulse var(--hint-anim);}
-  @keyframes handlePulse{0%,100%{filter:none;} 29.4%{filter:drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 7px var(--accent));}}
+  /* the handle's triangles grow, away from the line */
+  .evalbar-cursor.handle::before{transform-origin:50% 100%;} .evalbar-cursor.handle::after{transform-origin:50% 0;}
+  .hinting .evalbar-cursor.pulse-now::before, .hinting .evalbar-cursor.pulse-now::after{animation:handleGrow var(--hint-anim);}
+  @keyframes handleGrow{0%,100%{transform:translateX(-50%) scale(1);} 29.4%{transform:translateX(-50%) scale(1.7);}}
   .hinting .sq.pulse-now::before{content:""; position:absolute; inset:0; background:var(--square-hl); pointer-events:none; animation:tintPulse var(--hint-anim);}   /* the selection's own tint */
+  .hinting .sq.pulse-now::after{content:""; position:absolute; inset:5%; border:max(2px, 0.6cqw) solid var(--accent); border-radius:50%; pointer-events:none; z-index:1; animation:tintPulse var(--hint-anim);}   /* and a ring around the piece */
   @keyframes tintPulse{0%,100%{opacity:0;} 29.4%{opacity:1;}}
   .hinting .rate-row.pulse-now{position:relative; z-index:1; border-radius:6px; animation:liftPulse var(--hint-anim);}   /* as if picked up */
   @keyframes liftPulse{0%,100%{background:transparent; box-shadow:none; transform:none;} 29.4%{background:var(--panel-2); box-shadow:0 6px 18px var(--shadow); transform:translateY(-2px);}}
@@ -3139,7 +3142,7 @@ let aspPicker = null;   // {key, el, sliding}: the scale open under a badge
 // Each question's hint until its first touch: one element at a time (data-hint, inside the element with
 // the class "hinting"), picked at random, never twice in a row, pulses once; then a pause and another.
 // The pulsing element and its start are kept here, so a redraw carries on with it (hintApply).
-const hint = { key:null, at:0, timer:null, owner:null }, HINT_PULSE = 1700, HINT_CYCLE = 3700;   // 1.7 s pulse + 2 s pause
+const hint = { key:null, at:0, timer:null, owner:null }, HINT_PULSE = 1700, HINT_PAUSE = 2000, HINT_CYCLE = HINT_PULSE + HINT_PAUSE;
 function hintTick(){
   clearTimeout(hint.timer); hint.timer = null;
   const box = document.querySelector('#app .hinting');
@@ -3161,7 +3164,7 @@ function hintStart(wait){
   if(!document.querySelector('#app .hinting')) return;
   const owner = screen + '|' + (pos() ? pos().key : '');   // a cycle belongs to one question: a new one starts afresh
   if(hint.timer && hint.owner===owner){ hintApply(); return; }
-  clearTimeout(hint.timer); hint.owner = owner; hint.key = null; hint.timer = setTimeout(hintTick, wait ?? 600);
+  clearTimeout(hint.timer); hint.owner = owner; hint.key = null; hint.timer = setTimeout(hintTick, wait ?? HINT_PAUSE);   // first the pause, then the first pulse
 }
 // The first touch: no more hint on this question.
 function hintStop(){
@@ -5634,7 +5637,7 @@ function renderFinal(){
   // The hint until a move is first picked up: one move at a time lifts (its shadow, as when dragged), once the
   // moves are all in. Check waits for a first swap.
   rankedEl.classList.toggle('hinting', !s.rankTouched);
-  if(!s.rankTouched){ rankedEl.addEventListener('pointerdown', ()=>{ if(!s.rankTouched){ s.rankTouched = true; hintStop(); } }, { capture:true, once:true }); hintStart(Math.max(600, tLast + SLIDE_MS - introEl)); }
+  if(!s.rankTouched){ rankedEl.addEventListener('pointerdown', ()=>{ if(!s.rankTouched){ s.rankTouched = true; hintStop(); } }, { capture:true, once:true }); hintStart(Math.max(HINT_PAUSE, tLast + SLIDE_MS - introEl + HINT_PAUSE)); }
   wireDragReorder(rankedEl, s.order, changed=>{ s.moved = true; if(changed) s.swapped = true; render(); });
   document.getElementById('check').onclick = ()=>{ s.checked = true; s.revAt = null; s.revDone = false; render(); };
   wireCommon('final', false);
