@@ -418,10 +418,11 @@
   .asp-badge.off{background:transparent; color:var(--text-mute); border-color:var(--border); border-style:dashed; opacity:.75;}
   .asp-picker.note{justify-content:center; padding:9px 10px; font-size:0.84rem; color:var(--text-mute); text-align:center;}
   .asp-pick.editing{box-shadow:0 0 0 2px var(--dubious);}
-  /* Until you tap a first grade: the grades pulse (a yellow border on and off), to show where to start */
-  #aspInput.asp-pulse .asp-pick:not(.off){animation:aspPulse 1.4s ease-in-out infinite; animation-delay:var(--pulse-phase, 0ms);}   /* in phase across redraws (keepFades) */
+  /* Until you tap a first grade: one grade at a time, picked at random, pulses once (a yellow border on and
+     off), then a pause, then another (aspPulseTick), to show where to start */
+  #aspInput.asp-pulse .asp-pick.pulse-now{animation:aspPulse 1.6s ease-in-out 1 both;}
   @keyframes aspPulse{0%,100%{border-color:var(--border); box-shadow:none;} 50%{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}}
-  @media (prefers-reduced-motion: reduce){ #aspInput.asp-pulse .asp-pick:not(.off){animation:none; border-color:var(--accent);} }
+  @media (prefers-reduced-motion: reduce){ #aspInput.asp-pulse .asp-pick.pulse-now{animation:none; border-color:var(--accent);} }
   .score{display:flex; align-items:baseline; gap:8px; margin-bottom:12px;}
   .score-num{font-family:var(--font-display); font-size:1.7rem; line-height:1; font-variant-numeric:tabular-nums;}
   .score-label{color:var(--text-mute); font-size:0.86rem;}
@@ -3094,12 +3095,24 @@ function aspectsInputHtml(s, hidden){
       ? `<span class="asp-badge eq asp-pick">=</span>`
       : off
       ? `<button class="asp-badge off asp-pick" data-asp="${x.key}" data-off="1" aria-label="${aspNameText(x, fen)}: not counted here" aria-haspopup="true">·</button>`
-      : `<button class="asp-badge ${levelCls(l)} asp-pick${aspPicker && aspPicker.key===x.key ? ' editing' : ''}" data-asp="${x.key}" aria-label="${aspNameText(x, fen)}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
+      : `<button class="asp-badge ${levelCls(l)} asp-pick${aspPicker && aspPicker.key===x.key ? ' editing' : ''}${aspPulse.key===x.key && s && !s.aspTouched ? ' pulse-now' : ''}"${aspPulse.key===x.key && s && !s.aspTouched ? ` style="animation-delay:${Math.round(aspPulse.at - performance.now())}ms"` : ''} data-asp="${x.key}" aria-label="${aspNameText(x, fen)}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
   return `<div class="aspects asp-input${!hidden && s && !s.aspTouched ? ' asp-pulse' : ''}"${hidden ? '' : ' id="aspInput"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
     </div>`;
 }
 let aspPicker = null;   // {key, el, sliding}: the scale open under a badge
+// The question's hint until a first grade is tapped: one grade pulses (1.6 s), a pause (1.2 s), then
+// another one at random. The pulsing grade and its start are kept here, so a redraw carries on with it.
+const aspPulse = { key:null, at:0, timer:null };
+function aspPulseTick(){
+  clearTimeout(aspPulse.timer); aspPulse.timer = null;
+  const box = document.getElementById('aspInput');
+  if(!box || !box.classList.contains('asp-pulse')){ aspPulse.key = null; return; }
+  const keys = [...box.querySelectorAll('.asp-pick:not(.off)')].map(b=>b.dataset.asp).filter(k=>k && k!==aspPulse.key);
+  aspPulse.key = keys[Math.floor(Math.random() * keys.length)] || null; aspPulse.at = performance.now();
+  box.querySelectorAll('.asp-pick').forEach(b=>{ b.classList.toggle('pulse-now', b.dataset.asp===aspPulse.key); b.style.animationDelay = ''; });
+  aspPulse.timer = setTimeout(aspPulseTick, 2800);
+}
 function closeAspPicker(){ if(aspPicker){ aspPicker.el.remove(); aspPicker.badge && aspPicker.badge.classList.remove('editing'); aspPicker = null; } }
 // The scale covers the row above it: once it closes on lift, the click that follows would land on
 // whatever was under it, so that one click is dropped.
@@ -3146,6 +3159,7 @@ function openAspPicker(s, key){
   el.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeAspPicker(); badge.focus(); } });
 }
 function wireAspectsInput(s){
+  if(!s.aspTouched && !aspPulse.timer) aspPulse.timer = setTimeout(aspPulseTick, aspPulse.key ? 0 : 600);
   const was = aspPicker && aspPicker.key;   // a scale or note open when the page redraws (e.g. an evaluation arriving): open it again
   aspPicker = null;
   document.querySelectorAll('#aspInput .asp-pick').forEach(b=>{
@@ -5585,11 +5599,10 @@ function render(){
 // evaluation arriving, your account syncing, the engine starting): a CSS animation on a rebuilt
 // element would start over (or, its class gone, stop dead). So animations follow the clock, not the
 // redraws: an element fading in ("fade-in") keeps fading from where it was on the elements that
-// replace it, and endless ones (the grades' pulse) keep their phase.
+// replace it (the grades' pulse carries on the same way: aspPulse).
 const FADE_MS = 350, fadeStarts = new Map();   // element key -> when its fade started
 function keepFades(){
   const now = performance.now();
-  document.documentElement.style.setProperty('--pulse-phase', -(now % 1400) + 'ms');   // = the pulse's period
   for(const [k, t] of fadeStarts) if(now - t >= FADE_MS) fadeStarts.delete(k);
   const n = {};
   document.querySelectorAll('#app [id], #app [class]').forEach(el=>{
