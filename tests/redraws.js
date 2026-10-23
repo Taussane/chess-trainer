@@ -32,7 +32,8 @@ for(const a of ['imbalances','analysis','candidates','final']){
 }
 // Dragging a move in Move selection while the page redraws every 100 ms: the drag follows the finger
 // to the end and the order changes (redraws wait until it's let go).
-await p.evaluate(()=>{screen='home';render()}); await p.click('.card[data-go="final"]'); await p.waitForTimeout(3500);
+await p.evaluate(()=>{screen='home';render()}); await p.click('.card[data-go="final"]');
+await p.waitForFunction(()=>document.querySelectorAll('#ranked .rate-row').length===4, null, { timeout: 30000 }); await p.waitForTimeout(3500);   // the moves need the position's search (up to 8 s)
 await p.evaluate(()=>{ window.__iv = setInterval(()=>render(), 100); });
 const before = await p.evaluate(()=>st('final').order.slice());
 const r1 = await (await p.$$('#ranked .rate-row'))[0].boundingBox();

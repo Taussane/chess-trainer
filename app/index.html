@@ -1422,6 +1422,8 @@ let sfCurrentLines = {}; // rank (1..N) -> {cp, mate, uci} for the search curren
 let sfCurrentDepth = 0;  // the deepest full pass of that search (its best line's depth): shown in the reviews
 let sfCurrentFen = null; // the position being searched (a review shows its depth live while it waits for it)
 const liveDepth = {};    // position -> the deepest pass any search of it reached (the live badge)
+const LIVE_DEPTH = 20, LIVE_CAP_MS = 8000;   // the exercises' searches: depth 20, at most 8 s (the depth reached is shown)
+let sfStartedAt = 0;
 let sfVersion = 'SF19';  // the engine running: Stockfish 19 lite, or Stockfish 10 as the last resort
 
 // fetch() to either CDN is blocked in this sandbox (confirmed: both attempts failed before
@@ -1533,7 +1535,7 @@ function onEngineMessage(e){
       // of which label the engine happened to leave it under, rather than trusting a rank
       // number that only holds once every line has finished converging.
       const lines = collected.slice().sort((a,b)=> winPercent(b.cp,b.mate) - winPercent(a.cp,a.mate));
-      const result = lines.length ? { lines, bestUci, depth: sfCurrentDepth || null } : FAILED;
+      const result = lines.length ? { lines, bestUci, depth: sfCurrentDepth || null, ms: Math.round(performance.now() - sfStartedAt) } : FAILED;
       sfCurrentLines = {}; sfCurrentDepth = 0; sfCurrentFen = null;
       const resolve = sfCurrentResolve;
       sfBusy = false; sfCurrentResolve = null;
@@ -1561,7 +1563,10 @@ function pumpEngineQueue(){
   if(sfBusy || sfState!=='ready' || !sfWorker) return;
   // An exercise's search always goes first; background work only fills idle time, one short
   // search at a time, so a waiting review is never more than one quick search away.
-  const job = sfQueue.length ? sfQueue.shift() : bgQueue.length ? bgQueue.shift() : null;
+  // The open position's own searches before positions prepared in advance (each can take seconds).
+  const cur = typeof curPos!=='undefined' && curPos && ACTIVITIES.includes(screen) ? curPos.fen : null;
+  const mine = cur ? sfQueue.findIndex(j=>j.fen===cur) : -1;
+  const job = mine>0 ? sfQueue.splice(mine, 1)[0] : sfQueue.length ? sfQueue.shift() : bgQueue.length ? bgQueue.shift() : null;
   if(!job) return;
   const {fen, searchmoves, resolve} = job;
   sfBusy = true; sfCurrentResolve = resolve; sfCurrentLines = {}; sfCurrentDepth = 0; sfCurrentFen = fen;
@@ -1572,7 +1577,10 @@ function pumpEngineQueue(){
   sfWorker.postMessage('position fen '+fen);
   // `searchmoves` restricts the root search to a specific set of moves, still from `fen`'s own
   // side-to-move perspective — same kind of query as an unrestricted one, just narrowed.
-  sfWorker.postMessage('go movetime '+(job.movetime || 1200)+(searchmoves ? ' searchmoves '+searchmoves : ''));
+  // An exercise's own search goes to depth LIVE_DEPTH (or stops at LIVE_CAP_MS); background work and the
+  // position finders give a time instead (job.movetime).
+  sfWorker.postMessage((job.movetime ? 'go movetime '+job.movetime : 'go depth '+LIVE_DEPTH+' movetime '+LIVE_CAP_MS)+(searchmoves ? ' searchmoves '+searchmoves : ''));
+  sfStartedAt = performance.now();
   // Watchdog: a search that hasn't answered 5 s after its time is told to stop; 5 s after that,
   // the engine counts as failed (instead of every exercise waiting forever).
   clearTimeout(sfWatch);
@@ -1580,7 +1588,7 @@ function pumpEngineQueue(){
     if(sfCurrentResolve!==resolve) return;
     try{ sfWorker.postMessage('stop'); }catch(e){}
     sfWatch = setTimeout(()=>{ if(sfCurrentResolve===resolve) failEngine('stopped'); }, 5000);
-  }, (job.movetime || 1200) + 5000);
+  }, (job.movetime || LIVE_CAP_MS) + 5000);
 }
 // Background search (scanning your games): same result shape as engineEval, but queued behind
 // every exercise search. opts: {multipv, movetime, searchmoves}.
@@ -1588,7 +1596,7 @@ function bgEval(fen, opts){
   opts = opts || {};
   return new Promise(resolve=>{
     if(sfState==='error'){ resolve(FAILED); return; }
-    bgQueue.push({fen, searchmoves:opts.searchmoves, multipv:opts.multipv, movetime:opts.movetime, resolve});
+    bgQueue.push({fen, searchmoves:opts.searchmoves, multipv:opts.multipv, movetime:opts.movetime || OWN.checkMs, resolve});
     pumpEngineQueue();
   });
 }
@@ -4895,6 +4903,9 @@ let myBgRunning = false;
 // analyse, which flags its likely mistakes for checking in turn.
 // (a mistake's check and its Move selection searches are two separate jobs: tried apart)
 const job = x=>x.key + (x.prep ? '|' + x.prep : '');
+// The quick searches that sort your games' positions (1.2 s each): kept apart from the exercises' own
+// searches, which go deeper (LIVE_DEPTH) when you play the position.
+const prepStore = {};
 const myTried = new Set();   // likely mistakes already checked in this session: never checked twice
 const currentGame = id=>myGames.find(x=>x.id===id);   // games can be reloaded meanwhile: always write to the current copy
 async function myBackground(){
@@ -4938,7 +4949,7 @@ async function myBackground(){
 async function checkMistake(p){
   const disc = await bgEval(p.fen, { multipv:DISCOVERY_MULTIPV, movetime:OWN.checkMs });
   if(evalFailed(disc) || !disc.lines.length) return null;
-  if(!fenEvalStore[p.fen]) fenEvalStore[p.fen] = { status:'done', data:disc };
+  prepStore[p.fen] = disc;
   let lines = disc.lines, gm = lines.find(l=>l.uci===p.hist.uci);
   if(!gm){
     const both = await bgEval(p.fen, { searchmoves: lines.slice(0,5).map(l=>l.uci).concat(p.hist.uci).join(' ') });
@@ -4954,25 +4965,25 @@ async function checkMistake(p){
 // searches (so a position kept here never turns out otherwise later). Returns 1 if the four moves
 // are spread enough (finalSpreadOk), 0 if not, null if the engine failed (tried again later).
 async function prepFinal(p){
-  const known = fenEvalStore[p.fen] && fenEvalStore[p.fen].status==='done' ? fenEvalStore[p.fen].data : null;
+  const known = prepStore[p.fen] || null;
   const disc = known || await bgEval(p.fen, { multipv:DISCOVERY_MULTIPV, movetime:OWN.checkMs });
   if(evalFailed(disc) || !disc.lines.length) return null;
-  if(!fenEvalStore[p.fen]) fenEvalStore[p.fen] = { status:'done', data:disc };
+  prepStore[p.fen] = disc;
   let src = disc;
   if(!disc.lines.some(l=>l.uci===p.hist.uci)){
     const ucis = Array.from(new Set(disc.lines.slice(0, DISCOVERY_MULTIPV).map(l=>l.uci).filter(Boolean).concat(p.hist.uci)));
     const key = p.fen+'|pool:'+ucis.slice().sort().join(',');
-    src = poolEvalStore[key] && poolEvalStore[key].status==='done' ? poolEvalStore[key].data : await bgEval(p.fen, { searchmoves: ucis.join(' ') });
+    src = prepStore[key] || await bgEval(p.fen, { searchmoves: ucis.join(' ') });
     if(evalFailed(src) || !src.lines.length) return null;
-    if(!poolEvalStore[key]) poolEvalStore[key] = { status:'done', data:src };
+    prepStore[key] = src;
   }
   const four = pickFinalUcis(p, src);
   if(four.length < 4) return 0;
   const key4 = p.fen+'|pool:'+four.slice().sort().join(',');
-  const done = poolEvalStore[key4] && poolEvalStore[key4].status==='done' ? poolEvalStore[key4].data : await bgEval(p.fen, { searchmoves: four.join(' ') });
+  const done = prepStore[key4] || await bgEval(p.fen, { searchmoves: four.join(' ') });
   if(evalFailed(done)) return null;
   if(done.lines.length < 4) return 0;   // a move the search couldn't judge: not for Move selection
-  if(!poolEvalStore[key4]) poolEvalStore[key4] = { status:'done', data:done };
+  prepStore[key4] = done;
   return finalSpreadOk(done.lines, four) ? 1 : 0;
 }
 // Move selection's rule, the same as the master positions' (finder/rules.js, FINAL): the four moves
@@ -5231,7 +5242,7 @@ function renderAnalysis(){
     ${boardHtml(true, bar)}
     ${stackedPanel(`
       ${s.checked ? `
-        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(score.base + (score.final - score.base)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, false)}${depthBtnHtml(disc, p.fen)}${depthNoteHtml(s, disc)}</div>
+        <div class="score"><span class="score-num" id="revealAcc">${truth ? Math.round(score.base + (score.final - score.base)*t)+'%' : '—'}</span><span class="score-label">${truth ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, false)}${depthBtnHtml(disc, p.fen)}${depthNoteHtml(s, disc, p.fen)}</div>
         ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, false, false, p.fen) : planHtml(null, null, false, true)}
         <div class="actions-row split${done ? '' : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
@@ -5415,7 +5426,7 @@ function renderCandidates(){
       ${posBar()}
       ${boardHtml(false)}
       ${stackedPanel(`
-        <div class="score"><span class="score-num" id="candAcc">${s.countDone ? pctOrDash(acc) : s.countStarted ? '0%' : '—'}</span><span class="score-label" id="candAccLabel">${failed ? 'Engine unavailable' : s.countStarted || s.countDone ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.countDone, s.justCounted)}${depthBtnHtml(ev0, p.fen)}${depthNoteHtml(s, ev)}</div>
+        <div class="score"><span class="score-num" id="candAcc">${s.countDone ? pctOrDash(acc) : s.countStarted ? '0%' : '—'}</span><span class="score-label" id="candAccLabel">${failed ? 'Engine unavailable' : s.countStarted || s.countDone ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.countDone, s.justCounted)}${depthBtnHtml(ev0, p.fen)}${depthNoteHtml(s, ev, p.fen)}</div>
         <div class="review-cols">
           ${col('Your moves', 'mine', showMine, mine, '')}
           ${col('Top moves', 'top', showTop, top, failed ? 'Unavailable' : 'Evaluating…')}
@@ -5588,21 +5599,22 @@ function timedFade(el, delay, elapsed, dur, kind, easing){
 }
 // The review's engine button: the depth its search reached, the engine below (tap: what it means).
 let reviewDepth = null;   // the open review's depth (for the anonymous usage counts)
+function shownDepth(ev, fen){ return ev && !evalFailed(ev) ? Math.max(ev.depth || 0, liveDepth[fen] || 0) || null : null; }   // the deepest of the review's searches
 function depthBtnHtml(ev, fen){
   if(evalFailed(ev)){ reviewDepth = null; return ''; }
-  const d = ev ? Math.max(ev.depth || 0, liveDepth[fen] || 0) || null : null, live = !ev;   // live: still searching, the depth climbs (onEngineMessage); done: the deepest of the review's searches
+  const d = shownDepth(ev, fen), live = !ev;   // live: still searching, the depth climbs (onEngineMessage)
   reviewDepth = d;
   if(!live && !d) return '';
   const now = live ? (liveDepth[fen] || '…') : d;
   return `<button class="depth-btn" id="depthBtn"${live ? ` data-live="${fen}"` : ''} aria-label="${sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10'}${live ? ', searching' : ', depth ' + d}"><b>${now}</b><small>${sfVersion}</small></button>`;
 }
-function depthNoteHtml(s, ev){
-  const d = ev && !evalFailed(ev) ? ev.depth : null;
+function depthNoteHtml(s, ev, fen){
+  const d = shownDepth(ev, fen);
   if(!s.depthNote || !d) return '';
-  const v = sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10', t = String(OWN.checkMs/1000);
+  const v = sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10', capped = d < LIVE_DEPTH;
   return `<p class="depth-note" data-no-i18n>${LANG==='fr'
-    ? `${v}${sfVersion==='SF19' ? ' (version allégée, dans votre navigateur)' : ' (dans votre navigateur)'} a cherché ${t.replace('.', ',')} s, jusqu'à la profondeur ${d}. Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer.`
-    : `${v}${sfVersion==='SF19' ? ' (lite, in your browser)' : ' (in your browser)'} searched for ${t} s, to depth ${d}. Lichess analyses deeper on its servers, so its numbers can differ a little.`}</p>`;
+    ? `${v}${sfVersion==='SF19' ? ' (version allégée, dans votre navigateur)' : ' (dans votre navigateur)'} a cherché jusqu'à la profondeur ${d}${capped ? ` (arrêt à ${LIVE_CAP_MS/1000} s)` : ''}. Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer.`
+    : `${v}${sfVersion==='SF19' ? ' (lite, in your browser)' : ' (in your browser)'} searched to depth ${d}${capped ? ` (stopped at ${LIVE_CAP_MS/1000} s)` : ''}. Lichess analyses deeper on its servers, so its numbers can differ a little.`}</p>`;
 }
 function wireDepthBtn(s){
   const b = document.getElementById('depthBtn'); if(!b) return;
@@ -5679,7 +5691,7 @@ function renderFinal(){
       ${posBar()}
       ${boardHtml(false)}
       ${stackedPanel(`
-        <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'Engine unavailable' : counting ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}${depthBtnHtml(ev0, p.fen)}${depthNoteHtml(s, ev)}</div>
+        <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'Engine unavailable' : counting ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}${depthBtnHtml(ev0, p.fen)}${depthNoteHtml(s, ev, p.fen)}</div>
         <div id="reviewRows" class="rev-list">${rows.map(reviewRowHtml).join('')}</div>
         <div class="actions-row split${s.revDone ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`, ghostFinal(), engineErrorBanner())}`;
     renderBoard(document.getElementById('board'), bs, p.last);

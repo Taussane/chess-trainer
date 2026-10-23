@@ -149,7 +149,7 @@ async def main():
         b, pg, errs = await open_app(p, fake_engine=False); allerrs += errs
         await pg.evaluate("""(()=>{ sfState='ready'; sfBusy=false; sfQueue=[]; bgQueue=[]; sfWorker = { postMessage(){} }; fenEvalStore = {}; render(); })()""")
         await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(200)
-        await pg.wait_for_timeout(11800)
+        await pg.wait_for_timeout(18800)   # the search cap (8 s), then 5 s to stop, then 5 s to give up
         txt = await pg.inner_text('#app'); print('8.', 'stopped working' in txt)
         if 'stopped working' not in txt: fails.append('no error after the engine stopped answering')
         await b.close()
