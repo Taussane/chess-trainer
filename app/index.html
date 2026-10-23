@@ -419,7 +419,7 @@
   .asp-picker.note{justify-content:center; padding:9px 10px; font-size:0.84rem; color:var(--text-mute); text-align:center;}
   .asp-pick.editing{box-shadow:0 0 0 2px var(--dubious);}
   /* Until you tap a first grade: the grades pulse (a yellow border on and off), to show where to start */
-  #aspInput.asp-pulse .asp-pick:not(.off){animation:aspPulse 1.4s ease-in-out infinite;}
+  #aspInput.asp-pulse .asp-pick:not(.off){animation:aspPulse 1.4s ease-in-out infinite; animation-delay:var(--pulse-phase, 0ms);}   /* in phase across redraws (keepFades) */
   @keyframes aspPulse{0%,100%{border-color:var(--border); box-shadow:none;} 50%{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}}
   @media (prefers-reduced-motion: reduce){ #aspInput.asp-pulse .asp-pick:not(.off){animation:none; border-color:var(--accent);} }
   .score{display:flex; align-items:baseline; gap:8px; margin-bottom:12px;}
@@ -5574,6 +5574,31 @@ function render(){
   }
   typed.forEach(t=>{ const el = document.getElementById(t.id); if(el && /^(INPUT|TEXTAREA)$/.test(el.tagName)) el.value = t.value; });
   if(focus){ const el = document.getElementById(focus.id); if(el){ el.focus(); try{ el.setSelectionRange(focus.a, focus.b); }catch(e){} } }
+  keepFades();
+}
+// The page is rebuilt from scratch on every redraw, and redraws come often in the background (an
+// evaluation arriving, your account syncing, the engine starting): a CSS animation on a rebuilt
+// element would start over (or, its class gone, stop dead). So animations follow the clock, not the
+// redraws: an element fading in ("fade-in") keeps fading from where it was on the elements that
+// replace it, and endless ones (the grades' pulse) keep their phase.
+const FADE_MS = 350, fadeStarts = new Map();   // element key -> when its fade started
+function keepFades(){
+  const now = performance.now();
+  document.documentElement.style.setProperty('--pulse-phase', -(now % 1400) + 'ms');   // = the pulse's period
+  for(const [k, t] of fadeStarts) if(now - t >= FADE_MS) fadeStarts.delete(k);
+  const n = {};
+  document.querySelectorAll('#app [id], #app [class]').forEach(el=>{
+    if(el.closest('.ghost')) return;
+    const fading = el.classList.contains('fade-in');
+    if(!fading && !fadeStarts.size) return;
+    const base = el.id ? '#' + el.id : [...el.classList].filter(c=>c!=='fade-in' && c!=='data-wait').sort().join('.');
+    if(!base) return;
+    const k = screen + '|' + base + '|' + (n[base] = (n[base] || 0) + 1);
+    if(fading && !fadeStarts.has(k)) fadeStarts.set(k, now);
+    if(!fadeStarts.has(k)) return;
+    const e = now - fadeStarts.get(k);
+    if(e < FADE_MS){ el.classList.add('fade-in'); el.style.animationDelay = (-e) + 'ms'; }
+  });
 }
 // ================= Settings =================
 // Saved on this device (and to your account when logged in): board coordinates, the board's hue, the
@@ -5631,8 +5656,16 @@ function mergeSettings(s){
   if(!s || !((s.at || 0) > (settings.at || 0))) return;
   s = setClean(s); settings = { ...SET_DEFAULT, ...s, arrows: { ...(s.arrows || {}) } };
   try{ localStorage.setItem(SETTINGS_LS, JSON.stringify(settings)); }catch(e){}
-  applySettings(); setLanguage(); settingsRebuild = true; render();
+  applySettings(); setLanguage();
+  if(settingsDragging){ settingsRebuildAfterDrag = true; return; }   // never under a finger on a slider: once it's let go
+  settingsRebuild = true; render();
 }
+// A settings slider being dragged: the page is never rebuilt nor its preview redrawn by background work
+// meanwhile (only the slider's own changes draw), so the drag stays smooth and keeps its slider.
+let settingsDragging = false, settingsRebuildAfterDrag = false;
+document.addEventListener('pointerdown', e=>{ if(e.target.closest && e.target.closest('.set-page input[type=range]')) settingsDragging = true; }, true);
+const endDrag = ()=>{ if(!settingsDragging) return; settingsDragging = false; if(settingsRebuildAfterDrag){ settingsRebuildAfterDrag = false; settingsRebuild = true; render(); } };
+document.addEventListener('pointerup', endDrag, true); document.addEventListener('pointercancel', endDrag, true);
 applySettings();
 // Move notation: international letters (K Q R B N), your language's letters, or figurines.
 const LOCAL_PIECES = { fr:'RDTFC', de:'KDTLS', es:'RDTAC', it:'RDTAC', pt:'RDTBC', nl:'KDTLP', pl:'KHWGS', sv:'KDTLS', da:'KDTLS', no:'KDTLS', nb:'KDTLS', cs:'KDVSJ', hu:'KVBFH', ro:'RDTNC', tr:'ŞVKFA', fi:'KDTLR' };
@@ -6147,7 +6180,7 @@ const hueTrack = k=>`linear-gradient(to right, ${[0, 45, 90, 135, 180, 225, 270,
 // page is then left as it is (a slider being dragged keeps going); only its own changes rebuild it.
 let settingsRebuild = true, setTab = 'board';   // the section shown under the preview: 'board' | 'arrows' | 'notation'
 function renderSettings(){
-  if(!settingsRebuild && document.querySelector('#app .set-page')){ renderSettingsPreview(); return; }
+  if(!settingsRebuild && document.querySelector('#app .set-page')){ if(!settingsDragging) renderSettingsPreview(); return; }
   settingsRebuild = false;
   const app = document.getElementById('app');
   const row = (label, ctl, sw)=>`<div class="set-row"><span class="set-label">${sw ? `<span class="set-sw" style="background:${sw}"></span>` : ''}${label}</span>${ctl}</div>`;
