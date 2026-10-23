@@ -6112,7 +6112,7 @@ setLanguage();
 const SET_SAMPLE = { fen:'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3', last:{ from:'f1', to:'b5' },
   moves:[['a7','a6','a6'], ['f8','c5','Bc5'], ['g8','f6','Nf6'], ['b1','c3','Nc3'], ['d2','d4','d4'], ['e1','g1','O-O']] };   // in reading order: Black's (top) 1st to 3rd, then White's 4th to 6th, left to right
 let settingsPreview = false;
-function refreshBoardTracks(){ const a = document.getElementById('setBoardSat'), b = document.getElementById('setBoardLum'); if(a) a.style.background = boardTrack('sat'); if(b) b.style.background = boardTrack('lum'); }
+function refreshBoardTracks(){ [['setBoardHue', 'hue'], ['setBoardSat', 'sat'], ['setBoardLum', 'lum']].forEach(([id, k])=>{ const el = document.getElementById(id); if(el) el.style.background = boardTrack(k); }); }
 function renderSettingsPreview(){
   const b = document.getElementById('setBoard'), svg = document.getElementById('setArrows'); if(!b) return;
   settingsPreview = true;
@@ -6123,10 +6123,10 @@ function renderSettingsPreview(){
   const chip = ([, , san], i)=>`<span class="move-chip" style="background:var(--${SET_ARROWS[i][0]})">${fmtSan(san)}</span>`;
   document.getElementById('setChips').innerHTML = `<span class="set-side">${SET_SAMPLE.moves.slice(0, 3).map(chip).join('')}</span><span class="set-side">${SET_SAMPLE.moves.slice(3).map((m, i)=>chip(m, i + 3)).join('')}</span>`;
 }
-// The board's saturation and lightness tracks: the dark square's colour at the current hue, from grey to
-// vivid, and from darker to lighter.
+// The board's hue, saturation and lightness tracks: the dark square's colour around the colour wheel (at the
+// current saturation and lightness), from grey to vivid, and from darker to lighter.
 const boardTrack = kind=>{ const [L, C, h] = hexOklch(SET_BASE['board-dark']), hh = h + settings.boardHue, sat = (settings.boardSat ?? 100) / 100, lum = (settings.boardLum || 0) / 100;
-  const stops = kind==='sat' ? [0, .5, 1, 1.5, 2, 2.5].map(x=>oklchCss(L + lum, C * x, hh)) : [-25, -12, 0, 12, 25].map(d=>oklchCss(Math.max(.15, Math.min(.98, L + d / 100)), C * sat, hh));
+  const stops = kind==='hue' ? [-180, -135, -90, -45, 0, 45, 90, 135, 180].map(d=>oklchCss(Math.max(.15, Math.min(.98, L + lum)), C * sat, h + d)) : kind==='sat' ? [0, .5, 1, 1.5, 2, 2.5].map(x=>oklchCss(L + lum, C * x, hh)) : [-25, -12, 0, 12, 25].map(d=>oklchCss(Math.max(.15, Math.min(.98, L + d / 100)), C * sat, hh));
   return `linear-gradient(to right, ${stops.join(', ')})`; };
 const hueTrack = k=>`linear-gradient(to right, ${[0, 45, 90, 135, 180, 225, 270, 315, 360].map(h=>hueCss(k, h)).join(', ')})`;
 // The page redraws often in the background (your account, games, the engine arriving): the settings
@@ -6154,7 +6154,7 @@ function renderSettings(){
       <div class="seg" role="tablist" aria-label="Settings">${[['board', 'Board'], ['arrows', 'Arrows'], ['notation', 'Notation']].map(([k, v])=>`<button class="seg-btn${setTab===k ? ' active' : ''}" role="tab" aria-selected="${setTab===k}" data-tab="${k}">${v}</button>`).join('')}</div>
       <section class="pf-card">${setTab==='board' ? `
         ${row('Coordinates', `<button class="set-toggle${settings.coords ? ' on' : ''}" id="setCoords" role="switch" aria-checked="${settings.coords}" aria-label="Coordinates"><span></span></button>`)}
-        ${row('Board hue', slider('setBoardHue', -180, 180, settings.boardHue, `linear-gradient(to right, ${[-180, -135, -90, -45, 0, 45, 90, 135, 180].map(d=>hueCss('board-dark', baseHue('board-dark') + d)).join(', ')})`), 'var(--board-dark)')}
+        ${row('Board hue', slider('setBoardHue', -180, 180, settings.boardHue, boardTrack('hue')), 'var(--board-dark)')}
         ${row('Saturation', slider('setBoardSat', 0, 250, settings.boardSat ?? 100, boardTrack('sat')), 'var(--board-dark)')}
         ${row('Lightness', slider('setBoardLum', -25, 25, settings.boardLum || 0, boardTrack('lum')), 'var(--board-light)')}
         ${row('Last move', slider('setLastHue', 0, 359, settings.lastHue ?? baseHue('square-hl'), hueTrack('square-hl')), 'var(--square-hl)')}`
