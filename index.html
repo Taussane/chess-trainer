@@ -454,7 +454,7 @@
   .hinting .evalbar-cursor.pulse-now::before, .hinting .evalbar-cursor.pulse-now::after{animation:handleGrow var(--hint-anim);}
   @keyframes handleGrow{0%,100%{transform:translateX(-50%) scale(1);} 29.4%{transform:translateX(-50%) scale(1.7);}}
   /* a yellow ring around the piece, drawn like the review's marks (Imbalance reading): same size, line, soft shadow */
-  .hinting .sq.pulse-now::after{content:""; position:absolute; inset:6.67%; border:0.833cqw solid var(--accent); border-radius:50%; filter:drop-shadow(0 0.31cqw 0.37cqw rgba(0,0,0,.6)); pointer-events:none; z-index:1; animation:tintPulse var(--hint-anim);}
+  .hinting .sq.pulse-now::after{content:""; position:absolute; inset:3.33%; box-shadow:inset 0 0 0 calc(var(--sq, 40px) * 4 / 60) var(--accent); border-radius:50%; filter:drop-shadow(0 calc(var(--sq, 40px) * 1.5 / 60) calc(var(--sq, 40px) * 3.6 / 60) rgba(0,0,0,.6));   /* = the marks' circle (a shadow-drawn line: borders snap to whole pixels): radius 26 and line 4 on a 60 square, shadow 1.5 down, blur 1.8 (×2 in CSS); --sq: the square's width */ pointer-events:none; z-index:1; animation:tintPulse var(--hint-anim);}
   @keyframes tintPulse{0%,100%{opacity:0;} 29.4%{opacity:1;}}
   .hinting .rate-row.pulse-now{position:relative; z-index:1; border-radius:6px; animation:liftPulse var(--hint-anim);}   /* as if picked up */
   @keyframes liftPulse{0%,100%{background:transparent; box-shadow:none; transform:none;} 29.4%{background:var(--panel-2); box-shadow:0 6px 18px var(--shadow); transform:translateY(-2px);}}
@@ -5416,6 +5416,7 @@ function renderCandidates(){
   // time, any piece that can move, at random (never a hint at the good moves).
   const boardEl = document.getElementById('board'), hinting = !s.boardTouched && !s.picks.length;
   boardEl.classList.toggle('hinting', hinting);
+  if(hinting){ const q = boardEl.querySelector('.sq'); if(q) boardEl.style.setProperty('--sq', q.getBoundingClientRect().width + 'px'); }
   if(hinting){ const from = new Set(chess.moves({ verbose:true }).map(m=>m.from)); boardEl.querySelectorAll('.sq').forEach(q=>{ if(from.has(q.dataset.sq)) q.dataset.hint = q.dataset.sq; }); hintStart(); }
   if(promoPending) showPromotionPicker(chess, addPick);
   const listEl = document.getElementById('moveList');
