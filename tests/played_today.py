@@ -3,6 +3,9 @@ import asyncio, sys, pathlib
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
+# The questions' Check waits for a first move of the answer (the bar touched, a swap, a grade): tests that
+# answer straight away open it as a player would have.
+UNGATE = "(()=>{ const s = st(screen); s.barMoved = true; s.swapped = true; const c = document.getElementById('check'); if(c && sfState!=='error' && (screen!=='candidates' || s.picks.length)) c.disabled = false; })()"
 async def main():
     fails = []
     async with async_playwright() as p:
@@ -11,7 +14,7 @@ async def main():
         await pg.click('.card[data-go="candidates"]'); await pg.wait_for_timeout(300)
         k = await pg.evaluate("pos().key")
         await pg.evaluate("(()=>{ const ch=new Chess(pos().fen); const m=ch.moves({verbose:true})[0]; st('candidates').picks=[{id:'c',san:m.san,from:m.from,to:m.to,uci:m.from+m.to+(m.promotion||''),slot:0}]; render(); })()")
-        await pg.click('#check'); await pg.wait_for_timeout(3000)
+        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(3000)
         if await pg.evaluate("pos().key") != k: fails.append('the reviewed position changed under the review')
         await pg.click('#homeBtn')
         # Put that same position next in Final choice: it must be skipped.

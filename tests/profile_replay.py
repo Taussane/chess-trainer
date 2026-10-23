@@ -6,6 +6,9 @@ import asyncio, sys, pathlib
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
+# The questions' Check waits for a first move of the answer (the bar touched, a swap, a grade): tests that
+# answer straight away open it as a player would have.
+UNGATE = "(()=>{ const s = st(screen); s.barMoved = true; s.swapped = true; const c = document.getElementById('check'); if(c && sfState!=='error' && (screen!=='candidates' || s.picks.length)) c.disabled = false; })()"
 async def main():
     fails = []
     async with async_playwright() as p:
@@ -17,7 +20,7 @@ async def main():
         await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
         k = await pg.evaluate("pos().key"); await pg.wait_for_function("!!fenEval(pos().fen)")
         await pg.evaluate("(()=>{ const s=st('analysis'); const d=fenEval(pos().fen); s.guess = d && positionInfo(pos(), d).pct > 50 ? 2 : 98; render(); })()")
-        await pg.click('#check'); await pg.wait_for_timeout(2500)
+        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
         lst = await pg.evaluate("missedList().map(x=>x.a+':'+x.key)")
         print('after a bad play:', lst)
         if f'analysis:{k}' not in lst: fails.append('a position below the average did not join the replay list')
@@ -50,7 +53,7 @@ async def main():
         if not title.startswith('Replay'): fails.append(f'replay title: {title}')
         if await pg.evaluate("pos().key") != k: fails.append('replay opened another position')
         await pg.evaluate("(()=>{ const s=st('analysis'); const d=fenEval(pos().fen); s.guess = positionInfo(pos(), d).pct; render(); })()")
-        await pg.click('#check'); await pg.wait_for_timeout(2500)
+        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
         chip = await pg.inner_text('.layer:not(.ghost) .score')
         print('replay review:', chip.replace('\n',' '))
         if 'Average' not in chip: fails.append('replay review should show the average')

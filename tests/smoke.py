@@ -3,6 +3,9 @@
 # Needs: pip install playwright (with a Chromium browser).
 import asyncio, pathlib, sys
 from playwright.async_api import async_playwright
+# The questions' Check waits for a first move of the answer (the bar touched, a swap, a grade): tests that
+# answer straight away open it as a player would have.
+UNGATE = "(()=>{ const s = st(screen); s.barMoved = true; s.swapped = true; const c = document.getElementById('check'); if(c && sfState!=='error' && (screen!=='candidates' || s.picks.length)) c.disabled = false; })()"
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = (ROOT/'app'/'index.html').read_text()
 CHESS = (ROOT/'vendor'/'chess.js'/'chess.js').read_text()
@@ -30,7 +33,7 @@ async def main():
                 title = await pg.evaluate("document.querySelector('.pos-title').innerText.replace(/\\n/g,' · ')")
                 if act == 'candidates':
                     await pg.evaluate("(()=>{ const ch=new Chess(pos().fen); const m=ch.moves({verbose:true})[0]; st('candidates').picks=[{id:'c',san:m.san,from:m.from,to:m.to,uci:m.from+m.to,slot:0}]; render(); })()")
-                await pg.click('#check'); await pg.wait_for_timeout(4200)
+                await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(4200)
                 score = await pg.evaluate("document.querySelector('.layer:not(.ghost) .score').innerText.replace(/\\s+/g,' ')")
                 print(act, i, title, '|', score)
                 await pg.click('#nextPos'); await pg.wait_for_timeout(600)

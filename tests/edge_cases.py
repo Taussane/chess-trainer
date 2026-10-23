@@ -4,6 +4,9 @@
 # Needs: pip install playwright (with a Chromium browser).
 import asyncio, pathlib, sys
 from playwright.async_api import async_playwright
+# The questions' Check waits for a first move of the answer (the bar touched, a swap, a grade): tests that
+# answer straight away open it as a player would have.
+UNGATE = "(()=>{ const s = st(screen); s.barMoved = true; s.swapped = true; const c = document.getElementById('check'); if(c && sfState!=='error' && (screen!=='candidates' || s.picks.length)) c.disabled = false; })()"
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = (ROOT/'app'/'index.html').read_text()
 CHESS = (ROOT/'vendor'/'chess.js'/'chess.js').read_text()
@@ -68,7 +71,7 @@ async def main():
             picks = await pg.evaluate("st('candidates').picks.map(m=>m.san+' '+m.uci)")
             if len(picks) != len(CAND[name]): fails.append(f'{name}: picks {picks}')
             await pg.screenshot(path=str(SHOTS/f'{i:02d}_cand_pick.png'))
-            await pg.click('#check'); await pg.wait_for_timeout(4500)
+            await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(4500)
             res = await pg.evaluate("[...document.querySelectorAll('.layer:not(.ghost) .review-col')[0].querySelectorAll('.mini-row')].map(r=>r.innerText.replace(/\\s+/g,' ')).join(' | ')")
             if '—' in res or '…' in res: fails.append(f'{name}: candidate not graded: {res}')
             await pg.screenshot(path=str(SHOTS/f'{i:02d}_cand_review.png'))
@@ -78,7 +81,7 @@ async def main():
             await pg.click(f'.chip-btn[data-i="{i}"][data-a="final"]'); await pg.wait_for_timeout(600)
             moves = await pg.evaluate("finalMoves(pos()).map(m=>m.san+(m.historical?'*':''))")
             if len(moves) != 4 or not any(m.endswith('*') for m in moves): fails.append(f'{name}: final moves {moves}')
-            await pg.click('#check'); await pg.wait_for_timeout(4500)
+            await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(4500)
             rows = await pg.evaluate("[...document.querySelectorAll('.layer:not(.ghost) .review-row')].map(r=>r.innerText.replace(/\\s+/g,' ')).join(' | ')")
             if '—' in rows: fails.append(f'{name}: final not graded: {rows}')
             await pg.screenshot(path=str(SHOTS/f'{i:02d}_final_review.png'))

@@ -10,6 +10,9 @@ import asyncio, sys, pathlib
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
+# The questions' Check waits for a first move of the answer (the bar touched, a swap, a grade): tests that
+# answer straight away open it as a player would have.
+UNGATE = "(()=>{ const s = st(screen); s.barMoved = true; s.swapped = true; const c = document.getElementById('check'); if(c && sfState!=='error' && (screen!=='candidates' || s.picks.length)) c.disabled = false; })()"
 async def main():
     fails = []
     async with async_playwright() as p:
@@ -51,7 +54,7 @@ async def main():
         # Waiting at the review: everything but one Board analysis position already played today.
         await pg.evaluate("(()=>{ const t=ctx('analysis',false); ensureTrack(t); const pool=poolOf(t); const cur=posAt(t, firstAvailable(t, seqBy[t])); pool.forEach(p=>{ if(p.key!==cur.key) markPlayed(p.key); }); })()")
         await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
-        await pg.click('#check'); await pg.wait_for_timeout(2500)
+        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
         n = await pg.evaluate("[document.getElementById('nextPos').disabled, document.getElementById('nextPos').innerText]")
         print('next after the last one:', n)
         if n != [True, 'All played today']: fails.append(f'Next should wait: {n}')

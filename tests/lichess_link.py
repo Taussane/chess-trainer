@@ -5,6 +5,9 @@ import asyncio, sys, pathlib, urllib.parse
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
+# The questions' Check waits for a first move of the answer (the bar touched, a swap, a grade): tests that
+# answer straight away open it as a player would have.
+UNGATE = "(()=>{ const s = st(screen); s.barMoved = true; s.swapped = true; const c = document.getElementById('check'); if(c && sfState!=='error' && (screen!=='candidates' || s.picks.length)) c.disabled = false; })()"
 CHECK = """(p=>{ const u = lichessUrl(p), m = u.match(/analysis\\/pgn\\/([^?]+)\\?color=(\\w+)#(\\d+)$/);
   if(!m) return 'no whole game: ' + u;
   const sans = m[1].split('_').map(decodeURIComponent), c = new Chess();
@@ -29,7 +32,7 @@ async def main():
         t = await pg.evaluate("lichessUrl(TEST_POSITIONS[0])")
         if 'analysis/standard/' not in t: fails.append('a test position should open on its own: ' + t)
         await pg.click('#homeBtn'); await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
-        await pg.evaluate("fenEvalStore = {}; render()"); await pg.click('#check'); await pg.wait_for_timeout(2500)
+        await pg.evaluate("fenEvalStore = {}; render()"); await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
         href = await pg.get_attribute('a.btn.secondary', 'href'); print('review link:', href[:70] + '…' + href[-14:])
         if '/analysis/pgn/' not in href: fails.append('the review link is not the whole game')
         await b.close()

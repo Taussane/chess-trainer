@@ -12,6 +12,9 @@ import asyncio, sys, pathlib, json
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
+# The questions' Check waits for a first move of the answer (the bar touched, a swap, a grade): tests that
+# answer straight away open it as a player would have.
+UNGATE = "(()=>{ const s = st(screen); s.barMoved = true; s.swapped = true; const c = document.getElementById('check'); if(c && sfState!=='error' && (screen!=='candidates' || s.picks.length)) c.disabled = false; })()"
 
 FAKEDB = """
 (()=>{
@@ -73,7 +76,7 @@ async def main():
         await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(200)
         k = await pg.evaluate("pos().key")
         await pg.evaluate("(()=>{ st('analysis').guess = 70; render(); })()")
-        await pg.click('#check'); await pg.click('#homeBtn'); await pg.wait_for_timeout(2000)
+        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.click('#homeBtn'); await pg.wait_for_timeout(2000)
         await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(2500)
         n = await pg.evaluate(f"[pos().key, results.length, isPlayed({k!r})]"); print('2. reopened on', n[0]==k, 'results', n[1], 'played', n[2])
         if n != [k, 1, True]: fails.append(f'unrecorded review: {n}')
@@ -137,7 +140,7 @@ async def main():
         await pg.evaluate("(()=>{ POOLS.candidates.forEach(p=>markPlayed(p.key)); setRoutineNext('analysis'); render(); })()")
         await pg.click('#routineBtn'); await pg.wait_for_timeout(200)
         await pg.evaluate("(()=>{ st('analysis').guess = 70; render(); })()")
-        await pg.click('#check'); await pg.wait_for_timeout(2500)
+        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
         lbl = await pg.inner_text('#nextPos'); print('7. routine next:', lbl)
         if lbl != 'Move selection ›': fails.append(f'routine did not skip Candidate moves: {lbl}')
         await b.close()

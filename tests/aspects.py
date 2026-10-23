@@ -4,6 +4,9 @@ import asyncio, sys, pathlib, json
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
+# The questions' Check waits for a first move of the answer (the bar touched, a swap, a grade): tests that
+# answer straight away open it as a player would have.
+UNGATE = "(()=>{ const s = st(screen); s.barMoved = true; s.swapped = true; const c = document.getElementById('check'); if(c && sfState!=='error' && (screen!=='candidates' || s.picks.length)) c.disabled = false; })()"
 FEN = 'r1bq1rk1/pp2bppp/2n1pn2/3p4/2PP4/2N1PN2/PP1B1PPP/R2QKB1R w KQ - 0 8'
 TABLE = "     Term    |    White    |    Black    |    Total   \n             |   MG    EG  |   MG    EG  |   MG    EG \n ------------+-------------+-------------+------------\n    Material |  ----  ---- |  ----  ---- |  0.02  1.21\n   Imbalance |  ----  ---- |  ----  ---- |  0.28  0.28\n  Initiative |  ----  ---- |  ----  ---- |  0.00  0.12\n       Pawns |  0.73  0.04 |  0.48 -0.02 |  0.25  0.06\n     Knights | -0.04 -0.13 | -0.17 -0.20 |  0.13  0.07\n     Bishops | -0.33 -0.99 | -0.40 -1.01 |  0.07  0.02\n       Rooks | -0.26 -0.02 |  0.00  0.00 | -0.26 -0.02\n      Queens |  0.00  0.00 |  0.00  0.00 |  0.00  0.00\n    Mobility |  0.32  0.79 |  0.25  0.83 |  0.07 -0.03\n King safety |  0.42 -0.08 |  0.52 -0.08 | -0.10  0.00\n     Threats |  0.13  0.12 |  0.07  0.06 |  0.07  0.06\n      Passed |  0.00  0.00 |  0.00  0.00 |  0.00  0.00\n       Space |  0.92  0.00 |  0.67  0.00 |  0.25  0.00\n     Variant |  0.00  0.00 |  0.00  0.00 |  0.00  0.00\n ------------+-------------+-------------+------------\n       Total |  ----  ---- |  ----  ---- |  0.79  1.77\n\nTotal evaluation: 0.88 (white side)"   # recorded from Stockfish.js 10 ("Total evaluation: 0.88")
 async def main():
@@ -56,7 +59,7 @@ async def main():
         if await pg.query_selector('.asp-picker'): fails.append('a choice should not click through to the badge under it')
         if r['asp'] != {'material': 2, 'king': -2, 'space': 1} or r['badges'] != '++ = + = −− =' or r['open']: fails.append(f'gauging: {r}')
         # 5. The review: your levels first; then one by one the engine's, the score climbing; the buttons last.
-        await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000); await pg.wait_for_timeout(150)
+        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000); await pg.wait_for_timeout(150)
         first = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>b.textContent).join(' | ')"); acc0 = await pg.text_content('#revealAcc')
         print('at first:', first, acc0)
         if first != '++ | = | + | = | −− | =' or acc0 not in ('—', '0%'): fails.append(f'the review should open on your levels: {first} {acc0}')
@@ -140,7 +143,7 @@ async def main():
         if prompt != "Drag the evaluation bar to where you think it sits." or note: fails.append(f'evaluation question: {prompt} / {note}')
         if await pg.query_selector('#aspInput'): fails.append('Position evaluation asks for no imbalances')
         e1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
-        await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=8000); await pg.wait_for_timeout(300)
+        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=8000); await pg.wait_for_timeout(300)
         e2 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
         if e1 != e2: fails.append(f'Position evaluation panel height changed: {e1} -> {e2}')
         r = await pg.evaluate("""(()=>{ const s = st('analysis'), p = pos(); return { acc: document.getElementById('revealAcc').textContent, want: evalAccuracyPct(s.guess, positionInfo(p, fenEval(p.fen)).pct),

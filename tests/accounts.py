@@ -10,6 +10,9 @@ import asyncio, sys, pathlib, json, subprocess, time, urllib.request, urllib.err
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
+# The questions' Check waits for a first move of the answer (the bar touched, a swap, a grade): tests that
+# answer straight away open it as a player would have.
+UNGATE = "(()=>{ const s = st(screen); s.barMoved = true; s.swapped = true; const c = document.getElementById('check'); if(c && sfState!=='error' && (screen!=='candidates' || s.picks.length)) c.disabled = false; })()"
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PORT = 8791
 API_DELAY = [0]   # seconds added to each account-server answer (to see the pages while they wait)
@@ -71,7 +74,7 @@ async def play_one(pg):
     await pg.evaluate("screen='home'; render()")
     await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
     await pg.evaluate("(()=>{ st('analysis').guess = 60; render(); })()")
-    await pg.click('#check'); await pg.wait_for_timeout(2500)
+    await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
 
 async def login(pg):
     await pg.evaluate("screen='account'; render()")

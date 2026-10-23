@@ -418,11 +418,18 @@
   .asp-badge.off{background:transparent; color:var(--text-mute); border-color:var(--border); border-style:dashed; opacity:.75;}
   .asp-picker.note{justify-content:center; padding:9px 10px; font-size:0.84rem; color:var(--text-mute); text-align:center;}
   .asp-pick.editing{box-shadow:0 0 0 2px var(--dubious);}
-  /* Until you tap a first grade: one grade at a time, picked at random, pulses once (a yellow border on and
-     off), then a pause, then another (aspPulseTick), to show where to start */
-  #aspInput.asp-pulse .asp-pick.pulse-now{animation:aspPulse 1.7s ease-in-out 1 both;}
+  /* Each question's hint until its first touch (hintTick): one element at a time, picked at random, pulses
+     once (0.5 s on, 1.2 s fading out), a 2 s pause, then another. The pulse's start carries over redraws (--hint-delay). */
+  .hinting .pulse-now{--hint-anim:1.7s ease-in-out var(--hint-delay, 0ms) 1 both;}
+  .hinting .asp-pick.pulse-now{animation:aspPulse var(--hint-anim);}
+  .hinting .evalbar-cursor.pulse-now{animation:handlePulse var(--hint-anim);}
+  @keyframes handlePulse{0%,100%{filter:none;} 29.4%{filter:drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 7px var(--accent));}}
+  .hinting .sq.pulse-now::before{content:""; position:absolute; inset:0; background:var(--square-hl); pointer-events:none; animation:tintPulse var(--hint-anim);}   /* the selection's own tint */
+  @keyframes tintPulse{0%,100%{opacity:0;} 29.4%{opacity:1;}}
+  .hinting .rate-row.pulse-now{position:relative; z-index:1; border-radius:6px; animation:liftPulse var(--hint-anim);}   /* as if picked up */
+  @keyframes liftPulse{0%,100%{background:transparent; box-shadow:none; transform:none;} 29.4%{background:var(--panel-2); box-shadow:0 6px 18px var(--shadow); transform:translateY(-2px);}}
   @keyframes aspPulse{0%,100%{border-color:var(--border); box-shadow:none;} 29.4%{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}}   /* lights up in 0.5 s, fades out over 1.2 s */
-  @media (prefers-reduced-motion: reduce){ #aspInput.asp-pulse .asp-pick.pulse-now{animation:none; border-color:var(--accent);} }
+  @media (prefers-reduced-motion: reduce){ .hinting .pulse-now, .hinting .pulse-now::before{animation-duration:1ms !important;} }
   .score{display:flex; align-items:baseline; gap:8px; margin-bottom:12px;}
   .score-num{font-family:var(--font-display); font-size:1.7rem; line-height:1; font-variant-numeric:tabular-nums;}
   .score-label{color:var(--text-mute); font-size:0.86rem;}
@@ -1971,12 +1978,13 @@ function wireDragReorder(listEl, orderArr, onDrop){
       row.classList.remove('dragging');
       row.style.transform = '';
       rows.forEach(r=>{ if(r!==row) r.style.transform=''; });
-      if(hoverIndex!==startIndex){
+      const changed = hoverIndex!==startIndex;
+      if(changed){
         const [id] = orderArr.splice(startIndex,1);
         orderArr.splice(hoverIndex,0,id);
       }
       dragRow = null; startIndex = -1; hoverIndex = -1;
-      onDrop();
+      onDrop(changed);
     };
     row.addEventListener('pointerup', finish);
     row.addEventListener('pointercancel', finish);
@@ -2437,13 +2445,13 @@ function lichessLink(p){
 // the bottom when White is at the bottom, at the top when the board is flipped. `pct` = White's
 // winning chances; `text` is the score written inside the bar, at the winning side's end (like
 // Lichess). `cursorPct` draws the player's guess; `interactive` makes the bar draggable.
-function evalBarHtml(pct, text, cursorPct, interactive){
+function evalBarHtml(pct, text, cursorPct, interactive, hinting){
   const flip = boardFlipped();
   const black = `<div class="v-black" id="barBlack" style="height:${100-pct}%"></div>`;
   const white = `<div class="v-white" id="barWhite" style="height:${pct}%"></div>`;
   const cursor = cursorPct!=null
-    ? `<div class="evalbar-cursor${interactive ? ' handle' : ''}" id="barCursor" style="${flip ? 'top' : 'bottom'}:${cursorPct}%"></div>` : '';
-  return `<div class="evalbar-wrap">
+    ? `<div class="evalbar-cursor${interactive ? ' handle' : ''}" id="barCursor"${interactive ? ' data-hint="bar"' : ''} style="${flip ? 'top' : 'bottom'}:${cursorPct}%"></div>` : '';
+  return `<div class="evalbar-wrap${hinting ? ' hinting' : ''}">
       <div class="evalbar-v${interactive ? ' interactive' : ''}" id="evalBar"${interactive ? ' role="slider" aria-label="Your evaluation" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(pct)+'" aria-valuetext="'+text+'" tabindex="0"' : ''}>
         ${flip ? white+black : black+white}
       </div>
@@ -3095,23 +3103,40 @@ function aspectsInputHtml(s, hidden){
       ? `<span class="asp-badge eq asp-pick">=</span>`
       : off
       ? `<button class="asp-badge off asp-pick" data-asp="${x.key}" data-off="1" aria-label="${aspNameText(x, fen)}: not counted here" aria-haspopup="true">·</button>`
-      : `<button class="asp-badge ${levelCls(l)} asp-pick${aspPicker && aspPicker.key===x.key ? ' editing' : ''}${aspPulse.key===x.key && s && !s.aspTouched ? ' pulse-now' : ''}"${aspPulse.key===x.key && s && !s.aspTouched ? ` style="animation-delay:${Math.round(aspPulse.at - performance.now())}ms"` : ''} data-asp="${x.key}" aria-label="${aspNameText(x, fen)}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
-  return `<div class="aspects asp-input${!hidden && s && !s.aspTouched ? ' asp-pulse' : ''}"${hidden ? '' : ' id="aspInput"'}>
+      : `<button class="asp-badge ${levelCls(l)} asp-pick${aspPicker && aspPicker.key===x.key ? ' editing' : ''}" data-asp="${x.key}" data-hint="${x.key}" aria-label="${aspNameText(x, fen)}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
+  return `<div class="aspects asp-input${!hidden && s && !s.aspTouched ? ' hinting' : ''}"${hidden ? '' : ' id="aspInput"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
     </div>`;
 }
 let aspPicker = null;   // {key, el, sliding}: the scale open under a badge
-// The question's hint until a first grade is tapped: one grade pulses (0.5 s on, 1.2 s fading out), a pause (2 s), then
-// another one at random. The pulsing grade and its start are kept here, so a redraw carries on with it.
-const aspPulse = { key:null, at:0, timer:null };
-function aspPulseTick(){
-  clearTimeout(aspPulse.timer); aspPulse.timer = null;
-  const box = document.getElementById('aspInput');
-  if(!box || !box.classList.contains('asp-pulse')){ aspPulse.key = null; return; }
-  const keys = [...box.querySelectorAll('.asp-pick:not(.off)')].map(b=>b.dataset.asp).filter(k=>k && k!==aspPulse.key);
-  aspPulse.key = keys[Math.floor(Math.random() * keys.length)] || null; aspPulse.at = performance.now();
-  box.querySelectorAll('.asp-pick').forEach(b=>{ b.classList.toggle('pulse-now', b.dataset.asp===aspPulse.key); b.style.animationDelay = ''; });
-  aspPulse.timer = setTimeout(aspPulseTick, 3700);
+// Each question's hint until its first touch: one element at a time (data-hint, inside the element with
+// the class "hinting"), picked at random, never twice in a row, pulses once; then a pause and another.
+// The pulsing element and its start are kept here, so a redraw carries on with it (hintApply).
+const hint = { key:null, at:0, timer:null }, HINT_CYCLE = 3700;   // 1.7 s pulse + 2 s pause
+function hintTick(){
+  clearTimeout(hint.timer); hint.timer = null;
+  const box = document.querySelector('#app .hinting');
+  if(!box){ hint.key = null; return; }
+  const keys = [...new Set([...box.querySelectorAll('[data-hint]')].map(e=>e.dataset.hint))], others = keys.filter(k=>k!==hint.key), from = others.length ? others : keys;
+  hint.key = from[Math.floor(Math.random() * from.length)] || null; hint.at = performance.now();
+  hintApply();
+  hint.timer = setTimeout(hintTick, HINT_CYCLE);
+}
+function hintApply(){
+  document.querySelectorAll('#app .pulse-now').forEach(e=>{ if(e.dataset.hint!==hint.key) e.classList.remove('pulse-now'); });
+  if(!hint.key) return;
+  document.querySelectorAll('#app .hinting [data-hint]').forEach(e=>{ if(e.dataset.hint!==hint.key) return; e.style.setProperty('--hint-delay', Math.round(hint.at - performance.now()) + 'ms'); e.classList.add('pulse-now'); });
+}
+// After each redraw of a question that hints: starts the cycle (after `wait` ms), or carries on with it.
+function hintStart(wait){
+  if(!document.querySelector('#app .hinting')) return;
+  if(hint.timer){ hintApply(); return; }
+  hint.key = null; hint.timer = setTimeout(hintTick, wait ?? 600);
+}
+// The first touch: no more hint on this question.
+function hintStop(){
+  document.querySelectorAll('#app .hinting').forEach(b=>b.classList.remove('hinting'));
+  clearTimeout(hint.timer); hint.timer = null; hint.key = null;
 }
 function closeAspPicker(){ if(aspPicker){ aspPicker.el.remove(); aspPicker.badge && aspPicker.badge.classList.remove('editing'); aspPicker = null; } }
 // The scale covers the row above it: once it closes on lift, the click that follows would land on
@@ -3127,7 +3152,7 @@ function setAspect(s, key, l){
   if(b){ b.className = `asp-badge ${levelCls(s.asp[key])} asp-pick${aspPicker && aspPicker.key===key ? ' editing' : ''}`; b.textContent = SIGNS(s.asp[key]); b.setAttribute('aria-label', `${ASPECTS.find(x=>x.key===key).name}: ${SIGNS(s.asp[key])}`); }
   if(aspPicker && aspPicker.key===key) aspPicker.el.querySelectorAll('[data-l]').forEach(o=>o.classList.toggle('on', +o.dataset.l===s.asp[key]));
   const chk = document.getElementById('check'); if(chk && sfState!=='error') chk.disabled = !aspAnyGraded(s);
-  if(!s.aspTouched){ s.aspTouched = true; const box = document.getElementById('aspInput'); if(box) box.classList.remove('asp-pulse'); }
+  if(!s.aspTouched){ s.aspTouched = true; hintStop(); }
 }
 // Check waits for a first grade other than "=".
 const aspAnyGraded = s=>Object.values(s.asp || {}).some(l=>l);
@@ -3159,11 +3184,11 @@ function openAspPicker(s, key){
   el.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeAspPicker(); badge.focus(); } });
 }
 function wireAspectsInput(s){
-  if(!s.aspTouched && !aspPulse.timer) aspPulse.timer = setTimeout(aspPulseTick, aspPulse.key ? 0 : 600);
+  if(!s.aspTouched) hintStart();
   const was = aspPicker && aspPicker.key;   // a scale or note open when the page redraws (e.g. an evaluation arriving): open it again
   aspPicker = null;
   document.querySelectorAll('#aspInput .asp-pick').forEach(b=>{
-    b.onclick = e=>{ e.stopPropagation(); if(!s.aspTouched){ s.aspTouched = true; const box = document.getElementById('aspInput'); if(box) box.classList.remove('asp-pulse'); }
+    b.onclick = e=>{ e.stopPropagation(); if(!s.aspTouched){ s.aspTouched = true; hintStop(); }
       if(aspPicker && aspPicker.key===b.dataset.asp) closeAspPicker(); else openAspPicker(s, b.dataset.asp); };
     b.onkeydown = e=>{
       if(b.dataset.off) return;
@@ -5094,7 +5119,7 @@ function renderAnalysis(){
   const barPct = truth ? s.guess + (truth.pct - s.guess)*t : s.guess;
   const bar = s.checked
     ? evalBarHtml(barPct, done ? fmtBarScore(truth.info) : truth ? fmtGuess(barPct) : '…', s.guess, false)
-    : evalBarHtml(s.guess, fmtGuess(s.guess), s.guess, true);
+    : evalBarHtml(s.guess, fmtGuess(s.guess), s.guess, true, !s.barMoved);   // the handle pulses until the bar is first touched
   app.innerHTML = `
     ${header('Position evaluation')}
     ${posBar()}
@@ -5106,12 +5131,13 @@ function renderAnalysis(){
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
         <p class="prompt" id="anaPrompt">Drag the evaluation bar to where you think it sits.</p>
-        <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
+        <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' || !s.barMoved ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(aspVals) wireAspectView(p, s);
   if(!s.checked){
     setupGauge(s);
     introFade(s, ['anaPrompt', 'anaCheckRow']);
+    if(!s.barMoved) hintStart();
     document.getElementById('check').onclick = ()=>{ s.checked = true; s.animT = null; s.justDone = false; fenEval(p.fen); aspectsEntry(p.fen); render(); };
   }
   wireCommon('analysis', s.checked);
@@ -5195,8 +5221,11 @@ function setupGauge(s){
   };
   gaugeState = { bar, update };
   update(s.guess);
-  bar.parentElement.addEventListener('pointerdown', e=>{ gaugeDragging = true; update(gaugePos(e)); e.preventDefault(); });
+  // The first touch of the bar: the hint stops and Check wakes up (the answer can be "equal", so touching is enough).
+  const touched = ()=>{ if(s.barMoved) return; s.barMoved = true; hintStop(); const c = document.getElementById('check'); if(c && sfState!=='error') c.disabled = false; };
+  bar.parentElement.addEventListener('pointerdown', e=>{ touched(); gaugeDragging = true; update(gaugePos(e)); e.preventDefault(); });
   bar.addEventListener('keydown', e=>{
+    if(e.key==='ArrowUp' || e.key==='ArrowDown') touched();
     const step = e.shiftKey ? 10 : 2;
     const up = boardFlipped() ? -step : step; // "up" on screen = more of whatever is at the bottom's opposite
     if(e.key==='ArrowUp'){ update(s.guess + up); e.preventDefault(); }
@@ -5333,6 +5362,7 @@ function renderCandidates(){
   renderBoard(document.getElementById('board'), bs, p.last, {
     selectedSq: selSquare, destSquares,
     onSquareClick: sq=>{
+      if(!s.boardTouched){ s.boardTouched = true; hintStop(); }
       if(selSquare && destSquares.includes(sq)){
         const legal = chess.moves({square:selSquare, verbose:true}).filter(m=>m.to===sq);
         if(legal.some(m=>m.promotion) && !capReached){
@@ -5349,6 +5379,11 @@ function renderCandidates(){
     }
   });
   drawArrows(document.getElementById('arrows'), s.picks.map(m=>({ ...m, color:cols[m.slot] })), 'ap_');
+  // The hint until the board is first touched: the selection's tint pulses on one piece of the side to play
+  // at a time, any piece that can move, at random (never a hint at the good moves).
+  const boardEl = document.getElementById('board'), hinting = !s.boardTouched && !s.picks.length;
+  boardEl.classList.toggle('hinting', hinting);
+  if(hinting){ const from = new Set(chess.moves({ verbose:true }).map(m=>m.from)); boardEl.querySelectorAll('.sq').forEach(q=>{ if(from.has(q.dataset.sq)) q.dataset.hint = q.dataset.sq; }); hintStart(); }
   if(promoPending) showPromotionPicker(chess, addPick);
   const listEl = document.getElementById('moveList');
   s.picks.forEach((m,i)=>{
@@ -5539,7 +5574,7 @@ function renderFinal(){
     ${stackedPanel(`
       <p class="prompt top" id="finalHint">Order the moves, best first.</p>
       <div id="ranked"></div>
-      <div class="actions-row" id="finalCheckRow"><button class="btn" id="check" ${sfState==='error' ? 'disabled' : ''}>Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
+      <div class="actions-row" id="finalCheckRow"><button class="btn" id="check" ${sfState==='error' || !s.swapped ? 'disabled' : ''}>Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), bs, p.last);
   drawArrows(document.getElementById('arrows'), ordered, 'ar_');
   const rankedEl = document.getElementById('ranked');
@@ -5552,7 +5587,7 @@ function renderFinal(){
   ordered.forEach((m,i)=>{
     const row = document.createElement('div');
     row.className = 'rate-row';
-    row.dataset.id = m.id;
+    row.dataset.id = m.id; row.dataset.hint = m.id;
     row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${m.color}">${fmtSan(m.san)}</span></div><span class="drag-handle" aria-hidden="true">⠿</span>`;
     rankedEl.appendChild(row);
     fadeAt(row, INTRO_START + i*INTRO_STEP);
@@ -5566,7 +5601,11 @@ function renderFinal(){
   const tLast = INTRO_START + ordered.length*INTRO_STEP + 100;
   timedFade(document.getElementById('finalHint'), 0, introEl, SLIDE_MS, 'fadeIn');
   timedFade(document.getElementById('finalCheckRow'), tLast, introEl, SLIDE_MS, 'fadeIn');
-  wireDragReorder(rankedEl, s.order, ()=>{ s.moved = true; render(); });
+  // The hint until a move is first picked up: one move at a time lifts (its shadow, as when dragged), once the
+  // moves are all in. Check waits for a first swap.
+  rankedEl.classList.toggle('hinting', !s.rankTouched);
+  if(!s.rankTouched){ rankedEl.addEventListener('pointerdown', ()=>{ if(!s.rankTouched){ s.rankTouched = true; hintStop(); } }, { capture:true, once:true }); hintStart(Math.max(600, tLast + SLIDE_MS - introEl)); }
+  wireDragReorder(rankedEl, s.order, changed=>{ s.moved = true; if(changed) s.swapped = true; render(); });
   document.getElementById('check').onclick = ()=>{ s.checked = true; s.revAt = null; s.revDone = false; render(); };
   wireCommon('final', false);
 }
@@ -5599,7 +5638,7 @@ function render(){
 // evaluation arriving, your account syncing, the engine starting): a CSS animation on a rebuilt
 // element would start over (or, its class gone, stop dead). So animations follow the clock, not the
 // redraws: an element fading in ("fade-in") keeps fading from where it was on the elements that
-// replace it (the grades' pulse carries on the same way: aspPulse).
+// replace it (the questions' hints carry on the same way: hintApply).
 const FADE_MS = 350, fadeStarts = new Map();   // element key -> when its fade started
 function keepFades(){
   const now = performance.now();
