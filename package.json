@@ -8,7 +8,7 @@
     "report": "node finder/report.js data",
     "inject": "python3 finder/inject.py data/pools.json",
     "test": "python3 tests/smoke.py",
-    "test:all": "node --test worker/test/api.test.mjs 2>/dev/null | grep -E '^# (pass|fail)' && echo \"== sf_eval\" && node tests/sf_eval.js | tail -1 && echo \"== redraws\" && NODE_PATH=$(npm root -g) node tests/redraws.js | tail -1 && echo \"== engine_rules\" && NODE_PATH=$(npm root -g) node tests/engine_rules.js | tail -1 && for t in smoke edge_cases my_games played_today fast_start profile_replay review_fixes lichess_link website lichess_login pgn_import accounts google_login engine_down load_speed selection my_positions_order aspects; do echo \"== $t\"; out=$(python3 tests/$t.py 2>&1) || { echo \"$out\"; exit 1; }; echo \"$out\" | tail -1; done",
+    "test:all": "node --test worker/test/api.test.mjs 2>/dev/null | grep -E '^# (pass|fail)' && echo \"== sf_eval\" && node tests/sf_eval.js | tail -1 && echo \"== redraws\" && NODE_PATH=$(npm root -g) node tests/redraws.js | tail -1 && echo \"== back_button\" && NODE_PATH=$(npm root -g) node tests/back_button.js | tail -1 && echo \"== engine_rules\" && NODE_PATH=$(npm root -g) node tests/engine_rules.js | tail -1 && for t in smoke edge_cases my_games played_today fast_start profile_replay review_fixes lichess_link website lichess_login pgn_import accounts google_login engine_down load_speed selection my_positions_order aspects; do echo \"== $t\"; out=$(python3 tests/$t.py 2>&1) || { echo \"$out\"; exit 1; }; echo \"$out\" | tail -1; done",
     "site": "python3 scripts/build-site.py",
     "test:server": "node --test worker/test/api.test.mjs"
   }

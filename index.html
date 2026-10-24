@@ -3329,7 +3329,7 @@ function hintStop(){
   document.querySelectorAll('#app .hinting').forEach(b=>b.classList.remove('hinting'));
   clearTimeout(hint.timer); hint.timer = null; hint.key = null;
 }
-function closeAspPicker(){ if(aspPicker){ aspPicker.el.remove(); aspPicker.badge && aspPicker.badge.classList.remove('editing'); aspPicker = null; } }
+function closeAspPicker(){ if(aspPicker){ aspPicker.el.remove(); aspPicker.badge && aspPicker.badge.classList.remove('editing'); aspPicker = null; syncHistory(); } }
 // The scale covers the row above it: once it closes on lift, the click that follows would land on
 // whatever was under it, so that one click is dropped.
 function swallowNextClick(){
@@ -3359,7 +3359,7 @@ function openAspPicker(s, key){
     el.innerHTML = `<span>${offNote(pos().fen)}</span>`;
     box.appendChild(el);
     el.style.top = (badge.closest('.asp-item').offsetTop - el.offsetHeight - 4) + 'px';
-    aspPicker = { key, el, sliding:false, badge }; badge.classList.add('editing');
+    aspPicker = { key, el, sliding:false, badge }; badge.classList.add('editing'); syncHistory();
     el.addEventListener('pointerup', ()=>{ closeAspPicker(); swallowNextClick(); });
     return;
   }
@@ -3368,7 +3368,7 @@ function openAspPicker(s, key){
   const item = badge.closest('.asp-item');
   el.style.top = (item.offsetTop - el.offsetHeight - 4) + 'px';   // above the badge, so the finger doesn't hide it
   aspPicker = { key, el, sliding:false, badge };
-  badge.classList.add('editing');
+  badge.classList.add('editing'); syncHistory();
   const levelAt = e=>{ const o = document.elementFromPoint(e.clientX, e.clientY); return o && o.dataset && o.dataset.l!=null && el.contains(o) ? +o.dataset.l : null; };
   el.addEventListener('pointerdown', e=>{ holdRender(); aspPicker.sliding = true; const l = levelAt(e); if(l!=null) setAspect(s, key, l); e.preventDefault(); });
   el.addEventListener('pointermove', e=>{ if(!aspPicker || !aspPicker.sliding) return; const l = levelAt(e); if(l!=null) setAspect(s, key, l); });
@@ -5949,23 +5949,41 @@ function reviewOpened(){
 // The phone's back button (and the browser's): one history entry stands for "inside a page"; going back
 // does what the page's own back arrow does (an exercise or the profile: home; settings: the profile...),
 // or first closes the grades' scale if it's open. On the home page, back leaves the site as usual.
-let historyPushed = false;   // the entry was added by this page load (a reload keeps history.state, not our entry's meaning)
+// One history entry per level, each added when you go a level down (a tap: Chrome's back button skips
+// entries a page adds without one): home 0; an exercise, the profile 1; settings, the metrics, the tests
+// (from the profile) 2; ... and the grades' scale open, one more. Going up by the page's own arrow takes the
+// entries back off; the phone's back button goes up one level.
+function pageDepth(){
+  if(screen==='home') return 0;
+  let d = ['settings', 'metrics', 'tests'].includes(screen) ? 2
+        : screen==='support' ? (supportFrom==='home' ? 1 : 2)
+        : ACTIVITIES.includes(screen) ? (testMode ? 3 : replayMode ? 2 : 1) : 1;
+  if(aspPicker) d++;
+  return d;
+}
+let histDepth = 0, histIgnore = 0, histPopping = false;
+try{ histDepth = (history.state && (history.state.cstDepth || (history.state.cstDeep ? 1 : 0))) || 0; }catch(e){}
 function syncHistory(){
+  if(histPopping) return;
   try{
-    const deep = !!(history.state && history.state.cstDeep);
-    if(screen!=='home' && !deep){ history.pushState({ cstDeep:1 }, ''); historyPushed = true; }
-    else if(screen==='home' && deep){
-      if(historyPushed){ historyPushed = false; history.back(); }   // back home by the arrow: the entry goes too
-      else history.replaceState(null, '');   // after a reload: never step back out of the site
-    }
+    const want = pageDepth();
+    while(histDepth < want){ histDepth++; history.pushState({ cstDepth: histDepth }, ''); }
+    if(histDepth > want){ histIgnore++; history.go(want - histDepth); histDepth = want; }
   }catch(e){}
 }
-window.addEventListener('popstate', ()=>{
-  historyPushed = false;   // the entry is gone
-  if(screen==='home') return;
-  if(aspPicker){ closeAspPicker(); syncHistory(); return; }
-  const b = document.getElementById('homeBtn');
-  if(b) b.click(); else { screen = 'home'; render(); }
+window.addEventListener('popstate', e=>{
+  if(histIgnore > 0){ histIgnore--; return; }   // our own step back (the page's arrow)
+  const target = (e.state && (e.state.cstDepth || (e.state.cstDeep ? 1 : 0))) || 0;
+  histDepth = target;
+  histPopping = true;
+  try{
+    for(let k=0; k<6 && pageDepth() > target; k++){
+      if(aspPicker){ closeAspPicker(); continue; }
+      const b = document.getElementById('homeBtn');
+      if(b) b.click(); else { screen = 'home'; render(); }
+    }
+  } finally { histPopping = false; }
+  syncHistory();   // (a level the arrows skip: entries put back as needed)
 });
 // The page is rebuilt from scratch on every redraw, and redraws come often in the background (an
 // evaluation arriving, your account syncing, the engine starting): a CSS animation on a rebuilt
