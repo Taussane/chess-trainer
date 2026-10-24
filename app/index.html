@@ -1423,7 +1423,7 @@ let sfCurrentDepth = 0;  // the deepest full pass of that search (its best line'
 let sfCurrentFen = null; // the position being searched (a review shows its depth live while it waits for it)
 const liveDepth = {};    // position -> the deepest pass any search of it reached (the live badge)
 const LIVE_DEPTH = 20, LIVE_CAP_MS = 10000, REVIEW_CAP_MS = 3000;   // the exercises' searches: depth 20, at most 10 s ahead of time, 3 s once its review is waiting (the depth reached is shown)
-let reviewFen = null;   // the position whose review is open (its search is cut short at REVIEW_CAP_MS)
+let reviewFen = null, reviewAt = 0;   // the position whose review is open, and since when (its searches share REVIEW_CAP_MS)
 let sfStartedAt = 0, sfCurrentJob = null;
 // A long search for a position prepared in advance gives way when the open position needs the engine:
 // it's stopped (its partial result dropped) and searched again afterwards.
@@ -1523,6 +1523,9 @@ function onEngineMessage(e){
         if(sfCurrentDepth > (liveDepth[sfCurrentFen] || 0)) liveDepth[sfCurrentFen] = sfCurrentDepth;   // the deepest so far for this position: never down (a review can need two searches)
         if(b && b.dataset.live===sfCurrentFen) b.querySelector('b').textContent = liveDepth[sfCurrentFen];
       }
+      // A line cut off mid-pass (upper/lower bound) isn't a real score: the last full one stands (a stopped
+      // search keeps its last complete reading).
+      if(/ (upper|lower)bound/.test(line) && sfCurrentLines[rank]) return;
       sfCurrentLines[rank] = {
         cp: mateM ? null : (cpM ? parseInt(cpM[1],10) : null),
         mate: mateM ? parseInt(mateM[1],10) : null,
@@ -1591,7 +1594,8 @@ function pumpEngineQueue(){
   // side-to-move perspective — same kind of query as an unrestricted one, just narrowed.
   // An exercise's own search goes to depth LIVE_DEPTH (or stops at LIVE_CAP_MS); background work and the
   // position finders give a time instead (job.movetime).
-  job.cap = job.movetime || (fen===reviewFen ? REVIEW_CAP_MS : LIVE_CAP_MS);
+  // Once its review is open: 3 s at most; Candidate moves' top 5 (its first search) only the quick 1.2 s, its picks' search next.
+  job.cap = job.movetime || (fen===reviewFen ? (screen==='candidates' && !searchmoves ? OWN.checkMs : REVIEW_CAP_MS) : LIVE_CAP_MS);
   sfWorker.postMessage((job.movetime ? 'go movetime '+job.movetime : 'go depth '+LIVE_DEPTH+' movetime '+job.cap)+(searchmoves ? ' searchmoves '+searchmoves : ''));
   sfStartedAt = performance.now();
   // Watchdog: a search that hasn't answered 5 s after its time is told to stop; 5 s after that,
@@ -2294,11 +2298,11 @@ function upcomingFor(t){
   const s = store[t][cur.key];
   return [t, firstAvailable(t, seqBy[t] + (s && s.checked ? 1 : 0))];
 }
-// From the home page: where Position evaluation and Move selection would open, and where the routine
-// resumes (unless that's Candidate moves, which is only evaluated at its review).
+// From the home page: where Position evaluation, Candidate moves (its top 5, which doesn't depend on your
+// picks) and Move selection would open, and where the routine resumes.
 function prefetchHome(){
-  const ts = [ctx('analysis', false), ctx('final', false)];
-  if(routineNext!=='candidates' && routineNext!=='imbalances') ts.push(ctx(routineNext, true));
+  const ts = [ctx('analysis', false), ctx('final', false), ctx('candidates', false)];
+  if(routineNext!=='imbalances') ts.push(ctx(routineNext, true));
   ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0) fenEval(posAt(x, i).fen); });
   { const [x, i] = upcomingFor(ctx('imbalances', false)); if(i>=0) aspectsEntry(posAt(x, i).fen); }   // Imbalance reading's table (and its quick mate check)
 }
@@ -2378,6 +2382,9 @@ function candidatesEval(p, picks){
   const ucis = picks.map(m=>m.uci);
   ucis.push(p.hist.uci);
   disc.lines.slice(0, DISCOVERY_MULTIPV).forEach(l=>{ if(l.uci) ucis.push(l.uci); });
+  // The shortcut: when the top-5 search ran 3 s or more (or reached depth 20) and your picks and the game
+  // move are all among its lines, it already has them on the same footing: no second search.
+  if((disc.ms >= REVIEW_CAP_MS || disc.depth >= LIVE_DEPTH) && ucis.every(u=>disc.lines.some(l=>l.uci===u))) return disc;
   return poolEval(p.fen, Array.from(new Set(ucis)));
 }
 // Move selection: the four moves to rank, picked at runtime from the app's own top 5 (so its best
@@ -5472,6 +5479,7 @@ function renderCandidates(){
     return;
   }
 
+  fenEval(p.fen);   // its top 5 searched while you think (your picks only add one short search at the review)
   const capReached = s.picks.length>=3;
   const destSquares = selSquare
     ? (capReached ? s.picks.filter(m=>m.from===selSquare).map(m=>m.to)
@@ -5818,14 +5826,17 @@ function render(){
   reviewOpened();
   if(sfBusy) preemptForOpen();   // a position opened whose search was queued earlier (prepared ahead): it goes now
 }
-// A review just opened: its position's search, if still going (prepared ahead, up to 10 s), stops within 3 s of now.
+// A review just opened: its position's search, if still going (prepared ahead, up to 10 s), stops within
+// 3 s of now. In Candidate moves, the top-5 search stops at once (once it has had the quick 1.2 s), since
+// your picks need their own search right after.
 function reviewOpened(){
   const fen = ACTIVITIES.includes(screen) && curPos && store[ctx(screen)] && store[ctx(screen)][curPos.key] && store[ctx(screen)][curPos.key].checked ? curPos.fen : null;
   if(fen===reviewFen) return;
-  reviewFen = fen;
+  reviewFen = fen; reviewAt = performance.now();
   const j = sfCurrentJob;
   if(fen && j && !j.movetime && j.fen===fen){
-    setTimeout(()=>{ if(sfCurrentJob===j){ try{ sfWorker.postMessage('stop'); }catch(e){} } }, REVIEW_CAP_MS);
+    const wait = screen==='candidates' && !j.searchmoves ? Math.max(0, OWN.checkMs - (performance.now() - sfStartedAt)) : REVIEW_CAP_MS;
+    setTimeout(()=>{ if(sfCurrentJob===j){ try{ sfWorker.postMessage('stop'); }catch(e){} } }, wait);
   }
 }
 // The phone's back button (and the browser's): one history entry stands for "inside a page"; going back
