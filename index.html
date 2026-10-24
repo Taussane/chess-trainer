@@ -1736,7 +1736,7 @@ function fenEvalEntry(fen){
   if(!entry){
     entry = { status:'pending', data:null };
     fenEvalStore[fen] = entry;
-    engineEval(fen).then(data=>{ entry.status='done'; entry.data=data; render(); });
+    entry.promise = engineEval(fen).then(data=>{ entry.status='done'; entry.data=data; render(); return data; });
   } else if(entry.status==='pending') bumpJob(fen);
   return entry;
 }
@@ -2968,7 +2968,9 @@ function aspectsEntry(fen){
     entry = aspectsStore[fen] = { status:'pending', data:null };
     engineAspects(fen).then(async lines=>{
       const data = adaptAspects(parseAspects(lines, fen), fen);
-      entry.data = data ? applyMate(data, await mateSearch(fen), fen) : data;
+      // A mate: from the position's own search when it has one (Position evaluation's review), else a quick 0.4 s check.
+      const own = fenEvalStore[fen], ownRes = own ? await own.promise : null;
+      entry.data = data ? applyMate(data, ownRes && !ownRes.failed ? ownRes : await mateSearch(fen), fen) : data;
       entry.status = 'done'; render();
     });
   }
