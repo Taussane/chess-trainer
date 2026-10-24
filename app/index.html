@@ -1426,21 +1426,15 @@ const LIVE_DEPTH = 20, LIVE_CAP_MS = 10000, REVIEW_CAP_MS = 3000;   // the exerc
 let reviewFen = null, reviewAt = 0;   // the position whose review is open, and since when (its searches share REVIEW_CAP_MS)
 let sfStartedAt = 0, sfCurrentJob = null;
 // The master positions' top 3 moves and best evaluation from the position finder (1.2 s, the app's own engine),
-// in a separate file loaded in the background (master-evals.json): position key -> [[3 ucis], cp, mate, [Move
-// selection's four moves, best first]?].
+// in a separate file loaded in the background (master-evals.json): position key -> [[3 ucis], cp, mate].
 // Used when a review can't wait for a position's own search (Candidate moves: see reviewOpened).
-let masterEvals = null, masterEvalsReady = false;
+let masterEvals = null;
 function loadMasterEvals(){
-  if(masterEvals) return;
+  if(masterEvals || typeof fetch!=='function') return;
   masterEvals = {};
-  if(typeof fetch!=='function'){ masterEvalsReady = true; return; }
-  const done = d=>{ masterEvals = d || {}; masterEvalsReady = true; render(); };
-  fetch('master-evals.json').then(r=>r.ok ? r.json() : {}).then(done, ()=>done({}));
-  setTimeout(()=>{ if(!masterEvalsReady) done(masterEvals); }, 4000);   // never wait longer for it
+  fetch('master-evals.json').then(r=>r.ok ? r.json() : {}).then(d=>{ masterEvals = d || {}; }).catch(()=>{});
 }
 const shippedTop = p=>p && masterEvals && masterEvals[p.key] ? [].concat(masterEvals[p.key][0]) : [];
-const shippedFour = p=>p && masterEvals && masterEvals[p.key] && Array.isArray(masterEvals[p.key][3]) ? masterEvals[p.key][3] : null;
-const finalPicked = {};   // position key -> {ucis, right}: once a position's four moves are shown, they stay (whatever arrives later)
 // A long search for a position prepared in advance gives way when the open position needs the engine:
 // it's stopped (its partial result dropped) and searched again afterwards.
 function preemptForOpen(){
@@ -2301,9 +2295,9 @@ function st(activity){
 function prefetchCurrent(){ if(ACTIVITIES.includes(screen)) (screen==='imbalances' ? aspectsEntry : fenEval)(pos().fen); }
 function prefetchNext(){
   if(!ACTIVITIES.includes(screen)) return;
-  if(replayMode){ const e = replayQueue[replayIdx+1]; if(e){ if(e.a==='final') prepareFinal(e.pos); else fenEval(e.pos.fen); } return; }
+  if(replayMode){ const e = replayQueue[replayIdx+1]; if(e){ fenEval(e.pos.fen); if(e.a==='final') prepareFinal(e.pos); } return; }
   const [t, i] = nextTarget();
-  if(i>=0){ if(/final/.test(t)) prepareFinal(posAt(t, i)); else fenEval(posAt(t, i).fen); }   // (Move selection: its four moves, then their search)
+  if(i>=0){ fenEval(posAt(t, i).fen); if(/final/.test(t)) prepareFinal(posAt(t, i)); }
 }
 // Move selection ahead of time: once a position's top 5 (and the game move's search) are in, its four
 // moves are known, and their one search (the review's) starts too, whatever order you'll put them in.
@@ -2327,7 +2321,7 @@ function upcomingFor(t){
 function prefetchHome(){
   const ts = [ctx('analysis', false), ctx('final', false), ctx('candidates', false)];
   if(routineNext!=='imbalances') ts.push(ctx(routineNext, true));
-  ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0){ if(/final/.test(t)) prepareFinal(posAt(x, i)); else fenEval(posAt(x, i).fen); } });
+  ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0){ fenEval(posAt(x, i).fen); if(/final/.test(t)) prepareFinal(posAt(x, i)); } });
   { const [x, i] = upcomingFor(ctx('imbalances', false)); if(i>=0) aspectsEntry(posAt(x, i).fen); }   // Imbalance reading's table (and its quick mate check)
 }
 // Moves exercise `a`, on the open track, on to its next position, fresh.
@@ -2418,39 +2412,22 @@ function candidatesEval(p, picks){
 // When the game move isn't in the top 5, it is judged in ONE search with them, and the pick reads
 // that search, so its grade is known. Shuffled so the list never gives the answer away.
 function finalMoves(p){
-  // A master position whose four moves came with the app (the finder's, master-evals.json): shown at once,
-  // with no search before; only their one search is needed (the review's). Otherwise, picked from the top 5.
-  let picked = finalPicked[p.key];
-  if(!picked && !p.gameId && !masterEvalsReady) return null;   // a master position: its four moves may come with the file (a moment)
-  if(!picked){
-    const four = shippedFour(p), legal = new Set(new Chess(p.fen).moves({ verbose:true }).map(m=>m.from+m.to+(m.promotion||'')));
-    if(four && four.every(u=>legal.has(u)) && four.includes(p.hist.uci)){
-      picked = { ucis: four.slice(), right: four.join(',') };
-      const j = sfCurrentJob;   // a top-5 search of it already going (started before the file came): not needed any more
-      if(j && j.fen===p.fen && !j.searchmoves && !j.movetime){ try{ sfWorker.postMessage('stop'); }catch(e){} }
-    }
-    else {
-      const disc = fenEval(p.fen);
-      if(!disc) return null;
-      if(evalFailed(disc)) return FAILED;
-      let src = disc;
-      if(!disc.lines.some(l=>l.uci===p.hist.uci)){
-        const ucis = Array.from(new Set(disc.lines.slice(0, DISCOVERY_MULTIPV).map(l=>l.uci).filter(Boolean).concat(p.hist.uci)));
-        src = poolEval(p.fen, ucis);
-        if(!src) return null;
-        if(evalFailed(src)) return FAILED;
-      }
-      const ucis = pickFinalUcis(p, src);
-      if(!ucis.length) return FAILED;
-      picked = { ucis, right: ucis.slice().sort((a,b)=>{ const la = src.lines.find(l=>l.uci===a), lb = src.lines.find(l=>l.uci===b); return (lb ? winPercent(lb.cp, lb.mate) : 0) - (la ? winPercent(la.cp, la.mate) : 0); }).join(',') };
-    }
-    finalPicked[p.key] = picked;
+  const disc = fenEval(p.fen);
+  if(!disc) return null;
+  if(evalFailed(disc)) return FAILED;
+  let src = disc;
+  if(!disc.lines.some(l=>l.uci===p.hist.uci)){
+    const ucis = Array.from(new Set(disc.lines.slice(0, DISCOVERY_MULTIPV).map(l=>l.uci).filter(Boolean).concat(p.hist.uci)));
+    src = poolEval(p.fen, ucis);
+    if(!src) return null;
+    if(evalFailed(src)) return FAILED;
   }
-  const ucis = picked.ucis;
+  const ucis = pickFinalUcis(p, src);
+  if(!ucis.length) return FAILED;
   const list = ucis.map(u=>({ id:u, uci:u, from:u.slice(0,2), to:u.slice(2,4), san:sanForUci(p.fen, u), historical: u===p.hist.uci }));
   // ...and, during onboarding (the first positions), never already in the right order (by the search the
   // moves were picked from): at least two moves out of place, so there's always something to do.
-  const right = picked.right;
+  const right = ucis.slice().sort((a,b)=>{ const la = src.lines.find(l=>l.uci===a), lb = src.lines.find(l=>l.uci===b); return (lb ? winPercent(lb.cp, lb.mate) : 0) - (la ? winPercent(la.cp, la.mate) : 0); }).join(',');
   let order = stableShuffleByIds('final'+ctx('final')+p.key, list.map(m=>m.id));
   for(let k=1; k<8 && answeredIn('final') < FIRST_POSITIONS && order.join(',')===right; k++) order = stableShuffleByIds('final'+ctx('final')+p.key+'|'+k, list.map(m=>m.id));
   return order.map((id,i)=>({ ...list.find(m=>m.id===id), color: allCols[i] }));
@@ -5867,7 +5844,7 @@ function render(){
   if(focus){ const el = document.getElementById(focus.id); if(el){ el.focus(); try{ el.setSelectionRange(focus.a, focus.b); }catch(e){} } }
   keepFades();
   syncHistory();
-  loadMasterEvals();
+  if(!masterEvals && progressLoaded) setTimeout(loadMasterEvals, 1500);
   reviewOpened();
   if(sfBusy) preemptForOpen();   // a position opened whose search was queued earlier (prepared ahead): it goes now
 }
