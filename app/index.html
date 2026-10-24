@@ -581,7 +581,9 @@
     .side-item .side-name{flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
     .side-item .side-n{font-size:.8rem; color:var(--text-mute); font-variant-numeric:tabular-nums;}
     .side-foot{margin-top:auto; padding:14px 10px 0; display:flex; flex-direction:column; gap:10px; font-size:.8rem; color:var(--text-mute);}
-    .side-foot .title-chip{margin:0; align-self:flex-start;}
+    .side-foot .title-chip, .side-foot .donate-badge{margin:0; align-self:flex-start;}
+    .side-foot .donate-badge.on{box-shadow:0 0 0 2px var(--panel), 0 0 0 3px var(--accent);}
+    .side-links{margin:0; line-height:1.7;} .side-links a{color:var(--text-mute);}
     /* exercises: the board fills the height on the left; title, game and panel on the right */
     html.desk2 .wrap.ex{max-width:none; padding-block:16px;}
     html.desk2 .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 380px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:28px;}
@@ -597,10 +599,11 @@
     html.desk2 .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw - 44px, 100cqh - 44px);}
     /* profile: three columns; settings: the controls beside a large preview board */
     html.desk2 .wrap:not(.ex):not(.home){padding-block:24px;}
-    html.desk2 .wrap[data-scr=account] > #app{max-width:1280px;}
+    html.desk2 .wrap[data-scr=account] > #app{max-width:1040px;}
+    html.desk2 .wrap[data-scr=account] .ac-foot{display:none;}   /* (the links are in the menu) */
     html.desk2 .wrap[data-scr=support] > #app, html.desk2 .wrap[data-scr=metrics] > #app, html.desk2 .wrap[data-scr=tests] > #app{max-width:560px;}
     html.desk2 .wrap:not(.ex) .title-row .back, html.desk2 #settingsBtn{display:none;}   /* (in the sidebar) */
-    html.desk2 .pf-cols{display:grid; grid-template-columns:320px minmax(0, 1fr) 340px; gap:24px; align-items:start;}
+    html.desk2 .pf-cols{display:grid; grid-template-columns:360px minmax(0, 1fr); gap:28px; align-items:start;}
     html.desk2 .pf-col{display:flex; flex-direction:column; gap:12px; min-width:0;}
     html.desk2 .pf-scroll{overflow:visible;}
     /* settings: the preview board as big as the window, centred; the settings on the right (as an exercise) */
@@ -613,19 +616,17 @@
     html.desk2 #setLang{display:none;}   /* (in the menu) */
     /* home: a dashboard */
     html.desk2 .wrap.home{padding-block:28px;}
-    html.desk2 .wrap.home > #app{max-width:1120px;}
-    html.desk2 .wrap.home > #app{display:grid; grid-template-columns:340px minmax(0, 1fr); column-gap:28px; align-items:start;}
-    html.desk2 .wrap.home > #app > *{grid-column:2;}
+    html.desk2 .wrap.home > #app{max-width:1040px;}
+    html.desk2 .wrap.home > #app{display:grid; grid-template-columns:minmax(0, 1fr) 320px; column-gap:28px; align-items:start;}
+    html.desk2 .wrap.home > #app > *{grid-column:1;}
     html.desk2 .wrap.home .home-top{display:none;}
     html.desk2 .wrap.home > #app > .home-head{grid-column:1 / -1; margin:0 0 20px;}
     html.desk2 .wrap.home .home-head p{margin:0; font-size:1rem; max-width:760px;}
-    html.desk2 .wrap.home > #app > .routine{grid-column:1; grid-row:2 / span 2; margin:0;}
-    html.desk2 .wrap.home > #app > .home-donate{grid-column:1; grid-row:4; margin:16px 0 0;}
+    html.desk2 .wrap.home > #app > .routine{grid-column:2; grid-row:2 / span 2; margin:0;}
+    html.desk2 .wrap.home > #app > .home-donate, html.desk2 .wrap.home > #app > .home-foot{display:none;}   /* (in the menu) */
     html.desk2 .wrap.home > #app > .source-row{grid-row:2;}
     html.desk2 .wrap.home > #app > .cards{grid-row:3; display:grid; grid-template-columns:1fr 1fr; gap:14px;}
     html.desk2 .wrap.home .card{min-height:118px; align-items:center;}
-    html.desk2 .wrap.home > #app > .home-foot{display:block; grid-column:1 / -1; grid-row:5; margin-top:40px; padding-top:16px; border-top:1px solid var(--border); text-align:center; color:var(--text-mute); font-size:.84rem;}
-    html.desk2 .home-foot a, html.desk2 .home-foot button{color:var(--text-mute);}
   }
   @media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important;} }
 </style>
@@ -4049,10 +4050,11 @@ function renderSide(){
     <div class="side-sec">You</div>
     ${item('account', SIDE_ICONS.profile, displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
-    ${item('support', SIDE_ICONS.support, 'Support')}
     <div class="side-foot">
+      <button class="donate-badge${at==='support' ? ' on' : ''}" data-side="support"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>
       <button class="title-chip" id="sideLang" data-no-i18n aria-label="Language">${LANG==='fr' ? 'FR · English' : 'EN · Français'}</button>
       ${installOffered() ? `<button class="link-plain install-link" id="sideInstall">Install the app</button>` : ''}
+      <p class="side-links">${siteLinks()}</p>
     </div>`;
   nav.querySelectorAll('[data-side]').forEach(b=>b.onclick = ()=>sideGo(b.dataset.side==='account' ? 'account' : b.dataset.side));
   const lang = nav.querySelector('#sideLang'); if(lang) lang.onclick = ()=>{ settings.lang = LANG==='fr' ? 'en' : 'fr'; setLanguage(); saveSettings(); settingsRebuild = true; render(); };
@@ -4431,8 +4433,8 @@ function renderAccount(){
           <div><div class="pf-name">${esc(name) || 'Guest'}</div>
           <div class="pf-facts"><span><b>${results.length}</b> position${results.length===1?'':'s'} played since ${since}</span></div></div></div>
       </section>`, acct = DIRECT_LICHESS ? accountSection() : '';
-        // desktop: three columns (you and your account; progress; your games and positions)
-        return isDesk() ? `<div class="pf-cols"><div class="pf-col">${id}${acct}</div><div class="pf-col pf-wide">${prog.html}</div><div class="pf-col">${positionsSection()}</div></div>`
+        // desktop: two columns (you, your account, your games and positions; progress)
+        return isDesk() ? `<div class="pf-cols"><div class="pf-col">${id}${acct}${positionsSection()}</div><div class="pf-col pf-wide">${prog.html}</div></div>`
                         : `${id}${prog.html}${positionsSection()}${acct}`; })()}
       <p class="ac-foot">${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}${installLink()}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
