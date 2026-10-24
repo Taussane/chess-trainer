@@ -649,9 +649,10 @@
     html.desk2 .wrap.home > #app{max-width:1040px;}
     html.desk2 .wrap.home > #app{display:grid; grid-template-columns:minmax(0, 1fr) 320px; column-gap:28px; align-items:start;}
     html.desk2 .wrap.home > #app > *{grid-column:1;}
-    html.desk2 .wrap.home .home-top{display:none;}
-    html.desk2 .wrap.home > #app > .home-head{grid-column:1 / -1; margin:0 0 20px;}
-    html.desk2 .wrap.home .home-head p{margin:0; font-size:1rem; max-width:760px;}
+    html.desk2 .wrap.home > #app > .home-head{grid-column:1 / -1; margin:0 0 22px; display:flex; align-items:center; gap:24px;}
+    html.desk2 .wrap.home .home-top{order:2; margin:0; flex:none;}
+    html.desk2 .wrap.home .home-top h1{display:none;}   /* (the logo is in the menu) */
+    html.desk2 .wrap.home .home-head p{margin:0; font-size:1rem; flex:1;}
     html.desk2 .wrap.home > #app > .routine{grid-column:2; grid-row:2 / span 2; margin:0;}
     html.desk2 .wrap.home > #app > .home-donate, html.desk2 .wrap.home > #app > .home-foot{display:none;}   /* (in the menu) */
     html.desk2 .wrap.home > #app > .source-row{grid-row:2;}
@@ -4068,24 +4069,27 @@ function renderSide(){
   if(!DESK) return;
   let nav = document.getElementById('side');
   if(!nav){ nav = document.createElement('nav'); nav.id = 'side'; nav.className = 'side'; nav.setAttribute('aria-label', 'Menu'); document.body.insertBefore(nav, document.querySelector('.wrap')); }
-  const at = routine && ACTIVITIES.includes(screen) ? 'routine' : onProfile() ? 'profile' : screen;
+  const at = routine && ACTIVITIES.includes(screen) ? 'routine' : onProfile() ? 'account' : screen;
   const c = todayBy(), total = ACTS.reduce((t,a)=>t+Math.min(c[a], DAILY_GOAL), 0);
   const item = (k, icon, name, extra, dis)=>`<button class="side-item${at===k ? ' on' : ''}" data-side="${k}"${dis ? ' disabled' : ''}${at===k ? ' aria-current="page"' : ''}>${icon}<span class="side-name">${name}</span>${extra ? `<span class="side-n">${extra}</span>` : ''}</button>`;
-  nav.innerHTML = `
-    <button class="side-logo" data-side="home" data-no-i18n aria-label="Home"><b>Chess<span class="beta">${LANG==='fr' ? 'Bêta' : 'Beta'}</span><br>Strategy<span class="tld">.org</span></b></button>
-    ${item('home', SIDE_ICONS.home, 'Home')}
-    ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
+  const html = `
+    <button class="side-logo${at==='home' ? ' on' : ''}" data-side="home" data-no-i18n aria-label="Home"><b>Chess<span class="beta">${LANG==='fr' ? 'Bêta' : 'Beta'}</span><br>Strategy<span class="tld">.org</span></b></button>
     <div class="side-sec">Exercises</div>
     ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
+    ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     <div class="side-sec">You</div>
     ${item('account', SIDE_ICONS.profile, displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
     <div class="side-foot">
-      <button class="donate-badge${at==='support' ? ' on' : ''}" data-side="support"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>
       <button class="title-chip" id="sideLang" data-no-i18n aria-label="Language">${LANG==='fr' ? 'FR · English' : 'EN · Français'}</button>
+      <button class="donate-badge${at==='support' ? ' on' : ''}" data-side="support"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>
       ${installOffered() ? `<button class="link-plain install-link" id="sideInstall">Install the app</button>` : ''}
-      <p class="side-links">${siteLinks()}</p>
+      <p class="side-links">${siteLinks().replace(/ · /g, '<br>')}</p>
     </div>`;
+  // Rebuilt only when something in it changed: the page redraws often (games syncing, an evaluation
+  // arriving), and a menu rebuilt under the mouse would lose the click.
+  if(nav._html===html) return;
+  nav._html = html; nav.innerHTML = html;
   nav.querySelectorAll('[data-side]').forEach(b=>b.onclick = ()=>sideGo(b.dataset.side==='account' ? 'account' : b.dataset.side));
   const lang = nav.querySelector('#sideLang'); if(lang) lang.onclick = ()=>{ settings.lang = LANG==='fr' ? 'en' : 'fr'; setLanguage(); saveSettings(); settingsRebuild = true; render(); };
   const inst = nav.querySelector('#sideInstall'); if(inst) inst.onclick = installApp;
@@ -4542,7 +4546,7 @@ function renderHome(){
   app.innerHTML = `
     <div class="home-head">
       <div class="home-top"><h1 data-no-i18n>Chess<span class="beta">${LANG==='fr' ? 'Bêta' : 'Beta'}</span><br>Strategy<span class="tld">.org</span></h1><button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span><span class="acct-name">${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</span></button></div>
-      ${(DIRECT_LICHESS ? !signedIn() : !results.length) ? `<p>Train your strategy beyond tactics puzzles: gauge the imbalances, evaluate the position, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
+      ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isDesk() ? `<p>Train your strategy beyond tactics puzzles: gauge the imbalances, evaluate the position, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
     ${routineCard()}
     <div class="source-row"><span class="source-label">Positions from</span>
