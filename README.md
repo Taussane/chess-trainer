@@ -50,7 +50,7 @@ The rules are explained in plain words in the **Position finder rules** document
 ```sh
 npm run setup:engine          # once: downloads engine/stockfish
 npm run find                  # runs the finder on library/gm-classics.pgn into data/ (the app's own engine in a headless browser, 1.2 s per search: about 2 minutes per new game; needs playwright and the site built)
-python3 scripts/imbalance-skip.py && python3 scripts/starters.py   # then: the Imbalance reading filter, and the onboarding lists
+python3 scripts/imbalance-skip.py && python3 scripts/starters.py && python3 scripts/master-evals.py   # then: the Imbalance reading filter, the onboarding lists, and master-evals.json (each position's best move, loaded by the app in the background)
 npm run report                # prints the statistics
 node finder/baseline.js data/pools.json   # how a no-thinking player scores (50/50, random top-5 move, random order)
 npm run inject                # copies data/pools.json into app/index.html

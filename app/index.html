@@ -1425,6 +1425,16 @@ const liveDepth = {};    // position -> the deepest pass any search of it reache
 const LIVE_DEPTH = 20, LIVE_CAP_MS = 10000, REVIEW_CAP_MS = 3000;   // the exercises' searches: depth 20, at most 10 s ahead of time, 3 s once its review is waiting (the depth reached is shown)
 let reviewFen = null, reviewAt = 0;   // the position whose review is open, and since when (its searches share REVIEW_CAP_MS)
 let sfStartedAt = 0, sfCurrentJob = null;
+// The master positions' best move and evaluation from the position finder (1.2 s, the app's own engine),
+// in a separate file loaded in the background (master-evals.json): position key -> [uci, cp, mate].
+// Used when a review can't wait for a position's own search (Candidate moves: see reviewOpened).
+let masterEvals = null;
+function loadMasterEvals(){
+  if(masterEvals || typeof fetch!=='function') return;
+  masterEvals = {};
+  fetch('master-evals.json').then(r=>r.ok ? r.json() : {}).then(d=>{ masterEvals = d || {}; }).catch(()=>{});
+}
+const shippedBest = p=>p && masterEvals && masterEvals[p.key] ? masterEvals[p.key][0] : null;
 // A long search for a position prepared in advance gives way when the open position needs the engine:
 // it's stopped (its partial result dropped) and searched again afterwards.
 function preemptForOpen(){
@@ -2382,6 +2392,7 @@ function candidatesEval(p, picks){
   const ucis = picks.map(m=>m.uci);
   ucis.push(p.hist.uci);
   disc.lines.slice(0, DISCOVERY_MULTIPV).forEach(l=>{ if(l.uci) ucis.push(l.uci); });
+  const sb = shippedBest(p); if(sb && new Chess(p.fen).moves({ verbose:true }).some(m=>m.from+m.to+(m.promotion||'')===sb)) ucis.push(sb);   // the finder's best move too, when the top 5 was cut short
   // The shortcut: when the top-5 search ran 3 s or more (or reached depth 20) and your picks and the game
   // move are all among its lines, it already has them on the same footing: no second search.
   if((disc.ms >= REVIEW_CAP_MS || disc.depth >= LIVE_DEPTH) && ucis.every(u=>disc.lines.some(l=>l.uci===u))) return disc;
@@ -5823,6 +5834,7 @@ function render(){
   if(focus){ const el = document.getElementById(focus.id); if(el){ el.focus(); try{ el.setSelectionRange(focus.a, focus.b); }catch(e){} } }
   keepFades();
   syncHistory();
+  if(!masterEvals && progressLoaded) setTimeout(loadMasterEvals, 1500);
   reviewOpened();
   if(sfBusy) preemptForOpen();   // a position opened whose search was queued earlier (prepared ahead): it goes now
 }
@@ -5835,7 +5847,8 @@ function reviewOpened(){
   reviewFen = fen; reviewAt = performance.now();
   const j = sfCurrentJob;
   if(fen && j && !j.movetime && j.fen===fen){
-    const wait = screen==='candidates' && !j.searchmoves ? Math.max(0, OWN.checkMs - (performance.now() - sfStartedAt)) : REVIEW_CAP_MS;
+    // (no wait at all when the finder's best move came with the app: it joins your picks' search instead)
+    const wait = screen==='candidates' && !j.searchmoves ? (shippedBest(curPos) ? 0 : Math.max(0, OWN.checkMs - (performance.now() - sfStartedAt))) : REVIEW_CAP_MS;
     setTimeout(()=>{ if(sfCurrentJob===j){ try{ sfWorker.postMessage('stop'); }catch(e){} } }, wait);
   }
 }
