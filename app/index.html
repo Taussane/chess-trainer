@@ -152,9 +152,9 @@
   /* the home page's Donate badge, under the exercises: Ko-fi's button look, opening our Donate page */
   .home-donate{display:flex; justify-content:flex-start; margin:18px 0 4px;}
   .donate-badge{display:inline-flex; align-items:center; gap:6px; padding:6px 14px 6px 10px; border:none; border-radius:999px; background:#C9A227; color:#fff; font:inherit; font-size:0.84rem; font-weight:700; cursor:pointer;}
-  .donate-badge img, .kofi-btn img{width:20px; height:auto;}
+  .donate-badge img{width:20px; height:auto;} .kofi-btn img{width:28px; height:auto;}
   .kofi-slot{display:flex; justify-content:center;}
-  .kofi-btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; align-self:center; padding:9px 18px; border-radius:999px; background:var(--accent); color:var(--on-accent); font-weight:700; font-size:0.94rem; text-decoration:none; box-shadow:0 2px 6px rgba(0,0,0,.25);}
+  .kofi-btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; align-self:center; padding:9px 18px; border-radius:999px; background:var(--accent); color:#fff; font-weight:700; font-size:0.94rem; text-decoration:none; box-shadow:0 2px 6px rgba(0,0,0,.25);}
   .mx-page .seg{margin-bottom:2px;}
   .mx-tiles{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;}
   .mx-tile{display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 0;}
@@ -4103,7 +4103,7 @@ function routineCard(){
   const total = ACTS.reduce((t,a)=>t+Math.min(c[a], DAILY_GOAL), 0), started = total>0;
   const rn = routineFrom(routineNext);
   return `<div class="routine${done ? ' done' : ''}">
-      <div class="routine-head"><span class="routine-title">Today's routine</span><span class="routine-count${dataCls()}">${done ? 'Done ✓' : `${total}/${DAILY_GOAL*ACTS.length}`}</span></div>
+      <div class="routine-head"><span class="routine-title">Today's routine</span><span class="routine-count${dataCls()}">${done ? 'Done <span class="wk-done">✓</span>' : `${total}/${DAILY_GOAL*ACTS.length}`}</span></div>
       ${ACTS.map(a=>`<div class="routine-row"><span>${ACT_NAMES[a]}</span><span class="goal-dots${dataCls()}" aria-label="${Math.min(c[a],DAILY_GOAL)} of ${DAILY_GOAL}">${Array.from({length:DAILY_GOAL}, (_,i)=>`<i class="${i<c[a]?'on':''}"></i>`).join('')}</span></div>`).join('')}
       <button class="btn${done ? ' secondary' : ''} routine-btn" id="routineBtn" ${canOpen(rn, true) ? '' : 'disabled'}><span class="${dataCls().trim()}">${!canOpen(rn, true) ? waitText(rn, true) : done ? 'Keep training' : started ? 'Continue routine' : 'Start routine'}</span></button>
     </div>`;
@@ -4254,7 +4254,7 @@ const runningAsApp = ()=>{ try{ return matchMedia('(display-mode: standalone)').
 const isIOS = ()=>/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints > 1);
 const installOffered = ()=>DIRECT_LICHESS && !runningAsApp() && !!(installPrompt || isIOS());
 // first in the links at the bottom of the profile, in yellow
-const installLink = ()=>installOffered() ? `<button class="link-plain install-link" id="installBtn">Install the app</button> · ` : '';
+const installLink = ()=>installOffered() ? `<br><button class="link-plain install-link" id="installBtn">Install the app</button>` : '';   // on its own line, below the links
 async function installApp(){
   if(installPrompt){ const e = installPrompt; try{ await e.prompt(); const r = await e.userChoice; if(r && r.outcome==='accepted') installPrompt = null; }catch(err){} render(); return; }
   installHelp = !installHelp; render();
@@ -4279,7 +4279,7 @@ function renderAccount(){
       ${prog.html}
       ${positionsSection()}
       ${DIRECT_LICHESS ? accountSection() : ''}
-      <p class="ac-foot">${installLink()}${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}</p>
+      <p class="ac-foot">${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}${installLink()}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; render(); };
@@ -6117,6 +6117,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Today's routine": "Routine du jour",
 "Daily routine done": "Routine quotidienne faite",
 "Done ✓": "Fait ✓",
+"Done": "Fait",
 "Start routine": "Commencer la routine",
 "Continue routine": "Continuer la routine",
 "Keep training": "Continuer l'entraînement",
