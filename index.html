@@ -1450,7 +1450,7 @@ let sfCurrentDepth = 0;  // the deepest full pass of that search (its best line'
 let sfCurrentFen = null; // the position being searched (a review shows its depth live while it waits for it)
 const liveDepth = {};    // position -> the deepest pass any search of it reached (the live badge)
 const LIVE_DEPTH = 20, LIVE_CAP_MS = 10000, REVIEW_CAP_MS = 3000;   // the exercises' searches: depth 20, at most 10 s ahead of time, 3 s once its review is waiting (the depth reached is shown)
-let reviewFen = null, reviewAt = 0;   // the position whose review is open, and since when (its searches share REVIEW_CAP_MS)
+let reviewFen = null, reviewAt = 0, pickFen = null, pickAt = 0;   // the position whose review is open, and since when (its searches share REVIEW_CAP_MS)
 let sfStartedAt = 0, sfCurrentJob = null;
 // The master positions' top 3 moves and best evaluation from the position finder (1.2 s, the app's own engine),
 // in a separate file loaded in the background (master-evals.json): position key -> [[3 ucis], cp, mate].
@@ -1464,11 +1464,34 @@ function loadMasterEvals(){
 const shippedTop = p=>p && masterEvals && masterEvals[p.key] ? [].concat(masterEvals[p.key][0]) : [];
 // A long search for a position prepared in advance gives way when the open position needs the engine:
 // it's stopped (its partial result dropped) and searched again afterwards.
+// The same for a search prepared from the home page (low priority) once anything else is waiting.
 function preemptForOpen(){
   const j = sfCurrentJob, cur = typeof curPos!=='undefined' && curPos && ACTIVITIES.includes(screen) ? curPos.fen : null;
-  if(!j || j.movetime || j.preempted || !cur || j.fen===cur || !sfQueue.some(q=>q.fen===cur)) return;
+  if(!j || j.movetime || j.preempted || (cur && j.fen===cur)) return;
+  const forOpen = cur && sfQueue.some(q=>q.fen===cur);
+  const overLow = j.low && sfQueue.some(q=>!q.low);
+  const overNext = sfQueue.some(q=>q.next > (j.next || 0));   // a position about to be needed, asked for since
+  if(!forOpen && !overLow && !overNext) return;
   j.preempted = true;
   try{ sfWorker.postMessage('stop'); }catch(e){}
+}
+// Where a new search goes in the queue: a position about to be needed (an exercise's next one) first;
+// one prepared from the home page last (low: it may never be opened). Asking again for a search already
+// queued moves it up the same way.
+let prepFront = 0, prepLow = 0, nextGen = 0;
+const withPrep = (how, fn)=>{ if(how==='front'){ prepFront++; nextGen++; } else prepLow++; try{ return fn(); } finally{ if(how==='front') prepFront--; else prepLow--; } };
+function queueJob(job){
+  if(prepFront){ job.next = nextGen; sfQueue.unshift(job); }
+  else { job.low = !!prepLow; sfQueue.push(job); }
+}
+function bumpJob(fen, searchmoves){
+  if(prepLow) return;
+  const c = sfCurrentJob;
+  if(c && c.fen===fen && (c.searchmoves || '')===(searchmoves || '') && !c.movetime){ c.low = false; if(prepFront) c.next = nextGen; return; }   // already going: it carries on
+  const i = sfQueue.findIndex(q=>q.fen===fen && (q.searchmoves || '')===(searchmoves || '') && !q.movetime);
+  if(i < 0) return;
+  const job = sfQueue[i]; job.low = false;
+  if(prepFront){ job.next = nextGen; if(i > 0){ sfQueue.splice(i, 1); sfQueue.unshift(job); } }
 }
 let sfVersion = 'SF19';  // the engine running: Stockfish 19 lite, or Stockfish 10 as the last resort
 
@@ -1588,9 +1611,11 @@ function onEngineMessage(e){
       sfCurrentLines = {}; sfCurrentDepth = 0; sfCurrentFen = null;
       const resolve = sfCurrentResolve, job = sfCurrentJob;
       sfBusy = false; sfCurrentResolve = null; sfCurrentJob = null;
-      if(job && job.preempted){ job.preempted = false; sfQueue.push(job); pumpEngineQueue(); return; }   // stopped for the open position: searched again later, in full
+      // Stopped for the open position: searched again later, in full; unless it had already searched 3 s
+      // (what a review takes anyway), then it's kept.
+      if(job && job.preempted && (result===FAILED || result.ms < REVIEW_CAP_MS)){ job.preempted = false; sfQueue.push(job); pumpEngineQueue(); return; }
       if(resolve) resolve(result);
-      pumpEngineQueue();
+      setTimeout(pumpEngineQueue, 0);   // (after the result is read: a review asking for its next search right away goes first)
     }
   });
 }
@@ -1616,8 +1641,12 @@ function pumpEngineQueue(){
   // search at a time, so a waiting review is never more than one quick search away.
   // The open position's own searches before positions prepared in advance (each can take seconds).
   const cur = typeof curPos!=='undefined' && curPos && ACTIVITIES.includes(screen) ? curPos.fen : null;
-  const mine = cur ? sfQueue.findIndex(j=>j.fen===cur && j.movetime) >= 0 ? sfQueue.findIndex(j=>j.fen===cur && j.movetime) : sfQueue.findIndex(j=>j.fen===cur) : -1;   // its quick ones (Imbalance reading's mate check) first
-  const job = mine>0 ? sfQueue.splice(mine, 1)[0] : sfQueue.length ? sfQueue.shift() : bgQueue.length ? bgQueue.shift() : null;
+  // Order: the open position's quick searches (Imbalance reading's mate check), its other searches, any
+  // quick search (0.4 s), the rest in turn, those prepared from the home page last, then background work.
+  const pick = [j=>!!cur && j.fen===cur && !!j.movetime, j=>!!cur && j.fen===cur, j=>!!j.movetime, j=>!j.low, ()=>true];
+  let at = -1;
+  for(const f of pick){ at = sfQueue.findIndex(f); if(at >= 0) break; }
+  const job = at >= 0 ? sfQueue.splice(at, 1)[0] : bgQueue.length ? bgQueue.shift() : null;
   if(!job) return;
   const {fen, searchmoves, resolve} = job;
   sfCurrentJob = job;
@@ -1632,7 +1661,8 @@ function pumpEngineQueue(){
   // An exercise's own search goes to depth LIVE_DEPTH (or stops at LIVE_CAP_MS); background work and the
   // position finders give a time instead (job.movetime).
   // Once its review is open: 3 s at most; Candidate moves' top 5 (its first search) only the quick 1.2 s, its picks' search next.
-  job.cap = job.movetime || (fen===reviewFen ? (screen==='candidates' && !searchmoves ? OWN.checkMs : REVIEW_CAP_MS) : LIVE_CAP_MS);
+  job.cap = job.movetime || (fen===reviewFen ? (screen==='candidates' && !searchmoves ? (shippedTop(curPos).length ? 200 : OWN.checkMs) : REVIEW_CAP_MS)
+                             : fen===pickFen && !job.four ? Math.round(Math.max(500, REVIEW_CAP_MS - (performance.now() - pickAt))) : LIVE_CAP_MS);
   sfWorker.postMessage((job.movetime ? 'go movetime '+job.movetime : 'go depth '+LIVE_DEPTH+' movetime '+job.cap)+(searchmoves ? ' searchmoves '+searchmoves : ''));
   sfStartedAt = performance.now();
   // Watchdog: a search that hasn't answered 5 s after its time is told to stop; 5 s after that,
@@ -1657,10 +1687,10 @@ function bgEval(fen, opts){
 // Raw engine call for one position (optionally restricted to a set of root moves): returns
 // { lines: [{cp,mate,uci}, ...] (best first, all from the perspective of whichever side
 // is to move in `fen`), bestUci }.
-function engineEval(fen, searchmoves){
+function engineEval(fen, searchmoves, four){
   return new Promise(resolve=>{
     if(sfState==='error'){ resolve(FAILED); return; }
-    sfQueue.push({fen, searchmoves, resolve});
+    queueJob({fen, searchmoves, four, resolve});
     pumpEngineQueue();
   });
 }
@@ -1707,7 +1737,7 @@ function fenEvalEntry(fen){
     entry = { status:'pending', data:null };
     fenEvalStore[fen] = entry;
     engineEval(fen).then(data=>{ entry.status='done'; entry.data=data; render(); });
-  }
+  } else if(entry.status==='pending') bumpJob(fen);
   return entry;
 }
 function fenEval(fen){
@@ -1727,14 +1757,14 @@ function fenEval(fen){
 // search on its own. One shared search removes that possibility entirely, still using nothing
 // but Stockfish's own ranking.
 let poolEvalStore = {};
-function poolEval(baseFen, ucis){
+function poolEval(baseFen, ucis, four){
   const key = baseFen+'|pool:'+ucis.slice().sort().join(',');
   let entry = poolEvalStore[key];
   if(!entry){
-    entry = { status:'pending', data:null };
+    entry = { status:'pending', data:null, sm: ucis.join(' ') };
     poolEvalStore[key] = entry;
-    engineEval(baseFen, ucis.join(' ')).then(data=>{ entry.status='done'; entry.data=data; render(); });
-  }
+    engineEval(baseFen, entry.sm, four).then(data=>{ entry.status='done'; entry.data=data; render(); });
+  } else if(entry.status==='pending') bumpJob(baseFen, entry.sm);
   return entry.status==='done' ? entry.data : null;
 }
 
@@ -2319,20 +2349,34 @@ function st(activity){
 //    the reveal has started), so it never delays the current review.
 //  - from the home page, the positions Position evaluation and Move selection will open on (Candidate
 //    moves only needs its evaluation at the review, with your picks in it).
-function prefetchCurrent(){ if(ACTIVITIES.includes(screen)) (screen==='imbalances' ? aspectsEntry : fenEval)(pos().fen); }
+function prefetchCurrent(){ if(ACTIVITIES.includes(screen)) prepareFor(screen, pos()); }
+// What an exercise needs searched ahead for a position: Imbalance reading its table's quick mate check;
+// Move selection its top 5, then its four moves' search; the others the position's search.
+const exerciseOf = t=>ACTIVITIES.find(a=>t.includes(a));
+function prepareFor(a, p){
+  if(!p) return;
+  if(a==='imbalances') aspectsEntry(p.fen);
+  else if(a==='final') prepareFinal(p);
+  else fenEval(p.fen);
+}
+// The exercise's next position (once its review is in): ahead of everything else prepared.
 function prefetchNext(){
   if(!ACTIVITIES.includes(screen)) return;
-  if(replayMode){ const e = replayQueue[replayIdx+1]; if(e){ fenEval(e.pos.fen); if(e.a==='final') prepareFinal(e.pos); } return; }
-  const [t, i] = nextTarget();
-  if(i>=0){ fenEval(posAt(t, i).fen); if(/final/.test(t)) prepareFinal(posAt(t, i)); }
+  withPrep('front', ()=>{
+    if(replayMode){ const e = replayQueue[replayIdx+1]; if(e) prepareFor(e.a, e.pos); return; }
+    const [t, i] = nextTarget();
+    if(i>=0) prepareFor(exerciseOf(t), posAt(t, i));
+  });
 }
 // Move selection ahead of time: once a position's top 5 (and the game move's search) are in, its four
 // moves are known, and their one search (the review's) starts too, whatever order you'll put them in.
-function prepareFinal(p, tries){
+function prepareFinal(p, tries, how){
   if(!p) return;
-  const mv = finalMoves(p);
-  if(mv===null){ if((tries || 0) < 60) setTimeout(()=>prepareFinal(p, (tries || 0) + 1), 500); return; }   // still searching: look again
-  if(!evalFailed(mv)) finalEval(p, mv);
+  how = how || (prepFront ? 'front' : prepLow ? 'low' : null);
+  const run = fn=>how ? withPrep(how, fn) : fn();
+  const mv = run(()=>finalMoves(p));
+  if(mv===null){ if((tries || 0) < 60) setTimeout(()=>prepareFinal(p, (tries || 0) + 1, how), 500); return; }   // still searching: look again
+  if(!evalFailed(mv)) run(()=>finalEval(p, mv));
 }
 // Where a track will open next: its current position if that question is still open, the
 // one after it if its review was already reached.
@@ -2348,8 +2392,8 @@ function upcomingFor(t){
 function prefetchHome(){
   const ts = [ctx('analysis', false), ctx('final', false), ctx('candidates', false)];
   if(routineNext!=='imbalances') ts.push(ctx(routineNext, true));
-  ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0){ fenEval(posAt(x, i).fen); if(/final/.test(t)) prepareFinal(posAt(x, i)); } });
-  { const [x, i] = upcomingFor(ctx('imbalances', false)); if(i>=0) aspectsEntry(posAt(x, i).fen); }   // Imbalance reading's table (and its quick mate check)
+  ts.push(ctx('imbalances', false));
+  withPrep('low', ()=>ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0) prepareFor(exerciseOf(t), posAt(x, i)); }));
 }
 // Moves exercise `a`, on the open track, on to its next position, fresh.
 function advance(a){
@@ -2488,7 +2532,7 @@ function pickFinalUcis(p, disc){
 }
 // ...and ONE combined search over exactly those four moves — the only thing its review reads.
 function finalEval(p, moves){
-  return moves && !evalFailed(moves) ? poolEval(p.fen, moves.map(m=>m.uci)) : null;
+  return moves && !evalFailed(moves) ? poolEval(p.fen, moves.map(m=>m.uci), true) : null;
 }
 
 // ================= Shared pieces of UI =================
@@ -3039,7 +3083,7 @@ function adaptAspects(data, fen){
 function mateSearch(fen){
   return new Promise(resolve=>{
     if(sfState==='error' || !sfWorker){ resolve(null); return; }
-    sfQueue.push({ fen, multipv: 1, movetime: 400, resolve });
+    queueJob({ fen, multipv: 1, movetime: 400, resolve });
     pumpEngineQueue();
   });
 }
@@ -5369,9 +5413,7 @@ function renderImbalances(){
 }
 // Imbalance reading needs no search: its next position's table is asked for once the review is on.
 function prefetchNextAspects(){
-  if(replayMode){ const e = replayQueue[replayIdx+1]; if(e) aspectsEntry(e.pos.fen); return; }
-  const [t, i] = nextTarget();
-  if(i>=0) aspectsEntry(posAt(t, i).fen);
+  prefetchNext();
 }
 function startReveal(p, s, truth, score){
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -5878,8 +5920,19 @@ function render(){
 // A review just opened: its position's search, if still going (prepared ahead, up to 10 s), stops within
 // 3 s of now. In Candidate moves, the top-5 search stops at once (once it has had the quick 1.2 s), since
 // your picks need their own search right after.
+// Move selection's question waiting for its four moves (its top 5 still searching) is waited on the
+// same way: those searches stop at 3 s (the four moves' own search, while you rank, isn't).
 function reviewOpened(){
-  const fen = ACTIVITIES.includes(screen) && curPos && store[ctx(screen)] && store[ctx(screen)][curPos.key] && store[ctx(screen)][curPos.key].checked ? curPos.fen : null;
+  const open = ACTIVITIES.includes(screen) && curPos && store[ctx(screen)] && store[ctx(screen)][curPos.key];
+  const fen = open && open.checked ? curPos.fen : null;
+  const pf = screen==='final' && curPos && !fen && finalMoves(curPos)===null ? curPos.fen : null;
+  if(pf!==pickFen){
+    pickFen = pf; pickAt = performance.now();
+    const j = sfCurrentJob;
+    if(pf && j && !j.movetime && !j.four && j.fen===pf){
+      setTimeout(()=>{ if(sfCurrentJob===j){ try{ sfWorker.postMessage('stop'); }catch(e){} } }, Math.max(0, REVIEW_CAP_MS - (performance.now() - sfStartedAt)));
+    }
+  }
   if(fen===reviewFen) return;
   reviewFen = fen; reviewAt = performance.now();
   const j = sfCurrentJob;
@@ -5887,7 +5940,7 @@ function reviewOpened(){
     // (no wait at all when the finder's top 3 came with the app: they join your picks' search instead)
     // A search already going for 3 s or more is stopped at once; a shorter one, when it reaches 3 s.
     const ran = performance.now() - sfStartedAt;
-    const wait = screen==='candidates' && !j.searchmoves ? (shippedTop(curPos).length ? 0 : Math.max(0, OWN.checkMs - ran)) : Math.max(0, REVIEW_CAP_MS - ran);
+    const wait = screen==='candidates' && !j.searchmoves ? Math.max(0, (shippedTop(curPos).length ? 100 : OWN.checkMs) - ran) : Math.max(0, REVIEW_CAP_MS - ran);
     setTimeout(()=>{ if(sfCurrentJob===j){ try{ sfWorker.postMessage('stop'); }catch(e){} } }, wait);
   }
 }
