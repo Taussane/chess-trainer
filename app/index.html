@@ -1421,8 +1421,20 @@ let sfCurrentResolve = null;
 let sfCurrentLines = {}; // rank (1..N) -> {cp, mate, uci} for the search currently in flight
 let sfCurrentDepth = 0;  // the deepest full pass of that search (its best line's depth): shown in the reviews
 let sfCurrentFen = null; // the position being searched (a review shows its depth live while it waits for it)
-const LIVE_DEPTH = 20, LIVE_CAP_MS = 10000, REVIEW_CAP_MS = 3000;   // the exercises' searches: depth 20, at most 10 s ahead of time, 3 s once its review is waiting (the depth reached is shown)
-let reviewFen = null, reviewAt = 0, pickFen = null, pickAt = 0;   // the position whose review is open, and since when (its searches share REVIEW_CAP_MS)
+// THE EVALUATION RULES (tests/engine_rules.js times them with the real engine):
+//  - every exercise search goes to depth 20 (LIVE_DEPTH), at most 10 s (LIVE_CAP_MS) while you answer;
+//  - once you wait for it (a review; Move selection's question before its four moves are known), 3 s at most
+//    in all (REVIEW_CAP_MS): a search already past 3 s stops at once (reviewOpened, pumpEngineQueue);
+//  - Candidate moves: the top-5 search stops as the review opens (after 1.2 s, or at once when the finder's
+//    top 3 came with the app, master-evals.json); then ONE search of your picks + the game move + the top
+//    moves, 3 s at most; none when the top 5 ran 3 s (or reached depth 20) and has them all (candidatesEval);
+//  - Move selection: the four moves come from the top 5; their one search runs while you rank;
+//  - Imbalance reading: a 0.4 s mate check only (mateSearch), ahead of any long search;
+//  - order (pumpEngineQueue): the open position's searches; quick ones; an exercise's NEXT position (asked
+//    for as soon as its review is in: prefetchNext); the rest; what the home page prepared last (it gives
+//    way: preemptForOpen). A search stopped to give way is searched again, unless it had run 3 s.
+const LIVE_DEPTH = 20, LIVE_CAP_MS = 10000, REVIEW_CAP_MS = 3000;
+let reviewFen = null, pickFen = null, pickAt = 0;   // the position whose review is open; Move selection's question waiting for its moves, since when
 let sfStartedAt = 0, sfCurrentJob = null;
 // The master positions' top 3 moves and best evaluation from the position finder (1.2 s, the app's own engine),
 // in a separate file loaded in the background (master-evals.json): position key -> [[3 ucis], cp, mate].
@@ -1434,9 +1446,9 @@ function loadMasterEvals(){
   fetch('master-evals.json').then(r=>r.ok ? r.json() : {}).then(d=>{ masterEvals = d || {}; }).catch(()=>{});
 }
 const shippedTop = p=>p && masterEvals && masterEvals[p.key] ? [].concat(masterEvals[p.key][0]) : [];
-// A long search for a position prepared in advance gives way when the open position needs the engine:
-// it's stopped (its partial result dropped) and searched again afterwards.
-// The same for a search prepared from the home page (low priority) once anything else is waiting.
+// A long search prepared in advance gives way when the open position needs the engine, when a position
+// about to be needed was asked for since, or (prepared from the home page) when anything else is waiting:
+// it's stopped and searched again afterwards (kept if it had already run 3 s, see onEngineMessage).
 function preemptForOpen(){
   const j = sfCurrentJob, cur = typeof curPos!=='undefined' && curPos && ACTIVITIES.includes(screen) ? curPos.fen : null;
   if(!j || j.movetime || j.preempted || (cur && j.fen===cur)) return;
@@ -1445,7 +1457,15 @@ function preemptForOpen(){
   const overNext = sfQueue.some(q=>q.next > (j.next || 0));   // a position about to be needed, asked for since
   if(!forOpen && !overLow && !overNext) return;
   j.preempted = true;
+  stopForWait(j);
+}
+// A search someone is waiting for, told to stop: it must answer within 5 s, or the engine counts as failed
+// (the watchdog, see pumpEngineQueue, would otherwise wait for its whole 10 s first).
+function stopForWait(j){
+  if(sfCurrentJob!==j) return;
   try{ sfWorker.postMessage('stop'); }catch(e){}
+  clearTimeout(sfWatch);
+  sfWatch = setTimeout(()=>{ if(sfCurrentJob===j) failEngine('stopped'); }, 5000);
 }
 // Where a new search goes in the queue: a position about to be needed (an exercise's next one) first;
 // one prepared from the home page last (low: it may never be opened). Asking again for a search already
@@ -1600,7 +1620,7 @@ function failEngine(reason){
   if(!engineErrCounted && typeof stat==='function'){ engineErrCounted = true; stat('err', { n1: reason==='stopped' ? 2 : 1 }); }   // (anonymous usage count)
   const pending = sfQueue.splice(0, sfQueue.length).concat(bgQueue.splice(0, bgQueue.length));
   if(sfCurrentResolve){ pending.push({ resolve: sfCurrentResolve }); sfCurrentResolve = null; }
-  sfBusy = false; sfCurrentLines = {};
+  sfBusy = false; sfCurrentLines = {}; sfCurrentJob = null; sfCurrentFen = null; clearTimeout(sfWatch);
   pending.forEach(({resolve})=>resolve(FAILED));
   render();
 }
@@ -1688,7 +1708,6 @@ function sfTableLines(fen){
   return SF_TERMS.map(n=>`${n} | ${r[n].w ? r[n].w.join(' ') : '---- ----'} | ${r[n].b ? r[n].b.join(' ') : '---- ----'} | ${r[n].t.join(' ')}`);
 }
 function engineAspects(fen){ return Promise.resolve(sfTableLines(fen)); }
-function engineAspectsBg(fen){ return Promise.resolve(sfTableLines(fen)); }
 // Only ever renders something when the engine failed to load — silent otherwise.
 // Placed at the very bottom of an exercise's panel, below the action buttons.
 function engineErrorBanner(){
@@ -2314,12 +2333,10 @@ function st(activity){
   return bucket[p.key];
 }
 
-// When searches start (each position's top-5 search is stored, so it only ever runs once):
+// When searches start (each result is stored, so a position's search only ever runs once):
 //  - the open exercise's own position, as soon as the exercise is on screen;
-//  - that exercise's NEXT position, only once its review is under way (the evaluation is in and
-//    the reveal has started), so it never delays the current review.
-//  - from the home page, the positions Position evaluation and Move selection will open on (Candidate
-//    moves only needs its evaluation at the review, with your picks in it).
+//  - that exercise's NEXT position, once its review is in (so it never delays the current review);
+//  - from the home page, where each exercise and the routine would open (low priority, see queueJob).
 function prefetchCurrent(){ if(ACTIVITIES.includes(screen)) prepareFor(screen, pos()); }
 // What an exercise needs searched ahead for a position: Imbalance reading its table's quick mate check;
 // Move selection its top 5, then its four moves' search; the others the position's search.
@@ -2441,9 +2458,13 @@ function candidatesEval(p, picks){
   if(evalFailed(disc)) return FAILED;
   const ucis = picks.map(m=>m.uci);
   ucis.push(p.hist.uci);
-  disc.lines.slice(0, DISCOVERY_MULTIPV).forEach(l=>{ if(l.uci) ucis.push(l.uci); });
+  // The top moves: the top 5's; when it was cut short (under 1.2 s), the finder's top 3 instead, if they came
+  // with the app (the reference for up to 3 picks), so the search goes deeper on fewer moves.
   const legal = new Set(new Chess(p.fen).moves({ verbose:true }).map(m=>m.from+m.to+(m.promotion||'')));
-  shippedTop(p).forEach(u=>{ if(legal.has(u)) ucis.push(u); });   // the finder's top 3 too (the reference for up to 3 picks), when the top 5 was cut short
+  const shipped = shippedTop(p).filter(u=>legal.has(u));
+  const short = (disc.ms || 0) < OWN.checkMs && (disc.depth || 0) < LIVE_DEPTH;
+  if(short && shipped.length) shipped.forEach(u=>ucis.push(u));
+  else disc.lines.slice(0, DISCOVERY_MULTIPV).forEach(l=>{ if(l.uci) ucis.push(l.uci); });
   // The shortcut: when the top-5 search ran 3 s or more (or reached depth 20) and your picks and the game
   // move are all among its lines, it already has them on the same footing: no second search.
   if((disc.ms >= REVIEW_CAP_MS || disc.depth >= LIVE_DEPTH) && ucis.every(u=>disc.lines.some(l=>l.uci===u))) return disc;
@@ -5029,8 +5050,8 @@ async function myBackground(){
     if(retry) setTimeout(myBackground, 5000);   // the engine was briefly unavailable: try again
   }
 }
-// The check of one likely mistake: the app's usual search of the position (top 5), and your move
-// judged in the same search as the top 5. Kept for the exercises, which then open without waiting.
+// The check of one likely mistake: a quick search of the position (top 5, 1.2 s), and your move judged in
+// the same search as the top 5. Kept apart (prepStore): the exercises search the position in full themselves.
 async function checkMistake(p){
   const disc = await bgEval(p.fen, { multipv:DISCOVERY_MULTIPV, movetime:OWN.checkMs });
   if(evalFailed(disc) || !disc.lines.length) return null;
@@ -5044,11 +5065,9 @@ async function checkMistake(p){
   const drop = gm ? winPercent(lines[0].cp, lines[0].mate) - winPercent(gm.cp, gm.mate) : 0;
   return Math.round(drop*10)/10;
 }
-// Move selection for a mistake: the app's usual top-5 search (with your move, if it isn't in the
-// top 5; reused when the check just made it), then ONE search of the four moves the exercise will
-// show, both kept for the exercise, which then opens without waiting and grades with these very
-// searches (so a position kept here never turns out otherwise later). Returns 1 if the four moves
-// are spread enough (finalSpreadOk), 0 if not, null if the engine failed (tried again later).
+// Move selection for a mistake: the same quick top-5 search (with your move, if it isn't in the top 5;
+// reused when the check just made it), then ONE search of the four moves it gives. Returns 1 if they are
+// spread enough to rank (finalSpreadOk), 0 if not, null if the engine failed (tried again later).
 async function prepFinal(p){
   const known = prepStore[p.fen] || null;
   const disc = known || await bgEval(p.fen, { multipv:DISCOVERY_MULTIPV, movetime:OWN.checkMs });
@@ -5358,7 +5377,7 @@ function renderImbalances(){
   const asp = aspectsEntry(p.fen);   // asked for at once (no search, near instant): left-out criteria show in the question
   const vals = s.checked && asp.status==='done' ? asp.data : null;
   const failed = s.checked && asp.status==='done' && !asp.data;
-  if(vals && s.aspShown==null){ recordResult(s, 'imbalances', Math.round(imbalanceScore(vals, s.asp, ASPECTS.length))); startAspectsReveal(p, s, vals); prefetchNextAspects(); }
+  if(vals && s.aspShown==null){ recordResult(s, 'imbalances', Math.round(imbalanceScore(vals, s.asp, ASPECTS.length))); startAspectsReveal(p, s, vals); prefetchNext(); }
   const done = !!vals && !!s.aspDone;
   app.innerHTML = `
     ${header('Imbalance reading')}
@@ -5383,10 +5402,6 @@ function renderImbalances(){
   }
   wireCommon('imbalances', s.checked);
   s.justDone = false;
-}
-// Imbalance reading needs no search: its next position's table is asked for once the review is on.
-function prefetchNextAspects(){
-  prefetchNext();
 }
 function startReveal(p, s, truth, score){
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -5909,18 +5924,18 @@ function reviewOpened(){
     pickFen = pf; pickAt = performance.now();
     const j = sfCurrentJob;
     if(pf && j && !j.movetime && !j.four && j.fen===pf){
-      setTimeout(()=>{ if(sfCurrentJob===j){ try{ sfWorker.postMessage('stop'); }catch(e){} } }, Math.max(0, REVIEW_CAP_MS - (performance.now() - sfStartedAt)));
+      setTimeout(()=>stopForWait(j), Math.max(0, REVIEW_CAP_MS - (performance.now() - sfStartedAt)));
     }
   }
   if(fen===reviewFen) return;
-  reviewFen = fen; reviewAt = performance.now();
+  reviewFen = fen;
   const j = sfCurrentJob;
   if(fen && j && !j.movetime && j.fen===fen){
     // (no wait at all when the finder's top 3 came with the app: they join your picks' search instead)
     // A search already going for 3 s or more is stopped at once; a shorter one, when it reaches 3 s.
     const ran = performance.now() - sfStartedAt;
     const wait = screen==='candidates' && !j.searchmoves ? Math.max(0, (shippedTop(curPos).length ? 100 : OWN.checkMs) - ran) : Math.max(0, REVIEW_CAP_MS - ran);
-    setTimeout(()=>{ if(sfCurrentJob===j){ try{ sfWorker.postMessage('stop'); }catch(e){} } }, wait);
+    setTimeout(()=>stopForWait(j), wait);
   }
 }
 // The phone's back button (and the browser's): one history entry stands for "inside a page"; going back
@@ -5949,8 +5964,10 @@ function syncHistory(){
   }catch(e){}
 }
 window.addEventListener('popstate', e=>{
-  if(histIgnore > 0){ histIgnore--; return; }   // our own step back (the page's arrow)
   const target = (e.state && (e.state.cstDepth || (e.state.cstDeep ? 1 : 0))) || 0;
+  // Our own step back (the page's arrow): where it landed is the truth (a tap in between may have added a
+  // level before it happened), so the levels are put right from there.
+  if(histIgnore > 0){ histIgnore--; histDepth = target; if(!histIgnore) syncHistory(); return; }
   histDepth = target;
   histPopping = true;
   try{

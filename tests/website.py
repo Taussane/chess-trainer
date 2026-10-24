@@ -54,7 +54,7 @@ async def main():
         if 'wait a minute' not in line: fails.append('a sync problem is not shown: ' + line)
         # Typing in a field while the page keeps redrawing (as during analysis): nothing is lost.
         await pg.evaluate("window.__redraw = setInterval(()=>render(), 50)")
-        await pg.click('#ccUser'); await pg.keyboard.type('SomePlayer', delay=60)
+        await pg.evaluate("document.getElementById('ccUser').focus()"); await pg.keyboard.type('SomePlayer', delay=60)   # (focused directly: a click can't land on a field redrawn every 50 ms when the machine is busy)
         typed = await pg.evaluate("[document.getElementById('ccUser').value, document.activeElement.id]"); await pg.evaluate("clearInterval(__redraw)")
         print('typed while redrawing:', typed)
         if typed != ['SomePlayer', 'ccUser']: fails.append(f'typing lost on redraw: {typed}')
