@@ -534,6 +534,30 @@
   .modal-box .help-list{font-size:0.88rem; line-height:1.5; margin:-6px 0 10px; padding-left:18px;}
   .modal-box .help-list li{margin:2px 0;}
   .modal-actions{display:flex; justify-content:flex-end; margin-top:4px;}
+  /* ===== Wide screens (computers, tablets held sideways): the phone layout above stays as it is
+     everywhere else. Exercises: the board on the left, as big as the screen allows; the position's
+     title and the panel on the right. Home: the routine beside the exercises. */
+  @media (min-width:960px) and (min-height:560px){
+    .wrap.ex{max-width:1160px; padding-inline:28px;}
+    .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 420px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:36px;}
+    .wrap.ex > #app > *{grid-column:2;}
+    .wrap.ex > #app > .title-row{grid-column:1 / -1; grid-row:1;}
+    .wrap.ex > #app > .stage{grid-column:1; grid-row:2 / span 2; min-height:0; align-items:flex-start; justify-content:flex-end;}
+    .wrap.ex > #app > .posbar{grid-row:2; margin:22px 0 12px;}   /* (level with the board's top: under the player's name) */
+    .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0;}
+    .wrap.ex .stage .board-col > .board-outer, .wrap.ex .board-outer{max-width:none;}
+    .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px, 760px);}
+    .wrap.ex .board-row{max-width:none;}
+    .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw - 44px, 100cqh - 44px, 760px);}
+    .wrap.home{max-width:980px; padding-inline:28px;}
+    .wrap.home > #app{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:36px; align-items:start;}
+    .wrap.home > #app > *{grid-column:2;}
+    .wrap.home > #app > .home-head{grid-column:1 / -1;}
+    .wrap.home > #app > .routine{grid-column:1; grid-row:2 / span 3; margin-top:0;}
+    .wrap.home > #app > .source-row{grid-row:2;}
+    .wrap.home > #app > .cards{grid-row:3;}
+    .wrap.home > #app > .home-donate{grid-row:4;}
+  }
   @media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important;} }
 </style>
 
@@ -6725,6 +6749,7 @@ function renderScreen(){
   syncPos();
   const wrap = document.querySelector('.wrap');
   wrap.classList.toggle('ex', ACTIVITIES.includes(screen));
+  wrap.classList.toggle('home', screen==='home');
   if(screen==='home') renderHome();
   else if(onProfile()) renderAccount();
   else if(screen==='tests') renderTests();
