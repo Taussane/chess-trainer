@@ -14,7 +14,7 @@ async def main():
         await pg.click('.card[data-go="candidates"]'); await pg.wait_for_timeout(300)
         k = await pg.evaluate("pos().key")
         await pg.evaluate("(()=>{ const ch=new Chess(pos().fen); const m=ch.moves({verbose:true})[0]; st('candidates').picks=[{id:'c',san:m.san,from:m.from,to:m.to,uci:m.from+m.to+(m.promotion||''),slot:0}]; render(); })()")
-        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(3000)
+        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(5000)   # the review's searches: up to 1.2 s + 3 s
         if await pg.evaluate("pos().key") != k: fails.append('the reviewed position changed under the review')
         await pg.click('#homeBtn')
         # Put that same position next in Final choice: it must be skipped.
