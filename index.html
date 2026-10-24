@@ -3534,7 +3534,9 @@ function spaceCounts(fen){
   return npm >= SPACE_MIN_NPM;
 }
 const aspectOffIn = (fen, key)=>key==='space' && !spaceCounts(fen);   // a criterion left out in this position
-function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.nums.length || m.arrows.length || m.labels.length || m.zones.length || m.boxes.length); }
+// Something on the board to show for this criterion: the kings' totals alone (both "Total +0": nothing counted)
+// don't count, so a criterion with nothing for either side isn't offered.
+function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.nums.some(n=>!/^Total /.test(n.n)) || m.arrows.length || m.labels.length || m.zones.length || m.boxes.length); }
 // From the port's square numbers (a1 = 0) and colours (0 White, 1 Black) to the marks' names.
 const sqName = s=>FILES[s & 7] + ((s >> 3) + 1), sqIdx = n=>FILES.indexOf(n[0]) + 8*(+n[1] - 1);
 const colName = c=>c===0 ? 'w' : 'b';
