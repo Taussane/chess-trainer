@@ -5858,7 +5858,9 @@ function reviewOpened(){
   const j = sfCurrentJob;
   if(fen && j && !j.movetime && j.fen===fen){
     // (no wait at all when the finder's top 3 came with the app: they join your picks' search instead)
-    const wait = screen==='candidates' && !j.searchmoves ? (shippedTop(curPos).length ? 0 : Math.max(0, OWN.checkMs - (performance.now() - sfStartedAt))) : REVIEW_CAP_MS;
+    // A search already going for 3 s or more is stopped at once; a shorter one, when it reaches 3 s.
+    const ran = performance.now() - sfStartedAt;
+    const wait = screen==='candidates' && !j.searchmoves ? (shippedTop(curPos).length ? 0 : Math.max(0, OWN.checkMs - ran)) : Math.max(0, REVIEW_CAP_MS - ran);
     setTimeout(()=>{ if(sfCurrentJob===j){ try{ sfWorker.postMessage('stop'); }catch(e){} } }, wait);
   }
 }
