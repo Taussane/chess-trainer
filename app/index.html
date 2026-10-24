@@ -1421,7 +1421,6 @@ let sfCurrentResolve = null;
 let sfCurrentLines = {}; // rank (1..N) -> {cp, mate, uci} for the search currently in flight
 let sfCurrentDepth = 0;  // the deepest full pass of that search (its best line's depth): shown in the reviews
 let sfCurrentFen = null; // the position being searched (a review shows its depth live while it waits for it)
-const liveDepth = {};    // position -> the deepest pass any search of it reached (the live badge)
 const LIVE_DEPTH = 20, LIVE_CAP_MS = 10000, REVIEW_CAP_MS = 3000;   // the exercises' searches: depth 20, at most 10 s ahead of time, 3 s once its review is waiting (the depth reached is shown)
 let reviewFen = null, reviewAt = 0, pickFen = null, pickAt = 0;   // the position whose review is open, and since when (its searches share REVIEW_CAP_MS)
 let sfStartedAt = 0, sfCurrentJob = null;
@@ -1553,8 +1552,7 @@ function onEngineMessage(e){
       if(dM && rank===1 && !/ (upper|lower)bound/.test(line) && +dM[1] > sfCurrentDepth){
         sfCurrentDepth = +dM[1];
         const b = document.getElementById('depthBtn');   // a review waiting for this very search: its depth climbs as it goes
-        if(sfCurrentDepth > (liveDepth[sfCurrentFen] || 0)) liveDepth[sfCurrentFen] = sfCurrentDepth;   // the deepest so far for this position: never down (a review can need two searches)
-        if(b && b.dataset.live===sfCurrentFen) b.querySelector('b').textContent = liveDepth[sfCurrentFen];
+        if(b && b.dataset.live===sfCurrentFen) b.querySelector('b').textContent = sfCurrentDepth;
       }
       // A line cut off mid-pass (upper/lower bound) isn't a real score: the last full one stands (a stopped
       // search keeps its last complete reading).
@@ -5685,19 +5683,15 @@ function timedFade(el, delay, elapsed, dur, kind, easing){
 }
 // The review's engine button: the depth its search reached, the engine below (tap: what it means).
 let reviewDepth = null;   // the open review's depth (for the anonymous usage counts)
-// The deepest of the review's searches, as it was when the result came in: fixed from then on (a later
-// search of the same position never moves it).
-function shownDepth(ev, fen){
-  if(!ev || evalFailed(ev)) return null;
-  if(ev.shownDepth===undefined) ev.shownDepth = Math.max(ev.depth || 0, liveDepth[fen] || 0) || null;
-  return ev.shownDepth;
-}
+// The depth of the search the review reads (Candidate moves: your picks' search, unless the top 5 already
+// had them). While the review waits, the badge follows the search going on for the position, from its start.
+function shownDepth(ev, fen){ return ev && !evalFailed(ev) ? ev.depth || null : null; }
 function depthBtnHtml(ev, fen){
   if(evalFailed(ev)){ reviewDepth = null; return ''; }
   const d = shownDepth(ev, fen), live = !ev;   // live: still searching, the depth climbs (onEngineMessage)
   reviewDepth = d;
   if(!live && !d) return '';
-  const now = live ? (liveDepth[fen] || '…') : d;
+  const now = live ? (sfCurrentFen===fen && sfCurrentDepth ? sfCurrentDepth : '…') : d;
   return `<button class="depth-btn" id="depthBtn"${live ? ` data-live="${fen}"` : ''} aria-label="${sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10'}${live ? ', searching' : ', depth ' + d}"><b>${now}</b><small>${sfVersion}</small></button>`;
 }
 function depthNoteHtml(s, ev, fen){
