@@ -5685,7 +5685,13 @@ function timedFade(el, delay, elapsed, dur, kind, easing){
 }
 // The review's engine button: the depth its search reached, the engine below (tap: what it means).
 let reviewDepth = null;   // the open review's depth (for the anonymous usage counts)
-function shownDepth(ev, fen){ return ev && !evalFailed(ev) ? Math.max(ev.depth || 0, liveDepth[fen] || 0) || null : null; }   // the deepest of the review's searches
+// The deepest of the review's searches, as it was when the result came in: fixed from then on (a later
+// search of the same position never moves it).
+function shownDepth(ev, fen){
+  if(!ev || evalFailed(ev)) return null;
+  if(ev.shownDepth===undefined) ev.shownDepth = Math.max(ev.depth || 0, liveDepth[fen] || 0) || null;
+  return ev.shownDepth;
+}
 function depthBtnHtml(ev, fen){
   if(evalFailed(ev)){ reviewDepth = null; return ''; }
   const d = shownDepth(ev, fen), live = !ev;   // live: still searching, the depth climbs (onEngineMessage)
