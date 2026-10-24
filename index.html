@@ -5766,9 +5766,10 @@ function renderFinal(){
       ${header('Move selection')}
       ${posBar()}
       ${boardHtml(false)}
-      ${stackedPanel(`<p class="hint" style="margin:0">${none ? 'No moves to rank: the position couldn\'t be evaluated.' : 'Choosing four moves to rank…'}</p>
+      ${stackedPanel(`<p class="hint" id="finalWait" style="margin:0">${none ? 'No moves to rank: the position couldn\'t be evaluated.' : 'Choosing four moves to rank…'}</p>
         ${none ? `<div class="actions-row split">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>` : ''}`, ghostFinal(), engineErrorBanner())}`;
     renderBoard(document.getElementById('board'), bs, p.last);
+    fadeOnce(st('final'), 'wait', reviewPart('#finalWait'));   // fades in once (redraws carry on from where it is)
     wireCommon('final', false);
     return;
   }
