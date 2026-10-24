@@ -5815,6 +5815,9 @@ function renderFinal(){
     wireDepthBtn(s);
     wireCommon('final', true);
     s.justDone = false;
+    // Until the evaluation is in, each move's grade, score and badges (Game move...) stay hidden: they fade in
+    // with the reveal, never shown before it.
+    if(!ready && !failed) document.querySelectorAll('#reviewRows .move-result, #reviewRows .badges').forEach(x=>{ x.style.opacity = '0'; });
     if(ready && !s.revDone){
       const els = document.querySelectorAll('#reviewRows .review-row');
       els.forEach((row,i)=>{
