@@ -593,7 +593,7 @@
      as the window allows; home as a dashboard. ===== */
   .side, .home-foot{display:none;}
   @media (min-width:1024px) and (min-height:600px){
-    html.desk2{--side-w:236px;}
+    html.desk2{--side-w:264px;}
     html.desk2 .side{display:flex; flex-direction:column; position:fixed; left:0; top:0; bottom:0; width:var(--side-w); z-index:20;
       background:var(--panel); border-right:1px solid var(--border); padding:18px 12px 14px; overflow-y:auto;}
     html.desk2 .wrap{margin-left:var(--side-w); max-width:none; padding-inline:32px;}
@@ -620,9 +620,20 @@
     html.desk2 .wrap.ex > #app > .posbar{grid-row:2; margin:6px 0 14px;}
     html.desk2 .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0; max-width:none;}
     html.desk2 .wrap.ex .title-row .back{display:none;}
+    html.desk2 .wrap.ex > #app{width:100%; max-width:calc(100dvh - 76px + 44px + 28px + 380px); margin-inline:auto;}   /* board and panel together, centred, on very wide screens */
     html.desk2 .wrap.ex .board-outer, html.desk2 .wrap.ex .board-row{max-width:none;}
     html.desk2 .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px);}
     html.desk2 .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw - 44px, 100cqh - 44px);}
+    /* profile: three columns; settings: the controls beside a large preview board */
+    html.desk2 .wrap:not(.ex):not(.home){max-width:calc(1280px + var(--side-w)); padding-block:24px;}
+    html.desk2 .wrap:not(.ex) .title-row .back, html.desk2 #settingsBtn{display:none;}   /* (in the sidebar) */
+    html.desk2 .pf-cols{display:grid; grid-template-columns:320px minmax(0, 1fr) 340px; gap:24px; align-items:start;}
+    html.desk2 .pf-col{display:flex; flex-direction:column; gap:12px; min-width:0;}
+    html.desk2 .pf-scroll{overflow:visible;}
+    html.desk2 .set-page{display:grid; grid-template-columns:minmax(320px, 420px) minmax(0, 1fr); grid-auto-rows:min-content; column-gap:40px; row-gap:12px; align-items:start;}
+    html.desk2 .set-page > *{grid-column:1;}
+    html.desk2 .set-page > .set-preview{grid-column:2; grid-row:1 / span 4;}
+    html.desk2 .set-page .board-outer{max-width:min(640px, 100dvh - 170px);}
     /* home: a dashboard */
     html.desk2 .wrap.home{max-width:calc(1120px + var(--side-w)); padding-block:28px;}
     html.desk2 .wrap.home > #app{display:grid; grid-template-columns:340px minmax(0, 1fr); column-gap:28px; align-items:start;}
@@ -4437,14 +4448,14 @@ function renderAccount(){
       ${isOwner() ? `<button class="title-chip" id="metricsBtn">Metrics</button>` : ''}<button class="title-chip" id="settingsBtn">Settings</button>
     </div>
     <div class="pf-scroll">
-      <section class="pf-card pf-id">
+      ${(()=>{ const id = `<section class="pf-card pf-id">
         <div class="pf-who"><span class="acct-dot big" aria-hidden="true"><span class="pc pc-wK"></span></span>
           <div><div class="pf-name">${esc(name) || 'Guest'}</div>
           <div class="pf-facts"><span><b>${results.length}</b> position${results.length===1?'':'s'} played since ${since}</span></div></div></div>
-      </section>
-      ${prog.html}
-      ${positionsSection()}
-      ${DIRECT_LICHESS ? accountSection() : ''}
+      </section>`, acct = DIRECT_LICHESS ? accountSection() : '';
+        // desktop: three columns (you and your account; progress; your games and positions)
+        return isDesk() ? `<div class="pf-cols"><div class="pf-col">${id}${acct}</div><div class="pf-col pf-wide">${prog.html}</div><div class="pf-col">${positionsSection()}</div></div>`
+                        : `${id}${prog.html}${positionsSection()}${acct}`; })()}
       <p class="ac-foot">${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}${installLink()}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
     </div>`;
