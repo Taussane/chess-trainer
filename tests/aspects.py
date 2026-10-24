@@ -236,7 +236,7 @@ async def main():
         print('space left out:', so)
         if so != [100, 80, True, False]: fails.append(f'space left out: {so}')
         # every criterion in points: the exact level, all of it; the right side at the wrong strength (+ for ++), half; else nothing
-        ac = await pg.evaluate("[[1,1],[2,1],[1,2],[1,0],[1,-1],[-2,-1],[0,1]].map(([v,g])=>aspectCredit(v, g, 'threats'))")
+        ac = await pg.evaluate("[[1,1],[3,1],[1,2],[1,0],[1,-1],[-3,-1],[0,1]].map(([v,g])=>aspectCredit(v, g, 'threats'))")
         if ac != [1, 0.5, 0.5, 0, 0, 0.5, 0]: fails.append(f'credit (exact 1, right side 0.5): {ac}')
         # an ending Stockfish rates on its own (all-zero table): only Material (in points: the queen's 9), the rest left out
         sp = await pg.evaluate("""(()=>{ const z = ['Material','Imbalance','Initiative','Pawns','Knights','Bishops','Rooks','Queens','Mobility','King safety','Threats','Passed','Space'].map(k=>`  ${k} |  0.00  0.00 |  0.00  0.00 |  0.00  0.00`).concat(['Total evaluation: 61.20 (white side)']);
