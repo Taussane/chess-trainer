@@ -566,25 +566,75 @@
      everywhere else. Exercises: the board on the left, as big as the screen allows; the position's
      title and the panel on the right. Home: the routine beside the exercises. */
   @media (min-width:960px) and (min-height:560px){
-    .wrap.ex{max-width:1160px; padding-inline:28px;}
-    .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 420px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:36px;}
-    .wrap.ex > #app > *{grid-column:2;}
-    .wrap.ex > #app > .title-row{grid-column:1 / -1; grid-row:1;}
-    .wrap.ex > #app > .stage{grid-column:1; grid-row:2 / span 2; min-height:0; align-items:flex-start; justify-content:flex-end;}
-    .wrap.ex > #app > .posbar{grid-row:2; margin:22px 0 12px;}   /* (level with the board's top: under the player's name) */
-    .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0;}
-    .wrap.ex .stage .board-col > .board-outer, .wrap.ex .board-outer{max-width:none;}
-    .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px, 760px);}
-    .wrap.ex .board-row{max-width:none;}
-    .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw - 44px, 100cqh - 44px, 760px);}
-    .wrap.home{max-width:980px; padding-inline:28px;}
-    .wrap.home > #app{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:36px; align-items:start;}
-    .wrap.home > #app > *{grid-column:2;}
-    .wrap.home > #app > .home-head{grid-column:1 / -1;}
-    .wrap.home > #app > .routine{grid-column:1; grid-row:2 / span 3; margin-top:0;}
-    .wrap.home > #app > .source-row{grid-row:2;}
-    .wrap.home > #app > .cards{grid-row:3;}
-    .wrap.home > #app > .home-donate{grid-row:4;}
+    html:not(.desk2) .wrap.ex{max-width:1160px; padding-inline:28px;}
+    html:not(.desk2) .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 420px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:36px;}
+    html:not(.desk2) .wrap.ex > #app > *{grid-column:2;}
+    html:not(.desk2) .wrap.ex > #app > .title-row{grid-column:1 / -1; grid-row:1;}
+    html:not(.desk2) .wrap.ex > #app > .stage{grid-column:1; grid-row:2 / span 2; min-height:0; align-items:flex-start; justify-content:flex-end;}
+    html:not(.desk2) .wrap.ex > #app > .posbar{grid-row:2; margin:22px 0 12px;}   /* (level with the board's top: under the player's name) */
+    html:not(.desk2) .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0;}
+    html:not(.desk2) .wrap.ex .stage .board-col > .board-outer, html:not(.desk2) .wrap.ex .board-outer{max-width:none;}
+    html:not(.desk2) .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px, 760px);}
+    html:not(.desk2) .wrap.ex .board-row{max-width:none;}
+    html:not(.desk2) .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw - 44px, 100cqh - 44px, 760px);}
+    html:not(.desk2) .wrap.home{max-width:980px; padding-inline:28px;}
+    html:not(.desk2) .wrap.home > #app{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:36px; align-items:start;}
+    html:not(.desk2) .wrap.home > #app > *{grid-column:2;}
+    html:not(.desk2) .wrap.home > #app > .home-head{grid-column:1 / -1;}
+    html:not(.desk2) .wrap.home > #app > .routine{grid-column:1; grid-row:2 / span 3; margin-top:0;}
+    html:not(.desk2) .wrap.home > #app > .source-row{grid-row:2;}
+    html:not(.desk2) .wrap.home > #app > .cards{grid-row:3;}
+    html:not(.desk2) .wrap.home > #app > .home-donate{grid-row:4;}
+  }
+  /* ===== The desktop layout (being designed: on in the preview copy, html.desk2). Phones never see it:
+     everything below needs a wide, tall screen. A sidebar to go anywhere; exercises with the board as big
+     as the window allows; home as a dashboard. ===== */
+  .side, .home-foot{display:none;}
+  @media (min-width:1024px) and (min-height:600px){
+    html.desk2{--side-w:236px;}
+    html.desk2 .side{display:flex; flex-direction:column; position:fixed; left:0; top:0; bottom:0; width:var(--side-w); z-index:20;
+      background:var(--panel); border-right:1px solid var(--border); padding:18px 12px 14px; overflow-y:auto;}
+    html.desk2 .wrap{margin-left:var(--side-w); max-width:none; padding-inline:32px;}
+    .side-logo{display:block; background:none; border:none; color:var(--text); text-align:left; padding:2px 10px 16px; cursor:pointer; font-family:var(--font-title, inherit);}
+    .side-logo b{display:block; font-size:1.35rem; line-height:1.1; font-weight:800; letter-spacing:-.01em;}
+    .side-logo .tld{color:var(--accent); font-size:.8em;}
+    .side-logo .beta{display:inline-block; margin-left:8px; padding:2px 5px; border:1px solid var(--accent); border-radius:5px; color:var(--accent); font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; vertical-align:4px;}
+    .side-sec{margin:14px 10px 6px; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-mute);}
+    .side-item{display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; border-radius:8px; color:var(--text); font:inherit; font-size:.92rem; text-align:left; padding:8px 10px; cursor:pointer;}
+    .side-item:hover:not(:disabled){background:var(--panel-2);}
+    .side-item.on{background:var(--panel-2); box-shadow:inset 3px 0 0 var(--accent);}
+    .side-item:disabled{opacity:.45; cursor:default;}
+    .side-item .act-icon, .side-item svg{width:20px; height:20px; flex:none; color:var(--accent);}
+    .side-item .side-name{flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .side-item .side-n{font-size:.8rem; color:var(--text-mute); font-variant-numeric:tabular-nums;}
+    .side-foot{margin-top:auto; padding:14px 10px 0; display:flex; flex-direction:column; gap:10px; font-size:.8rem; color:var(--text-mute);}
+    .side-foot .title-chip{margin:0; align-self:flex-start;}
+    /* exercises: the board fills the height on the left; title, game and panel on the right */
+    html.desk2 .wrap.ex{max-width:none; padding-block:16px;}
+    html.desk2 .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 380px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:28px;}
+    html.desk2 .wrap.ex > #app > *{grid-column:2;}
+    html.desk2 .wrap.ex > #app > .title-row{grid-row:1;}
+    html.desk2 .wrap.ex > #app > .stage{grid-column:1; grid-row:1 / span 3; min-height:0; align-items:center; justify-content:center;}
+    html.desk2 .wrap.ex > #app > .posbar{grid-row:2; margin:6px 0 14px;}
+    html.desk2 .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0; max-width:none;}
+    html.desk2 .wrap.ex .title-row .back{display:none;}
+    html.desk2 .wrap.ex .board-outer, html.desk2 .wrap.ex .board-row{max-width:none;}
+    html.desk2 .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px);}
+    html.desk2 .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw - 44px, 100cqh - 44px);}
+    /* home: a dashboard */
+    html.desk2 .wrap.home{max-width:calc(1120px + var(--side-w)); padding-block:28px;}
+    html.desk2 .wrap.home > #app{display:grid; grid-template-columns:340px minmax(0, 1fr); column-gap:28px; align-items:start;}
+    html.desk2 .wrap.home > #app > *{grid-column:2;}
+    html.desk2 .wrap.home .home-top{display:none;}
+    html.desk2 .wrap.home > #app > .home-head{grid-column:1 / -1; margin:0 0 20px;}
+    html.desk2 .wrap.home .home-head p{margin:0; font-size:1rem; max-width:760px;}
+    html.desk2 .wrap.home > #app > .routine{grid-column:1; grid-row:2 / span 2; margin:0;}
+    html.desk2 .wrap.home > #app > .home-donate{grid-column:1; grid-row:4; margin:16px 0 0;}
+    html.desk2 .wrap.home > #app > .source-row{grid-row:2;}
+    html.desk2 .wrap.home > #app > .cards{grid-row:3; display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+    html.desk2 .wrap.home .card{min-height:118px; align-items:center;}
+    html.desk2 .wrap.home > #app > .home-foot{display:block; grid-column:1 / -1; grid-row:5; margin-top:40px; padding-top:16px; border-top:1px solid var(--border); text-align:center; color:var(--text-mute); font-size:.84rem;}
+    html.desk2 .home-foot a, html.desk2 .home-foot button{color:var(--text-mute);}
   }
   @media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important;} }
 </style>
@@ -3961,6 +4011,62 @@ const ACT_GLYPHS = {
   final:      actIcon('<path d="M4 6h10M4 11h7M4 16h4"/><path d="M18 5v14M15 16l3 3 3-3"/>'),
 };
 const ACT_NAMES = { imbalances:'Imbalance reading', analysis:'Position evaluation', candidates:'Candidate moves', final:'Move selection' };
+// ---- The desktop layout (being designed; on in the preview copy: html.desk2) ----
+// A sidebar on every page: the logo (home), the routine, the four exercises with your averages, your
+// profile, settings, support; the language and installing the app at the bottom.
+const DESK = document.documentElement.classList.contains('desk2');
+const deskMQ = window.matchMedia ? matchMedia('(min-width:1024px) and (min-height:600px)') : null;
+const isDesk = ()=>DESK && !!deskMQ && deskMQ.matches;
+if(DESK && deskMQ && deskMQ.addEventListener) deskMQ.addEventListener('change', ()=>render());
+const SIDE_ICONS = {
+  home: actIcon('<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>'),
+  routine: actIcon('<path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v4h4"/><path d="M12 8v4l3 2"/>'),
+  profile: actIcon('<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'),
+  settings: actIcon('<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'),
+  support: actIcon('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'),
+};
+// Leaving an exercise from the sidebar: as its own back arrow does (the routine remembers where it was).
+function leaveExercise(){
+  if(!ACTIVITIES.includes(screen)) return;
+  if(routine){ const s = st(screen); routine = false; setRoutineNext(s.checked ? routineAfter(screen) : screen); }
+  testMode = false; replayMode = false; selSquare = null; promoPending = null;
+}
+function sideGo(where){
+  if(where==='routine'){ leaveExercise(); return startRoutine(); }
+  if(ACTIVITIES.includes(where)){ if(!canOpen(where, false)) return; leaveExercise(); routine = false; return openActivity(where); }
+  leaveExercise();
+  if(where==='settings') settingsRebuild = true;
+  if(where==='support'){ supportFrom = 'home'; supportRebuild = true; }
+  screen = where; render();
+}
+function siteLinks(){
+  return `${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>`;
+}
+function renderSide(){
+  if(!DESK) return;
+  let nav = document.getElementById('side');
+  if(!nav){ nav = document.createElement('nav'); nav.id = 'side'; nav.className = 'side'; nav.setAttribute('aria-label', 'Menu'); document.body.insertBefore(nav, document.querySelector('.wrap')); }
+  const at = routine && ACTIVITIES.includes(screen) ? 'routine' : onProfile() ? 'profile' : screen;
+  const c = todayBy(), total = ACTS.reduce((t,a)=>t+Math.min(c[a], DAILY_GOAL), 0);
+  const item = (k, icon, name, extra, dis)=>`<button class="side-item${at===k ? ' on' : ''}" data-side="${k}"${dis ? ' disabled' : ''}${at===k ? ' aria-current="page"' : ''}>${icon}<span class="side-name">${name}</span>${extra ? `<span class="side-n">${extra}</span>` : ''}</button>`;
+  nav.innerHTML = `
+    <button class="side-logo" data-side="home" data-no-i18n aria-label="Home"><b>Chess<span class="beta">${LANG==='fr' ? 'Bêta' : 'Beta'}</span><br>Strategy<span class="tld">.org</span></b></button>
+    ${item('home', SIDE_ICONS.home, 'Home')}
+    ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
+    <div class="side-sec">Exercises</div>
+    ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
+    <div class="side-sec">You</div>
+    ${item('account', SIDE_ICONS.profile, displayName() || 'Profile')}
+    ${item('settings', SIDE_ICONS.settings, 'Settings')}
+    ${item('support', SIDE_ICONS.support, 'Support')}
+    <div class="side-foot">
+      <button class="title-chip" id="sideLang" data-no-i18n aria-label="Language">${LANG==='fr' ? 'FR · English' : 'EN · Français'}</button>
+      ${installOffered() ? `<button class="link-plain install-link" id="sideInstall">Install the app</button>` : ''}
+    </div>`;
+  nav.querySelectorAll('[data-side]').forEach(b=>b.onclick = ()=>sideGo(b.dataset.side==='account' ? 'account' : b.dataset.side));
+  const lang = nav.querySelector('#sideLang'); if(lang) lang.onclick = ()=>{ settings.lang = LANG==='fr' ? 'en' : 'fr'; setLanguage(); saveSettings(); settingsRebuild = true; render(); };
+  const inst = nav.querySelector('#sideInstall'); if(inst) inst.onclick = installApp;
+}
 const GEAR_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.85 1.85M16.65 16.65l1.85 1.85M5.5 18.5l1.85-1.85M16.65 7.35l1.85-1.85" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 const BACK_ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ACT_SHORT = { imbalances:'Imbalances', analysis:'Evaluation', candidates:'Candidates', final:'Selection' };   // where space is short (profile)
@@ -4435,7 +4541,8 @@ function renderHome(){
         </button>`; }).join('')}
     </div>
     <div class="home-donate"><button class="donate-badge" id="donateBtn"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button></div>
-    ${engineErrorBanner()}`;
+    ${engineErrorBanner()}
+    ${DESK ? `<p class="home-foot ac-foot">${siteLinks()}</p>` : ''}`;
   app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>setSource(b.dataset.src));
   document.getElementById('donateBtn').onclick = ()=>{ supportFrom = 'home'; screen = 'support'; supportRebuild = true; render(); };
   app.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
@@ -6778,6 +6885,7 @@ function renderScreen(){
   const wrap = document.querySelector('.wrap');
   wrap.classList.toggle('ex', ACTIVITIES.includes(screen));
   wrap.classList.toggle('home', screen==='home');
+  renderSide();
   if(screen==='home') renderHome();
   else if(onProfile()) renderAccount();
   else if(screen==='tests') renderTests();
