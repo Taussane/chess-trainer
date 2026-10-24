@@ -310,6 +310,14 @@
     border:1px solid var(--border); border-radius:2px; overflow:hidden;
   }
   .board{container-type:inline-size;}
+  /* Board light (Settings): a soft light over the whole board, from the top-left corner or the centre */
+  .board{position:relative; isolation:isolate;}   /* (the light stays under the arrows drawn over the board) */
+  html[data-light] .board::after{content:''; position:absolute; inset:0; pointer-events:none; z-index:3; mix-blend-mode:soft-light;}
+  html[data-light="corner"] .board::after{background:radial-gradient(120% 120% at 20% 10%, rgba(255,255,255,.26), rgba(255,255,255,0) 45%, rgba(0,0,0,.34) 100%);}
+  html[data-light="centre"] .board::after{background:radial-gradient(75% 75% at 50% 45%, rgba(255,255,255,.34), rgba(255,255,255,0) 60%, rgba(0,0,0,.5) 100%);}
+  .set-mini{display:flex; gap:4px; flex:none;}
+  .set-mini button{background:var(--panel-2); border:1px solid var(--border); border-radius:999px; color:var(--text-mute); padding:4px 10px; font:inherit; font-size:0.8rem; cursor:pointer;}
+  .set-mini button.on{border-color:var(--accent); color:var(--text);}
   .sq{position:relative; display:flex;align-items:center;justify-content:center; font-size:10cqw; line-height:1; user-select:none;}
   .sq.light{background:var(--board-light);}
   .sq.dark{background:var(--board-dark);}
@@ -6006,7 +6014,7 @@ function keepFades(){
 const SETTINGS_LS = 'cst.settings';
 const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#279C47', pick2:'#D25450', pick3:'#4E7EE2', system:'#D9B33A', 'cyan-arrow':'#00CEEB', top3:'#CBA0FF' };
 const SET_ARROWS = [['pick1', '1st'], ['pick2', '2nd'], ['pick3', '3rd'], ['system', '4th'], ['cyan-arrow', '5th'], ['top3', '6th']];
-const SET_DEFAULT = { coords:false, boardHue:0, boardSat:100, boardLum:0, lastHue:null, arrows:{}, notation:'intl', lang:null, at:0, v:2 };   // lang null: the device's (French when it's French, else English)
+const SET_DEFAULT = { coords:false, boardLight:'none', boardHue:0, boardSat:100, boardLum:0, lastHue:null, arrows:{}, notation:'intl', lang:null, at:0, v:2 };   // lang null: the device's (French when it's French, else English)
 const SET_VERSION = 2;   // 2: hues in OKLCH (earlier saved hues, in HSL, are dropped)
 const setClean = x=>x && x.v===SET_VERSION ? x : { ...(x || {}), lastHue:null, arrows:{}, v:SET_VERSION };
 let settings = (()=>{ try{ return { ...SET_DEFAULT, ...setClean(JSON.parse(localStorage.getItem(SETTINGS_LS) || 'null')) }; }catch(e){ return { ...SET_DEFAULT }; } })();
@@ -6040,6 +6048,7 @@ function applySettings(){
   // the board: hue turned, colourfulness scaled (boardSat %), lightness moved (boardLum, in OKLCH points), both squares alike
   const boardSet = settings.boardHue || (settings.boardSat ?? 100)!==100 || (settings.boardLum || 0);
   for(const k of ['board-light', 'board-dark']){ const [L, C, h] = hexOklch(SET_BASE[k]); set(k, boardSet ? oklchCss(Math.min(.98, Math.max(.15, L + (settings.boardLum || 0) / 100)), C * (settings.boardSat ?? 100) / 100, h + settings.boardHue) : null); }
+  if(settings.boardLight==='corner' || settings.boardLight==='centre') document.documentElement.dataset.light = settings.boardLight; else delete document.documentElement.dataset.light;
   set('square-hl', settings.lastHue!=null ? hueCss('square-hl', settings.lastHue, .45) : null);
   for(const [k] of SET_ARROWS){ const h = settings.arrows[k]; set(k, h!=null ? hueCss(k, h) : null); }
 }
@@ -6148,6 +6157,10 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Daily routine done": "Routine quotidienne faite",
 "Done ✓": "Fait ✓",
 "Done": "Fait",
+"Light": "Lumière",
+"None": "Aucune",
+"Corner": "Coin",
+"Centre": "Centre",
 "Start routine": "Commencer la routine",
 "Continue routine": "Continuer la routine",
 "Keep training": "Continuer l'entraînement",
@@ -6602,6 +6615,7 @@ function renderSettings(){
       <div class="seg" role="tablist" aria-label="Settings">${[['board', 'Board'], ['arrows', 'Arrows'], ['notation', 'Notation']].map(([k, v])=>`<button class="seg-btn${setTab===k ? ' active' : ''}" role="tab" aria-selected="${setTab===k}" data-tab="${k}">${v}</button>`).join('')}</div>
       <section class="pf-card">${setTab==='board' ? `
         ${row('Coordinates', `<button class="set-toggle${settings.coords ? ' on' : ''}" id="setCoords" role="switch" aria-checked="${settings.coords}" aria-label="Coordinates"><span></span></button>`)}
+        ${row('Light', `<div class="set-mini" role="radiogroup" aria-label="Board light">${[['none', 'None'], ['corner', 'Corner'], ['centre', 'Centre']].map(([k, v])=>`<button class="${(settings.boardLight || 'none')===k ? 'on' : ''}" data-light="${k}" role="radio" aria-checked="${(settings.boardLight || 'none')===k}">${v}</button>`).join('')}</div>`)}
         ${row('Board hue', slider('setBoardHue', -180, 180, settings.boardHue, boardTrack('hue')), 'var(--board-dark)')}
         ${row('Saturation', slider('setBoardSat', 0, 250, settings.boardSat ?? 100, boardTrack('sat')), 'var(--board-dark)')}
         ${row('Lightness', slider('setBoardLum', -25, 25, settings.boardLum || 0, boardTrack('lum')), 'var(--board-light)')}
@@ -6625,9 +6639,10 @@ function renderSettings(){
   on('setLastHue', 'oninput', e=>{ settings.lastHue = +e.target.value; live(); });
   for(const [k] of SET_ARROWS) on('setAr-' + k, 'oninput', e=>{ settings.arrows = { ...settings.arrows, [k]: +e.target.value }; live(); });
   document.querySelectorAll('.set-opt').forEach(b=>b.onclick = ()=>{ settings.notation = b.dataset.n; saveSettings(); rebuild(); });
+  document.querySelectorAll('.set-mini [data-light]').forEach(b=>b.onclick = ()=>{ settings.boardLight = b.dataset.light; applySettings(); saveSettings(); rebuild(); });
   // Reset: only the section shown (Board, Arrows or Notation)
   document.getElementById('setReset').onclick = ()=>{
-    if(setTab==='board') Object.assign(settings, { coords: SET_DEFAULT.coords, boardHue: SET_DEFAULT.boardHue, boardSat: SET_DEFAULT.boardSat, boardLum: SET_DEFAULT.boardLum, lastHue: SET_DEFAULT.lastHue });
+    if(setTab==='board') Object.assign(settings, { coords: SET_DEFAULT.coords, boardLight: SET_DEFAULT.boardLight, boardHue: SET_DEFAULT.boardHue, boardSat: SET_DEFAULT.boardSat, boardLum: SET_DEFAULT.boardLum, lastHue: SET_DEFAULT.lastHue });
     else if(setTab==='arrows') settings.arrows = {};
     else settings.notation = SET_DEFAULT.notation;
     applySettings(); saveSettings(); rebuild(); };
