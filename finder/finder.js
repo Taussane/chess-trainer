@@ -34,7 +34,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
     const game = { id:'g'+gi, white:header(g,'White'), black:header(g,'Black'), event:header(g,'Event'), year:header(g,'Date').slice(0,4), result:header(g,'Result'),
                    added: ad[1] ? Date.UTC(+ad[1], ad[2]-1, +ad[3]) : 0 };
     game.title = surname(game.white)+' – '+surname(game.black);
-    const decisive = !R.ANALYSIS.decisiveGamesOnly || game.result==='1-0' || game.result==='0-1';
+    const drawn = game.result==='1/2-1/2';   // Board analysis keeps only a drawn game's unbalanced positions
     const div = L.divide(fens);
     const gs = { ...game, sans:hist.map(m=>m.san), plies:hist.length, middlegame:div.mid, endgame:div.end, checked:0, passedGeneral:0, analysis:0, candidates:0, final:0 };
     stats.games.push(gs);
@@ -47,12 +47,11 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
                last: prev ? [prev.from, prev.to] : null,
                hist:{ uci:m.from+m.to+(m.promotion||''), san:m.san, from:m.from, to:m.to } };
     };
-    // Board analysis range: decisive games, middlegame start to endgame start (a few half-moves
+    // Board analysis range: middlegame start to endgame start (a few half-moves
     // more at the endgame start, for its anchor).
     // (When the middlegame and endgame start together, the range starts at the endgame start.)
-    const baFrom = decisive ? (div.mid>=0 ? div.mid : div.end) : -1, baLast = div.end>=0 ? div.end : hist.length-1;
+    const baFrom = div.mid>=0 ? div.mid : div.end, baLast = div.end>=0 ? div.end : hist.length-1;
     const baTo = baFrom<0 ? -2 : (div.end>=0 ? div.end + R.ANALYSIS.retryPlies : baLast);
-    if(!decisive) tally(stats.analysis, 'games skipped: draw');
 
     // ----- One pass: every half-move is checked once against every exercise, with early exits.
     const elig = {};   // ply -> { options:Set, metrics, final }
@@ -77,6 +76,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
       if(ply>=baFrom && ply<=baTo && baFrom>=0){
         if(R.ANALYSIS.notInCheck && c.in_check()) tally(stats.analysis,'rejected: in check');
         else if(Math.abs(L.materialDiff(c)) > R.ANALYSIS.maxMaterialDiff && winPct(Math.sign(L.materialDiff(c)) * (fen.split(' ')[1]==='w' ? 1 : -1) * moverScore(ls[0]), null) >= R.ANALYSIS.bigMaterialMaxWin) tally(stats.analysis,'rejected: big material gap, decided');
+        else if(drawn && ls[0].mate==null && Math.abs(ls[0].cp) < R.ANALYSIS.drawMinEval) tally(stats.analysis,'rejected: balanced, in a drawn game')
         else if(div.mid>=0 && ply < div.mid + R.ANALYSIS.earlyBalanced.plies && ls[0].mate==null && Math.abs(ls[0].cp) < R.ANALYSIS.earlyBalanced.maxEval) tally(stats.analysis,'rejected: balanced, early in the middlegame');
         else { e.options.add('analysis'); e.metrics.evalWhite = (fen.split(' ')[1]==='w' ? 1 : -1) * moverScore(ls[0]); e.metrics.mate = ls[0].mate ?? null; }
       }
