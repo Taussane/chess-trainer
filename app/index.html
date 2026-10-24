@@ -2295,9 +2295,17 @@ function st(activity){
 function prefetchCurrent(){ if(ACTIVITIES.includes(screen)) (screen==='imbalances' ? aspectsEntry : fenEval)(pos().fen); }
 function prefetchNext(){
   if(!ACTIVITIES.includes(screen)) return;
-  if(replayMode){ const e = replayQueue[replayIdx+1]; if(e) fenEval(e.pos.fen); return; }
+  if(replayMode){ const e = replayQueue[replayIdx+1]; if(e){ fenEval(e.pos.fen); if(e.a==='final') prepareFinal(e.pos); } return; }
   const [t, i] = nextTarget();
-  if(i>=0) fenEval(posAt(t, i).fen);
+  if(i>=0){ fenEval(posAt(t, i).fen); if(/final/.test(t)) prepareFinal(posAt(t, i)); }
+}
+// Move selection ahead of time: once a position's top 5 (and the game move's search) are in, its four
+// moves are known, and their one search (the review's) starts too, whatever order you'll put them in.
+function prepareFinal(p, tries){
+  if(!p) return;
+  const mv = finalMoves(p);
+  if(mv===null){ if((tries || 0) < 60) setTimeout(()=>prepareFinal(p, (tries || 0) + 1), 500); return; }   // still searching: look again
+  if(!evalFailed(mv)) finalEval(p, mv);
 }
 // Where a track will open next: its current position if that question is still open, the
 // one after it if its review was already reached.
@@ -2313,7 +2321,7 @@ function upcomingFor(t){
 function prefetchHome(){
   const ts = [ctx('analysis', false), ctx('final', false), ctx('candidates', false)];
   if(routineNext!=='imbalances') ts.push(ctx(routineNext, true));
-  ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0) fenEval(posAt(x, i).fen); });
+  ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0){ fenEval(posAt(x, i).fen); if(/final/.test(t)) prepareFinal(posAt(x, i)); } });
   { const [x, i] = upcomingFor(ctx('imbalances', false)); if(i>=0) aspectsEntry(posAt(x, i).fen); }   // Imbalance reading's table (and its quick mate check)
 }
 // Moves exercise `a`, on the open track, on to its next position, fresh.
@@ -5676,6 +5684,7 @@ function renderFinal(){
   const app = document.getElementById('app');
   const p = pos(), s = st('final');
   const moves = finalMoves(p);
+  if(moves && !evalFailed(moves) && !st('final').checked) finalEval(p, moves);   // the review's search starts while you rank
   const bs = boardObjFromGame(new Chess(p.fen));
   if(!moves || evalFailed(moves)){
     // Waiting for the engine's top moves — or no engine at all, in which case there's nothing to
