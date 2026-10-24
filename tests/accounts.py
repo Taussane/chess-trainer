@@ -6,7 +6,7 @@
 #  3. What it plays reaches the account; logging out clears that browser (it's safe in the account).
 #  4. Another person logging in on a browser holding someone else's copy never gets it.
 #  5. Delete my account removes everything on the server.
-import asyncio, sys, pathlib, json, subprocess, time, urllib.request, urllib.error
+import re, asyncio, sys, pathlib, json, subprocess, time, urllib.request, urllib.error
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
@@ -84,6 +84,7 @@ async def login(pg):
 async def main():
     fails = []
     SITE = (ROOT/'index.html').read_text()
+    SITE = re.sub(r'<meta http-equiv="Content-Security-Policy"[^>]*>\n', '', SITE)   # (served here from stand-in addresses: the policy is checked by csp.js)
     server = subprocess.Popen(['node', str(ROOT/'worker'/'test'/'local.mjs'), str(PORT)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     try:
         for _ in range(50):

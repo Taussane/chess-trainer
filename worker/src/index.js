@@ -44,7 +44,24 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000;
+const VERSION = '2026-10-24';   // shown by /api/health: which version is deployed
+const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
+// What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
+// positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
+const GAME_SITES = ['lichess', 'chesscom'], MAX_GAMES_PER_SITE = 300, MAX_RESULTS = 200000;
+const META_NAMES = ['profile', 'replay', 'settings', 'chesscom', 'games-cleared'];
+const gameSite = g => typeof g.site === 'string' ? g.site : String(g.id).startsWith('cc-') ? 'chesscom' : 'lichess';   // as the app's siteOf
+
+// Requests per address and minute (Cloudflare's rate limiting, bindings in wrangler.toml; absent when run
+// locally): RL_ALL for everything, RL_OUT for what makes this server ask another site (Lichess checking a
+// login, Google's keys, Chess.com), so no one can use it to flood them.
+async function limit(req, env, binding) {
+  const rl = env[binding];
+  if (!rl || typeof rl.limit !== 'function') return;
+  const key = req.headers.get('CF-Connecting-IP') || 'unknown';
+  const { success } = await rl.limit({ key });
+  if (!success) throw fail(429, 'too many requests; try again in a minute');
+}
 const UA = { 'User-Agent': 'chess-trainer-api (https://github.com/Taussane/chess-trainer)' };
 
 export default {
@@ -79,9 +96,11 @@ const fail = (status, message) => Object.assign(new Error(message), { status });
 
 async function route(req, env) {
   const url = new URL(req.url), path = url.pathname.replace(/\/+$/, ''), m = req.method;
-  if (path === '/api/health') return json({ ok: true });
+  if (path === '/api/health') return json({ ok: true, version: VERSION });
+  await limit(req, env, 'RL_ALL');
   if (m === 'POST' && path === '/api/ev') return usageEvents(req, env);
-  if (m === 'POST' && path === '/api/login/google') return googleLogin(env, (await body(req)).idToken);
+  if (m === 'POST' && path === '/api/login/google') { await limit(req, env, 'RL_OUT'); return googleLogin(env, (await body(req)).idToken); }
+  if (m === 'GET' && path.startsWith('/api/chesscom/')) await limit(req, env, 'RL_OUT');
   if (m === 'GET' && path === '/api/chesscom/player') {   // public data: no sign-in needed (also before logging in)
     const user = ccUser(url);
     const p = await (await ccFetch('https://api.chess.com/pub/player/' + user)).json();
@@ -101,7 +120,7 @@ async function route(req, env) {
     await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run();
     return json({ ok: true });
   }
-  const account = await signIn(env, site, token, tokenHash);
+  const account = await signIn(env, site, token, tokenHash, req);
   if (!account) throw fail(401, site === 'app' ? 'your login has expired; log in again' : 'Lichess did not accept this login');
   const DB = env.DB;
 
@@ -118,7 +137,9 @@ async function route(req, env) {
   if (m === 'POST' && path === '/api/results') {
     const rows = (await body(req)).rows;
     if (!Array.isArray(rows) || rows.length > MAX_ROWS) throw fail(400, 'rows: a list of at most ' + MAX_ROWS);
-    const ok = rows.filter(r => r && Number.isFinite(r.ts) && typeof r.a === 'string' && typeof r.acc === 'number');
+    const ok = rows.filter(r => r && Number.isFinite(r.ts) && typeof r.a === 'string' && r.a.length <= 20 && typeof r.acc === 'number' && JSON.stringify(r).length <= MAX_RESULT_BYTES);
+    const have = await DB.prepare('SELECT COUNT(*) n FROM results WHERE account_id = ?').bind(account).first();
+    if (have.n + ok.length > MAX_RESULTS) throw fail(409, 'too many results kept');
     if (ok.length) await DB.batch(ok.map(r => DB.prepare('INSERT OR IGNORE INTO results (account_id, ts, a, data) VALUES (?, ?, ?, ?)').bind(account, r.ts, r.a, JSON.stringify(r))));
     return json({ added: ok.length });
   }
@@ -137,25 +158,36 @@ async function route(req, env) {
     // Lichess games only while Lichess is connected (same reason).
     const li = await DB.prepare("SELECT COUNT(*) n FROM connections WHERE account_id = ? AND site = 'lichess'").bind(account).first();
     const liOn = !!(li && li.n);
+    // Games already kept, per site: a game new to the account counts towards MAX_GAMES_PER_SITE.
+    const { results: kept } = await DB.prepare('SELECT id, site FROM games WHERE account_id = ?').bind(account).all();
+    const ids = new Set(kept.map(k => k.id)), count = {};
+    kept.forEach(k => { count[k.site] = (count[k.site] || 0) + 1; });
+    let refused = 0;
     for (const g of games) {
-      if (!g || typeof g.id !== 'string' || !g.id || !Array.isArray(g.sans)) continue;
-      if (!ccOn && (g.site === 'chesscom' || g.id.startsWith('cc-'))) continue;
-      if (!liOn && (g.site || (g.id.startsWith('cc-') ? 'chesscom' : 'lichess')) === 'lichess') continue;   // as the app's siteOf
+      if (!g || typeof g.id !== 'string' || !g.id || g.id.length > 40 || !Array.isArray(g.sans)) continue;
+      const site = gameSite(g);
+      if (!GAME_SITES.includes(site)) continue;   // games from Lichess and Chess.com only
+      if (!ccOn && site === 'chesscom') continue;
+      if (!liOn && site === 'lichess') continue;
+      if (!ids.has(g.id)) {
+        if ((count[site] || 0) >= MAX_GAMES_PER_SITE) { refused++; continue; }
+        count[site] = (count[site] || 0) + 1; ids.add(g.id);
+      }
       const { positions, ...keep } = g;   // positions are worked out again by the app
       const data = JSON.stringify(keep);
       if (data.length > MAX_GAME_BYTES) continue;
       stmts.push(DB.prepare('INSERT INTO games (account_id, id, site, data, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT (account_id, id) DO UPDATE SET data = excluded.data, site = excluded.site, updated_at = excluded.updated_at')
-        .bind(account, g.id, typeof g.site === 'string' ? g.site : 'lichess', data, now));
+        .bind(account, g.id, site, data, now));
     }
     if (stmts.length) await DB.batch(stmts);
-    return json({ saved: stmts.length });
+    return json({ saved: stmts.length, refused });
   }
   let mm;
   if (m === 'DELETE' && (mm = path.match(/^\/api\/games\/([^/]+)$/))) {
     await DB.prepare('DELETE FROM games WHERE account_id = ? AND id = ?').bind(account, decodeURIComponent(mm[1])).run();
     return json({ ok: true });
   }
-  if ((mm = path.match(/^\/api\/meta\/([a-z0-9-]{1,40})$/))) {
+  if ((mm = path.match(/^\/api\/meta\/([a-z0-9-]{1,40})$/)) && META_NAMES.includes(mm[1])) {
     if (m === 'GET') {
       const r = await DB.prepare('SELECT data FROM meta WHERE account_id = ? AND name = ?').bind(account, mm[1]).first();
       return json({ exists: !!r, data: r ? JSON.parse(r.data) : null });
@@ -174,6 +206,7 @@ async function route(req, env) {
     return json(await metrics(env, Math.max(1, Math.min(400, Number(url.searchParams.get('days')) || 90))));
   }
   if (m === 'POST' && path === '/api/link/lichess') {
+    await limit(req, env, 'RL_OUT');
     const b = await body(req);
     const player = await SITES.lichess(String(b.token || ''));
     if (!player) throw fail(401, 'Lichess did not accept this login');
@@ -198,7 +231,7 @@ async function route(req, env) {
 
 // The account for this token: remembered sign-in (checked within a day), else asked to the site;
 // a player seen for the first time gets a new account.
-async function signIn(env, site, token, tokenHash) {
+async function signIn(env, site, token, tokenHash, req) {
   const DB = env.DB, now = Date.now();
   const s = await DB.prepare('SELECT account_id, checked_at FROM sessions WHERE token_hash = ?').bind(tokenHash).first();
   if (site === 'app') {   // our own token (Google sign-in): valid while used at least every 180 days
@@ -208,6 +241,7 @@ async function signIn(env, site, token, tokenHash) {
     return s.account_id;
   }
   if (s && now - s.checked_at < DAY) return s.account_id;
+  await limit(req, env, 'RL_OUT');   // asking Lichess
   const player = await SITES[site](token);
   if (!player) { if (s) await DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run(); return null; }
   const c = await DB.prepare('SELECT account_id FROM connections WHERE site = ? AND site_user_id = ?').bind(site, player.id).first();
@@ -279,7 +313,7 @@ async function verifyGoogle(env, idToken) {
   if (!key || !(await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, unb64(parts[2]), new TextEncoder().encode(parts[0] + '.' + parts[1])))) return null;
   const now = Date.now() / 1000;
   if (!['accounts.google.com', 'https://accounts.google.com'].includes(claims.iss) || claims.aud !== env.GOOGLE_CLIENT_ID) return null;
-  if (!(claims.exp > now) || !claims.sub || !claims.email || claims.email_verified === false) return null;
+  if (!(claims.exp > now) || !claims.sub || !claims.email || claims.email_verified !== true) return null;
   return { id: String(claims.sub), username: String(claims.email) };
 }
 async function googleLogin(env, idToken) {

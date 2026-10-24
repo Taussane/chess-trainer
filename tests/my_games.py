@@ -46,13 +46,11 @@ async def main():
         dis = await pg.evaluate("[...document.querySelectorAll('[data-src]')].map(x=>x.dataset.src+':'+x.disabled).join(' ')")
         if 'mine:true' not in dis: fails.append('source buttons not disabled before any games: '+dis)
         await pg.click('#accountBtn'); await pg.wait_for_timeout(200)
-        await pg.fill('#lichessUser', 'TestPlayer')
-        href = await pg.get_attribute('#exportLink', 'href')
+        href = await pg.evaluate("lichessExportUrl('TestPlayer')")   # (the games' sync asks Lichess for this)
         if 'games/user/TestPlayer' not in href or 'evals=true' not in href or 'bullet,blitz' not in href: fails.append('export link: '+href)
-        async with pg.expect_file_chooser(timeout=3000) as fc:   # a real tap must open the browser's file chooser
-            await pg.click('.file-btn')
-        await (await fc.value).set_files(SAMPLE); await pg.wait_for_timeout(400)
-        note = await pg.inner_text('.mg-note'); print('note:', note)
+        # The games as Lichess sends them (the sync reads them the same way)
+        await pg.evaluate("(t=>{ importPgnText(t, false, 'TestPlayer'); render(); })", pathlib.Path(SAMPLE).read_text()); await pg.wait_for_timeout(400)
+        note = await pg.evaluate("myImportNote"); print('note:', note)
         if 'Added 10 games' not in note or '5 already analysed' not in note or '1 variant' not in note: fails.append('import note: '+note)
         await pg.screenshot(path=str(SHOTS/'mg_1_after_upload.png'))
         seen = []; counts_seen = []; ba_keys = []
@@ -110,16 +108,16 @@ async def main():
         if r != [1650, 1640]: fails.append(f'ratings: {r}')
         await pg.evaluate("delete myGames[0].whiteElo; delete myGames[0].blackElo")
         # Upload again: everything already there
-        await pg.click('#accountBtn'); await pg.set_input_files('#pgnFile', SAMPLE); await pg.wait_for_timeout(300)
+        await pg.click('#accountBtn'); await pg.evaluate("(t=>{ importPgnText(t, false, 'TestPlayer'); render(); })", pathlib.Path(SAMPLE).read_text()); await pg.wait_for_timeout(300)
         r = await pg.evaluate("[myGames[0].whiteElo, myGames[0].blackElo]")
         if r != [1650, 1640]: fails.append(f'ratings not filled in: {r}')
-        note = await pg.inner_text('.mg-note')
+        note = await pg.evaluate("myImportNote")
         if 'Added 0 games' not in note or '10 already added' not in note: fails.append('re-upload note: '+note)
-        # Paste route: remove, then paste the same file's text
+        # Removed, then the same games again: all added back
         await pg.click('#clearBtn'); await pg.click('#clearYes'); await pg.wait_for_timeout(200)
-        await pg.click('#pasteToggle'); await pg.fill('#pgnPaste', pathlib.Path(SAMPLE).read_text()); await pg.click('#pasteAdd'); await pg.wait_for_timeout(300)
-        note = await pg.inner_text('.mg-note'); print('paste note:', note)
-        if 'Added 10 games' not in note: fails.append('paste: '+note)
+        await pg.evaluate("(t=>{ importPgnText(t, false, 'TestPlayer'); render(); })", pathlib.Path(SAMPLE).read_text()); await pg.wait_for_timeout(300)
+        note = await pg.evaluate("myImportNote"); print('again note:', note)
+        if 'Added 10 games' not in note: fails.append('again: '+note)
         # Remove
         await pg.click('#clearBtn'); await pg.click('#clearYes'); await pg.wait_for_timeout(200)
         n = await pg.evaluate("[myGames.length, myPositions.length, source]")

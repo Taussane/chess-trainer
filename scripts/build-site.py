@@ -6,7 +6,24 @@ import pathlib, sys
 root = pathlib.Path(__file__).resolve().parent.parent
 app = (root / 'app' / 'index.html').read_text(encoding='utf-8')
 icon = "icons/icon.svg"   # the white king of the board, on the yellow accent (icons/: the app icons, the same)
+# What the page may load and call (Content-Security-Policy): its own files; the account server, Lichess
+# (logins, games), and the CDNs the engine falls back to; Ko-fi's cup image. Inline scripts and styles are
+# the app itself. A safety net: even injected code couldn't send anything to another site.
+import re
+API = re.search(r"/\*API_BASE\*/'([^']+)'", app).group(1)   # the account server's address, as the app has it
+CDNS = 'https://cdn.jsdelivr.net https://cdnjs.cloudflare.com'
+CSP = '; '.join([
+    "default-src 'self'",
+    f"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' {CDNS}",
+    f"worker-src 'self' blob: {CDNS}",
+    f"connect-src 'self' {API} https://lichess.org {CDNS}",
+    "img-src 'self' data: blob: https://storage.ko-fi.com",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
+    "object-src 'none'", "frame-src 'none'", "base-uri 'self'", "form-action 'self'",
+])
 page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+        f'<meta http-equiv="Content-Security-Policy" content="{CSP}">\n'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
         '<meta name="theme-color" content="#12161B">\n'
         '<meta name="description" content="Chess strategy training on positions from master games and your own Lichess and Chess.com games.">\n'
@@ -31,6 +48,10 @@ page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
 
         '<!-- Built from app/index.html by scripts/build-site.py: edit the app, not this file. -->\n'
         '</head>\n<body>\n' + app + '\n</body>\n</html>\n')
+# chess.js from this site (vendor/, the same 0.12.1 file) rather than a CDN: no script from another site in the page.
+CDN_CHESS = '<script src="https://cdn.jsdelivr.net/npm/chess.js@0.12.1/chess.js"></script>'
+assert page.count(CDN_CHESS) == 1, 'chess.js script tag not found'
+page = page.replace(CDN_CHESS, '<script src="vendor/chess.js/chess.js"></script>')
 out = root / 'index.html'
 if '--check' in sys.argv:
     ok = out.exists() and out.read_text(encoding='utf-8') == page

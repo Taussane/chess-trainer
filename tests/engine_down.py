@@ -1,6 +1,6 @@
 # The engine can't be loaded (here: its download is blocked): Check can't be pressed, and the
 # message sits below the exercise's card, as on the home page.
-import asyncio, sys, pathlib
+import re, asyncio, sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
 from playwright.async_api import async_playwright
@@ -8,6 +8,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 async def main():
     fails = []
     SITE = (ROOT/'index.html').read_text()
+    SITE = re.sub(r'<meta http-equiv="Content-Security-Policy"[^>]*>\n', '', SITE)   # (served here from stand-in addresses: the policy is checked by csp.js)
     async with async_playwright() as p:
         b = await p.chromium.launch(); pg = await b.new_page(viewport={'width':390,'height':760})
         async def route(r):

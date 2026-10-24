@@ -5,7 +5,7 @@
 #  3. Log out clears the browser; the account keeps everything. A Lichess login stays separate.
 #  4. Linking: the Google account adds that Lichess login; the Lichess account (with its own progress)
 #     is merged into it, and both logins open the same account. A Lichess account isn't offered Google.
-import asyncio, sys, pathlib, subprocess, time, urllib.request
+import re, asyncio, sys, pathlib, subprocess, time, urllib.request
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
@@ -20,6 +20,7 @@ async def google_login(pg):
 async def main():
     fails = []
     SITE = (ROOT/'index.html').read_text().replace('156223514087-0v17r4o6c77ru9hq3kafmpan91l2lunh.apps.googleusercontent.com', 'test-client.apps.googleusercontent.com')
+    SITE = re.sub(r'<meta http-equiv="Content-Security-Policy"[^>]*>\n', '', SITE)   # (served here from stand-in addresses: the policy is checked by csp.js)
     server = subprocess.Popen(['node', str(ROOT/'worker'/'test'/'local.mjs'), str(A.PORT)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     try:
         for _ in range(50):

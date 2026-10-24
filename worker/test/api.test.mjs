@@ -203,3 +203,39 @@ test('usage counts: anonymous events from this site only; the metrics for the ow
   assert.equal(m.body.accounts.total, 2);
   assert.deepEqual(m.body.errors, { visits: 1, load: 1, stopped: 0 });
 });
+
+test('limits: games from Lichess and Chess.com only, 300 per site; known settings documents only; results checked', async () => {
+  const env = makeEnv();
+  await call(env, 'PUT', '/api/meta/chesscom', { body: { data: { username: 'CCPlayer' } } });
+  const many = (pre, n, site) => Array.from({ length: n }, (_, i) => ({ id: pre + i, site, sans: ['e4'] }));
+  let r = await j(await call(env, 'POST', '/api/games', { body: { games: many('li', 290, 'lichess').concat(many('f', 3, 'file')) } }));
+  assert.equal(r.body.saved, 290, 'PGN-file games refused');
+  r = await j(await call(env, 'POST', '/api/games', { body: { games: many('li', 295, 'lichess').concat(many('lx', 20, 'lichess')) } }));
+  assert.deepEqual([r.body.saved, r.body.refused], [300, 15], 'updates always; new ones up to 300');
+  r = await j(await call(env, 'POST', '/api/games', { body: { games: many('cc-', 10, 'chesscom') } }));
+  assert.equal(r.body.saved, 10, 'Chess.com counted apart');
+  await call(env, 'DELETE', '/api/games/li0');
+  r = await j(await call(env, 'POST', '/api/games', { body: { games: many('ly', 2, 'lichess') } }));
+  assert.deepEqual([r.body.saved, r.body.refused], [1, 1], 'room again after a game is removed');
+  assert.equal((await call(env, 'PUT', '/api/meta/anything', { body: { data: 1 } })).status, 404, 'unknown settings document');
+  for (const n of ['profile', 'replay', 'settings', 'chesscom', 'games-cleared']) assert.equal((await call(env, 'PUT', '/api/meta/' + n, { body: { data: { x: 1 } } })).status, 200, n);
+  r = await j(await call(env, 'POST', '/api/results', { body: { rows: [{ ts: 1, a: 'final', acc: 50 }, { ts: 2, a: 'final', acc: 50, pad: 'x'.repeat(5000) }] } }));
+  assert.equal(r.body.added, 1, 'an oversized result is left out');
+});
+
+test('Google: an email not marked verified is refused', async () => {
+  const env = makeEnv();
+  const r = await call(env, 'POST', '/api/login/google', { token: null, body: { idToken: await googleIdToken({ email_verified: undefined }) } });
+  assert.equal(r.status, 401);
+});
+
+test('rate limits: too many requests from one address get 429', async () => {
+  const env = makeEnv(), seen = {};
+  const limiter = n => ({ limit: async ({ key }) => ({ success: (seen[n + key] = (seen[n + key] || 0) + 1) <= 3 }) });
+  env.RL_ALL = limiter('all'); env.RL_OUT = limiter('out');
+  const cc = () => call(env, 'GET', '/api/chesscom/player?user=ccplayer', { token: null, headers: { 'CF-Connecting-IP': '1.2.3.4' } });
+  assert.deepEqual([(await cc()).status, (await cc()).status, (await cc()).status, (await cc()).status], [200, 200, 200, 429]);
+  const other = await call(env, 'GET', '/api/chesscom/player?user=ccplayer', { token: null, headers: { 'CF-Connecting-IP': '5.6.7.8' } });
+  assert.equal(other.status, 200, 'another address is not affected');
+  assert.equal((await call(env, 'GET', '/api/health', { token: null })).status, 200, 'health is never limited');
+});

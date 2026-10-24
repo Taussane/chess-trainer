@@ -16,14 +16,14 @@ How players' accounts and their game sites work. Adding another site only adds t
 | --- | --- | --- |
 | Results | account, time, exercise | Each row also keeps the position key, where the position came from (`masters` or a site), and whether it was a miss. Missed positions are read from these rows. |
 | Games | account, site, the site's game id | Moves, evaluations (the site's or the app's), the app's engine checks. Each game says which site it came from. |
-| Settings | account, name | `profile` (joined date), `chesscom` (the username), `games-cleared` (inside Claude's "Remove my games"), `replay` (older saves' missed positions). |
+| Settings | account, name | `profile` (joined date), `chesscom` (the username), `games-cleared` (inside Claude's "Remove my games"), `settings`, `replay` (older saves' missed positions). |
 
 Positions found in a player's games are not stored in the account: each device works them out from the games and keeps them in the browser with a signature of the rules and of the game, so a rule change or new analysis finds them again (a few games at a time, so the page never freezes).
 
 ## Ids that stay stable
 
 - **Lichess games** keep their Lichess id as is (8 characters).
-- **Games from any other site** get a prefix: `cc-` and the Chess.com game number for Chess.com; games added as a file with no site id get a `g…` code made from their moves.
+- **Games from any other site** get a prefix: `cc-` and the Chess.com game number for Chess.com.
 - **Position keys** stay `own:<game id>:<half-move>`, so they are unique across sites through the game id.
 
 ## Downloading games
@@ -33,8 +33,16 @@ One function per site returns PGN text; everything after it (reading the games, 
 - **Lichess:** the game export (`/api/games/user/<name>`), with Lichess's own evaluations where the game was analysed.
 - **Chess.com:** the public game API (`api.chess.com/pub/player/<name>/games/<year>/<month>/pgn`), month by month until there are enough games, one request at a time as Chess.com asks. No evaluations: every game gets the app's quick scan.
 - **How many:** each site's last 100 games (bullet to classical; UltraBullet, daily games and variants left out) form the core list; an older game stays only while it has missed positions to replay (at most 100 such games per site). Ratings, time control and date are kept with each game.
-- **Removing games:** disconnecting Chess.com removes its games and their positions; an account with Lichess keeps it (its games go with the account). The website has no "Remove my games"; inside Claude, where games are added as files, it remains.
+- **Removing games:** disconnecting Chess.com removes its games and their positions; an account with Lichess keeps it (its games go with the account). Games come from Lichess and Chess.com only (adding a PGN file is gone).
 
 ## Server
 
 A small Cloudflare Worker with a D1 database. It checks each request's sign-in (Lichess: `/api/account` with the player's token, remembered for a day; Google: the server's own token, given at login after checking Google's ID token), then reads or writes only that account's rows. The browser keeps a copy of everything, so the app opens instantly and works offline, and sends what was played offline when it reconnects.
+
+## Limits and protection
+
+- **Per account:** games from Lichess and Chess.com only, at most 300 per site (the app keeps 100 + up to 100 to replay; a sync adds new games before the oldest go); results up to 200,000 rows of at most 4 KB; settings documents only by the names above (20 KB each).
+- **Per address and minute** (Cloudflare's rate limiting, `[[ratelimits]]` in `wrangler.toml`): 300 requests in all; 30 that make the server ask another site (checking a Lichess login, Google's keys, Chess.com), so it can't be used to flood them. Over the limit: 429.
+- **Browsers:** only this site's addresses may call the server (`ALLOWED_ORIGINS`); logins are sent as a header, never cookies, so another site can't act for a player.
+- **The page:** no script from another site (chess.js and the engine are served from this site; the Ko-fi button is our own), and a Content-Security-Policy that lists what the page may load and call.
+- `/api/health` shows the deployed version.

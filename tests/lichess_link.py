@@ -22,8 +22,7 @@ async def main():
         r = await pg.evaluate(f"(()=>{{ const f = {CHECK}; const out = {{}}; ['analysis','candidates','final'].forEach(a=>POOLS[a].forEach(x=>{{ const v = f(x); out[v] = (out[v]||0)+1; }})); return out; }})()")
         print('masters:', r)
         if list(r) != ['ok']: fails.append(f'masters: {r}')
-        await pg.click('#accountBtn'); await pg.fill('#lichessUser', 'TestPlayer')
-        await pg.set_input_files('#pgnFile', T.SAMPLE); await pg.wait_for_timeout(500)
+        await pg.click('#accountBtn'); await pg.evaluate("(t=>{ importPgnText(t, false, 'TestPlayer'); render(); })", pathlib.Path(T.SAMPLE).read_text()); await pg.wait_for_timeout(500)
         r = await pg.evaluate("""(()=>{ const out = {}; myPositions.forEach(x=>{ const u = lichessUrl(x), m = u.match(/^https:\/\/lichess\.org\/([A-Za-z0-9]{8})(\/black)?#(\d+)$/);
           const v = !m ? 'not the game page: ' + u : m[1]!==x.gameId ? 'wrong game' : +m[3]!==x.ply ? 'wrong move' : (!!m[2])!==(x.side==='b') ? 'wrong side' : 'ok';
           out[v] = (out[v]||0)+1; }); return out; })()""")

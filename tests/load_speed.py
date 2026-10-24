@@ -9,7 +9,7 @@ async def main():
     fails = []
     async with async_playwright() as p:
         b, pg, errs = await T.page_with_app(p)
-        await pg.click('#accountBtn'); await pg.set_input_files('#pgnFile', T.SAMPLE); await pg.wait_for_timeout(300)
+        await pg.click('#accountBtn'); await pg.evaluate("(t=>{ importPgnText(t, false, 'TestPlayer'); render(); })", pathlib.Path(T.SAMPLE).read_text()); await pg.wait_for_timeout(300)
         await pg.evaluate("importPgnText(%s, false, 'TestPlayer')" % json.dumps(pathlib.Path('/home/claude/chess-trainer/tests/chesscom-sample.pgn').read_text()))
         await pg.wait_for_timeout(2000)
         saved = await pg.evaluate("""(()=>{ myGames.forEach(g=>{ if(!g.evals){ g.evals = g.sans.map((s,i)=>({cp: Math.round(80*Math.sin(i*1.7))})); g.evalBy='scan'; g.status='evaluated'; } });

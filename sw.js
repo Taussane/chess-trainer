@@ -7,6 +7,7 @@ self.addEventListener('activate', e=>e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', e=>{
   const r = e.request, u = new URL(r.url);
   if(r.method!=='GET' || u.origin!==self.location.origin) return;   // other sites: straight to the network
+  if(['code', 'state', 'error'].some(k=>u.searchParams.has(k))) return;   // back from a login: its one-time code is never kept
   e.respondWith(fetch(r).then(res=>{
     if(res.ok){ const copy = res.clone(); caches.open(CACHE).then(c=>c.put(r, copy)).catch(()=>{}); }
     return res;

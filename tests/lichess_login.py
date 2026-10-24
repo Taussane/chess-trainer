@@ -3,7 +3,7 @@
 # single-use code). Then: your username fills in, your games download with the token, the profile
 # shows the account, a reload keeps you logged in, "Log out" revokes the token, and a cancelled
 # login says so.
-import asyncio, sys, pathlib, hashlib, base64, json, urllib.parse
+import re, asyncio, sys, pathlib, hashlib, base64, json, urllib.parse
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
@@ -12,6 +12,7 @@ CORS = {'access-control-allow-origin':'*', 'access-control-allow-headers':'autho
 async def main():
     fails = []
     SITE = (ROOT/'index.html').read_text()
+    SITE = re.sub(r'<meta http-equiv="Content-Security-Policy"[^>]*>\n', '', SITE)   # (served here from stand-in addresses: the policy is checked by csp.js)
     L = {'auth':None, 'codes':{}, 'revoked':[], 'games_auth':[], 'deny':False}
     async with async_playwright() as p:
         b = await p.chromium.launch(); ctx = await b.new_context(viewport={'width':390,'height':760})

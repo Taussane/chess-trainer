@@ -1,7 +1,7 @@
 # The website (index.html at the top of the repository, built by scripts/build-site.py):
 # up to date with the app, a proper phone page, and "My games" downloading games straight from
 # Lichess (a stand-in Lichess answers here: the sample games for TestPlayer, "not found" otherwise). Only a logged-in player can download games: their own.
-import asyncio, sys, pathlib, subprocess
+import re, asyncio, sys, pathlib, subprocess
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import my_games as T
@@ -10,6 +10,7 @@ async def main():
     fails = []
     if subprocess.run([sys.executable, str(ROOT/'scripts'/'build-site.py'), '--check']).returncode: fails.append('index.html out of date')
     SITE = (ROOT/'index.html').read_text()
+    SITE = re.sub(r'<meta http-equiv="Content-Security-Policy"[^>]*>\n', '', SITE)   # (served here from stand-in addresses: the policy is checked by csp.js)
     asked = []
     async with async_playwright() as p:
         b = await p.chromium.launch(); ctx = await b.new_context(viewport={'width':390,'height':760}, is_mobile=True, has_touch=True)

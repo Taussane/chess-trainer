@@ -10,6 +10,18 @@ ALLOWED_ORIGINS = "https://chessstrategy.org,https://taussane.github.io"
 # "Log in with Google": the OAuth client id from Google Cloud (public; empty = Google sign-in off).
 GOOGLE_CLIENT_ID = "156223514087-0v17r4o6c77ru9hq3kafmpan91l2lunh.apps.googleusercontent.com"
 
+# Requests per address (each Cloudflare location) and minute: everything; what makes this server ask
+# another site (Lichess, Google, Chess.com). See limit() in src/index.js.
+[[ratelimits]]
+name = "RL_ALL"
+namespace_id = "1001"
+simple = { limit = 300, period = 60 }
+
+[[ratelimits]]
+name = "RL_OUT"
+namespace_id = "1002"
+simple = { limit = 30, period = 60 }
+
 [[d1_databases]]
 binding = "DB"
 database_name = "chess-trainer"
