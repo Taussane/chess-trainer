@@ -37,7 +37,7 @@ async def page_with_app(p, storage=None, in_claude=True):
     if in_claude: await pg.add_init_script("window.claude = { use: async()=>null };")
     if storage: await pg.add_init_script(f"localStorage.setItem('cst.mygames.v1', {storage!r});")
     await pg.goto('https://app.test/'); await pg.wait_for_timeout(300)
-    await pg.evaluate("(()=>{"+FAKE+" render(); myBackground(); })()")
+    await pg.evaluate("(()=>{"+FAKE+" fenEvalStore = {}; poolEvalStore = {}; render(); myBackground(); })()")   # (searches asked before the stand-in arrived are dropped)
     return b, pg, errs
 async def main():
     fails = []
