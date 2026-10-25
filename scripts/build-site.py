@@ -22,7 +22,7 @@ CSP = '; '.join([
     "font-src 'self' data:",
     "object-src 'none'", "frame-src 'none'", "base-uri 'self'", "form-action 'self'",
 ])
-page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+page = ('<!doctype html>\n<html lang="en" class="desk2">\n<head>\n<meta charset="utf-8">\n'
         f'<meta http-equiv="Content-Security-Policy" content="{CSP}">\n'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
         '<meta name="theme-color" content="#12161B">\n'
@@ -52,16 +52,11 @@ page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
 CDN_CHESS = '<script src="https://cdn.jsdelivr.net/npm/chess.js@0.12.1/chess.js"></script>'
 assert page.count(CDN_CHESS) == 1, 'chess.js script tag not found'
 page = page.replace(CDN_CHESS, '<script src="vendor/chess.js/chess.js"></script>')
-# The desktop preview (chessstrategy.org/preview/, not linked, not indexed): the same page with the desktop
-# layout being worked on switched on (html.desk2), its files taken from the site's root.
-preview = (page.replace('<html lang="en">', '<html lang="en" class="desk2">', 1)
-               .replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<base href="../">\n<meta name="robots" content="noindex">\n', 1))
-assert preview.count('class="desk2"') == 1 and '<base href' in preview
-outs = { root / 'index.html': page, root / 'preview' / 'index.html': preview }
+outs = { root / 'index.html': page }
 if '--check' in sys.argv:
     ok = all(f.exists() and f.read_text(encoding='utf-8') == t for f, t in outs.items())
     print('index.html is up to date' if ok else 'index.html is out of date: run python3 scripts/build-site.py')
     sys.exit(0 if ok else 1)
 for f, t in outs.items():
     f.parent.mkdir(exist_ok=True); f.write_text(t, encoding='utf-8')
-print('index.html built,', len(page)//1024, 'KB (and preview/index.html)')
+print('index.html built,', len(page)//1024, 'KB')

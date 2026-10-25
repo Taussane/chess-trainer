@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="desk2">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://chess-trainer-api.sauveur-guillaume.workers.dev https://lichess.org https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://storage.ko-fi.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'">
@@ -564,31 +564,31 @@
   .modal-box .help-list{font-size:0.88rem; line-height:1.5; margin:-6px 0 10px; padding-left:18px;}
   .modal-box .help-list li{margin:2px 0;}
   .modal-actions{display:flex; justify-content:flex-end; margin-top:4px;}
-  /* ===== Wide screens (computers, tablets held sideways): the phone layout above stays as it is
-     everywhere else. Exercises: the board on the left, as big as the screen allows; the position's
-     title and the panel on the right. Home: the routine beside the exercises. */
-  @media (min-width:960px) and (min-height:560px){
-    html:not(.desk2) .wrap.ex{max-width:1160px; padding-inline:28px;}
-    html:not(.desk2) .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 420px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:36px;}
-    html:not(.desk2) .wrap.ex > #app > *{grid-column:2;}
-    html:not(.desk2) .wrap.ex > #app > .title-row{grid-column:1 / -1; grid-row:1;}
-    html:not(.desk2) .wrap.ex > #app > .stage{grid-column:1; grid-row:2 / span 2; min-height:0; align-items:flex-start; justify-content:flex-end;}
-    html:not(.desk2) .wrap.ex > #app > .posbar{grid-row:2; margin:22px 0 12px;}   /* (level with the board's top: under the player's name) */
-    html:not(.desk2) .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0;}
-    html:not(.desk2) .wrap.ex .stage .board-col > .board-outer, html:not(.desk2) .wrap.ex .board-outer{max-width:none;}
-    html:not(.desk2) .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px, 760px);}
-    html:not(.desk2) .wrap.ex .board-row{max-width:none;}
-    html:not(.desk2) .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw - 44px, 100cqh - 44px, 760px);}
-    html:not(.desk2) .wrap.home{max-width:980px; padding-inline:28px;}
-    html:not(.desk2) .wrap.home > #app{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:36px; align-items:start;}
-    html:not(.desk2) .wrap.home > #app > *{grid-column:2;}
-    html:not(.desk2) .wrap.home > #app > .home-head{grid-column:1 / -1;}
-    html:not(.desk2) .wrap.home > #app > .routine{grid-column:1; grid-row:2 / span 3; margin-top:0;}
-    html:not(.desk2) .wrap.home > #app > .source-row{grid-row:2;}
-    html:not(.desk2) .wrap.home > #app > .cards{grid-row:3;}
-    html:not(.desk2) .wrap.home > #app > .home-donate{grid-row:4;}
+  /* ===== Wide screens a little short of the desktop layout below (960 to 1023 px wide, or under 600 px
+     tall): the board on the left, the position's title and the panel on the right; home: the routine
+     beside the exercises. The phone layout above stays as it is everywhere else. */
+  @media (min-width:960px) and (min-height:560px) and ((max-width:1023.98px) or (max-height:599.98px)){
+    html .wrap.ex{max-width:1160px; padding-inline:28px;}
+    html .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 420px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:36px;}
+    html .wrap.ex > #app > *{grid-column:2;}
+    html .wrap.ex > #app > .title-row{grid-column:1 / -1; grid-row:1;}
+    html .wrap.ex > #app > .stage{grid-column:1; grid-row:2 / span 2; min-height:0; align-items:flex-start; justify-content:flex-end;}
+    html .wrap.ex > #app > .posbar{grid-row:2; margin:22px 0 12px;}   /* (level with the board's top: under the player's name) */
+    html .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0;}
+    html .wrap.ex .stage .board-col > .board-outer, html .wrap.ex .board-outer{max-width:none;}
+    html .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px, 760px);}
+    html .wrap.ex .board-row{max-width:none;}
+    html .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw - 44px, 100cqh - 44px, 760px);}
+    html .wrap.home{max-width:980px; padding-inline:28px;}
+    html .wrap.home > #app{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:36px; align-items:start;}
+    html .wrap.home > #app > *{grid-column:2;}
+    html .wrap.home > #app > .home-head{grid-column:1 / -1;}
+    html .wrap.home > #app > .routine{grid-column:1; grid-row:2 / span 3; margin-top:0;}
+    html .wrap.home > #app > .source-row{grid-row:2;}
+    html .wrap.home > #app > .cards{grid-row:3;}
+    html .wrap.home > #app > .home-donate{grid-row:4;}
   }
-  /* ===== The desktop layout (being designed: on in the preview copy, html.desk2). Phones never see it:
+  /* ===== The desktop layout (html.desk2, set by the app; computers, 1024 px and wider). Phones never see it:
      everything below needs a wide, tall screen. A sidebar to go anywhere; exercises with the board as big
      as the window allows; home as a dashboard. ===== */
   .side, .home-foot{display:none;}
@@ -4058,10 +4058,11 @@ const ACT_GLYPHS = {
   final:      actIcon('<path d="M4 6h10M4 11h7M4 16h4"/><path d="M18 5v14M15 16l3 3 3-3"/>'),
 };
 const ACT_NAMES = { imbalances:'Imbalance reading', analysis:'Position evaluation', candidates:'Candidate moves', final:'Move selection' };
-// ---- The desktop layout (being designed; on in the preview copy: html.desk2) ----
+// ---- The desktop layout (html.desk2: the sidebar menu and the pages laid out for a computer) ----
 // A sidebar on every page: the logo (home), the routine, the four exercises with your averages, your
 // profile, settings, support; the language and installing the app at the bottom.
-const DESK = document.documentElement.classList.contains('desk2');
+document.documentElement.classList.add('desk2');   // (its CSS needs a wide, tall screen as well: see isDesk)
+const DESK = true;
 const deskMQ = window.matchMedia ? matchMedia('(min-width:1024px) and (min-height:600px)') : null;
 const isDesk = ()=>DESK && !!deskMQ && deskMQ.matches;
 if(DESK && deskMQ && deskMQ.addEventListener) deskMQ.addEventListener('change', ()=>render());
