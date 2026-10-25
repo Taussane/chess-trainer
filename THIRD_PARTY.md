@@ -10,13 +10,9 @@ Move generation and validation. Loaded by the app from a CDN; a copy is in `vend
 
 The chess engine. The app searches with Stockfish 19 (the "lite, single-threaded" WebAssembly build of stockfish.js by Nathan Rugg, copied in `vendor/stockfish/`; source: https://github.com/nmrugg/stockfish.js/tree/v19.0.1), with Stockfish 10 (JavaScript build, from a CDN) as a fallback. `app/sf-eval.js` is a JavaScript port of Stockfish 10's evaluation (the multi-variant fork by Niklas Fiekas), under the same licence. The position finder uses the official Stockfish 19 build, downloaded by `scripts/setup-stockfish.sh` and not stored here. Stockfish is licensed under the GNU General Public License v3.0: https://github.com/official-stockfish/Stockfish
 
-## Chess pieces: Cburnett set
-
-The board's pieces (`vendor/pieces/cburnett/`, embedded in the app by `scripts/piece-css.py`) are the standard set drawn by Colin M.L. Burnett (https://en.wikipedia.org/wiki/User:Cburnett) for Wikimedia Commons, where it is available under the GFDL, BSD and GPL licences. The files come from Lichess (https://github.com/lichess-org/lila, `public/piece/cburnett/`), which distributes them under the GNU General Public License v2 or later (https://www.gnu.org/licenses/gpl-2.0.txt), compatible with this project's AGPL v3.
-
 ## Chess pieces: Caliente set
 
-The board's other piece set, chosen in Settings (`vendor/pieces/caliente/`, with its licence file), is "caliente" by Leonid Gordenin "avi" (https://github.com/avi-0/caliente), licensed under Creative Commons Attribution-ShareAlike 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Changes: the files were renamed (`kw.svg` to `wK.svg`, and so on) and stripped of editor data (Inkscape metadata, unused ids, shorter numbers); the drawings are unchanged. These files remain under CC BY-SA 4.0.
+The board's pieces, and the king of the app icon (`icons/`), are "caliente" (`vendor/pieces/caliente/`, with its licence file, embedded in the app by `scripts/piece-css.py`), by Leonid Gordenin "avi" (https://github.com/avi-0/caliente), licensed under Creative Commons Attribution-ShareAlike 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Changes: the files were renamed (`kw.svg` to `wK.svg`, and so on) and stripped of editor data (Inkscape metadata, unused ids, shorter numbers); the drawings are unchanged. The app icons put the white king on a yellow square. These files and icons remain under CC BY-SA 4.0.
 
 ## scalachess: game phases (Divider)
 
