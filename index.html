@@ -634,17 +634,16 @@
     html.desk2 .wrap.ex .stage .board-col > .board-row .evalbar-wrap{position:absolute; top:0; bottom:0; left:calc(100% + 10px);}
     /* profile: three columns; settings: the controls beside a large preview board */
     html.desk2 .wrap:not(.ex):not(.home){padding-block:24px;}
-    html.desk2 .wrap[data-scr=account] > #app{max-width:1040px;}
+    html.desk2 .wrap[data-scr=account] > #app{max-width:900px;}   /* (home, profile and metrics: one width) */
     html.desk2 .wrap[data-scr=account] .ac-foot{display:none;}   /* (the links are in the menu) */
     html.desk2 .wrap[data-scr=support] > #app, html.desk2 .wrap[data-scr=tests] > #app{max-width:560px;}
     /* metrics: a dashboard as wide as the home page */
-    html.desk2 .wrap[data-scr=metrics] > #app{max-width:1040px;}
-    html.desk2 .mx-page{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:20px; align-items:start;}
+    html.desk2 .wrap[data-scr=metrics] > #app{max-width:900px;}
+    html.desk2 .mx-page{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:20px; align-items:start;}
     html.desk2 .mx-page > .seg{grid-column:1 / -1; justify-self:start; width:360px;}
     html.desk2 .mx-page > .pf-card, html.desk2 .mx-page > .mx-note, html.desk2 .mx-page > .mg-status{grid-column:1 / -1;}
     html.desk2 .mx-tiles{grid-template-columns:repeat(6, 1fr);}
     html.desk2 .mx-grp{display:flex; flex-direction:column; gap:12px; min-width:0;}
-    html.desk2 .mx-grp.mx-2{grid-column:span 2;}
     html.desk2 .mx-lines span{white-space:nowrap;}
     html.desk2 .mx-grp.mx-wide{grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:12px 20px;}
     html.desk2 .mx-grp.mx-wide > .pf-h{grid-column:1 / -1;}
