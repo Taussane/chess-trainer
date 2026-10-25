@@ -638,7 +638,7 @@
     html.desk2 .pf-scroll{overflow:visible;}
     /* settings: the preview board as big as the window, centred; the settings on the right (as an exercise) */
     html.desk2 .wrap[data-scr=settings]:not(.ex){padding-block:16px;}   /* (as an exercise: same board, same title place) */
-    html.desk2 .wrap[data-scr=settings] > #app{display:grid; width:100%; max-width:calc(100dvh - 76px + 44px + 28px + 380px); grid-template-columns:minmax(0, 1fr) 380px; grid-template-rows:auto auto auto 1fr; column-gap:28px; row-gap:12px; align-items:start;}
+    html.desk2 .wrap[data-scr=settings] > #app{display:grid; width:100%; height:calc(100dvh - 32px); min-height:0; max-width:calc(100dvh - 76px + 44px + 28px + 380px); grid-template-columns:minmax(0, 1fr) 380px; grid-template-rows:auto auto auto 1fr; column-gap:28px; row-gap:12px; align-items:start;}
     html.desk2 .wrap[data-scr=settings] .set-page{display:contents;}
     html.desk2 .wrap[data-scr=settings] #app > .title-row, html.desk2 .wrap[data-scr=settings] .set-page > *{grid-column:2;}
     html.desk2 .wrap[data-scr=settings] .set-page > .set-preview{grid-column:1; grid-row:1 / span 4; height:calc(100dvh - 32px); justify-content:center; align-items:center; padding-top:28px;}
