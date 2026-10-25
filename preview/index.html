@@ -617,6 +617,7 @@
     .side-foot .title-chip, .side-foot .donate-badge{margin:0; align-self:flex-start;}
     .side-foot .donate-badge.on{box-shadow:0 0 0 2px var(--panel), 0 0 0 3px var(--accent);}
     .side-links{margin:0; line-height:1.7;} .side-links a{color:var(--text-mute);}
+    .side-links .install-link{color:var(--accent); text-decoration-color:var(--accent); text-align:left;}
     /* exercises: the board fills the height on the left; title, game and panel on the right */
     html.desk2 .wrap.ex{max-width:none; padding-block:16px;}
     html.desk2 .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 380px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:54px;}   /* (the gap holds Position evaluation's bar) */
@@ -4112,8 +4113,7 @@ function renderSide(){
     <div class="side-foot">
       <button class="title-chip" id="sideLang" data-no-i18n aria-label="Language">${LANG==='fr' ? 'FR · Français' : 'EN · English'}</button>
       <button class="donate-badge${at==='support' ? ' on' : ''}" data-side="support"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>
-      ${installOffered() ? `<button class="link-plain install-link" id="sideInstall">Install the app</button>` : ''}
-      <p class="side-links">${siteLinks().replace(/ · /g, '<br>')}</p>
+      <p class="side-links">${siteLinks().replace(/ · /g, '<br>')}${installOffered() ? `<br><button class="link-plain install-link" id="sideInstall">Install the app</button>` : ''}</p>
     </div>`;
   // Rebuilt only when something in it changed: the page redraws often (games syncing, an evaluation
   // arriving), and a menu rebuilt under the mouse would lose the click.
