@@ -6043,6 +6043,13 @@ let renderHeld = false, renderWaiting = false;
 function holdRender(){ renderHeld = true; }
 const releaseRender = ()=>{ if(!renderHeld) return; renderHeld = false; if(renderWaiting){ renderWaiting = false; setTimeout(render, 0); } };
 document.addEventListener('pointerup', releaseRender, true); document.addEventListener('pointercancel', releaseRender, true);
+// The same for any press on a button, a card or a menu item: a redraw from background work (games syncing,
+// an evaluation arriving) between press and release would replace the button and the click would be lost.
+// (A redraw that's due waits until it's let go, 2 s at most.)
+document.addEventListener('pointerdown', e=>{
+  if(e.button || !e.target.closest || !e.target.closest('#app button, #app .card, #app [role=radio], #side button')) return;
+  holdRender(); clearTimeout(holdRender.safety); holdRender.safety = setTimeout(releaseRender, 2000);
+}, true);
 function render(){
   if(renderHeld){ renderWaiting = true; return; }
   // The page is redrawn often (e.g. while your games are analysed): text being typed, and the
