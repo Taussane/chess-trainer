@@ -564,36 +564,17 @@
   .modal-box .help-list{font-size:0.88rem; line-height:1.5; margin:-6px 0 10px; padding-left:18px;}
   .modal-box .help-list li{margin:2px 0;}
   .modal-actions{display:flex; justify-content:flex-end; margin-top:4px;}
-  /* ===== Wide screens a little short of the desktop layout below (960 to 1023 px wide, or under 600 px
-     tall): the board on the left, the position's title and the panel on the right; home: the routine
-     beside the exercises. The phone layout above stays as it is everywhere else. */
-  @media (min-width:960px) and (min-height:560px) and ((max-width:1023.98px) or (max-height:599.98px)){
-    html .wrap.ex{max-width:1160px; padding-inline:28px;}
-    html .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 420px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:36px;}
-    html .wrap.ex > #app > *{grid-column:2;}
-    html .wrap.ex > #app > .title-row{grid-column:1 / -1; grid-row:1;}
-    html .wrap.ex > #app > .stage{grid-column:1; grid-row:2 / span 2; min-height:0; align-items:flex-start; justify-content:flex-end;}
-    html .wrap.ex > #app > .posbar{grid-row:2; margin:22px 0 12px;}   /* (level with the board's top: under the player's name) */
-    html .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0;}
-    html .wrap.ex .stage .board-col > .board-outer, html .wrap.ex .board-outer{max-width:none;}
-    html .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px, 760px);}
-    html .wrap.ex .board-row{max-width:none;}
-    html .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw - 44px, 100cqh - 44px, 760px);}
-    html .wrap.home{max-width:980px; padding-inline:28px;}
-    html .wrap.home > #app{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:36px; align-items:start;}
-    html .wrap.home > #app > *{grid-column:2;}
-    html .wrap.home > #app > .home-head{grid-column:1 / -1;}
-    html .wrap.home > #app > .routine{grid-column:1; grid-row:2 / span 3; margin-top:0;}
-    html .wrap.home > #app > .source-row{grid-row:2;}
-    html .wrap.home > #app > .cards{grid-row:3;}
-    html .wrap.home > #app > .home-donate{grid-row:4;}
-  }
-  /* ===== The desktop layout (html.desk2, set by the app; computers, 1024 px and wider). Phones never see it:
-     everything below needs a wide, tall screen. A sidebar to go anywhere; exercises with the board as big
+  /* ===== The desktop layout (html.desk2, set by the app): screens 1024 px wide or more and at least 4:3
+     (wider than tall by a third); every other screen gets the phone layout. Phones never see it:
+     everything below needs such a screen. A sidebar to go anywhere; exercises with the board as big
      as the window allows; home as a dashboard. ===== */
   .side, .home-foot{display:none;}
-  @media (min-width:1024px) and (min-height:600px){
-    html.desk2{--side-w:264px;}
+  @media (min-width:1024px) and (min-aspect-ratio:4/3){
+    html.desk2{--side-w:264px; --panel-w:380px;}
+    @media (max-width:1279.98px){   /* smaller desktops (a 1024x768 tablet held sideways): a narrower menu and panel, for the board */
+      html.desk2{--side-w:228px; --panel-w:320px;}
+      html.desk2 .wrap{padding-inline:20px !important;}
+    }
     html.desk2 .side{display:flex; flex-direction:column; position:fixed; left:0; top:0; bottom:0; width:var(--side-w); z-index:20;
       background:var(--panel); border-right:1px solid var(--border); padding:18px 12px 14px; overflow-y:auto;}
     html.desk2 .wrap{margin-left:var(--side-w); max-width:none; padding-inline:32px;}
@@ -618,14 +599,14 @@
     .side-links .install-link{color:var(--accent); text-decoration-color:var(--accent); text-align:left;}
     /* exercises: the board fills the height on the left; title, game and panel on the right */
     html.desk2 .wrap.ex{max-width:none; padding-block:16px;}
-    html.desk2 .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 380px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:54px;}   /* (the gap holds Position evaluation's bar) */
+    html.desk2 .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) var(--panel-w); grid-template-rows:auto auto minmax(0, 1fr); column-gap:54px;}   /* (the gap holds Position evaluation's bar) */
     html.desk2 .wrap.ex > #app > *{grid-column:2;}
     html.desk2 .wrap.ex > #app > .title-row{grid-row:1;}
     html.desk2 .wrap.ex > #app > .stage{grid-column:1; grid-row:1 / span 3; min-height:0; align-items:center; justify-content:center;}
     html.desk2 .wrap.ex > #app > .posbar{grid-row:2; margin:6px 0 14px;}
     html.desk2 .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0; max-width:none;}
     html.desk2 .wrap.ex .title-row .back{display:none;}
-    html.desk2 .wrap.ex > #app{width:100%; max-width:calc(100dvh - 76px + 54px + 380px); margin-inline:auto;}   /* board and panel together, centred, on very wide screens */
+    html.desk2 .wrap.ex > #app{width:100%; max-width:calc(100dvh - 76px + 54px + var(--panel-w)); margin-inline:auto;}   /* board and panel together, centred, on very wide screens */
     html.desk2 .wrap.ex .board-outer, html.desk2 .wrap.ex .board-row{max-width:none;}
     html.desk2 .coord-f{bottom:1cqw; left:.5cqw;} html.desk2 .coord-r{top:.5cqw; right:.5cqw;}
     html.desk2 .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px);}
@@ -655,7 +636,7 @@
     html.desk2 .pf-scroll{overflow:visible;}
     /* settings: the preview board as big as the window, centred; the settings on the right (as an exercise) */
     html.desk2 .wrap[data-scr=settings]:not(.ex){padding-block:16px;}   /* (as an exercise: same board, same title place) */
-    html.desk2 .wrap[data-scr=settings] > #app{display:grid; width:100%; height:calc(100dvh - 32px); min-height:0; max-width:calc(100dvh - 76px + 54px + 380px); grid-template-columns:minmax(0, 1fr) 380px; grid-template-rows:auto auto auto auto minmax(0, 1fr); column-gap:54px; row-gap:12px; align-items:start;}
+    html.desk2 .wrap[data-scr=settings] > #app{display:grid; width:100%; height:calc(100dvh - 32px); min-height:0; max-width:calc(100dvh - 76px + 54px + var(--panel-w)); grid-template-columns:minmax(0, 1fr) var(--panel-w); grid-template-rows:auto auto auto auto minmax(0, 1fr); column-gap:54px; row-gap:12px; align-items:start;}
     html.desk2 .wrap[data-scr=settings] .set-page{display:contents;}
     html.desk2 .wrap[data-scr=settings] #app > .title-row, html.desk2 .wrap[data-scr=settings] .set-page > *{grid-column:2;}
     html.desk2 .wrap[data-scr=settings] .set-page > .set-preview{grid-column:1; grid-row:1 / -1; height:calc(100dvh - 32px); justify-content:center; align-items:center; padding-top:28px;}
@@ -4063,7 +4044,7 @@ const ACT_NAMES = { imbalances:'Imbalance reading', analysis:'Position evaluatio
 // profile, settings, support; the language and installing the app at the bottom.
 document.documentElement.classList.add('desk2');   // (its CSS needs a wide, tall screen as well: see isDesk)
 const DESK = true;
-const deskMQ = window.matchMedia ? matchMedia('(min-width:1024px) and (min-height:600px)') : null;
+const deskMQ = window.matchMedia ? matchMedia('(min-width:1024px) and (min-aspect-ratio:4/3)') : null;
 const isDesk = ()=>DESK && !!deskMQ && deskMQ.matches;
 if(DESK && deskMQ && deskMQ.addEventListener) deskMQ.addEventListener('change', ()=>render());
 const SIDE_ICONS = {
