@@ -606,8 +606,8 @@
     html.desk2 .wrap[data-scr=account] > #app{max-width:1040px;}
     html.desk2 .wrap[data-scr=account] .ac-foot{display:none;}   /* (the links are in the menu) */
     html.desk2 .wrap[data-scr=support] > #app, html.desk2 .wrap[data-scr=metrics] > #app, html.desk2 .wrap[data-scr=tests] > #app{max-width:560px;}
-    html.desk2 .wrap:not(.ex) .title-row .back, html.desk2 #settingsBtn{display:none;}   /* (in the sidebar) */
-    html.desk2 .pf-cols{display:grid; grid-template-columns:minmax(0, 1fr) 360px; gap:28px; align-items:start;}
+    html.desk2 .wrap:not(.ex) .title-row .back, html.desk2 #settingsBtn, html.desk2 #metricsBtn{display:none;}   /* (in the sidebar) */
+    html.desk2 .pf-cols{display:grid; grid-template-columns:360px minmax(0, 1fr); gap:28px; align-items:start;}
     html.desk2 .pf-col > .title-row{margin-bottom:4px;}
     html.desk2 .pf-col{display:flex; flex-direction:column; gap:12px; min-width:0;}
     html.desk2 .pf-scroll{overflow:visible;}
@@ -629,7 +629,9 @@
     html.desk2 .wrap.home > #app > *{grid-column:1;}
     html.desk2 .wrap.home > #app > .home-head{grid-column:1 / -1; margin:0 0 22px; display:flex; align-items:center; gap:24px;}
     html.desk2 .wrap.home .home-top{order:-1; margin:0; flex:none;}
-    html.desk2 .wrap.home .home-top h1{display:none;}   /* (the logo is in the menu) */
+    html.desk2 .wrap.home .home-top h1{display:none;}
+    html.desk2 .wrap.home .home-top .acct-chip{font-size:1.72rem; gap:12px; padding:8px 24px 8px 8px; border-width:2px;}   /* twice as big */
+    html.desk2 .wrap.home .home-top .acct-dot{width:44px; height:44px; font-size:1.56rem;}   /* (the logo is in the menu) */
     html.desk2 .wrap.home .home-head p{margin:0; font-size:1rem; flex:1;}
     html.desk2 .wrap.home > #app > .routine{grid-column:2; grid-row:2 / span 2; margin:0;}
     html.desk2 .wrap.home > #app > .home-donate, html.desk2 .wrap.home > #app > .home-foot{display:none;}   /* (in the menu) */
@@ -4024,6 +4026,7 @@ const SIDE_ICONS = {
   routine: actIcon('<path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v4h4"/><path d="M12 8v4l3 2"/>'),
   profile: actIcon('<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'),
   settings: actIcon('<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'),
+  metrics: actIcon('<path d="M4 20V4M4 20h16"/><path d="M7 15l4-5 3 3 5-6"/>'),
   support: actIcon('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'),
 };
 // Leaving an exercise from the sidebar: as its own back arrow does (the routine remembers where it was).
@@ -4038,7 +4041,9 @@ function sideGo(where){
   leaveExercise();
   if(where==='settings') settingsRebuild = true;
   if(where==='support'){ supportFrom = 'home'; supportRebuild = true; }
-  screen = where; render();
+  screen = where;
+  if(where==='metrics') return loadMetrics();
+  render();
 }
 function siteLinks(){
   return `${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>`;
@@ -4058,6 +4063,7 @@ function renderSide(){
     <div class="side-sec">You</div>
     ${item('account', SIDE_ICONS.profile, displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
+    ${isOwner() ? item('metrics', SIDE_ICONS.metrics, 'Metrics') : ''}
     <div class="side-foot">
       <button class="title-chip" id="sideLang" data-no-i18n aria-label="Language">${LANG==='fr' ? 'FR · Français' : 'EN · English'}</button>
       <button class="donate-badge${at==='support' ? ' on' : ''}" data-side="support"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>
@@ -4446,8 +4452,8 @@ function renderAccount(){
           <div><div class="pf-name">${esc(name) || 'Guest'}</div>
           <div class="pf-facts"><span><b>${results.length}</b> position${results.length===1?'':'s'} played since ${since}</span></div></div></div>
       </section>`, acct = DIRECT_LICHESS ? accountSection() : '';
-        // desktop: two columns (progress; you, your account, your games and positions)
-        return isDesk() ? `<div class="pf-cols"><div class="pf-col pf-wide">${prog.html}</div><div class="pf-col">${head}${id}${acct}${positionsSection()}</div></div>`
+        // desktop: two columns (you, your account, your games and positions; progress)
+        return isDesk() ? `<div class="pf-cols"><div class="pf-col">${head}${id}${acct}${positionsSection()}</div><div class="pf-col pf-wide">${prog.html}</div></div>`
                         : `${id}${prog.html}${positionsSection()}${acct}`; })()}
       <p class="ac-foot">${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}${installLink()}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
