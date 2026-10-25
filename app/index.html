@@ -579,6 +579,7 @@
     .side-item.on{background:var(--panel-2); box-shadow:inset 3px 0 0 var(--accent);}
     .side-item:disabled{opacity:.45; cursor:default;}
     .side-item .act-icon, .side-item svg{width:20px; height:20px; flex:none; color:var(--accent);}
+    .side-item .side-app-icon{width:20px; height:20px; flex:none; border-radius:4px;}
     .side-item .side-name{flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
     .side-item .side-n{font-size:.8rem; color:var(--text-mute); font-variant-numeric:tabular-nums;}
     .side-foot{margin-top:auto; padding:14px 10px 0; display:flex; flex-direction:column; gap:10px; font-size:.8rem; color:var(--text-mute);}
@@ -4076,7 +4077,7 @@ function renderSide(){
     ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
     <div class="side-sec">You</div>
-    ${item('account', SIDE_ICONS.profile, displayName() || 'Profile')}
+    ${item('account', '<img class="side-app-icon" src="icons/icon.svg" alt="" aria-hidden="true">', displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
     ${isOwner() ? item('metrics', SIDE_ICONS.metrics, 'Metrics') : ''}
     <div class="side-foot">
@@ -6057,7 +6058,7 @@ function render(){
   shownScreen = screen;
   // pages slide: in from the right going deeper (home → a page, profile → settings), from the left coming back
   const sub = x=>x==='settings' || x==='support' || x==='metrics', settingsStep = (sub(from) && onProfile()) || (sub(screen) && ['account', 'progress', 'mygames'].includes(from));
-  if(from && from!==screen && (from==='home' || screen==='home' || settingsStep)){
+  if(from && from!==screen && !isDesk() && (from==='home' || screen==='home' || settingsStep)){   // (not on desktop: the menu reaches any page)
     const app = document.getElementById('app'), cls = screen==='home' || sub(from) ? 'page-back' : 'page-fwd';
     app.classList.remove('page-fwd', 'page-back'); void app.offsetWidth; app.classList.add(cls);
     app.addEventListener('animationend', function done(e){ if(e.target===app){ app.classList.remove(cls); app.removeEventListener('animationend', done); } });
