@@ -623,6 +623,7 @@
     html.desk2 .wrap.ex .title-row .back{display:none;}
     html.desk2 .wrap.ex > #app{width:100%; max-width:calc(100dvh - 76px + 44px + 28px + 380px); margin-inline:auto;}   /* board and panel together, centred, on very wide screens */
     html.desk2 .wrap.ex .board-outer, html.desk2 .wrap.ex .board-row{max-width:none;}
+    html.desk2 .coord-f{bottom:1.3cqw; left:.5cqw;} html.desk2 .coord-r{top:.5cqw; right:.5cqw;}
     html.desk2 .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px);}
     html.desk2 .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw - 44px, 100cqh - 44px);}
     /* profile: three columns; settings: the controls beside a large preview board */
@@ -631,7 +632,8 @@
     html.desk2 .wrap[data-scr=account] .ac-foot{display:none;}   /* (the links are in the menu) */
     html.desk2 .wrap[data-scr=support] > #app, html.desk2 .wrap[data-scr=metrics] > #app, html.desk2 .wrap[data-scr=tests] > #app{max-width:560px;}
     html.desk2 .wrap:not(.ex) .title-row .back, html.desk2 #settingsBtn{display:none;}   /* (in the sidebar) */
-    html.desk2 .pf-cols{display:grid; grid-template-columns:360px minmax(0, 1fr); gap:28px; align-items:start;}
+    html.desk2 .pf-cols{display:grid; grid-template-columns:minmax(0, 1fr) 360px; gap:28px; align-items:start;}
+    html.desk2 .pf-col > .title-row{margin-bottom:4px;}
     html.desk2 .pf-col{display:flex; flex-direction:column; gap:12px; min-width:0;}
     html.desk2 .pf-scroll{overflow:visible;}
     /* settings: the preview board as big as the window, centred; the settings on the right (as an exercise) */
@@ -648,7 +650,7 @@
     html.desk2 .wrap.home > #app{display:grid; grid-template-columns:minmax(0, 1fr) 320px; column-gap:28px; align-items:start;}
     html.desk2 .wrap.home > #app > *{grid-column:1;}
     html.desk2 .wrap.home > #app > .home-head{grid-column:1 / -1; margin:0 0 22px; display:flex; align-items:center; gap:24px;}
-    html.desk2 .wrap.home .home-top{order:2; margin:0; flex:none;}
+    html.desk2 .wrap.home .home-top{order:-1; margin:0; flex:none;}
     html.desk2 .wrap.home .home-top h1{display:none;}   /* (the logo is in the menu) */
     html.desk2 .wrap.home .home-head p{margin:0; font-size:1rem; flex:1;}
     html.desk2 .wrap.home > #app > .routine{grid-column:2; grid-row:2 / span 2; margin:0;}
@@ -4073,13 +4075,13 @@ function renderSide(){
   const html = `
     <button class="side-logo${at==='home' ? ' on' : ''}" data-side="home" data-no-i18n aria-label="Home"><b>Chess<span class="beta">${LANG==='fr' ? 'Bêta' : 'Beta'}</span><br>Strategy<span class="tld">.org</span></b></button>
     <div class="side-sec">Exercises</div>
-    ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
     ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
+    ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
     <div class="side-sec">You</div>
     ${item('account', SIDE_ICONS.profile, displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
     <div class="side-foot">
-      <button class="title-chip" id="sideLang" data-no-i18n aria-label="Language">${LANG==='fr' ? 'FR · English' : 'EN · Français'}</button>
+      <button class="title-chip" id="sideLang" data-no-i18n aria-label="Language">${LANG==='fr' ? 'FR · Français' : 'EN · English'}</button>
       <button class="donate-badge${at==='support' ? ' on' : ''}" data-side="support"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>
       ${installOffered() ? `<button class="link-plain install-link" id="sideInstall">Install the app</button>` : ''}
       <p class="side-links">${siteLinks().replace(/ · /g, '<br>')}</p>
@@ -4089,7 +4091,7 @@ function renderSide(){
   if(nav._html===html) return;
   nav._html = html; nav.innerHTML = html;
   nav.querySelectorAll('[data-side]').forEach(b=>b.onclick = ()=>sideGo(b.dataset.side==='account' ? 'account' : b.dataset.side));
-  const lang = nav.querySelector('#sideLang'); if(lang) lang.onclick = ()=>{ settings.lang = LANG==='fr' ? 'en' : 'fr'; setLanguage(); saveSettings(); settingsRebuild = true; render(); };
+  const lang = nav.querySelector('#sideLang'); if(lang) lang.onclick = ()=>{ settings.lang = LANG==='fr' ? 'en' : 'fr'; setLanguage(); saveSettings(); settingsRebuild = true; supportRebuild = true; render(); };
   const inst = nav.querySelector('#sideInstall'); if(inst) inst.onclick = installApp;
 }
 const GEAR_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.85 1.85M16.65 16.65l1.85 1.85M5.5 18.5l1.85-1.85M16.65 7.35l1.85-1.85" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
@@ -4453,20 +4455,21 @@ function renderAccount(){
   const app = document.getElementById('app'), esc = x=>String(x).replace(/</g,'&lt;');
   const since = new Date(joinedAt()).toLocaleDateString(dateLoc(), { day:'numeric', month:'short', year:'numeric' });
   const name = displayName(), prog = progressSection();
-  app.innerHTML = `
-    <div class="title-row">
+  const head = `<div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to exercises">${BACK_ARROW}</button>
       <h1>Profile</h1>
       ${isOwner() ? `<button class="title-chip" id="metricsBtn">Metrics</button>` : ''}<button class="title-chip" id="settingsBtn">Settings</button>
-    </div>
+    </div>`;
+  app.innerHTML = `
+    ${isDesk() ? '' : head}
     <div class="pf-scroll">
       ${(()=>{ const id = `<section class="pf-card pf-id">
         <div class="pf-who"><span class="acct-dot big" aria-hidden="true"><span class="pc pc-wK"></span></span>
           <div><div class="pf-name">${esc(name) || 'Guest'}</div>
           <div class="pf-facts"><span><b>${results.length}</b> position${results.length===1?'':'s'} played since ${since}</span></div></div></div>
       </section>`, acct = DIRECT_LICHESS ? accountSection() : '';
-        // desktop: two columns (you, your account, your games and positions; progress)
-        return isDesk() ? `<div class="pf-cols"><div class="pf-col">${id}${acct}${positionsSection()}</div><div class="pf-col pf-wide">${prog.html}</div></div>`
+        // desktop: two columns (progress; you, your account, your games and positions)
+        return isDesk() ? `<div class="pf-cols"><div class="pf-col pf-wide">${prog.html}</div><div class="pf-col">${head}${id}${acct}${positionsSection()}</div></div>`
                         : `${id}${prog.html}${positionsSection()}${acct}`; })()}
       <p class="ac-foot">${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}${installLink()}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
