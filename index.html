@@ -184,6 +184,7 @@
   .kofi-slot{display:flex; justify-content:center;}
   .kofi-btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; align-self:center; padding:9px 18px; border-radius:999px; background:var(--accent); color:#fff; font-weight:700; font-size:0.94rem; text-decoration:none; box-shadow:0 2px 6px rgba(0,0,0,.25);}
   .mx-page .seg{margin-bottom:2px;}
+  .mx-grp{display:contents;}   /* (groups for the desktop layout) */
   .mx-tiles{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;}
   .mx-tile{display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 0;}
   .mx-tile b{font-size:1.35rem; font-family:var(--font-display);} .mx-tile small{color:var(--text-mute); font-size:0.74rem; text-align:center;}
@@ -633,7 +634,18 @@
     html.desk2 .wrap:not(.ex):not(.home){padding-block:24px;}
     html.desk2 .wrap[data-scr=account] > #app{max-width:1040px;}
     html.desk2 .wrap[data-scr=account] .ac-foot{display:none;}   /* (the links are in the menu) */
-    html.desk2 .wrap[data-scr=support] > #app, html.desk2 .wrap[data-scr=metrics] > #app, html.desk2 .wrap[data-scr=tests] > #app{max-width:560px;}
+    html.desk2 .wrap[data-scr=support] > #app, html.desk2 .wrap[data-scr=tests] > #app{max-width:560px;}
+    /* metrics: a dashboard as wide as the home page */
+    html.desk2 .wrap[data-scr=metrics] > #app{max-width:1040px;}
+    html.desk2 .mx-page{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:20px; align-items:start;}
+    html.desk2 .mx-page > .seg{grid-column:1 / -1; justify-self:start; width:360px;}
+    html.desk2 .mx-page > .pf-card, html.desk2 .mx-page > .mx-note, html.desk2 .mx-page > .mg-status{grid-column:1 / -1;}
+    html.desk2 .mx-tiles{grid-template-columns:repeat(6, 1fr);}
+    html.desk2 .mx-grp{display:flex; flex-direction:column; gap:12px; min-width:0;}
+    html.desk2 .mx-grp.mx-2{grid-column:span 2;}
+    html.desk2 .mx-lines span{white-space:nowrap;}
+    html.desk2 .mx-grp.mx-wide{grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:12px 20px;}
+    html.desk2 .mx-grp.mx-wide > .pf-h{grid-column:1 / -1;}
     html.desk2 .wrap:not(.ex) .title-row .back, html.desk2 #settingsBtn, html.desk2 #metricsBtn{display:none;}   /* (in the sidebar) */
     html.desk2 .pf-cols{display:grid; grid-template-columns:360px minmax(0, 1fr); gap:28px; align-items:start;}
     html.desk2 .pf-col > .title-row{margin-bottom:4px;}
@@ -6869,14 +6881,14 @@ function renderMetrics(){
         ${tile(d.active.day, 'active today')}${tile(d.active.week, 'active 7 days')}${tile(d.active.month, 'active 30 days')}
         ${tile(sum('newDevices'), 'new devices')}${tile(sum('visits'), 'visits')}${tile(sum('positions'), 'positions')}
       </div></section>
-      <h2 class="pf-h">Every day</h2>
+      <div class="mx-grp mx-wide"><h2 class="pf-h">Every day</h2>
       <section class="pf-card">${metricsChart(d.daily, [['devices', 'var(--accent)', 'Active devices'], ['newDevices', 'var(--cyan-arrow)', 'New devices'], ['newAccounts', 'var(--pick1)', 'New accounts']])}</section>
       <section class="pf-card">${metricsChart(d.daily, [['positions', 'var(--accent)', 'Positions'], ['visits', 'var(--cyan-arrow)', 'Visits']])}</section>
-      <h2 class="pf-h">Exercises</h2>
+      </div><div class="mx-grp mx-2"><h2 class="pf-h">Exercises</h2>
       <section class="pf-card"><table class="mx-table"><thead><tr><th></th><th>Played</th><th>Share</th><th>Avg</th><th>&lt;50</th><th>≥80</th></tr></thead><tbody>
         ${d.exercises.map(x=>`<tr><td>${ACT_SHORT[x.a] || x.a}</td><td>${x.n}</td><td>${pc(x.n, totPos)}</td><td>${x.avg ?? '—'}%</td><td>${pc(x.low, x.n)}</td><td>${pc(x.high, x.n)}</td></tr>`).join('') || '<tr><td colspan="6">No positions yet</td></tr>'}
       </tbody></table><p class="mx-note">Avg: average accuracy. &lt;50 / ≥80: share of positions scored below 50% (hard) or 80% and more (easy).</p></section>
-      <h2 class="pf-h">Visits</h2>
+      </div><div class="mx-grp"><h2 class="pf-h">Visits</h2>
       <section class="pf-card mx-lines">
         <div><span>Positions per visit</span><b>${d.visits.positionsPerVisit}</b></div>
         <div><span>Exercises per visit</span><b>${d.visits.exercisesPerVisit}</b></div>
@@ -6884,7 +6896,7 @@ function renderMetrics(){
         <div><span>Master / own positions</span><b>${pc(d.sources.masters || 0, totPos)} / ${pc(d.sources.mine || 0, totPos)}</b></div>
         <div><span>In the daily routine</span><b>${pc(d.routine.positions, d.routine.of)}</b></div>
       </section>
-      <h2 class="pf-h">Devices (${dev})</h2>
+      </div><div class="mx-grp"><h2 class="pf-h">Devices (${dev})</h2>
       <section class="pf-card mx-lines">
         <div><span>Logged in</span><b>${shares(d.devices.auth)}</b></div>
         <div><span>Chess.com connected</span><b>${pc(d.devices.chesscom['1'] || 0, dev)}</b></div>
@@ -6892,20 +6904,20 @@ function renderMetrics(){
         <div><span>Installed app</span><b>${pc(d.devices.app['1'] || 0, dev)}</b></div>
         <div><span>Engine failed (visits)</span><b>${d.errors ? `${d.errors.visits} · ${pc(d.errors.visits, d.visits.n)}` : '—'}</b></div>
       </section>
-      <h2 class="pf-h">Own games</h2>
+      </div><div class="mx-grp"><h2 class="pf-h">Own games</h2>
       <section class="pf-card mx-lines">
         <div><span>Devices with own games</span><b>${d.ownGames.devices}</b></div>
         <div><span>Games / positions found</span><b>${d.ownGames.games} / ${d.ownGames.positions}</b></div>
         <div><span>Positions per game</span><b>${d.ownGames.positionsPerGame}</b></div>
       </section>
-      <h2 class="pf-h">Accounts (all time)</h2>
+      </div><div class="mx-grp"><h2 class="pf-h">Accounts (all time)</h2>
       <section class="pf-card mx-lines">
         <div><span>Accounts</span><b>${d.accounts.total} (${d.accounts.recent} in ${d.days} days)</b></div>
         <div><span>Lichess / Google</span><b>${d.accounts.bySite.lichess || 0} / ${d.accounts.bySite.google || 0}</b></div>
         <div><span>Chess.com connected</span><b>${d.accounts.chesscom}</b></div>
       </section>
-      <h2 class="pf-h">Donations</h2>
-      <section class="pf-card"><p class="mx-note">Not connected yet: Ko-fi donations can be added from Stripe.</p></section>
+      </div><div class="mx-grp"><h2 class="pf-h">Donations</h2>
+      <section class="pf-card"><p class="mx-note">Not connected yet: Ko-fi donations can be added from Stripe.</p></section></div>
       <p class="mx-note">Updated ${new Date(d.generated).toLocaleString(dateLoc())}. Counts start when this version went live; your own play isn't counted.</p>`;
   }
   app.innerHTML = `
