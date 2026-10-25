@@ -614,18 +614,21 @@
     .side-links{margin:0; line-height:1.7;} .side-links a{color:var(--text-mute);}
     /* exercises: the board fills the height on the left; title, game and panel on the right */
     html.desk2 .wrap.ex{max-width:none; padding-block:16px;}
-    html.desk2 .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 380px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:28px;}
+    html.desk2 .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) 380px; grid-template-rows:auto auto minmax(0, 1fr); column-gap:72px;}   /* (the gap holds Position evaluation's bar) */
     html.desk2 .wrap.ex > #app > *{grid-column:2;}
     html.desk2 .wrap.ex > #app > .title-row{grid-row:1;}
     html.desk2 .wrap.ex > #app > .stage{grid-column:1; grid-row:1 / span 3; min-height:0; align-items:center; justify-content:center;}
     html.desk2 .wrap.ex > #app > .posbar{grid-row:2; margin:6px 0 14px;}
     html.desk2 .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0; max-width:none;}
     html.desk2 .wrap.ex .title-row .back{display:none;}
-    html.desk2 .wrap.ex > #app{width:100%; max-width:calc(100dvh - 76px + 44px + 28px + 380px); margin-inline:auto;}   /* board and panel together, centred, on very wide screens */
+    html.desk2 .wrap.ex > #app{width:100%; max-width:calc(100dvh - 76px + 72px + 380px); margin-inline:auto;}   /* board and panel together, centred, on very wide screens */
     html.desk2 .wrap.ex .board-outer, html.desk2 .wrap.ex .board-row{max-width:none;}
     html.desk2 .coord-f{bottom:1cqw; left:.5cqw;} html.desk2 .coord-r{top:.5cqw; right:.5cqw;}
     html.desk2 .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px);}
-    html.desk2 .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw - 44px, 100cqh - 44px);}
+    /* Position evaluation: its bar in the gap beside the board, so every board sits at the same place */
+    html.desk2 .wrap.ex .stage .board-col > .board-row{position:relative; display:block;}
+    html.desk2 .wrap.ex .stage .board-col > .board-row .board-outer{width:min(100cqw, 100cqh - 44px);}
+    html.desk2 .wrap.ex .stage .board-col > .board-row .evalbar-wrap{position:absolute; top:0; bottom:0; left:calc(100% + 19px);}
     /* profile: three columns; settings: the controls beside a large preview board */
     html.desk2 .wrap:not(.ex):not(.home){padding-block:24px;}
     html.desk2 .wrap[data-scr=account] > #app{max-width:1040px;}
@@ -638,7 +641,7 @@
     html.desk2 .pf-scroll{overflow:visible;}
     /* settings: the preview board as big as the window, centred; the settings on the right (as an exercise) */
     html.desk2 .wrap[data-scr=settings]:not(.ex){padding-block:16px;}   /* (as an exercise: same board, same title place) */
-    html.desk2 .wrap[data-scr=settings] > #app{display:grid; width:100%; height:calc(100dvh - 32px); min-height:0; max-width:calc(100dvh - 76px + 44px + 28px + 380px); grid-template-columns:minmax(0, 1fr) 380px; grid-template-rows:auto auto auto auto minmax(0, 1fr); column-gap:28px; row-gap:12px; align-items:start;}
+    html.desk2 .wrap[data-scr=settings] > #app{display:grid; width:100%; height:calc(100dvh - 32px); min-height:0; max-width:calc(100dvh - 76px + 72px + 380px); grid-template-columns:minmax(0, 1fr) 380px; grid-template-rows:auto auto auto auto minmax(0, 1fr); column-gap:72px; row-gap:12px; align-items:start;}
     html.desk2 .wrap[data-scr=settings] .set-page{display:contents;}
     html.desk2 .wrap[data-scr=settings] #app > .title-row, html.desk2 .wrap[data-scr=settings] .set-page > *{grid-column:2;}
     html.desk2 .wrap[data-scr=settings] .set-page > .set-preview{grid-column:1; grid-row:1 / -1; height:calc(100dvh - 32px); justify-content:center; align-items:center; padding-top:28px;}
