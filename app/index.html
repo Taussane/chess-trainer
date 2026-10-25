@@ -306,6 +306,10 @@
   .set-hue::-webkit-slider-thumb{-webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--text); border:2px solid var(--bg); box-shadow:0 1px 3px var(--shadow);}
   .set-hue::-moz-range-thumb{width:18px; height:18px; border-radius:50%; background:var(--text); border:2px solid var(--bg);}
   .set-toggle{width:44px; height:26px; border-radius:999px; border:1px solid var(--border); background:var(--panel-2); position:relative; cursor:pointer; flex:none; padding:0;}
+  .set-pcs{display:flex; gap:6px;}
+  .set-pc{background:transparent; border:1px solid var(--border); color:var(--text-mute); border-radius:999px; padding:4px 12px; font:inherit; font-size:0.84rem; cursor:pointer;}
+  .set-pc.on{border-color:var(--accent); color:var(--text); background:var(--panel-2);}
+  @media (hover:hover){ .set-pc:not(.on):hover{border-color:var(--accent);} }
   .set-toggle span{position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--text-mute); transition:left .15s;}
   .set-toggle.on{background:var(--accent);} .set-toggle.on span{left:20px; background:var(--on-accent);}
   .set-seg{display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;}
@@ -335,6 +339,18 @@
   .pc-bB{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxnIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48ZyBmaWxsPSIjMDAwIiBzdHJva2UtbGluZWNhcD0iYnV0dCI+PHBhdGggZD0iTTkgMzZjMy40LTEgMTAuMS40IDEzLjUtMiAzLjQgMi40IDEwLjEgMSAxMy41IDIgMCAwIDEuNi41IDMgMi0uNyAxLTEuNiAxLTMgLjUtMy40LTEtMTAuMS41LTEzLjUtMS0zLjQgMS41LTEwLjEgMC0xMy41IDEtMS40LjUtMi4zLjUtMy0uNSAxLjQtMiAzLTIgMy0yeiIvPjxwYXRoIGQ9Ik0xNSAzMmMyLjUgMi41IDEyLjUgMi41IDE1IDAgLjUtMS41IDAtMiAwLTIgMC0yLjUtMi41LTQtMi41LTQgNS41LTEuNSA2LTExLjUtNS0xNS41LTExIDQtMTAuNSAxNC01IDE1LjUgMCAwLTIuNSAxLjUtMi41IDQgMCAwLS41LjUgMCAyeiIvPjxwYXRoIGQ9Ik0yNSA4YTIuNSAyLjUgMCAxIDEtNSAwIDIuNSAyLjUgMCAxIDEgNSAweiIvPjwvZz48cGF0aCBzdHJva2U9IiNlY2VjZWMiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiIGQ9Ik0xNy41IDI2aDEwTTE1IDMwaDE1bS03LjUtMTQuNXY1TTIwIDE4aDUiLz48L2c+PC9zdmc+")}
   .pc-bN{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxnIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48cGF0aCBmaWxsPSIjMDAwIiBkPSJNMjIgMTBjMTAuNSAxIDE2LjUgOCAxNiAyOUgxNWMwLTkgMTAtNi41IDgtMjEiLz48cGF0aCBmaWxsPSIjMDAwIiBkPSJNMjQgMThjLjM4IDIuOTEtNS41NSA3LjM3LTggOS0zIDItMi44MiA0LjM0LTUgNC0xLjA0LS45NCAxLjQxLTMuMDQgMC0zLTEgMCAuMTkgMS4yMy0xIDItMSAwLTQgMS00LTQgMC0yIDYtMTIgNi0xMnMxLjg5LTEuOSAyLTMuNWMtLjczLTEtLjUtMi0uNS0zIDEtMSAzIDIuNSAzIDIuNWgycy43OC0yIDIuNS0zYzEgMCAxIDMgMSAzIi8+PHBhdGggZmlsbD0iI2VjZWNlYyIgc3Ryb2tlPSIjZWNlY2VjIiBkPSJNOS41IDI1LjVhLjUuNSAwIDEgMS0xIDAgLjUuNSAwIDEgMSAxIDBtNS40My05Ljc1YS41IDEuNSAzMCAxIDEtLjg2LS41LjUgMS41IDMwIDEgMSAuODYuNSIvPjxwYXRoIGZpbGw9IiNlY2VjZWMiIHN0cm9rZT0ibm9uZSIgZD0ibTI0LjU1IDEwLjQtLjQ1IDEuNDUuNS4xNWMzLjE1IDEgNS42NSAyLjQ5IDcuOSA2Ljc1UzM1Ljc1IDI5LjA2IDM1LjI1IDM5bC0uMDUuNWgyLjI1bC4wNS0uNWMuNS0xMC4wNi0uODgtMTYuODUtMy4yNS0yMS4zNHMtNS43OS02LjY0LTkuMTktNy4xNnoiLz48L2c+PC9zdmc+")}
   .pc-bP{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJjb2xvci1zY2hlbWU6bGlnaHQgb25seSIgd2lkdGg9IjQ1IiBoZWlnaHQ9IjQ1IiB2aWV3Qm94PSIwIDAgNDUgNDUiPjxwYXRoIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utd2lkdGg9IjEuNSIgZD0iTTIyLjUgOWE0IDQgMCAwIDAtMy4yMiA2LjM4IDYuNDggNi40OCAwIDAgMC0uODcgMTAuNjVjLTMgMS4wNi03LjQxIDUuNTUtNy40MSAxMy40N2gyM2MwLTcuOTItNC40MS0xMi40MS03LjQxLTEzLjQ3YTYuNDYgNi40NiAwIDAgMC0uODctMTAuNjVBNC4wMSA0LjAxIDAgMCAwIDIyLjUgOXoiLz48L3N2Zz4=")}
+  html.pcs-caliente :not(.acct-dot) > .pc-wK{background-image:url("vendor/pieces/caliente/wK.svg")}
+  html.pcs-caliente :not(.acct-dot) > .pc-wQ{background-image:url("vendor/pieces/caliente/wQ.svg")}
+  html.pcs-caliente :not(.acct-dot) > .pc-wR{background-image:url("vendor/pieces/caliente/wR.svg")}
+  html.pcs-caliente :not(.acct-dot) > .pc-wB{background-image:url("vendor/pieces/caliente/wB.svg")}
+  html.pcs-caliente :not(.acct-dot) > .pc-wN{background-image:url("vendor/pieces/caliente/wN.svg")}
+  html.pcs-caliente :not(.acct-dot) > .pc-wP{background-image:url("vendor/pieces/caliente/wP.svg")}
+  html.pcs-caliente :not(.acct-dot) > .pc-bK{background-image:url("vendor/pieces/caliente/bK.svg")}
+  html.pcs-caliente :not(.acct-dot) > .pc-bQ{background-image:url("vendor/pieces/caliente/bQ.svg")}
+  html.pcs-caliente :not(.acct-dot) > .pc-bR{background-image:url("vendor/pieces/caliente/bR.svg")}
+  html.pcs-caliente :not(.acct-dot) > .pc-bB{background-image:url("vendor/pieces/caliente/bB.svg")}
+  html.pcs-caliente :not(.acct-dot) > .pc-bN{background-image:url("vendor/pieces/caliente/bN.svg")}
+  html.pcs-caliente :not(.acct-dot) > .pc-bP{background-image:url("vendor/pieces/caliente/bP.svg")}
   /*END PIECE_CSS*/
   .sq .piece-w{color:var(--piece-w); text-shadow:0 0 1px #000, 0 0 2px rgba(0,0,0,.5); z-index:1;}
   .sq .piece-b{color:var(--piece-b); text-shadow:0 0 1px rgba(255,255,255,.3); z-index:1;}
@@ -6158,7 +6174,7 @@ function keepFades(){
 const SETTINGS_LS = 'cst.settings';
 const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#279C47', pick2:'#D25450', pick3:'#4E7EE2', system:'#D9B33A', 'cyan-arrow':'#00CEEB', top3:'#CBA0FF' };
 const SET_ARROWS = [['pick1', '1st'], ['pick2', '2nd'], ['pick3', '3rd'], ['system', '4th'], ['cyan-arrow', '5th'], ['top3', '6th']];
-const SET_DEFAULT = { coords:false, boardHue:0, boardSat:100, boardLum:0, lastHue:null, arrows:{}, notation:'intl', lang:null, at:0, v:2 };   // lang null: the device's (French when it's French, else English)
+const SET_DEFAULT = { pieces:'cburnett', coords:false, boardHue:0, boardSat:100, boardLum:0, lastHue:null, arrows:{}, notation:'intl', lang:null, at:0, v:2 };   // lang null: the device's (French when it's French, else English)
 const SET_VERSION = 2;   // 2: hues in OKLCH (earlier saved hues, in HSL, are dropped)
 const setClean = x=>x && x.v===SET_VERSION ? x : { ...(x || {}), lastHue:null, arrows:{}, v:SET_VERSION };
 let settings = (()=>{ try{ return { ...SET_DEFAULT, ...setClean(JSON.parse(localStorage.getItem(SETTINGS_LS) || 'null')) }; }catch(e){ return { ...SET_DEFAULT }; } })();
@@ -6188,6 +6204,7 @@ const ARROW_FAMILY = { pick1:[0.61, 0.16], pick2:[0.61, 0.16], pick3:[0.61, 0.16
 const hueCss = (k, h, a)=>{ const [L, C] = ARROW_FAMILY[k] || hexOklch(SET_BASE[k]); return oklchCss(L, C, h, a); };   // SET_BASE[k]'s colour (or its family's) at hue h
 function applySettings(){
   const st = document.documentElement.style;
+  document.documentElement.classList.toggle('pcs-caliente', settings.pieces==='caliente');   // the piece set (piece-css.py)
   const set = (k, css)=>css ? st.setProperty('--' + k, css) : st.removeProperty('--' + k);   // default: the stylesheet's own colour
   // the board: hue turned, colourfulness scaled (boardSat %), lightness moved (boardLum, in OKLCH points), both squares alike
   const boardSet = settings.boardHue || (settings.boardSat ?? 100)!==100 || (settings.boardLum || 0);
@@ -6753,6 +6770,7 @@ function renderSettings(){
       </div>
       <div class="seg" role="tablist" aria-label="Settings">${[['board', 'Board'], ['arrows', 'Arrows'], ['notation', 'Notation']].map(([k, v])=>`<button class="seg-btn${setTab===k ? ' active' : ''}" role="tab" aria-selected="${setTab===k}" data-tab="${k}">${v}</button>`).join('')}</div>
       <section class="pf-card">${setTab==='board' ? `
+        ${row('Pieces', `<div class="set-pcs" role="radiogroup" aria-label="Pieces">${[['cburnett', 'Classic'], ['caliente', 'Caliente']].map(([k, name])=>`<button class="set-pc${(settings.pieces || 'cburnett')===k ? ' on' : ''}" data-pcs="${k}" role="radio" aria-checked="${(settings.pieces || 'cburnett')===k}">${name}</button>`).join('')}</div>`)}
         ${row('Coordinates', `<button class="set-toggle${settings.coords ? ' on' : ''}" id="setCoords" role="switch" aria-checked="${settings.coords}" aria-label="Coordinates"><span></span></button>`)}
         ${row('Board hue', slider('setBoardHue', -180, 180, settings.boardHue, boardTrack('hue')), 'var(--board-dark)')}
         ${row('Saturation', slider('setBoardSat', 0, 250, settings.boardSat ?? 100, boardTrack('sat')), 'var(--board-dark)')}
@@ -6771,6 +6789,7 @@ function renderSettings(){
   const on = (id, ev, f)=>{ const el = document.getElementById(id); if(el) el[ev] = f; };
   document.querySelectorAll('.set-page .seg-btn').forEach(b=>b.onclick = ()=>{ setTab = b.dataset.tab; rebuild(); });
   on('setCoords', 'onclick', ()=>{ settings.coords = !settings.coords; saveSettings(); rebuild(); });
+  document.querySelectorAll('[data-pcs]').forEach(b=>b.onclick = ()=>{ settings.pieces = b.dataset.pcs; applySettings(); saveSettings(); rebuild(); });
   on('setBoardHue', 'oninput', e=>{ settings.boardHue = +e.target.value; live(); refreshBoardTracks(); });
   on('setBoardSat', 'oninput', e=>{ settings.boardSat = +e.target.value; live(); refreshBoardTracks(); });
   on('setBoardLum', 'oninput', e=>{ settings.boardLum = +e.target.value; live(); refreshBoardTracks(); });
@@ -6779,7 +6798,7 @@ function renderSettings(){
   document.querySelectorAll('.set-opt').forEach(b=>b.onclick = ()=>{ settings.notation = b.dataset.n; saveSettings(); rebuild(); });
   // Reset: only the section shown (Board, Arrows or Notation)
   document.getElementById('setReset').onclick = ()=>{
-    if(setTab==='board') Object.assign(settings, { coords: SET_DEFAULT.coords, boardHue: SET_DEFAULT.boardHue, boardSat: SET_DEFAULT.boardSat, boardLum: SET_DEFAULT.boardLum, lastHue: SET_DEFAULT.lastHue });
+    if(setTab==='board') Object.assign(settings, { pieces: SET_DEFAULT.pieces, coords: SET_DEFAULT.coords, boardHue: SET_DEFAULT.boardHue, boardSat: SET_DEFAULT.boardSat, boardLum: SET_DEFAULT.boardLum, lastHue: SET_DEFAULT.lastHue });
     else if(setTab==='arrows') settings.arrows = {};
     else settings.notation = SET_DEFAULT.notation;
     applySettings(); saveSettings(); rebuild(); };

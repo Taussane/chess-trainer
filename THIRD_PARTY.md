@@ -14,6 +14,10 @@ The chess engine. The app searches with Stockfish 19 (the "lite, single-threaded
 
 The board's pieces (`vendor/pieces/cburnett/`, embedded in the app by `scripts/piece-css.py`) are the standard set drawn by Colin M.L. Burnett (https://en.wikipedia.org/wiki/User:Cburnett) for Wikimedia Commons, where it is available under the GFDL, BSD and GPL licences. The files come from Lichess (https://github.com/lichess-org/lila, `public/piece/cburnett/`), which distributes them under the GNU General Public License v2 or later (https://www.gnu.org/licenses/gpl-2.0.txt), compatible with this project's AGPL v3.
 
+## Chess pieces: Caliente set
+
+The board's other piece set, chosen in Settings (`vendor/pieces/caliente/`, with its licence file), is "caliente" by Leonid Gordenin "avi" (https://github.com/avi-0/caliente), licensed under Creative Commons Attribution-ShareAlike 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Changes: the files were renamed (`kw.svg` to `wK.svg`, and so on) and stripped of editor data (Inkscape metadata, unused ids, shorter numbers); the drawings are unchanged. These files remain under CC BY-SA 4.0.
+
 ## scalachess: game phases (Divider)
 
 The game-phase detection (middlegame and endgame starts) in `finder/lib.js` and `app/index.html` is a port of `Divider.scala` from scalachess (https://github.com/lichess-org/scalachess), under this licence:
