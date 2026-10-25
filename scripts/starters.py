@@ -18,7 +18,7 @@ IMB_MIN = 3        # imbalances not "="
 DECENT_MIN = 3     # good moves among the top 5
 
 pools = json.loads((ROOT / 'data' / 'pools.json').read_text())['pools']
-key = lambda e: ' '.join(e['fen'].split(' ')[:4])
+key = lambda e: f"{int(e['game'][1:])}:{e['ply']}"   # a position as game number:half-moves (the app's p.game, p.ply), far shorter than its FEN
 analysis = {}
 for e in pools['analysis']:
     m = e.get('metrics', {}); v = m.get('evalWhite')
@@ -34,7 +34,7 @@ JS = r"""async (min)=>{
     const ls = ASPECTS.filter(x=>!d.off.includes(x.key)).map(x=>aspectLevel(d[x.key], x.key)).filter(l=>l);
     if(ls.length < min) continue;
     const w = ls.filter(l=>l>0).length, b = ls.length - w;
-    out[p.key] = [w > b ? 1 : w < b ? -1 : 0, w && b ? 1 : 0];   // the side most grades favour; both sides have some
+    out[p.game.slice(1) + ':' + p.ply] = [w > b ? 1 : w < b ? -1 : 0, w && b ? 1 : 0];   // the side most grades favour; both sides have some
   }
   return out;
 }"""

@@ -67,9 +67,9 @@ async def main():
           const newer = P.slice(0, 5); newer.forEach(p=>p.added = (p.added||0) + 30*864e5);   // as if added a month later
           results.push({ a, acc:95, ts: now, key: P[10].key, miss:false }); results.sort((x,y)=>x.ts-y.ts); lineCache = {};
           const c = candidatesFor(a, 'masters'), keys = c.core.map(p=>p.key);
-          const first = {}; for(let i=0; i<5000; i++){ const k = drawWeighted(a, 'masters')[0].key; first[k] = (first[k]||0)+1; }
+          const first = {}; for(let i=0; i<20000; i++){ const k = drawWeighted(a, 'masters')[0].key; first[k] = (first[k]||0)+1; }
           return { newerFirst: newer.every(p=>keys.indexOf(p.key) < 5), gotRightLast: keys[keys.length-1]===P[10].key,
-                   newerShare: newer.reduce((t,p)=>t+(first[p.key]||0),0)/5000, size: keys.length }; })()""")
+                   newerShare: newer.reduce((t,p)=>t+(first[p.key]||0),0)/20000, size: keys.length }; })()""")
         print('masters line:', ms)
         if not ms['newerFirst'] or not ms['gotRightLast']: fails.append(f'masters line order: {ms}')
         if ms['newerShare'] < 5/ms['size']*1.5: fails.append(f'newer master positions not favoured: {ms}')
