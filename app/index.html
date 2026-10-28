@@ -131,35 +131,9 @@
   .routine-title{font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
   .routine-count{font-size:0.84rem; color:var(--text-mute); font-variant-numeric:tabular-nums;}
   .routine-row{display:flex; justify-content:space-between; align-items:center; font-size:0.86rem; color:var(--text-mute); padding:3px 0;}
-  .xp-panel{display:flex; flex-direction:column; gap:10px;}
-  .xp-moves{display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 4px; max-height:5.4em; overflow-y:auto; font-size:0.9rem; padding:2px 0;}
-  .xp-no{color:var(--text-mute); font-size:0.8rem; margin-left:4px;}
-  .xp-move{background:none; border:none; color:var(--text); font:inherit; padding:2px 5px; border-radius:5px; cursor:pointer;}
-  .xp-move.on{background:var(--accent); color:var(--on-accent); font-weight:700;}
-  .xp-hint{color:var(--text-mute);}
-  .xp-nav{display:flex; align-items:center; gap:6px;}
-  .xp-nav .icon-btn{font-size:0.95rem;}
-  .xp-toggle{margin-left:auto; display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-mute); cursor:pointer;}
-  .xp-modes{flex:none;}
-  .xp-list{display:flex; flex-direction:column; gap:2px;}
-  .xp-head, .xp-row{display:grid; grid-template-columns:minmax(0,1fr) 2.6rem 7.5rem; align-items:center; column-gap:10px;}
-  .xp-head{font-size:0.72rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:.06em; padding:0 6px 2px;}
-  .xp-row{padding:5px 6px; border-radius:6px;}
-  .xp-row .asp-badge{justify-self:center;}
-  .xp-row.pickable{cursor:pointer;}
-  .xp-row.sel{background:var(--panel-2); box-shadow:inset 0 0 0 1px var(--accent);}
-  @media (hover:hover){ .xp-row.pickable:hover{background:var(--panel-2);} }
-  .xp-row.pickable .xp-name{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
-  .xp-row.sel .xp-name{color:var(--accent); text-decoration:none; font-weight:600;}
-  .xp-row.off .xp-name{color:var(--text-mute);}
-  .xp-name{font-size:0.92rem;}
-  .xp-change{font-size:0.82rem; text-align:right; white-space:nowrap;}
-  .xp-delta.w{color:var(--text);} .xp-delta.b{color:var(--text-mute);}
-  .xp-delta.lvl{font-weight:700;}
-  .xp-note{margin:0; font-size:0.8rem; color:var(--text-mute);}
-  .xp-eval{display:flex; align-items:baseline; gap:10px;} .xp-eval b{font-size:1.2rem;} .xp-eval span{font-size:0.8rem; color:var(--text-mute);}
-  .xp-plans{display:flex; flex-direction:column; gap:6px;}
-  .xp-new{display:inline-block; margin-left:4px; padding:0 5px; border-radius:4px; background:var(--accent); color:var(--on-accent); font-size:0.66rem; font-weight:700; vertical-align:1px;}
+  .xp-nav{justify-content:center; gap:10px;}
+  .xp-nav .icon-btn{width:44px; height:36px; border-radius:8px; font-size:1rem;}
+  .xp-modes{margin:0 0 10px;}
   .xp-entry .card-title .title-badge{font-size:0.62rem; vertical-align:2px;}
   .goal-dots{display:flex; gap:8px;}
   .goal-dots i{width:36px; height:8px; border-radius:4px; background:var(--panel-2); border:1px solid var(--border);}
@@ -1591,7 +1565,7 @@ const shippedTop = p=>p && masterEvals && masterEvals[p.key] ? [].concat(masterE
 function preemptForOpen(){
   const j = sfCurrentJob, cur = typeof curPos!=='undefined' && curPos && ACTIVITIES.includes(screen) ? curPos.fen : null;
   if(!j || j.movetime || j.preempted || (cur && j.fen===cur)) return;
-  const forOpen = cur && sfQueue.some(q=>q.fen===cur);
+  const forOpen = (cur && sfQueue.some(q=>q.fen===cur)) || (screen==='explorer' && !j.explorer && sfQueue.some(q=>q.explorer || q.fen===curFen()));   // (the explorer's position, and its mate check, too)
   const overLow = j.low && sfQueue.some(q=>!q.low);
   const overNext = sfQueue.some(q=>q.next > (j.next || 0));   // a position about to be needed, asked for since
   if(!forOpen && !overLow && !overNext) return;
@@ -6973,7 +6947,7 @@ const EXPLORER_START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 const EXPLORER_MS = 1500;   // the engine's look at each position (its best move, its evaluation)
 let explorer = null;        // { fens, sans, moves, at, flip, mode: 'imbalances' | 'evaluation', view, arrow, sel }
 function explorerInit(){
-  if(!explorer) explorer = { fens:[EXPLORER_START], sans:[], moves:[], at:0, flip:false, mode:'imbalances', view:null, arrow:true, sel:null };
+  if(!explorer) explorer = { fens:[EXPLORER_START], sans:[], moves:[], at:0, flip:false, mode:'imbalances', sel:null, aspView:null, aspPiece:null, aspKing:null, depthNote:false, lastPct:null };
 }
 function explorerPos(){
   const fen = explorer.fens[explorer.at], m = explorer.moves[explorer.at - 1];
@@ -6991,6 +6965,7 @@ function explorerEval(fen){
     new Promise(resolve=>{
       if(sfState==='error'){ resolve(FAILED); return; }
       queueJob({ fen, movetime: EXPLORER_MS, multipv: 3, explorer: true, resolve }); pumpEngineQueue();
+      if(sfBusy) preemptForOpen();   // a long search prepared in advance gives way (searched again later)
     }).then(d=>{
       if(d===EXPLORER_DROPPED){ delete explorerEvals[fen]; return; }
       e.status = 'done'; e.data = d;
@@ -6998,12 +6973,6 @@ function explorerEval(fen){
     });
   }
   return e.status==='done' ? e.data : null;
-}
-// The position's evaluation (White's side): the engine's when it's in, else Stockfish's static one.
-function explorerInfo(fen, ev){
-  if(ev && !evalFailed(ev) && ev.lines.length) return { ...toWhitePerspective(ev.lines[0], fen), engine:true, depth: ev.depth };
-  const st = staticEval(fen);
-  return st==null ? null : { cp: Math.round(st * 100), mate: null, engine:false };
 }
 function explorerPlay(mv){
   const g = new Chess(explorer.fens[explorer.at]), m = g.move(mv);
@@ -7013,79 +6982,57 @@ function explorerPlay(mv){
   explorer.at++; explorer.sel = null;
   render();
 }
-function explorerGo(i){ explorer.at = Math.max(0, Math.min(explorer.fens.length - 1, i)); explorer.sel = null; promoPending = null; render(); }
+function explorerGo(i){ explorer.at = Math.max(0, Math.min(explorer.fens.length - 1, i)); explorer.sel = null; explorer.aspPiece = explorer.aspKing = null; promoPending = null; render(); }
 addEventListener('keydown', e=>{
   if(screen!=='explorer' || !explorer || e.target.closest && e.target.closest('input, textarea')) return;
   if(e.key==='ArrowLeft'){ explorerGo(explorer.at - 1); e.preventDefault(); }
   if(e.key==='ArrowRight'){ explorerGo(explorer.at + 1); e.preventDefault(); }
 });
-// How one imbalance moved with the last move, in its own points: "+2" for White, "+1.5" for Black.
-function explorerDelta(cur, prev, key){
-  if(!cur || !prev || (cur.off && cur.off.includes(key)) || (prev.off && prev.off.includes(key))) return '';
-  const d = Math.round((cur[key] - prev[key]) * 10) / 10;
-  if(Math.abs(d) < 0.5) return '';
-  const lvl = aspectLevel(cur[key], key) - aspectLevel(prev[key], key);
-  return `<span class="xp-delta ${d > 0 ? 'w' : 'b'}${lvl ? ' lvl' : ''}">${d > 0 ? '▲' : '▼'} ${d > 0 ? 'White' : 'Black'} +${fmtNum(Math.abs(d))}</span>`;
+// The panel, built like the reviews: the evaluation and the engine's depth on top, then the six imbalances
+// (Static and Dynamic, as in Imbalance reading's review) or the plans of the side at the bottom of the board
+// (as in Position evaluation's review; flip the board for the other side's). Its height never changes.
+function explorerNavHtml(x){
+  return `<div class="actions-row xp-nav">
+      <button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}>◀</button>
+      <button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}>▶</button>
+      <button class="icon-btn" id="xpFlip" aria-label="Switch sides">⇅</button>
+    </div>`;
 }
-const fmtNum = x=>Number.isInteger(x) ? String(x) : x.toFixed(1);
-function explorerImbalancesHtml(fen, vals, prev){
-  if(!vals) return `<p class="mg-status mg-loading">Reading the imbalances…</p>`;
-  const rows = ASPECTS.map(x=>{
-    const off = vals.off && vals.off.includes(x.key);
-    return `<div class="xp-row${off ? ' off' : ' pickable'}${explorer.view===x.key ? ' sel' : ''}"${off ? '' : ` data-asp="${x.key}" role="button" tabindex="0"`}>
-      <span class="xp-name">${aspNameText(x, fen)}</span>${off ? '<span class="asp-badge eq">·</span>' : aspectBadge(vals[x.key], x.key)}<span class="xp-change">${off ? '' : explorerDelta(vals, prev, x.key)}</span></div>`;
-  }).join('');
-  return `<div class="xp-list" id="aspects"><div class="xp-head"><span>Imbalance</span><span></span><span>${explorer.at ? 'This move' : ''}</span></div>${rows}</div>
-    <p class="xp-note">Tap an imbalance to see it on the board.</p>`;
-}
-function explorerPlansHtml(p, vals, info, prevVals, prevInfo, prevFen){
-  if(!vals || !info) return `<p class="mg-status mg-loading">Reading the position…</p>`;
-  const block = c=>{
-    const plan = planFor({ ...p, side:c }, vals, info);
-    const before = prevVals && prevInfo ? planFor({ fen: prevFen, side:c }, prevVals, prevInfo).lines.map(l=>l.situation) : null;
-    const rows = plan.lines.map(l=>`<div class="plan-row xp-plan"><span class="plan-sit">${l.situation}${before && !before.includes(l.situation) ? ' <span class="xp-new">New</span>' : ''}</span><span class="plan-text">${l.plan}</span></div>`).join('');
-    return `<div class="xp-plans"><div class="asp-head">${c==='w' ? 'White' : 'Black'}${p.side===c ? ' (to play)' : ''}</div><div class="plan-rows">${rows}</div></div>`;
-  };
-  const sign = x=>x.mate!=null ? (x.mate > 0 ? 'White mates' : 'Black mates') : fmtSigned(x);
-  return `<div class="xp-eval"><b>${sign(info)}</b><span>${info.engine ? `engine, depth ${info.depth || '–'}` : 'first reading, the engine is looking…'}</span></div>
-    ${block('w')}${block('b')}`;
-}
+const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
+    <button class="seg-btn${x.mode==='imbalances' ? ' active' : ''}" data-mode="imbalances" role="radio" aria-checked="${x.mode==='imbalances'}">Imbalances</button>
+    <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plans</button>
+  </div>`;
+const GHOST_SCORE = `<div class="score"><span class="score-num">+0.0</span><span class="score-label">Evaluation</span></div>`;
 function renderExplorer(){
   explorerInit();
   const app = document.getElementById('app'), x = explorer, p = explorerPos(), fen = p.fen;
   side = p.side;
-  const ev = explorerEval(fen), asp = aspectsEntry(fen), vals = asp.status==='done' ? asp.data : null;
-  const prevFen = x.at ? x.fens[x.at - 1] : null;
-  const prevAsp = prevFen ? aspectsEntry(prevFen) : null, prevVals = prevAsp && prevAsp.status==='done' ? prevAsp.data : null;
-  const info = explorerInfo(fen, ev), prevInfo = prevFen ? explorerInfo(prevFen, explorerEvals[prevFen] && explorerEvals[prevFen].data) : null;
-  const pct = info ? cpToPct(info.cp, info.mate) : 50;
-  const g = new Chess(fen), over = g.game_over();
-  const moves = x.sans.map((san, i)=>`${i % 2 ? '' : `<span class="xp-no">${i / 2 + 1}.</span>`}<button class="xp-move${i + 1===x.at ? ' on' : ''}" data-at="${i + 1}">${fmtSan(san)}</button>`).join('');
-  const best = ev && !evalFailed(ev) && ev.lines[0] && ev.lines[0].uci;
+  const ev = explorerEval(fen), failed = evalFailed(ev);
+  const asp = aspectsEntry(fen), vals = asp.status==='done' ? asp.data : null;
+  // the position on screen first: its searches move to the front of the queue, and the explorer's search
+  // of a position you've left stops (what it found is kept)
+  const mineFirst = sfQueue.filter(j=>j.fen===fen); if(mineFirst.length){ for(const j of mineFirst) sfQueue.splice(sfQueue.indexOf(j), 1); sfQueue.unshift(...mineFirst); }
+  const c = sfCurrentJob; if(c && c.explorer && c.fen!==fen && !c.preempted){ c.preempted = true; stopForWait(c); }
+  const info = ev && !failed && ev.lines.length ? toWhitePerspective(ev.lines[0], fen) : null;
+  if(info) x.lastPct = cpToPct(info.cp, info.mate);   // (the bar stays where it was while the next position is searched)
+  const pct = x.lastPct ?? 50;
+  const g = new Chess(fen), mine = x.flip ? 'b' : 'w';
+  const best = info && ev.lines[0].uci;
+  const label = info ? (info.mate!=null ? '#' + Math.abs(info.mate) : fmtSigned(info)) : '—';
+  const scoreRow = `<div class="score"><span class="score-num">${label}</span><span class="score-label">${info ? (g.in_checkmate() ? 'Checkmate' : 'Evaluation') : failed ? 'Engine unavailable' : g.game_over() ? 'Game over' : 'Evaluating…'}</span>${depthBtnHtml(ev, fen)}${depthNoteHtml(x, ev, fen)}</div>`;
+  const body = x.mode==='imbalances'
+    ? aspectsGridHtml(vals, null, ASPECTS.length, !vals, x.aspView, vals && fen)
+    : vals && info ? planHtml(planFor({ ...p, side: mine }, vals, info), x.aspView, false, false, fen) : planHtml(null, null, false, true);
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
       <h1>Strategy explorer <span class="title-badge">Beta</span></h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
-    ${boardHtml(true, evalBarHtml(pct, info ? (info.mate!=null ? '#' + Math.abs(info.mate) : fmtBarScore(info)) : '…', null, false))}
-    <div class="panel xp-panel">
-      <div class="xp-moves" id="xpMoves">${moves || '<span class="xp-hint">Play a move on the board.</span>'}</div>
-      <div class="xp-nav">
-        <button class="icon-btn" id="xpStart" aria-label="Start position" ${x.at ? '' : 'disabled'}>⏮</button>
-        <button class="icon-btn" id="xpBack" aria-label="Back one move" ${x.at ? '' : 'disabled'}>◀</button>
-        <button class="icon-btn" id="xpFwd" aria-label="Forward one move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}>▶</button>
-        <button class="icon-btn" id="xpEnd" aria-label="Last move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}>⏭</button>
-        <button class="icon-btn" id="xpFlip" aria-label="Flip the board">⇅</button>
-        <label class="xp-toggle"><input type="checkbox" id="xpArrow" ${x.arrow ? 'checked' : ''}> Best move</label>
-      </div>
-      <div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
-        <button class="seg-btn${x.mode==='imbalances' ? ' active' : ''}" data-mode="imbalances" role="radio" aria-checked="${x.mode==='imbalances'}">Imbalances</button>
-        <button class="seg-btn${x.mode==='evaluation' ? ' active' : ''}" data-mode="evaluation" role="radio" aria-checked="${x.mode==='evaluation'}">Evaluation and plans</button>
-      </div>
-      ${over ? `<p class="xp-note">${g.in_checkmate() ? 'Checkmate.' : 'Draw.'}</p>` : ''}
-      ${x.mode==='imbalances' ? explorerImbalancesHtml(fen, vals, prevVals) : explorerPlansHtml(p, vals, info, prevVals, prevInfo, prevFen)}
-    </div>`;
+    ${boardHtml(true, evalBarHtml(pct, info ? fmtBarScore(info) : '…', null, false))}
+    ${stackedPanel(`${explorerModesHtml(x)}${scoreRow}${body}${explorerNavHtml(x)}`,
+      [`${explorerModesHtml(x)}${GHOST_SCORE}${aspectsGridHtml(null, null, 0, true)}${explorerNavHtml(x)}`,
+       `${explorerModesHtml(x)}${GHOST_SCORE}${planHtml(null, null, false, true)}${explorerNavHtml(x)}`])}`;
   // the board: click a piece, then where it goes
   const bs = boardObjFromGame(g);
   const dest = x.sel ? g.moves({ square:x.sel, verbose:true }).map(m=>m.to) : [];
@@ -7098,25 +7045,17 @@ function renderExplorer(){
     const pc = bs[sq]; x.sel = pc && colorOf(pc)===p.side && sq!==x.sel ? sq : null; render();
   } });
   if(promoPending) showPromotionPicker(g, mv=>{ promoPending = null; explorerPlay(mv); });
-  // marks of the imbalance picked, and the best move above them (its own layer)
-  const outer = document.querySelector('.board-outer'), svg = document.getElementById('arrows');
-  const top = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  // the imbalance (or plan) tapped: its marks, as in the reviews; the best move above them, on its own layer
+  if(vals) wireAspectView(p, x); else document.getElementById('arrows').innerHTML = '';
+  const outer = document.querySelector('.board-outer'), top = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   top.setAttribute('class', 'arrows'); top.setAttribute('viewBox', '0 0 480 480'); outer.appendChild(top);
-  if(x.view && vals && x.mode==='imbalances') drawMarks(svg, aspectMarks(fen, x.view)); else svg.innerHTML = '';
-  if(x.arrow && best) drawArrows(top, [{ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }], 'xb_');
-  // wiring
+  if(best) drawArrows(top, [{ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }], 'xb_');
+  wireDepthBtn(x);
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ screen = 'home'; render(); });
-  on('xpStart', ()=>explorerGo(0)); on('xpBack', ()=>explorerGo(x.at - 1)); on('xpFwd', ()=>explorerGo(x.at + 1)); on('xpEnd', ()=>explorerGo(x.fens.length - 1));
+  on('xpBack', ()=>explorerGo(x.at - 1)); on('xpFwd', ()=>explorerGo(x.at + 1));
   on('xpFlip', ()=>{ x.flip = !x.flip; render(); });
-  const arrowBox = document.getElementById('xpArrow'); if(arrowBox) arrowBox.onchange = ()=>{ x.arrow = arrowBox.checked; render(); };
-  app.querySelectorAll('[data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; render(); });
-  app.querySelectorAll('.xp-move').forEach(b=>b.onclick = ()=>explorerGo(+b.dataset.at));
-  app.querySelectorAll('.xp-row.pickable').forEach(el=>{
-    const pick = ()=>{ x.view = x.view===el.dataset.asp ? null : el.dataset.asp; render(); };
-    el.onclick = pick; el.onkeydown = e=>{ if(e.key==='Enter' || e.key===' '){ pick(); e.preventDefault(); } };
-  });
-  const ml = document.getElementById('xpMoves'), cur = ml && ml.querySelector('.xp-move.on'); if(cur) ml.scrollTop = cur.offsetTop - ml.offsetTop - 8;
+  app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; render(); });
 }
 function renderScreen(){
   syncPos();
