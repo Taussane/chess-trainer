@@ -152,6 +152,8 @@
   .xp-hbar-w{position:absolute; left:0; top:0; bottom:0; background:var(--white-fill); transition:width .25s ease-out;}
   .xp-hbar-num{position:absolute; top:50%; transform:translateY(-50%); font-size:0.72rem; font-weight:700;}
   .xp-hbar-num.w{left:6px; color:var(--black-fill);} .xp-hbar-num.b{right:6px; color:var(--white-fill);}
+  .xp-hbar.flip .xp-hbar-w{left:auto; right:0;}
+  .xp-hbar.flip .xp-hbar-num.w{left:auto; right:6px;} .xp-hbar.flip .xp-hbar-num.b{right:auto; left:6px;}
   .asp-badge.xp-turn{animation:xpTurn .45s ease-out;}
   @keyframes xpTurn{from{transform:scale(1.25); box-shadow:0 0 0 2px var(--accent);} to{transform:none; box-shadow:none;}}
   .xp-entry .card-title .title-badge{font-size:0.62rem; vertical-align:2px;}
@@ -7046,23 +7048,16 @@ function explorerLiveLine(fen, line, d){
   if(screen!=='explorer' || explorerLiveT) return;
   explorerLiveT = setTimeout(()=>{ explorerLiveT = null; if(screen==='explorer') render(); }, 200);
 }
-// After a move, the imbalances turn one at a time, as in the reviews (from what the last position showed);
-// the others keep the values shown before.
-const XP_STEP = 220;
+// After a move the imbalances change all at once; those whose grade changed pulse once.
 function explorerShownVals(x, fen, vals){
   if(!vals) return x.shown || null;
-  if(!x.from || x.revealFen!==fen){ x.revealKey = null; return (x.shown = vals); }
-  const k = Math.min(ASPECTS.length, Math.floor((performance.now() - x.revealAt) / XP_STEP) + 1);
-  if(k >= ASPECTS.length){ x.from = null; x.revealKey = null; return (x.shown = vals); }
-  const out = { ...x.from, off: vals.off };
-  ASPECTS.slice(0, k).forEach(a=>{ out[a.key] = vals[a.key]; });
-  x.revealKey = ASPECTS[k - 1].key;
-  clearTimeout(x.revealT); x.revealT = setTimeout(()=>{ if(screen==='explorer') render(); }, XP_STEP);
-  return out;
+  x.changed = x.from && x.revealFen===fen ? ASPECTS.filter(a=>aspectLevel(vals[a.key], a.key)!==aspectLevel(x.from[a.key], a.key)).map(a=>a.key) : [];
+  x.from = null;
+  return (x.shown = vals);
 }
-function explorerHbarHtml(info, pct){
+function explorerHbarHtml(info, pct, flip){   // flip (playing Black): White's share from the right
   const num = info ? (info.mate!=null ? '#' + Math.abs(info.mate) : fmtBarScore(info)) : '…', whiteAhead = pct >= 50;
-  return `<div class="pl-line xp-hbar-line"><div class="xp-hbar" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" style="width:${pct}%"></div>
+  return `<div class="pl-line xp-hbar-line"><div class="xp-hbar${flip ? ' flip' : ''}" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" style="width:${pct}%"></div>
       <span class="xp-hbar-num ${whiteAhead ? 'w' : 'b'}">${num}</span></div></div>`;
 }
 function renderExplorer(){
@@ -7092,11 +7087,13 @@ function renderExplorer(){
       <h1>Strategy explorer <span class="title-badge">Beta</span></h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
-    ${boardHtml(false).replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct))}
+    ${boardHtml(false).replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct, x.flip))}
     ${stackedPanel(`${explorerModesHtml(x)}${body}${explorerNavHtml(x, depth, depthNoteHtml(x, ev, fen))}`,
       [`${explorerModesHtml(x)}${aspectsGridHtml(null, null, 0, true)}${explorerNavHtml(x)}`,
        `${explorerModesHtml(x)}${planHtml(null, null, false, true)}${explorerNavHtml(x)}`])}`;
-  if(x.revealKey){ const b = app.querySelector(`#aspects .asp-item[data-asp="${x.revealKey}"] .asp-badge`); if(b) b.classList.add('xp-turn'); }
+  (x.changed || []).forEach(k=>{ const b = app.querySelector(`#aspects .asp-item[data-asp="${k}"] .asp-badge`); if(b) b.classList.add('xp-turn'); }); x.changed = [];
+  // every imbalance can be picked, even with nothing to draw in this position: the one picked stays as you play on
+  app.querySelectorAll('#aspects .asp-item:not(.off):not(.pickable)').forEach(el=>{ el.classList.add('pickable'); el.setAttribute('role', 'radio'); el.setAttribute('aria-checked', String(x.aspView===el.dataset.asp)); el.tabIndex = 0; });
   // the board: click a piece, then where it goes
   const bs = boardObjFromGame(g);
   const dest = x.sel ? g.moves({ square:x.sel, verbose:true }).map(m=>m.to) : [];
