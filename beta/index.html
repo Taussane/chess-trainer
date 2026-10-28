@@ -161,7 +161,11 @@
   .routine-title{font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
   .routine-count{font-size:0.84rem; color:var(--text-mute); font-variant-numeric:tabular-nums;}
   .routine-row{display:flex; justify-content:space-between; align-items:center; font-size:0.86rem; color:var(--text-mute); padding:3px 0;}
-  .xp-nav{justify-content:center; gap:10px;}
+  .xp-nav{justify-content:flex-end; align-items:center; gap:10px;}
+  .xp-nav{position:relative;}
+  .xp-depth{margin-right:auto; display:flex; align-items:center;}
+  .xp-depth .depth-btn{position:static; margin:0;}
+  .xp-nav .depth-note{top:auto; bottom:calc(100% + 6px);}   /* (opens upwards, over the grid) */
   .xp-nav .icon-btn{width:44px; height:36px; border-radius:8px; font-size:1rem;}
   .xp-modes{margin:0 0 10px;}
   .xp-entry .card-title .title-badge{font-size:0.62rem; vertical-align:2px;}
@@ -7021,8 +7025,9 @@ addEventListener('keydown', e=>{
 // The panel, built like the reviews: the evaluation and the engine's depth on top, then the six imbalances
 // (Static and Dynamic, as in Imbalance reading's review) or the plans of the side at the bottom of the board
 // (as in Position evaluation's review; flip the board for the other side's). Its height never changes.
-function explorerNavHtml(x){
+function explorerNavHtml(x, depth, note){
   return `<div class="actions-row xp-nav">
+      <span class="xp-depth">${depth || ''}</span>${note || ''}
       <button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}>◀</button>
       <button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}>▶</button>
       <button class="icon-btn" id="xpFlip" aria-label="Switch sides">⇅</button>
@@ -7032,7 +7037,6 @@ const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup"
     <button class="seg-btn${x.mode==='imbalances' ? ' active' : ''}" data-mode="imbalances" role="radio" aria-checked="${x.mode==='imbalances'}">Imbalances</button>
     <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plans</button>
   </div>`;
-const GHOST_SCORE = `<div class="score"><span class="score-num">+0.0</span><span class="score-label">Evaluation</span></div>`;
 function renderExplorer(){
   explorerInit();
   const app = document.getElementById('app'), x = explorer, p = explorerPos(), fen = p.fen;
@@ -7048,8 +7052,7 @@ function renderExplorer(){
   const pct = x.lastPct ?? 50;
   const g = new Chess(fen), mine = x.flip ? 'b' : 'w';
   const best = info && ev.lines[0].uci;
-  const label = info ? (info.mate!=null ? '#' + Math.abs(info.mate) : fmtSigned(info)) : '—';
-  const scoreRow = `<div class="score"><span class="score-num">${label}</span><span class="score-label">${info ? (g.in_checkmate() ? 'Checkmate' : 'Evaluation') : failed ? 'Engine unavailable' : g.game_over() ? 'Game over' : 'Evaluating…'}</span>${depthBtnHtml(ev, fen)}${depthNoteHtml(x, ev, fen)}</div>`;
+  const depth = g.game_over() ? '' : depthBtnHtml(ev, fen);   // the engine's depth, with the buttons (tap: what it means)
   const body = x.mode==='imbalances'
     ? aspectsGridHtml(vals, null, ASPECTS.length, !vals, x.aspView, vals && fen)
     : vals && info ? planHtml(planFor({ ...p, side: mine }, vals, info), x.aspView, false, false, fen) : planHtml(null, null, false, true);
@@ -7060,9 +7063,9 @@ function renderExplorer(){
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
     ${boardHtml(true, evalBarHtml(pct, info ? fmtBarScore(info) : '…', null, false))}
-    ${stackedPanel(`${explorerModesHtml(x)}${scoreRow}${body}${explorerNavHtml(x)}`,
-      [`${explorerModesHtml(x)}${GHOST_SCORE}${aspectsGridHtml(null, null, 0, true)}${explorerNavHtml(x)}`,
-       `${explorerModesHtml(x)}${GHOST_SCORE}${planHtml(null, null, false, true)}${explorerNavHtml(x)}`])}`;
+    ${stackedPanel(`${explorerModesHtml(x)}${body}${explorerNavHtml(x, depth, depthNoteHtml(x, ev, fen))}`,
+      [`${explorerModesHtml(x)}${aspectsGridHtml(null, null, 0, true)}${explorerNavHtml(x)}`,
+       `${explorerModesHtml(x)}${planHtml(null, null, false, true)}${explorerNavHtml(x)}`])}`;
   // the board: click a piece, then where it goes
   const bs = boardObjFromGame(g);
   const dest = x.sel ? g.moves({ square:x.sel, verbose:true }).map(m=>m.to) : [];
