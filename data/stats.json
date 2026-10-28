@@ -1,5 +1,5 @@
 {
- "version": "2026-10-24.1",
+ "version": "2026-10-27.1",
  "engine": {
   "movetime": 1200,
   "multipv": 5
@@ -41521,7 +41521,7 @@
    "endgame": 56,
    "checked": 72,
    "passedGeneral": 58,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 4,
    "final": 1
   },
@@ -42163,7 +42163,7 @@
    "endgame": 68,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 6,
+   "analysis": 2,
    "candidates": 7,
    "final": 6
   },
@@ -42526,7 +42526,7 @@
    "endgame": 73,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 5,
+   "analysis": 1,
    "candidates": 5,
    "final": 4
   },
@@ -42626,7 +42626,7 @@
    "endgame": 43,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 7,
    "final": 9
   },
@@ -43038,7 +43038,7 @@
    "endgame": 62,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 3,
    "final": 2
   },
@@ -43438,7 +43438,7 @@
    "endgame": 49,
    "checked": 64,
    "passedGeneral": 51,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 6,
    "final": 6
   },
@@ -43671,7 +43671,7 @@
    "endgame": 62,
    "checked": 72,
    "passedGeneral": 66,
-   "analysis": 4,
+   "analysis": 1,
    "candidates": 3,
    "final": 1
   },
@@ -43883,7 +43883,7 @@
    "endgame": 48,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 5,
    "final": 2
   },
@@ -44261,7 +44261,7 @@
    "endgame": 52,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 9,
    "final": 8
   },
@@ -44446,7 +44446,7 @@
    "endgame": 59,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 5,
    "final": 6
   },
@@ -44827,7 +44827,7 @@
    "endgame": -1,
    "checked": 64,
    "passedGeneral": 56,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 3,
    "final": 2
   },
@@ -45048,7 +45048,7 @@
    "endgame": -1,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 2,
    "final": 3
   },
@@ -45149,7 +45149,7 @@
    "endgame": 55,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 3,
    "final": 2
   },
@@ -45531,7 +45531,7 @@
    "endgame": 48,
    "checked": 62,
    "passedGeneral": 49,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 6,
    "final": 5
   },
@@ -45639,7 +45639,7 @@
    "endgame": 43,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 3,
    "final": 0
   },
@@ -45810,7 +45810,7 @@
    "endgame": -1,
    "checked": 62,
    "passedGeneral": 53,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 4,
    "final": 2
   },
@@ -45911,7 +45911,7 @@
    "endgame": 48,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 3,
    "final": 5
   },
@@ -46443,7 +46443,7 @@
    "endgame": 64,
    "checked": 67,
    "passedGeneral": 54,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 3,
    "final": 3
   },
@@ -46637,7 +46637,7 @@
    "endgame": -1,
    "checked": 72,
    "passedGeneral": 66,
-   "analysis": 5,
+   "analysis": 3,
    "candidates": 4,
    "final": 3
   },
@@ -46787,7 +46787,7 @@
    "endgame": 43,
    "checked": 72,
    "passedGeneral": 63,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 5,
    "final": 3
   },
@@ -46908,7 +46908,7 @@
    "endgame": 71,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 3,
    "final": 1
   },
@@ -47048,7 +47048,7 @@
    "endgame": 72,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 6,
+   "analysis": 0,
    "candidates": 6,
    "final": 3
   },
@@ -47531,7 +47531,7 @@
    "endgame": 79,
    "checked": 72,
    "passedGeneral": 63,
-   "analysis": 4,
+   "analysis": 1,
    "candidates": 7,
    "final": 4
   },
@@ -47817,7 +47817,7 @@
    "endgame": 89,
    "checked": 72,
    "passedGeneral": 66,
-   "analysis": 6,
+   "analysis": 4,
    "candidates": 5,
    "final": 7
   },
@@ -47952,7 +47952,7 @@
    "endgame": 49,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 8,
    "final": 7
   },
@@ -48060,7 +48060,7 @@
    "endgame": 40,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 3,
    "final": 5
   },
@@ -48857,7 +48857,7 @@
    "endgame": 50,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 5,
    "final": 1
   },
@@ -49195,7 +49195,7 @@
    "endgame": 85,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 4,
+   "analysis": 0,
    "candidates": 7,
    "final": 2
   },
@@ -49655,7 +49655,7 @@
    "endgame": 98,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 6,
+   "analysis": 4,
    "candidates": 5,
    "final": 3
   },
@@ -49806,7 +49806,7 @@
    "endgame": 63,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 6,
    "final": 7
   },
@@ -49981,7 +49981,7 @@
    "endgame": 42,
    "checked": 52,
    "passedGeneral": 47,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 3,
    "final": 2
   },
@@ -50083,7 +50083,7 @@
    "endgame": 34,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 3,
    "final": 2
   },
@@ -50399,7 +50399,7 @@
    "endgame": 62,
    "checked": 68,
    "passedGeneral": 59,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 3,
    "final": 1
   },
@@ -51484,7 +51484,7 @@
    "endgame": 101,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 6,
    "final": 0
   },
@@ -51587,7 +51587,7 @@
    "endgame": -1,
    "checked": 72,
    "passedGeneral": 66,
-   "analysis": 8,
+   "analysis": 4,
    "candidates": 4,
    "final": 6
   },
@@ -51689,7 +51689,7 @@
    "endgame": 64,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 4,
    "final": 3
   },
@@ -51904,7 +51904,7 @@
    "endgame": 53,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 6,
    "final": 4
   },
@@ -52156,7 +52156,7 @@
    "endgame": 57,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 6,
    "final": 5
   },
@@ -52547,7 +52547,7 @@
    "endgame": 69,
    "checked": 72,
    "passedGeneral": 66,
-   "analysis": 5,
+   "analysis": 1,
    "candidates": 6,
    "final": 4
   },
@@ -52650,7 +52650,7 @@
    "endgame": 64,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 5,
    "final": 4
   },
@@ -52760,7 +52760,7 @@
    "endgame": 67,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 2,
    "final": 2
   },
@@ -53282,7 +53282,7 @@
    "endgame": 53,
    "checked": 52,
    "passedGeneral": 40,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 3,
    "final": 1
   },
@@ -53407,7 +53407,7 @@
    "endgame": 51,
    "checked": 72,
    "passedGeneral": 64,
-   "analysis": 4,
+   "analysis": 3,
    "candidates": 8,
    "final": 5
   },
@@ -53700,7 +53700,7 @@
    "endgame": 69,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 4,
    "final": 0
   },
@@ -53974,7 +53974,7 @@
    "endgame": -1,
    "checked": 59,
    "passedGeneral": 50,
-   "analysis": 4,
+   "analysis": 1,
    "candidates": 5,
    "final": 3
   },
@@ -54067,7 +54067,7 @@
    "endgame": 72,
    "checked": 65,
    "passedGeneral": 55,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 5,
    "final": 4
   },
@@ -54356,7 +54356,7 @@
    "endgame": -1,
    "checked": 58,
    "passedGeneral": 49,
-   "analysis": 4,
+   "analysis": 1,
    "candidates": 3,
    "final": 4
   },
@@ -54454,7 +54454,7 @@
    "endgame": -1,
    "checked": 70,
    "passedGeneral": 64,
-   "analysis": 5,
+   "analysis": 4,
    "candidates": 5,
    "final": 2
   },
@@ -54646,7 +54646,7 @@
    "endgame": 86,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 4,
    "final": 3
   },
@@ -54842,7 +54842,7 @@
    "endgame": -1,
    "checked": 63,
    "passedGeneral": 54,
-   "analysis": 5,
+   "analysis": 4,
    "candidates": 4,
    "final": 5
   },
@@ -55239,7 +55239,7 @@
    "endgame": 96,
    "checked": 72,
    "passedGeneral": 66,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 2,
    "final": 1
   },
@@ -55525,7 +55525,7 @@
    "endgame": 70,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 5,
+   "analysis": 1,
    "candidates": 4,
    "final": 3
   },
@@ -55625,7 +55625,7 @@
    "endgame": 48,
    "checked": 72,
    "passedGeneral": 63,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 3,
    "final": 2
   },
@@ -55729,7 +55729,7 @@
    "endgame": 50,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 3,
    "final": 2
   },
@@ -55897,7 +55897,7 @@
    "endgame": -1,
    "checked": 56,
    "passedGeneral": 48,
-   "analysis": 4,
+   "analysis": 0,
    "candidates": 6,
    "final": 3
   },
@@ -55989,7 +55989,7 @@
    "endgame": 43,
    "checked": 64,
    "passedGeneral": 55,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 3,
    "final": 2
   },
@@ -57266,7 +57266,7 @@
    "endgame": -1,
    "checked": 53,
    "passedGeneral": 46,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 5,
    "final": 5
   },
@@ -57534,7 +57534,7 @@
    "endgame": 67,
    "checked": 72,
    "passedGeneral": 63,
-   "analysis": 6,
+   "analysis": 4,
    "candidates": 5,
    "final": 7
   },
@@ -57665,7 +57665,7 @@
    "endgame": 101,
    "checked": 72,
    "passedGeneral": 69,
-   "analysis": 6,
+   "analysis": 5,
    "candidates": 5,
    "final": 5
   },
@@ -57753,7 +57753,7 @@
    "endgame": 54,
    "checked": 60,
    "passedGeneral": 53,
-   "analysis": 4,
+   "analysis": 0,
    "candidates": 5,
    "final": 4
   },
@@ -58037,7 +58037,7 @@
    "endgame": 59,
    "checked": 61,
    "passedGeneral": 50,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 5,
    "final": 1
   },
@@ -58125,7 +58125,7 @@
    "endgame": 57,
    "checked": 60,
    "passedGeneral": 54,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 2,
    "final": 0
   },
@@ -58414,7 +58414,7 @@
    "endgame": 47,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 3,
    "final": 2
   },
@@ -59707,7 +59707,7 @@
    "endgame": 43,
    "checked": 52,
    "passedGeneral": 40,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 1,
    "final": 0
   },
@@ -59853,7 +59853,7 @@
    "endgame": 103,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 6,
+   "analysis": 4,
    "candidates": 7,
    "final": 9
   },
@@ -59961,7 +59961,7 @@
    "endgame": 72,
    "checked": 72,
    "passedGeneral": 63,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 6,
    "final": 2
   },
@@ -60487,7 +60487,7 @@
    "endgame": 85,
    "checked": 72,
    "passedGeneral": 66,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 6,
    "final": 5
   },
@@ -60794,7 +60794,7 @@
    "endgame": 60,
    "checked": 68,
    "passedGeneral": 52,
-   "analysis": 3,
+   "analysis": 2,
    "candidates": 6,
    "final": 4
   },
@@ -60908,7 +60908,7 @@
    "endgame": -1,
    "checked": 72,
    "passedGeneral": 68,
-   "analysis": 5,
+   "analysis": 0,
    "candidates": 4,
    "final": 4
   },
@@ -61019,7 +61019,7 @@
    "endgame": 53,
    "checked": 72,
    "passedGeneral": 63,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 5,
    "final": 3
   },
@@ -61151,7 +61151,7 @@
    "endgame": 74,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 3,
+   "analysis": 2,
    "candidates": 5,
    "final": 2
   },
@@ -61281,7 +61281,7 @@
    "endgame": 69,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 4,
+   "analysis": 1,
    "candidates": 3,
    "final": 4
   },
@@ -61655,7 +61655,7 @@
    "endgame": 58,
    "checked": 54,
    "passedGeneral": 44,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 5,
    "final": 2
   },
@@ -61898,7 +61898,7 @@
    "endgame": 91,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 1,
    "final": 0
   },
@@ -61991,7 +61991,7 @@
    "endgame": 63,
    "checked": 65,
    "passedGeneral": 53,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 4,
    "final": 4
   },
@@ -62373,7 +62373,7 @@
    "endgame": 71,
    "checked": 72,
    "passedGeneral": 63,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 3,
    "final": 3
   },
@@ -62593,7 +62593,7 @@
    "endgame": 63,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 5,
+   "analysis": 3,
    "candidates": 6,
    "final": 3
   },
@@ -63366,7 +63366,7 @@
    "endgame": 46,
    "checked": 57,
    "passedGeneral": 50,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 6,
    "final": 4
   },
@@ -63566,7 +63566,7 @@
    "endgame": 61,
    "checked": 72,
    "passedGeneral": 63,
-   "analysis": 5,
+   "analysis": 3,
    "candidates": 6,
    "final": 3
   },
@@ -63911,7 +63911,7 @@
    "endgame": 61,
    "checked": 55,
    "passedGeneral": 47,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 4,
    "final": 4
   },
@@ -63995,7 +63995,7 @@
    "endgame": 59,
    "checked": 56,
    "passedGeneral": 48,
-   "analysis": 4,
+   "analysis": 1,
    "candidates": 4,
    "final": 4
   },
@@ -64418,7 +64418,7 @@
    "endgame": 58,
    "checked": 66,
    "passedGeneral": 55,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 7,
    "final": 8
   },
@@ -64624,7 +64624,7 @@
    "endgame": 51,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 5,
    "final": 2
   },
@@ -64732,7 +64732,7 @@
    "endgame": 50,
    "checked": 72,
    "passedGeneral": 64,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 2,
    "final": 1
   },
@@ -65170,7 +65170,7 @@
    "endgame": 56,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 4,
+   "analysis": 1,
    "candidates": 7,
    "final": 9
   },
@@ -65334,7 +65334,7 @@
    "endgame": 55,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 6,
    "final": 4
   },
@@ -65436,7 +65436,7 @@
    "endgame": 47,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 4,
    "final": 3
   },
@@ -65962,7 +65962,7 @@
    "endgame": 89,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 5,
+   "analysis": 2,
    "candidates": 6,
    "final": 5
   },
@@ -66541,7 +66541,7 @@
    "endgame": 48,
    "checked": 57,
    "passedGeneral": 48,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 6,
    "final": 5
   },
@@ -67001,7 +67001,7 @@
    "endgame": 45,
    "checked": 68,
    "passedGeneral": 58,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 6,
    "final": 6
   },
@@ -67128,7 +67128,7 @@
    "endgame": 95,
    "checked": 72,
    "passedGeneral": 64,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 3,
    "final": 3
   },
@@ -67613,7 +67613,7 @@
    "endgame": 59,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 4,
    "final": 4
   },
@@ -67974,7 +67974,7 @@
    "endgame": 59,
    "checked": 72,
    "passedGeneral": 64,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 2,
    "final": 1
   },
@@ -68124,7 +68124,7 @@
    "endgame": -1,
    "checked": 72,
    "passedGeneral": 66,
-   "analysis": 8,
+   "analysis": 6,
    "candidates": 3,
    "final": 1
   },
@@ -68241,7 +68241,7 @@
    "endgame": 82,
    "checked": 72,
    "passedGeneral": 66,
-   "analysis": 5,
+   "analysis": 1,
    "candidates": 4,
    "final": 1
   },
@@ -68372,7 +68372,7 @@
    "endgame": 76,
    "checked": 72,
    "passedGeneral": 64,
-   "analysis": 4,
+   "analysis": 1,
    "candidates": 4,
    "final": 4
   },
@@ -68774,7 +68774,7 @@
    "endgame": 53,
    "checked": 72,
    "passedGeneral": 63,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 5,
    "final": 3
   },
@@ -68932,7 +68932,7 @@
    "endgame": 63,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 2,
    "final": 2
   },
@@ -69236,7 +69236,7 @@
    "endgame": 60,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 4,
+   "analysis": 1,
    "candidates": 5,
    "final": 1
   },
@@ -69350,7 +69350,7 @@
    "endgame": 51,
    "checked": 72,
    "passedGeneral": 56,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 6,
    "final": 3
   },
@@ -69466,7 +69466,7 @@
    "endgame": 83,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 6,
+   "analysis": 2,
    "candidates": 8,
    "final": 10
   },
@@ -69811,7 +69811,7 @@
    "endgame": 56,
    "checked": 62,
    "passedGeneral": 53,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 3,
    "final": 2
   },
@@ -70003,7 +70003,7 @@
    "endgame": 66,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 6,
    "final": 3
   },
@@ -70262,7 +70262,7 @@
    "endgame": 67,
    "checked": 72,
    "passedGeneral": 59,
-   "analysis": 5,
+   "analysis": 2,
    "candidates": 4,
    "final": 1
   },
@@ -70849,7 +70849,7 @@
    "endgame": 74,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 5,
+   "analysis": 2,
    "candidates": 3,
    "final": 4
   },
@@ -70947,7 +70947,7 @@
    "endgame": 65,
    "checked": 70,
    "passedGeneral": 57,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 5,
    "final": 1
   },
@@ -71073,7 +71073,7 @@
    "endgame": 37,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 5,
    "final": 4
   },
@@ -71610,7 +71610,7 @@
    "endgame": 54,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 6,
    "final": 1
   },
@@ -71732,7 +71732,7 @@
    "endgame": 36,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 4,
    "final": 0
   },
@@ -71833,7 +71833,7 @@
    "endgame": 59,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 4,
+   "analysis": 3,
    "candidates": 6,
    "final": 3
   },
@@ -71934,7 +71934,7 @@
    "endgame": 49,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 8,
    "final": 7
   },
@@ -72141,7 +72141,7 @@
    "endgame": 43,
    "checked": 72,
    "passedGeneral": 64,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 6,
    "final": 6
   },
@@ -72357,7 +72357,7 @@
    "endgame": 77,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 4,
+   "analysis": 0,
    "candidates": 3,
    "final": 2
   },
@@ -72565,7 +72565,7 @@
    "endgame": 57,
    "checked": 71,
    "passedGeneral": 61,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 5,
    "final": 3
   },
@@ -72792,7 +72792,7 @@
    "endgame": 52,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 3,
    "final": 2
   },
@@ -73164,7 +73164,7 @@
    "endgame": 74,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 3,
+   "analysis": 0,
    "candidates": 4,
    "final": 1
   },
@@ -73470,7 +73470,7 @@
    "endgame": 63,
    "checked": 71,
    "passedGeneral": 61,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 5,
    "final": 3
   },
@@ -73927,7 +73927,7 @@
    "endgame": 53,
    "checked": 72,
    "passedGeneral": 60,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 5,
    "final": 6
   },
@@ -74087,7 +74087,7 @@
    "endgame": 46,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 5,
    "final": 2
   },
@@ -74179,7 +74179,7 @@
    "endgame": 57,
    "checked": 64,
    "passedGeneral": 51,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 4,
    "final": 4
   },
@@ -74284,7 +74284,7 @@
    "endgame": 52,
    "checked": 72,
    "passedGeneral": 58,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 5,
    "final": 4
   },
@@ -75049,7 +75049,7 @@
    "endgame": 57,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 5,
+   "analysis": 3,
    "candidates": 6,
    "final": 6
   },
@@ -76402,7 +76402,7 @@
    "endgame": 72,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 5,
+   "analysis": 1,
    "candidates": 4,
    "final": 5
   },
@@ -76609,7 +76609,7 @@
    "endgame": 55,
    "checked": 72,
    "passedGeneral": 57,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 6,
    "final": 7
   },
@@ -77208,7 +77208,7 @@
    "endgame": 94,
    "checked": 72,
    "passedGeneral": 63,
-   "analysis": 5,
+   "analysis": 3,
    "candidates": 5,
    "final": 3
   },
@@ -77468,7 +77468,7 @@
    "endgame": 61,
    "checked": 72,
    "passedGeneral": 64,
-   "analysis": 4,
+   "analysis": 2,
    "candidates": 4,
    "final": 2
   },
@@ -78082,7 +78082,7 @@
    "endgame": 77,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 4,
+   "analysis": 0,
    "candidates": 3,
    "final": 2
   },
@@ -78167,7 +78167,7 @@
    "endgame": -1,
    "checked": 57,
    "passedGeneral": 53,
-   "analysis": 5,
+   "analysis": 3,
    "candidates": 3,
    "final": 1
   },
@@ -78336,7 +78336,7 @@
    "endgame": 99,
    "checked": 72,
    "passedGeneral": 68,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 2,
    "final": 0
   },
@@ -78471,7 +78471,7 @@
    "endgame": 68,
    "checked": 72,
    "passedGeneral": 64,
-   "analysis": 7,
+   "analysis": 2,
    "candidates": 4,
    "final": 1
   },
@@ -78795,7 +78795,7 @@
    "endgame": 48,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 1,
    "final": 1
   },
@@ -79008,7 +79008,7 @@
    "endgame": 72,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 3,
    "final": 0
   },
@@ -79186,7 +79186,7 @@
    "endgame": 54,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 4,
+   "analysis": 2,
    "candidates": 4,
    "final": 4
   },
@@ -79283,7 +79283,7 @@
    "endgame": 64,
    "checked": 69,
    "passedGeneral": 56,
-   "analysis": 6,
+   "analysis": 2,
    "candidates": 4,
    "final": 1
   },
@@ -79546,7 +79546,7 @@
    "endgame": 87,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 3,
+   "analysis": 2,
    "candidates": 3,
    "final": 0
   },
@@ -80019,7 +80019,7 @@
    "endgame": 132,
    "checked": 72,
    "passedGeneral": 68,
-   "analysis": 8,
+   "analysis": 3,
    "candidates": 3,
    "final": 1
   },
@@ -80793,7 +80793,7 @@
    "endgame": 54,
    "checked": 55,
    "passedGeneral": 42,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 2,
    "final": 0
   },
@@ -81113,7 +81113,7 @@
    "endgame": 57,
    "checked": 71,
    "passedGeneral": 57,
-   "analysis": 1,
+   "analysis": 0,
    "candidates": 4,
    "final": 2
   },
@@ -81522,7 +81522,7 @@
    "endgame": 68,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 4,
+   "analysis": 0,
    "candidates": 4,
    "final": 3
   },
@@ -81820,7 +81820,7 @@
    "endgame": 71,
    "checked": 72,
    "passedGeneral": 64,
-   "analysis": 2,
+   "analysis": 0,
    "candidates": 5,
    "final": 6
   },
@@ -82232,7 +82232,7 @@
    "endgame": 62,
    "checked": 68,
    "passedGeneral": 58,
-   "analysis": 4,
+   "analysis": 2,
    "candidates": 5,
    "final": 3
   },
@@ -82540,7 +82540,7 @@
    "endgame": 62,
    "checked": 72,
    "passedGeneral": 64,
-   "analysis": 2,
+   "analysis": 1,
    "candidates": 5,
    "final": 4
   },
@@ -82631,7 +82631,7 @@
    "endgame": 58,
    "checked": 63,
    "passedGeneral": 55,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 3,
    "final": 3
   },
@@ -82896,7 +82896,7 @@
    "endgame": 60,
    "checked": 58,
    "passedGeneral": 45,
-   "analysis": 4,
+   "analysis": 3,
    "candidates": 4,
    "final": 1
   },
@@ -83125,7 +83125,7 @@
    "endgame": 69,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 4,
+   "analysis": 2,
    "candidates": 8,
    "final": 7
   },
@@ -84190,7 +84190,7 @@
    "endgame": 64,
    "checked": 72,
    "passedGeneral": 65,
-   "analysis": 5,
+   "analysis": 1,
    "candidates": 6,
    "final": 7
   },
@@ -84312,7 +84312,7 @@
    "endgame": 67,
    "checked": 72,
    "passedGeneral": 62,
-   "analysis": 3,
+   "analysis": 1,
    "candidates": 6,
    "final": 8
   },
@@ -84687,7 +84687,7 @@
    "endgame": 73,
    "checked": 72,
    "passedGeneral": 61,
-   "analysis": 4,
+   "analysis": 1,
    "candidates": 5,
    "final": 6
   }
@@ -84699,16 +84699,17 @@
   "mate already under way": 20
  },
  "eligible": {
-  "analysis": 11362,
+  "analysis": 10019,
   "candidates": 7937,
   "final": 2762,
-  "anchors": 443
+  "anchors": 385
  },
  "analysis": {
-  "rejected: balanced, early in the middlegame": 4095,
+  "rejected: balanced, early in the middlegame": 3497,
   "rejected: big material gap, decided": 91,
   "rejected: in check": 276,
-  "rejected: balanced, in a drawn game": 7691
+  "rejected: balanced, in a drawn game": 7691,
+  "rejected: White slightly better, in a drawn game": 2014
  },
  "candidates": {
   "rejected: no trap in top 5": 34896
@@ -84720,5 +84721,5 @@
   "rejected: search lost a move": 3940,
   "rejected: search lost the game move": 211
  },
- "multi": 4669
+ "multi": 4496
 }

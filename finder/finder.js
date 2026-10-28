@@ -77,6 +77,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
         if(R.ANALYSIS.notInCheck && c.in_check()) tally(stats.analysis,'rejected: in check');
         else if(Math.abs(L.materialDiff(c)) > R.ANALYSIS.maxMaterialDiff && winPct(Math.sign(L.materialDiff(c)) * (fen.split(' ')[1]==='w' ? 1 : -1) * moverScore(ls[0]), null) >= R.ANALYSIS.bigMaterialMaxWin) tally(stats.analysis,'rejected: big material gap, decided');
         else if(drawn && ls[0].mate==null && Math.abs(ls[0].cp) < R.ANALYSIS.drawMinEval) tally(stats.analysis,'rejected: balanced, in a drawn game')
+        else if(drawn && ls[0].mate==null && (()=>{ const w = (fen.split(' ')[1]==='w' ? 1 : -1) * moverScore(ls[0]); return w >= R.ANALYSIS.drawSkipWhiteEdge[0] && w <= R.ANALYSIS.drawSkipWhiteEdge[1]; })()) tally(stats.analysis,'rejected: White slightly better, in a drawn game')
         else if(div.mid>=0 && ply < div.mid + R.ANALYSIS.earlyBalanced.plies && ls[0].mate==null && Math.abs(ls[0].cp) < R.ANALYSIS.earlyBalanced.maxEval) tally(stats.analysis,'rejected: balanced, early in the middlegame');
         else { e.options.add('analysis'); e.metrics.evalWhite = (fen.split(' ')[1]==='w' ? 1 : -1) * moverScore(ls[0]); e.metrics.mate = ls[0].mate ?? null; }
       }

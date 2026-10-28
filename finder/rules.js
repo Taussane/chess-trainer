@@ -1,7 +1,7 @@
 // Position finder rules — every threshold the finder uses, and nothing else.
 // Mirrors the "Position finder rules" doc. Change a rule here (and in the doc), bump VERSION.
 module.exports = {
-  VERSION: '2026-10-24.1',
+  VERSION: '2026-10-27.1',
 
   // The app's own engine (Stockfish 19 lite in the page), 1.2 s per search, as for a player's own games:
   // one calibration for both (2026-10-22: 1.2 s matches depth 18 as well as 2 s does; safety margins below).
@@ -21,6 +21,8 @@ module.exports = {
   ANALYSIS: {
     drawMinEval: 50,               // drawn games too, but not their balanced positions: one side 0.50 or more ahead
                                    // (so drawn games don't make "equal" an easy answer)
+    drawSkipWhiteEdge: [50, 150],  // and not where White is slightly better (0.50 to 1.50): drawn games are full of
+                                   // those, which made a cursor parked a little on White's side a good blind guess
     notInCheck: true,
     spacingPlies: 7,               // 7 half-moves between kept positions (alternates the side to move)
     retryPlies: 3,                 // if a sampled position fails, try up to 3 more half-moves
