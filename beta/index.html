@@ -161,13 +161,29 @@
   .routine-title{font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
   .routine-count{font-size:0.84rem; color:var(--text-mute); font-variant-numeric:tabular-nums;}
   .routine-row{display:flex; justify-content:space-between; align-items:center; font-size:0.86rem; color:var(--text-mute); padding:3px 0;}
-  .xp-nav{justify-content:flex-end; align-items:center; gap:10px;}
-  .xp-nav{position:relative;}
-  .xp-depth{margin-right:auto; display:flex; align-items:center;}
+  .actions-row.xp-nav{position:relative; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; justify-content:stretch;}
+  .xp-depth{display:flex; align-items:center; justify-content:center;}
   .xp-depth .depth-btn{position:static; margin:0;}
   .xp-nav .depth-note{top:auto; bottom:calc(100% + 6px);}   /* (opens upwards, over the grid) */
   .xp-nav .icon-btn{width:44px; height:36px; border-radius:8px; font-size:1rem;}
-  .xp-modes{margin:0 0 10px;}
+  .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
+  .xp-steps{justify-self:end; display:flex; gap:10px;}
+  .xp-nav > #xpFlip{justify-self:start;}
+  .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
+  /* both modes alike: the same heading, row spacing and size (a word on row n sits at the same height in both) */
+  .wrap[data-scr=explorer] .aspects.plan{margin:0; padding-top:6px;}
+  .wrap[data-scr=explorer] .aspects.plan .asp-head{margin-bottom:6px;}
+  .wrap[data-scr=explorer] .plan-rows{row-gap:6px;}
+  .wrap[data-scr=explorer] .plan-row{height:23.4px; align-items:center; padding:0 6px; margin:0 -6px;}
+  .wrap[data-scr=explorer] .plan-sit, .wrap[data-scr=explorer] .plan-text{font-size:0.88rem; line-height:16px; padding-bottom:0; margin-bottom:0;}
+  /* the evaluation, across the top of the board */
+  .xp-hbar-line{padding:3px 0;}
+  .xp-hbar{position:relative; width:100%; height:100%; border-radius:4px; overflow:hidden; background:var(--black-fill); border:1px solid var(--border);}
+  .xp-hbar-w{position:absolute; left:0; top:0; bottom:0; background:var(--white-fill); transition:width .25s ease-out;}
+  .xp-hbar-num{position:absolute; top:50%; transform:translateY(-50%); font-size:0.72rem; font-weight:700;}
+  .xp-hbar-num.w{left:6px; color:var(--black-fill);} .xp-hbar-num.b{right:6px; color:var(--white-fill);}
+  .asp-badge.xp-turn{animation:xpTurn .45s ease-out;}
+  @keyframes xpTurn{from{transform:scale(1.25); box-shadow:0 0 0 2px var(--accent);} to{transform:none; box-shadow:none;}}
   .xp-entry .card-title .title-badge{font-size:0.62rem; vertical-align:2px;}
   .goal-dots{display:flex; gap:8px;}
   .goal-dots i{width:36px; height:8px; border-radius:4px; background:var(--panel-2); border:1px solid var(--border);}
@@ -1733,6 +1749,7 @@ function onEngineMessage(e){
       // each depth's lines kept apart too: a search stopped mid-depth leaves some ranks at the new depth and
       // the others at the one before, so a move can sit under two ranks and another be missing (see bestmove)
       (sfLinesByDepth[d] = sfLinesByDepth[d] || {})[rank] = sfCurrentLines[rank];
+      if(rank===1 && sfCurrentJob && sfCurrentJob.explorer && !/ (upper|lower)bound/.test(line)) explorerLiveLine(sfCurrentFen, sfCurrentLines[1], d);
       return;
     }
     if(line.indexOf('bestmove')===0){
@@ -7014,9 +7031,14 @@ function explorerPlay(mv){
   explorer.fens.length = explorer.at + 1; explorer.sans.length = explorer.at; explorer.moves.length = explorer.at;   // a new move: what came after it goes
   explorer.fens.push(g.fen()); explorer.sans.push(m.san); explorer.moves.push({ from:m.from, to:m.to });
   explorer.at++; explorer.sel = null;
+  explorerTurn();
   render();
 }
-function explorerGo(i){ explorer.at = Math.max(0, Math.min(explorer.fens.length - 1, i)); explorer.sel = null; explorer.aspPiece = explorer.aspKing = null; promoPending = null; render(); }
+function explorerGo(i){
+  const at = Math.max(0, Math.min(explorer.fens.length - 1, i)); if(at===explorer.at) return;
+  explorer.at = at; explorer.sel = null; explorer.aspPiece = explorer.aspKing = null; promoPending = null; explorerTurn(); render();
+}
+function explorerTurn(){ const x = explorer; if(x.shown){ x.from = x.shown; x.revealFen = x.fens[x.at]; x.revealAt = performance.now(); } }
 addEventListener('keydown', e=>{
   if(screen!=='explorer' || !explorer || e.target.closest && e.target.closest('input, textarea')) return;
   if(e.key==='ArrowLeft'){ explorerGo(explorer.at - 1); e.preventDefault(); }
@@ -7027,45 +7049,84 @@ addEventListener('keydown', e=>{
 // (as in Position evaluation's review; flip the board for the other side's). Its height never changes.
 function explorerNavHtml(x, depth, note){
   return `<div class="actions-row xp-nav">
-      <span class="xp-depth">${depth || ''}</span>${note || ''}
-      <button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}>◀</button>
-      <button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}>▶</button>
       <button class="icon-btn" id="xpFlip" aria-label="Switch sides">⇅</button>
+      <span class="xp-depth">${depth || ''}</span>${note || ''}
+      <span class="xp-steps"><button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}>◀</button><button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}>▶</button></span>
     </div>`;
 }
 const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
     <button class="seg-btn${x.mode==='imbalances' ? ' active' : ''}" data-mode="imbalances" role="radio" aria-checked="${x.mode==='imbalances'}">Imbalances</button>
     <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plans</button>
   </div>`;
+// The six imbalances at once, from Stockfish's evaluation table (no search): shown while the short mate
+// check (aspectsEntry) runs, which only changes them when there is a mate.
+const explorerStatic = {};
+function explorerVals(fen){
+  const asp = aspectsEntry(fen);
+  if(asp.status==='done') return asp.data;
+  if(!(fen in explorerStatic)){ try{ explorerStatic[fen] = adaptAspects(parseAspects(sfTableLines(fen), fen), fen); }catch(e){ explorerStatic[fen] = null; } }
+  return explorerStatic[fen];
+}
+// The engine's reading as it deepens (its best line so far, at every new depth): the bar and the arrow follow it.
+const explorerLive = {};
+let explorerLiveT = null;
+function explorerLiveLine(fen, line, d){
+  if(!line || line.uci==null) return;
+  explorerLive[fen] = { cp: line.cp, mate: line.mate, uci: line.uci, d };
+  if(screen!=='explorer' || explorerLiveT) return;
+  explorerLiveT = setTimeout(()=>{ explorerLiveT = null; if(screen==='explorer') render(); }, 200);
+}
+// After a move, the imbalances turn one at a time, as in the reviews (from what the last position showed);
+// the others keep the values shown before.
+const XP_STEP = 220;
+function explorerShownVals(x, fen, vals){
+  if(!vals) return x.shown || null;
+  if(!x.from || x.revealFen!==fen){ x.revealKey = null; return (x.shown = vals); }
+  const k = Math.min(ASPECTS.length, Math.floor((performance.now() - x.revealAt) / XP_STEP) + 1);
+  if(k >= ASPECTS.length){ x.from = null; x.revealKey = null; return (x.shown = vals); }
+  const out = { ...x.from, off: vals.off };
+  ASPECTS.slice(0, k).forEach(a=>{ out[a.key] = vals[a.key]; });
+  x.revealKey = ASPECTS[k - 1].key;
+  clearTimeout(x.revealT); x.revealT = setTimeout(()=>{ if(screen==='explorer') render(); }, XP_STEP);
+  return out;
+}
+function explorerHbarHtml(info, pct){
+  const num = info ? (info.mate!=null ? '#' + Math.abs(info.mate) : fmtBarScore(info)) : '…', whiteAhead = pct >= 50;
+  return `<div class="pl-line xp-hbar-line"><div class="xp-hbar" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" style="width:${pct}%"></div>
+      <span class="xp-hbar-num ${whiteAhead ? 'w' : 'b'}">${num}</span></div></div>`;
+}
 function renderExplorer(){
   explorerInit();
   const app = document.getElementById('app'), x = explorer, p = explorerPos(), fen = p.fen;
   side = p.side;
   const ev = explorerEval(fen), failed = evalFailed(ev);
-  const asp = aspectsEntry(fen), vals = asp.status==='done' ? asp.data : null;
   // the position on screen first: its searches move to the front of the queue, and the explorer's search
   // of a position you've left stops (what it found is kept)
   const mineFirst = sfQueue.filter(j=>j.fen===fen); if(mineFirst.length){ for(const j of mineFirst) sfQueue.splice(sfQueue.indexOf(j), 1); sfQueue.unshift(...mineFirst); }
   const c = sfCurrentJob; if(c && c.explorer && c.fen!==fen && !c.preempted){ c.preempted = true; stopForWait(c); }
-  const info = ev && !failed && ev.lines.length ? toWhitePerspective(ev.lines[0], fen) : null;
-  if(info) x.lastPct = cpToPct(info.cp, info.mate);   // (the bar stays where it was while the next position is searched)
+  const vals = explorerShownVals(x, fen, explorerVals(fen));
+  const done = ev && !failed && ev.lines.length ? ev.lines[0] : null, live = !ev ? explorerLive[fen] : null;
+  const line = done || live, info = line ? toWhitePerspective(line, fen) : null;
+  if(info){ x.lastPct = cpToPct(info.cp, info.mate); x.lastInfo = info; }   // (the bar stays where it was until the next position's first reading)
   const pct = x.lastPct ?? 50;
   const g = new Chess(fen), mine = x.flip ? 'b' : 'w';
-  const best = info && ev.lines[0].uci;
-  const depth = g.game_over() ? '' : depthBtnHtml(ev, fen);   // the engine's depth, with the buttons (tap: what it means)
+  const best = line && line.uci;
+  const depth = g.game_over() ? '' : depthBtnHtml(ev, fen);   // the engine's depth (tap: what it means)
+  const planInfo = info || x.lastInfo;
   const body = x.mode==='imbalances'
     ? aspectsGridHtml(vals, null, ASPECTS.length, !vals, x.aspView, vals && fen)
-    : vals && info ? planHtml(planFor({ ...p, side: mine }, vals, info), x.aspView, false, false, fen) : planHtml(null, null, false, true);
+    : vals && planInfo ? planHtml(planFor({ ...p, side: mine }, vals, planInfo), x.aspView, false, false, fen) : planHtml(null, null, false, true);
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
       <h1>Strategy explorer <span class="title-badge">Beta</span></h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
-    ${boardHtml(true, evalBarHtml(pct, info ? fmtBarScore(info) : '…', null, false))}
+    ${boardHtml(false).replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct))}
     ${stackedPanel(`${explorerModesHtml(x)}${body}${explorerNavHtml(x, depth, depthNoteHtml(x, ev, fen))}`,
       [`${explorerModesHtml(x)}${aspectsGridHtml(null, null, 0, true)}${explorerNavHtml(x)}`,
        `${explorerModesHtml(x)}${planHtml(null, null, false, true)}${explorerNavHtml(x)}`])}`;
+  if(x.revealKey){ const b = app.querySelector(`#aspects .asp-item[data-asp="${x.revealKey}"] .asp-badge`); if(b) b.classList.add('xp-turn'); }
   // the board: click a piece, then where it goes
   const bs = boardObjFromGame(g);
   const dest = x.sel ? g.moves({ square:x.sel, verbose:true }).map(m=>m.to) : [];
