@@ -52,11 +52,16 @@ page = ('<!doctype html>\n<html lang="en" class="desk2">\n<head>\n<meta charset=
 CDN_CHESS = '<script src="https://cdn.jsdelivr.net/npm/chess.js@0.12.1/chess.js"></script>'
 assert page.count(CDN_CHESS) == 1, 'chess.js script tag not found'
 page = page.replace(CDN_CHESS, '<script src="vendor/chess.js/chess.js"></script>')
-outs = { root / 'index.html': page }
+# The beta (chessstrategy.org/beta/, not linked, not indexed): the same page with features being tried
+# switched on (html.beta: see BETA in the app), its files taken from the site's root.
+beta = (page.replace('<html lang="en" class="desk2">', '<html lang="en" class="desk2 beta">', 1)
+            .replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<base href="../">\n<meta name="robots" content="noindex">\n', 1))
+assert beta.count('class="desk2 beta"') == 1 and '<base href' in beta
+outs = { root / 'index.html': page, root / 'beta' / 'index.html': beta }
 if '--check' in sys.argv:
     ok = all(f.exists() and f.read_text(encoding='utf-8') == t for f, t in outs.items())
     print('index.html is up to date' if ok else 'index.html is out of date: run python3 scripts/build-site.py')
     sys.exit(0 if ok else 1)
 for f, t in outs.items():
     f.parent.mkdir(exist_ok=True); f.write_text(t, encoding='utf-8')
-print('index.html built,', len(page)//1024, 'KB')
+print('index.html built,', len(page)//1024, 'KB (and beta/index.html)')
