@@ -7033,7 +7033,7 @@ function explorerPlay(mv){
   explorer.fens.length = explorer.at + 1; explorer.sans.length = explorer.at; explorer.moves.length = explorer.at;   // a new move: what came after it goes
   const rank = m.color==='w' ? '1' : '8', rook = /k/.test(m.flags) ? ['h' + rank, 'f' + rank] : /q/.test(m.flags) ? ['a' + rank, 'd' + rank] : null;
   explorer.fens.push(g.fen()); explorer.sans.push(m.san); explorer.moves.push({ from:m.from, to:m.to, rook });
-  explorerSlide([[m.from, m.to]].concat(rook ? [rook] : []));
+  explorerSlide([[m.from, m.to]].concat(rook ? [rook] : [])); explorerSound(!!m.captured);
   explorer.at++; explorer.sel = null;
   explorerTurn();
   render();
@@ -7041,12 +7041,36 @@ function explorerPlay(mv){
 function explorerGo(i){
   const at = Math.max(0, Math.min(explorer.fens.length - 1, i)); if(at===explorer.at) return;
   const step = at - explorer.at, mv = step===1 ? explorer.moves[at - 1] : step===-1 ? explorer.moves[explorer.at - 1] : null;
-  if(mv){ const paths = [[mv.from, mv.to]].concat(mv.rook ? [mv.rook] : []); explorerSlide(step===1 ? paths : paths.map(([a, b])=>[b, a])); }
+  if(mv){ const paths = [[mv.from, mv.to]].concat(mv.rook ? [mv.rook] : []); explorerSlide(step===1 ? paths : paths.map(([a, b])=>[b, a])); explorerSound(step===1 && /x/.test(explorer.sans[at - 1])); }
   explorer.at = at; explorer.sel = null; explorer.aspPiece = explorer.aspKing = null; promoPending = null; explorerTurn(); render();
+}
+// A short wooden knock for a move, a fuller one for a capture: made in the browser (Web Audio), no sound file.
+let xpAudio = null;
+function explorerSound(capture){
+  try{
+    xpAudio = xpAudio || new (window.AudioContext || window.webkitAudioContext)();
+    const ac = xpAudio, t = ac.currentTime + 0.01, out = ac.createGain();
+    out.gain.value = capture ? 0.55 : 0.4; out.connect(ac.destination);
+    const knock = (at, freq, len, vol)=>{
+      // the click: a burst of noise through a band-pass filter, fading fast
+      const n = ac.createBuffer(1, Math.ceil(ac.sampleRate * len), ac.sampleRate), d = n.getChannelData(0);
+      for(let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 4);
+      const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
+      src.buffer = n; bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 1.2; g.gain.value = vol;
+      src.connect(bp).connect(g).connect(out); src.start(at);
+      // the body: a low tone, dying away
+      const o = ac.createOscillator(), og = ac.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(freq / 9, at); o.frequency.exponentialRampToValueAtTime(freq / 14, at + len);
+      og.gain.setValueAtTime(vol * 0.6, at); og.gain.exponentialRampToValueAtTime(0.001, at + len * 1.6);
+      o.connect(og).connect(out); o.start(at); o.stop(at + len * 1.7);
+    };
+    if(capture){ knock(t, 1400, 0.06, 1); knock(t + 0.045, 900, 0.08, 0.9); }   // two knocks, lower: a piece taken
+    else knock(t, 1900, 0.05, 1);
+  }catch(e){}
 }
 // Pieces slide to their square (a move, or one step back or forward): one animation across redraws, which
 // finds the piece on its new square each frame and shifts it back along its path, less and less.
-const xpSlide = { paths:[], t0:0, raf:0 }, XP_SLIDE_MS = 220;
+const xpSlide = { paths:[], t0:0, raf:0 }, XP_SLIDE_MS = 150;
 function explorerSlide(paths){
   xpSlide.paths = paths; xpSlide.t0 = performance.now();
   if(xpSlide.raf) return;
