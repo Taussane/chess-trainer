@@ -7044,17 +7044,28 @@ function explorerGo(i){
   if(mv){ const paths = [[mv.from, mv.to]].concat(mv.rook ? [mv.rook] : []); explorerSlide(step===1 ? paths : paths.map(([a, b])=>[b, a])); explorerSound(step===1 && /x/.test(explorer.sans[at - 1])); }
   explorer.at = at; explorer.sel = null; explorer.aspPiece = explorer.aspKing = null; promoPending = null; explorerTurn(); render();
 }
-// A soft pop for a move (from 680 Hz), a higher one for a capture (from 900 Hz): a sine dropping fast,
-// made in the browser (Web Audio), no sound file.
+// A "wooden pop" for a move, the same a little higher for a capture: a falling sine, a short knock of
+// filtered noise and a hollow low tone together. Made in the browser (Web Audio), no sound file.
 let xpAudio = null;
 function explorerSound(capture){
   try{
     xpAudio = xpAudio || new (window.AudioContext || window.webkitAudioContext)();
     const ac = xpAudio; if(ac.state==='suspended') ac.resume();
-    const t = ac.currentTime + 0.01, f = capture ? 900 : 680, o = ac.createOscillator(), g = ac.createGain();
-    o.type = 'sine'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.29, t + 0.05);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
-    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 0.07);
+    const t = ac.currentTime + 0.01, k = capture ? 820 / 620 : 1, out = ac.createGain();
+    out.gain.value = 0.49; out.connect(ac.destination);
+    const tone = (f0, f1, len, gain, type)=>{
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + len);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      o.connect(g).connect(out); o.start(t); o.stop(t + len + 0.02);
+    };
+    tone(620 * k, 200 * k, 0.05, 0.4, 'sine');
+    tone(310 * k, 250 * k, 0.06, 0.25, 'triangle');
+    const len = 0.03, b = ac.createBuffer(1, Math.ceil(ac.sampleRate * len), ac.sampleRate), d = b.getChannelData(0);
+    for(let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 5);
+    const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = b; bp.type = 'bandpass'; bp.frequency.value = 1100 * k; bp.Q.value = 4; g.gain.value = 0.9;
+    src.connect(bp).connect(g).connect(out); src.start(t);
   }catch(e){}
 }
 // Pieces slide to their square (a move, or one step back or forward): one animation across redraws, which
