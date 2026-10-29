@@ -7046,14 +7046,14 @@ function explorerGo(i){
   if(mv){ const paths = [[mv.from, mv.to]].concat(mv.rook ? [mv.rook] : []); explorerSlide(step===1 ? paths : paths.map(([a, b])=>[b, a])); explorerSound(step===1 && /x/.test(explorer.sans[at - 1])); }
   explorer.at = at; explorer.sel = null; explorer.aspPiece = explorer.aspKing = null; promoPending = null; explorerTurn(); render();
 }
-// A "wooden pop" for a move, the same a little higher for a capture: a falling sine, a short knock of
-// filtered noise and a hollow low tone together. Made in the browser (Web Audio), no sound file.
+// A move: a bright "wooden pop" (a falling sine, a short knock of filtered noise and a hollow low tone
+// together). A capture: the same parts, mostly the knock. Made in the browser (Web Audio), no sound file.
 let xpAudio = null;
 function explorerSound(capture){
   try{
     xpAudio = xpAudio || new (window.AudioContext || window.webkitAudioContext)();
     const ac = xpAudio; if(ac.state==='suspended') ac.resume();
-    const t = ac.currentTime + 0.01, k = capture ? 820 / 620 : 1, out = ac.createGain();
+    const t = ac.currentTime + 0.01, k = capture ? 820 / 620 : 1.3, mix = capture ? { pop:0.15, body:0.35, knock:1.5 } : { pop:0.4, body:0.25, knock:0.9 }, out = ac.createGain();
     out.gain.value = 0.49; out.connect(ac.destination);
     const tone = (f0, f1, len, gain, type)=>{
       const o = ac.createOscillator(), g = ac.createGain();
@@ -7061,12 +7061,12 @@ function explorerSound(capture){
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
       o.connect(g).connect(out); o.start(t); o.stop(t + len + 0.02);
     };
-    tone(620 * k, 200 * k, 0.05, 0.4, 'sine');
-    tone(310 * k, 250 * k, 0.06, 0.25, 'triangle');
+    tone(620 * k, 200 * k, 0.05, mix.pop, 'sine');
+    tone(310 * k, 250 * k, 0.06, mix.body, 'triangle');
     const len = 0.03, b = ac.createBuffer(1, Math.ceil(ac.sampleRate * len), ac.sampleRate), d = b.getChannelData(0);
     for(let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 5);
     const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
-    src.buffer = b; bp.type = 'bandpass'; bp.frequency.value = 1100 * k; bp.Q.value = 4; g.gain.value = 0.9;
+    src.buffer = b; bp.type = 'bandpass'; bp.frequency.value = 1100 * k; bp.Q.value = 4; g.gain.value = mix.knock;
     src.connect(bp).connect(g).connect(out); src.start(t);
   }catch(e){}
 }
