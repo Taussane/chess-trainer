@@ -135,27 +135,30 @@
   .xp-depth{display:flex; align-items:center; justify-content:center;}
   .xp-depth .depth-btn{position:static; margin:0;}
   .xp-nav .depth-note{top:auto; bottom:calc(100% + 6px);}   /* (opens upwards, over the grid) */
-  .xp-nav .icon-btn{width:44px; height:36px; border-radius:8px; font-size:1rem;}
+  .xp-nav .icon-btn{width:auto; min-width:36px; height:var(--xp-btn-h, 33px); padding:5px 8px; border-radius:8px; font-size:1rem;}   /* (the depth button's size) */
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
   .xp-steps{justify-self:end; display:flex; gap:10px;}
   .xp-nav > #xpFlip{justify-self:start;}
   .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
   /* both modes alike: the same heading, row spacing and size (a word on row n sits at the same height in both) */
-  .wrap[data-scr=explorer] .aspects.plan{margin:0; padding-top:6px;}
-  .wrap[data-scr=explorer] .aspects.plan .asp-head{margin-bottom:6px;}
+  .wrap[data-scr=explorer] .aspects, .wrap[data-scr=explorer] .aspects.plan{margin:0; padding-top:6px;}
+  .wrap[data-scr=explorer] .asp-head{height:14px; line-height:14px; margin:0;}
+  .wrap[data-scr=explorer] .asp-grid{row-gap:6px;}
+  .wrap[data-scr=explorer] .asp-item{height:24px;}
+  .wrap[data-scr=explorer] .aspects.plan .asp-head{margin-bottom:6px;}   /* (= the grid's gap below its heading) */
   .wrap[data-scr=explorer] .plan-rows{row-gap:6px;}
-  .wrap[data-scr=explorer] .plan-row{height:23.4px; align-items:center; padding:0 6px; margin:0 -6px;}
+  .wrap[data-scr=explorer] .plan-row{height:24px; align-items:center; padding:0 6px; margin:-3px -6px;}   /* (as the grid's items: 24 px, 3 px into the gaps) */
   .wrap[data-scr=explorer] .plan-sit, .wrap[data-scr=explorer] .plan-text{font-size:0.88rem; line-height:16px; padding-bottom:0; margin-bottom:0;}
   /* the evaluation, across the top of the board */
   .xp-hbar-line{padding:3px 0;}
   .xp-hbar{position:relative; width:100%; height:100%; border-radius:4px; overflow:hidden; background:var(--black-fill); border:1px solid var(--border);}
-  .xp-hbar-w{position:absolute; left:0; top:0; bottom:0; background:var(--white-fill); transition:width .25s ease-out;}
+  .xp-hbar-w{position:absolute; left:0; top:0; bottom:0; background:var(--white-fill); transition:width .6s cubic-bezier(.25,.8,.3,1);}
   .xp-hbar-num{position:absolute; top:50%; transform:translateY(-50%); font-size:0.72rem; font-weight:700;}
   .xp-hbar-num.w{left:6px; color:var(--black-fill);} .xp-hbar-num.b{right:6px; color:var(--white-fill);}
   .xp-hbar.flip .xp-hbar-w{left:auto; right:0;}
   .xp-hbar.flip .xp-hbar-num.w{left:auto; right:6px;} .xp-hbar.flip .xp-hbar-num.b{right:auto; left:6px;}
   .asp-badge.xp-turn{animation:xpTurn .45s ease-out;}
-  @keyframes xpTurn{from{transform:scale(1.25); box-shadow:0 0 0 2px var(--accent);} to{transform:none; box-shadow:none;}}
+  @keyframes xpTurn{from{box-shadow:0 0 0 2px var(--accent);} to{box-shadow:0 0 0 2px transparent;}}
   .xp-entry .card-title .title-badge{font-size:0.62rem; vertical-align:2px;}
   .goal-dots{display:flex; gap:8px;}
   .goal-dots i{width:36px; height:8px; border-radius:4px; background:var(--panel-2); border:1px solid var(--border);}
@@ -3090,7 +3093,7 @@ function parseAspects(lines, fen){
   // When one side is far ahead (about 7 pawns or more on material and squares), Stockfish stops before
   // the details (its "lazy" evaluation), and the table is all zeros: only Material can be read then.
   // Such positions are kept out of Imbalance reading.
-  const special = !Object.values(terms).some(([a, b])=>a || b);
+  const ev0 = sfEvalOf(fen), special = ev0 ? !!ev0.special : !Object.values(terms).some(([a, b])=>a || b);   // (an all-zero table can also be a symmetric position, the start: not special)
   const count = { w:{}, b:{} };
   for(const ch of fen.split(' ')[0]) if(/[pnbrqPNBRQ]/.test(ch)){ const c = ch===ch.toUpperCase() ? 'w' : 'b', t = ch.toLowerCase(); count[c][t] = (count[c][t]||0) + 1; }
   let npm = 0;
@@ -7057,7 +7060,10 @@ function explorerShownVals(x, fen, vals){
 }
 function explorerHbarHtml(info, pct, flip){   // flip (playing Black): White's share from the right
   const num = info ? (info.mate!=null ? '#' + Math.abs(info.mate) : fmtBarScore(info)) : '…', whiteAhead = pct >= 50;
-  return `<div class="pl-line xp-hbar-line"><div class="xp-hbar${flip ? ' flip' : ''}" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" style="width:${pct}%"></div>
+  // drawn where it stands on screen now (mid-glide too), then glides to pct (see renderExplorer)
+  const old = document.getElementById('xpBarW'), box = old && old.parentElement.getBoundingClientRect();
+  const from = old && box.width ? old.getBoundingClientRect().width / box.width * 100 : pct;   // (White's share, whichever end it fills from)
+  return `<div class="pl-line xp-hbar-line"><div class="xp-hbar${flip ? ' flip' : ''}" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" id="xpBarW" data-to="${pct}" style="width:${from}%"></div>
       <span class="xp-hbar-num ${whiteAhead ? 'w' : 'b'}">${num}</span></div></div>`;
 }
 function renderExplorer(){
@@ -7112,6 +7118,9 @@ function renderExplorer(){
   top.setAttribute('class', 'arrows'); top.setAttribute('viewBox', '0 0 480 480'); outer.appendChild(top);
   if(best) drawArrows(top, [{ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }], 'xb_');
   wireDepthBtn(x);
+  const bw = document.getElementById('xpBarW');
+  if(bw){ const to = +bw.dataset.to; requestAnimationFrame(()=>requestAnimationFrame(()=>{ bw.style.width = to + '%'; })); }
+  const db = app.querySelector('.layer:not(.ghost) .depth-btn'); if(db) app.style.setProperty('--xp-btn-h', db.offsetHeight + 'px');
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ screen = 'home'; render(); });
   on('xpBack', ()=>explorerGo(x.at - 1)); on('xpFwd', ()=>explorerGo(x.at + 1));
