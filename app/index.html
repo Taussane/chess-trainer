@@ -142,7 +142,6 @@
   .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
   /* both modes alike: the same heading, row spacing and size (a word on row n sits at the same height in both) */
   .wrap[data-scr=explorer] .aspects.plan{margin:0; padding-top:6px;}
-  .wrap[data-scr=explorer] .aspects:not(.plan) .asp-item{transform:translateY(-1px);}   /* (their letters level with the plans')*/
   .wrap[data-scr=explorer] .aspects.plan .asp-head{margin-bottom:8.2px;}   /* (the plans on the review grid's lines: the 1st level with Material…) */
   .wrap[data-scr=explorer] .plan-rows{row-gap:11.45px;}   /* (29.45 px from line to line, as the grid) */
   .wrap[data-scr=explorer] .plan-row{height:24px; align-items:center; padding:0 6px; margin:-3px -6px;}   /* (as the grid's items: 24 px, 3 px into the gaps) */
@@ -7077,6 +7076,21 @@ function explorerHbarHtml(info, pct, flip){   // flip (playing Black): White's s
   return `<div class="pl-line xp-hbar-line"><div class="xp-hbar${flip ? ' flip' : ''}" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" id="xpBarW" style="width:${from}%"></div>
       <span class="xp-hbar-num ${whiteAhead ? 'w' : 'b'}">${num}</span></div></div>`;
 }
+// Plans on the criteria's lines, measured on this screen (the criteria's rows take their height from the
+// font, which differs between devices): each plan line moves to the height of Material, Pawns, Space in the
+// hidden copy of the grid the panel keeps for its size; the heading to Static's.
+function explorerAlignPlans(app){
+  const centre = el=>{ if(!el) return null; const r = document.createRange(); r.selectNodeContents(el); const b = r.getBoundingClientRect(); return b.height ? b.top + b.height / 2 : null; };
+  const ghost = app.querySelector('.panel .layer.ghost .aspects:not(.plan)'), live = app.querySelector('.panel .layer:not(.ghost) .aspects.plan');
+  if(!ghost || !live) return;
+  const names = [...ghost.querySelectorAll('.asp-item')].slice(0, 3).map(e=>e.querySelector('.asp-name'));
+  const pairs = [[ghost.querySelector('.asp-head'), live.querySelector('.asp-head')]].concat([...live.querySelectorAll('.plan-row')].map((row, i)=>[names[i], row.querySelector('.plan-sit') || row]));
+  for(const [want, el] of pairs){
+    if(!want || !el) continue;
+    const row = el.closest('.plan-row') || el; row.style.transform = '';
+    const a = centre(want), b = centre(el); if(a!=null && b!=null) row.style.transform = `translateY(${(a - b).toFixed(1)}px)`;
+  }
+}
 function renderExplorer(){
   explorerInit();
   const app = document.getElementById('app'), x = explorer, p = explorerPos(), fen = p.fen;
@@ -7130,6 +7144,7 @@ function renderExplorer(){
   if(best) drawArrows(top, [{ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }], 'xb_');
   wireDepthBtn(x);
   xpBarEase(pct);
+  if(x.mode==='plans') explorerAlignPlans(app);
   const db = app.querySelector('.layer:not(.ghost) .depth-btn'); if(db) app.style.setProperty('--xp-btn-h', db.offsetHeight + 'px');
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ screen = 'home'; render(); });
