@@ -7016,28 +7016,17 @@ function explorerGo(i){
   if(mv){ const paths = [[mv.from, mv.to]].concat(mv.rook ? [mv.rook] : []); explorerSlide(step===1 ? paths : paths.map(([a, b])=>[b, a])); explorerSound(step===1 && /x/.test(explorer.sans[at - 1])); }
   explorer.at = at; explorer.sel = null; explorer.aspPiece = explorer.aspKing = null; promoPending = null; explorerTurn(); render();
 }
-// A short wooden knock for a move, a fuller one for a capture: made in the browser (Web Audio), no sound file.
+// A soft pop for a move (from 680 Hz), a higher one for a capture (from 900 Hz): a sine dropping fast,
+// made in the browser (Web Audio), no sound file.
 let xpAudio = null;
 function explorerSound(capture){
   try{
     xpAudio = xpAudio || new (window.AudioContext || window.webkitAudioContext)();
-    const ac = xpAudio, t = ac.currentTime + 0.01, out = ac.createGain();
-    out.gain.value = capture ? 0.55 : 0.4; out.connect(ac.destination);
-    const knock = (at, freq, len, vol)=>{
-      // the click: a burst of noise through a band-pass filter, fading fast
-      const n = ac.createBuffer(1, Math.ceil(ac.sampleRate * len), ac.sampleRate), d = n.getChannelData(0);
-      for(let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 4);
-      const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
-      src.buffer = n; bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 1.2; g.gain.value = vol;
-      src.connect(bp).connect(g).connect(out); src.start(at);
-      // the body: a low tone, dying away
-      const o = ac.createOscillator(), og = ac.createGain();
-      o.type = 'sine'; o.frequency.setValueAtTime(freq / 9, at); o.frequency.exponentialRampToValueAtTime(freq / 14, at + len);
-      og.gain.setValueAtTime(vol * 0.6, at); og.gain.exponentialRampToValueAtTime(0.001, at + len * 1.6);
-      o.connect(og).connect(out); o.start(at); o.stop(at + len * 1.7);
-    };
-    if(capture){ knock(t, 1400, 0.06, 1); knock(t + 0.045, 900, 0.08, 0.9); }   // two knocks, lower: a piece taken
-    else knock(t, 1900, 0.05, 1);
+    const ac = xpAudio; if(ac.state==='suspended') ac.resume();
+    const t = ac.currentTime + 0.01, f = capture ? 900 : 680, o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.29, t + 0.05);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 0.07);
   }catch(e){}
 }
 // Pieces slide to their square (a move, or one step back or forward): one animation across redraws, which
