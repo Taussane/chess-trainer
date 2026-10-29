@@ -149,7 +149,7 @@
   /* the evaluation, across the top of the board */
   .xp-hbar-line{padding:3px 0;}
   .xp-hbar{position:relative; width:100%; height:100%; border-radius:4px; overflow:hidden; background:var(--black-fill); border:1px solid var(--border);}
-  .xp-hbar-w{position:absolute; left:0; top:0; bottom:0; background:var(--white-fill); transition:width .6s cubic-bezier(.25,.8,.3,1);}
+  .xp-hbar-w{position:absolute; left:0; top:0; bottom:0; background:var(--white-fill);}
   .xp-hbar-num{position:absolute; top:50%; transform:translateY(-50%); font-size:0.72rem; font-weight:700;}
   .xp-hbar-num.w{left:6px; color:var(--black-fill);} .xp-hbar-num.b{right:6px; color:var(--white-fill);}
   .xp-hbar.flip .xp-hbar-w{left:auto; right:0;}
@@ -7055,12 +7055,25 @@ function explorerShownVals(x, fen, vals){
   x.from = null;
   return (x.shown = vals);
 }
+// The bar eases toward each new reading: every frame it covers a share of the distance left, from where it
+// stands (redraws don't restart it), and stops exactly on the value once there.
+const xpBar = { shown:null, target:null, raf:0 };
+function xpBarEase(target){
+  xpBar.target = target;
+  if(xpBar.shown==null) xpBar.shown = target;
+  if(xpBar.raf) return;
+  const step = ()=>{
+    const d = xpBar.target - xpBar.shown;
+    xpBar.shown = Math.abs(d) < 0.05 ? xpBar.target : xpBar.shown + d * 0.12;
+    const el = document.getElementById('xpBarW'); if(el) el.style.width = xpBar.shown + '%';
+    xpBar.raf = xpBar.shown===xpBar.target || screen!=='explorer' ? 0 : requestAnimationFrame(step);
+  };
+  xpBar.raf = requestAnimationFrame(step);
+}
 function explorerHbarHtml(info, pct, flip){   // flip (playing Black): White's share from the right
   const num = info ? (info.mate!=null ? '#' + Math.abs(info.mate) : fmtBarScore(info)) : '…', whiteAhead = pct >= 50;
-  // drawn where it stands on screen now (mid-glide too), then glides to pct (see renderExplorer)
-  const old = document.getElementById('xpBarW'), box = old && old.parentElement.getBoundingClientRect();
-  const from = old && box.width ? old.getBoundingClientRect().width / box.width * 100 : pct;   // (White's share, whichever end it fills from)
-  return `<div class="pl-line xp-hbar-line"><div class="xp-hbar${flip ? ' flip' : ''}" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" id="xpBarW" data-to="${pct}" style="width:${from}%"></div>
+  const from = xpBar.shown ?? pct;   // where it stands now; it eases to pct (xpBarEase), across redraws
+  return `<div class="pl-line xp-hbar-line"><div class="xp-hbar${flip ? ' flip' : ''}" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" id="xpBarW" style="width:${from}%"></div>
       <span class="xp-hbar-num ${whiteAhead ? 'w' : 'b'}">${num}</span></div></div>`;
 }
 function renderExplorer(){
@@ -7115,8 +7128,7 @@ function renderExplorer(){
   top.setAttribute('class', 'arrows'); top.setAttribute('viewBox', '0 0 480 480'); outer.appendChild(top);
   if(best) drawArrows(top, [{ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }], 'xb_');
   wireDepthBtn(x);
-  const bw = document.getElementById('xpBarW');
-  if(bw){ const to = +bw.dataset.to; requestAnimationFrame(()=>requestAnimationFrame(()=>{ bw.style.width = to + '%'; })); }
+  xpBarEase(pct);
   const db = app.querySelector('.layer:not(.ghost) .depth-btn'); if(db) app.style.setProperty('--xp-btn-h', db.offsetHeight + 'px');
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ screen = 'home'; render(); });
