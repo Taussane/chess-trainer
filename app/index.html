@@ -135,7 +135,9 @@
   .xp-depth{display:flex; align-items:center; justify-content:center;}
   .xp-depth .depth-btn{position:static; margin:0;}
   .xp-nav .depth-note{top:auto; bottom:calc(100% + 6px);}   /* (opens upwards, over the grid) */
-  .xp-nav .icon-btn{width:auto; min-width:36px; height:var(--xp-btn-h, 33px); padding:5px 8px; border-radius:8px; font-size:1rem;}   /* (the depth button's size) */
+  .xp-nav .icon-btn svg{width:14px; height:14px; display:block;}
+  .panel-stack > .layer > .actions-row.xp-nav{padding-top:16px;}   /* (a little room under the grid / the plans) */
+  .xp-nav .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:auto; min-width:36px; height:var(--xp-btn-h, 33px); padding:5px 8px; border-radius:8px; font-size:1rem;}   /* (the depth button's size) */
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
   .xp-steps{justify-self:end; display:flex; gap:10px;}
   .xp-nav > #xpFlip{justify-self:start;}
@@ -7001,14 +7003,36 @@ function explorerPlay(mv){
   const g = new Chess(explorer.fens[explorer.at]), m = g.move(mv);
   if(!m) return;
   explorer.fens.length = explorer.at + 1; explorer.sans.length = explorer.at; explorer.moves.length = explorer.at;   // a new move: what came after it goes
-  explorer.fens.push(g.fen()); explorer.sans.push(m.san); explorer.moves.push({ from:m.from, to:m.to });
+  const rank = m.color==='w' ? '1' : '8', rook = /k/.test(m.flags) ? ['h' + rank, 'f' + rank] : /q/.test(m.flags) ? ['a' + rank, 'd' + rank] : null;
+  explorer.fens.push(g.fen()); explorer.sans.push(m.san); explorer.moves.push({ from:m.from, to:m.to, rook });
+  explorerSlide([[m.from, m.to]].concat(rook ? [rook] : []));
   explorer.at++; explorer.sel = null;
   explorerTurn();
   render();
 }
 function explorerGo(i){
   const at = Math.max(0, Math.min(explorer.fens.length - 1, i)); if(at===explorer.at) return;
+  const step = at - explorer.at, mv = step===1 ? explorer.moves[at - 1] : step===-1 ? explorer.moves[explorer.at - 1] : null;
+  if(mv){ const paths = [[mv.from, mv.to]].concat(mv.rook ? [mv.rook] : []); explorerSlide(step===1 ? paths : paths.map(([a, b])=>[b, a])); }
   explorer.at = at; explorer.sel = null; explorer.aspPiece = explorer.aspKing = null; promoPending = null; explorerTurn(); render();
+}
+// Pieces slide to their square (a move, or one step back or forward): one animation across redraws, which
+// finds the piece on its new square each frame and shifts it back along its path, less and less.
+const xpSlide = { paths:[], t0:0, raf:0 }, XP_SLIDE_MS = 220;
+function explorerSlide(paths){
+  xpSlide.paths = paths; xpSlide.t0 = performance.now();
+  if(xpSlide.raf) return;
+  const step = ()=>{
+    const t = Math.min(1, (performance.now() - xpSlide.t0) / XP_SLIDE_MS), k = 1 - easeOut(t);
+    const flip = explorer && explorer.flip, col = sq=>{ const f = FILES.indexOf(sq[0]); return flip ? 7 - f : f; }, row = sq=>flip ? +sq[1] - 1 : 8 - +sq[1];
+    for(const [from, to] of xpSlide.paths){
+      const el = document.querySelector(`#board .sq[data-sq="${to}"] .pc`); if(!el) continue;
+      el.style.transform = k ? `translate(${(col(from) - col(to)) * k * 100}%, ${(row(from) - row(to)) * k * 100}%)` : '';
+      el.style.zIndex = k ? 6 : '';
+    }
+    xpSlide.raf = t < 1 && screen==='explorer' ? requestAnimationFrame(step) : 0;
+  };
+  xpSlide.raf = requestAnimationFrame(step);
 }
 function explorerTurn(){ const x = explorer; if(x.shown){ x.from = x.shown; x.revealFen = x.fens[x.at]; x.revealAt = performance.now(); } }
 addEventListener('keydown', e=>{
@@ -7021,9 +7045,9 @@ addEventListener('keydown', e=>{
 // (as in Position evaluation's review; flip the board for the other side's). Its height never changes.
 function explorerNavHtml(x, depth, note){
   return `<div class="actions-row xp-nav">
-      <button class="icon-btn" id="xpFlip" aria-label="Switch sides">⇅</button>
+      <button class="icon-btn" id="xpFlip" aria-label="Switch sides"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <span class="xp-depth">${depth || ''}</span>${note || ''}
-      <span class="xp-steps"><button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}>◀</button><button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}>▶</button></span>
+      <span class="xp-steps"><button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
     </div>`;
 }
 const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
