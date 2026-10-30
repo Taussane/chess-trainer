@@ -168,6 +168,9 @@
   .pq-choice.good{border-color:var(--good);} .pq-choice.good small{color:var(--good);}
   .pq-choice.bad{border-color:var(--bad);} .pq-choice.bad small{color:var(--bad);}
   .pq-choice.off{opacity:.55;}
+  .pq-choice em{display:block; font-style:normal; font-size:0.76rem; color:var(--text-mute); margin-top:1px;}
+  .pq-choice.pq-why.sel{box-shadow:inset 0 0 0 1px currentColor; background:var(--panel);}
+  .pq-choice.pq-why.best.sel{box-shadow:inset 0 0 0 1px var(--best-green);} .pq-choice.pq-why.good.sel{box-shadow:inset 0 0 0 1px var(--good);}
   .pq-prompt{display:flex; align-items:baseline; justify-content:space-between; gap:12px;}
   .pq-prompt .pq-steps{flex:none;}
   .score .pq-steps{margin-left:auto;}
@@ -7445,11 +7448,15 @@ function renderPlanq(){
   side = p.side;
   // the board: the threats once question 1 is checked (until a criterion is tapped in the plan review)
   if(q.step===0 && q.checked && q.urgent && !q.aspView) q.aspView = 'threats';
+  // in the plan's review, a right plan can be tapped to draw the criterion it comes from
+  const lineOf = v=>step==='plan' && q.plan.lines.find(l=>l.plan===v);
   const choice = ([v, label])=>{
     const best = v===ans.best, also = ans.also.includes(v);
     const cls = !q.checked ? (pick===v ? ' on' : '') : best ? ' best' : also ? ' good' : pick===v ? ' bad' : ' off';
     const tag = !q.checked ? '' : best ? (step==='plan' ? 'Main plan' : 'Right') : also ? 'Also good' : pick===v ? (step==='plan' ? 'Not here' : 'Your answer') : '';
-    return `<button class="pq-choice${cls}" data-v="${v}" ${q.checked ? 'disabled' : ''}><span>${label}</span>${tag ? `<small>${tag}</small>` : ''}</button>`;
+    const l = q.checked && lineOf(v), key = l && l.key && hasMarks(p.fen, l.key) ? l.key : null;
+    if(key) return `<button class="pq-choice${cls} pq-why${q.aspView===key ? ' sel' : ''}" data-key="${key}" aria-pressed="${q.aspView===key}"><span>${label}<em>${l.situation}</em></span><small>${tag}</small></button>`;
+    return `<button class="pq-choice${cls}" data-v="${v}" ${q.checked ? 'disabled' : ''}><span>${label}${l ? `<em>${l.situation}</em>` : ''}</span>${tag ? `<small>${tag}</small>` : ''}</button>`;
   };
   const steps = (q.urgent ? 1 : 3), asked = PLANQ_STEPS.slice(0, steps);
   const dots = `<div class="pq-steps" aria-label="Question ${q.step + 1} of ${steps}">${asked.map((s, i)=>{ const sc = q.scores[s];
@@ -7463,7 +7470,7 @@ function renderPlanq(){
         ${step==='plan' ? '' : prompt}
         <div class="pq-choices">${planqOptions(q).map(choice).join('')}</div>
         ${note ? `<p class="pq-note">${note}</p>` : ''}
-        ${step==='plan' ? planHtml(q.plan, q.aspView, false, false, p.fen) : ''}
+        ${step==='plan' && q.plan.lines.some(l=>l.key && hasMarks(p.fen, l.key)) ? '<p class="pq-note">Tap a right plan to see why on the board.</p>' : ''}
         <div class="actions-row split">${lichessLink(p)}<button class="btn" id="pqNext">Next position</button></div>`
     : `
         ${prompt}
@@ -7474,7 +7481,8 @@ function renderPlanq(){
   // (the position's own plan choices, known from the start: the height stays the same through the three questions)
   const g4 = `<div class="pq-choices">${(q.choices.length ? q.choices.map(c=>PLAN_LABELS[c]) : ["No, it's quiet", 'Yes, I can win something', 'Yes, I must defend']).map(l=>`<span class="pq-choice"><span>${l}</span><small>Also good</small></span>`).join('')}</div>`;
   const ghostQ = `<div class="pq-prompt"><p class="prompt">Choose a middlegame plan for White</p></div>${g4}<p class="pq-note">Nothing to win or to parry right now.</p><div class="actions-row"><span class="btn">Check</span></div>`;
-  const ghostR = `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${g4}${planHtml(null, null, false, true)}${GHOST_ACTIONS}`;
+  const g4why = `<div class="pq-choices">${(q.choices.length ? q.choices.map(c=>PLAN_LABELS[c]) : ['', '', '']).map(l=>`<span class="pq-choice"><span>${l}<em>Enemy passed pawn</em></span><small>Also good</small></span>`).join('')}</div>`;
+  const ghostR = `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${g4why}<p class="pq-note">Tap a right plan to see why on the board.</p>${GHOST_ACTIONS}`;
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
@@ -7491,6 +7499,7 @@ function renderPlanq(){
   on('pqCheck', ()=>{ if(!pick) return; q.checked = true; q.scores[step] = ans.score(pick); if(last) q.done = true; render(); });
   on('pqGo', ()=>{ q.step++; q.checked = false; q.aspView = q.aspPiece = q.aspKing = null; render(); });
   on('pqNext', ()=>{ planq = planqPick() || null; render(); });
+  app.querySelectorAll('.layer:not(.ghost) .pq-why[data-key]').forEach(b=>b.onclick = ()=>{ q.aspView = q.aspView===b.dataset.key ? null : b.dataset.key; q.aspPiece = q.aspKing = null; render(); });
   app.querySelectorAll('.layer:not(.ghost) .pq-choice[data-v]').forEach(b=>b.onclick = ()=>{ if(q.checked) return; q.picks[step] = b.dataset.v; render(); });
 }
 function renderScreen(){
