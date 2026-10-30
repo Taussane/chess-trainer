@@ -1,8 +1,8 @@
-# Beta: lists the Imbalance reading positions whose grades, added up, disagree with the engine: the
+# Lists the Imbalance reading positions whose grades, added up, disagree with the engine: the
 # engine (master-evals.json: the finder's search, the app's engine at 1.2 s) has one side 1.0 or more
 # ahead, and the grades' sum (+ 1, ++ 2, from White's side; Development in place of Activity while a
 # knight or bishop has never moved) is "=" or leans the other way. Writes the list into app/index.html
-# (/*IMBALANCE_SKIP_BETA*/); the beta site leaves those positions out too (on top of IMBALANCE_SKIP).
+# (/*IMBALANCE_SKIP_BETA*/); the app leaves those positions out too (on top of IMBALANCE_SKIP).
 # Needs playwright and the site built (python3 scripts/build-site.py). Usage: python3 scripts/imbalance-beta-skip.py
 import asyncio, json, pathlib, re, subprocess, sys, time
 from playwright.async_api import async_playwright
@@ -28,7 +28,7 @@ async def main():
                 else: await r.abort()
             await pg.route('**/*', lambda r: asyncio.ensure_future(route(r)))
             await pg.goto('http://localhost:8799/beta/index.html'); await pg.wait_for_timeout(2000)
-            assert await pg.evaluate('DEV_ON'), 'not the beta page'
+            assert await pg.evaluate('DEV_ON'), 'Development is off'
             rows = await pg.evaluate(JS)
             await b.close()
     finally:

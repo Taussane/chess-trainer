@@ -278,8 +278,9 @@ async def main():
             guarded: M('4k3/1p6/2n5/1B6/8/8/8/4K3 w - - 0 1', 'threats').a,
             spaceFew: M('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 'space').t,
             knight: M('4k3/8/8/8/8/8/8/1N2K3 w - - 0 1', 'activity').n,
+            knightOut: M('4k3/8/8/8/8/2N5/8/4K3 w - - 0 1', 'activity').n,
           }; })()""")
-        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2w d5b g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b1+3 e1Total +3 e8Total +0'}
+        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2w d5b g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'e1Total +0 e8Total +0', 'knightOut': 'c3+8 e1Total +8 e8Total +0'}   # (a knight never moved: Development, nothing developed)
         for k, v in want.items():
             if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
         # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (the move's arrow, no rings)
@@ -287,7 +288,7 @@ async def main():
             if marks[k]['a'] != a or marks[k]['c'] != c: fails.append(f'{k} threats: {marks[k]}')
         # the pool: Position evaluation's positions less the tactical ones; neither has a castling right
         # lost with king and rook still on their first squares
-        n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, POOLS.analysis.filter(p=>IMBALANCE_SKIP.includes(p.key)).length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key)), POOLS.analysis.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss)]")
+        n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, POOLS.analysis.filter(p=>IMBALANCE_SKIP.includes(p.key) || IMBALANCE_SKIP_BETA.includes(p.key)).length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key) || IMBALANCE_SKIP_BETA.includes(p.key)), POOLS.analysis.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss)]")
         print('pools:', n)
         if n[0] != n[1] - n[2] or n[3] or n[2] < 5 or n[4] or n[5] != [True, False, False]: fails.append(f'Imbalance reading pool: {n}')
         await b.close()
