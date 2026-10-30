@@ -186,6 +186,16 @@
   .xp-hbar.flip .xp-hbar-num.w{left:auto; right:6px;} .xp-hbar.flip .xp-hbar-num.b{right:auto; left:6px;}
   .asp-badge.xp-turn{animation:xpTurn .45s ease-out;}
   @keyframes xpTurn{from{box-shadow:0 0 0 2px var(--accent);} to{box-shadow:0 0 0 2px transparent;}}
+  .pq-choices{display:flex; flex-direction:column; gap:8px; margin:4px 0 6px;}
+  .pq-choice{display:flex; justify-content:space-between; align-items:center; gap:10px; text-align:left; width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); font:inherit; font-size:0.92rem; cursor:pointer;}
+  .pq-choice small{font-size:0.74rem; font-weight:700; white-space:nowrap;}
+  @media (hover:hover){ button.pq-choice:not(:disabled):hover{border-color:var(--accent);} }
+  .pq-choice.on{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent);}
+  .pq-choice:disabled{cursor:default;}
+  .pq-choice.best{border-color:var(--best-green);} .pq-choice.best small{color:var(--best-green);}
+  .pq-choice.good{border-color:var(--good);} .pq-choice.good small{color:var(--good);}
+  .pq-choice.bad{border-color:var(--bad);} .pq-choice.bad small{color:var(--bad);}
+  .pq-choice.off{opacity:.55;}
   .xp-entry .card-title .title-badge{font-size:0.62rem; vertical-align:2px;}
   .goal-dots{display:flex; gap:8px;}
   .goal-dots i{width:36px; height:8px; border-radius:4px; background:var(--panel-2); border:1px solid var(--border);}
@@ -2514,7 +2524,7 @@ let selSquare = null;          // piece being moved while entering a candidate
 let promoPending = null;       // {from, to}: a pawn move to the last rank, waiting for its piece
 let helpVisible = false;
 // `store`: per track and per position, so leaving an exercise and coming back keeps what was entered.
-function pos(){ return screen==='explorer' && explorer ? explorerPos() : curPos; }
+function pos(){ return screen==='explorer' && explorer ? explorerPos() : screen==='planq' && planq ? planq.p : curPos; }
 function st(activity){
   ensureTrack(ctx(activity));
   const p = pos(), bucket = store[ctx(activity)];
@@ -4113,6 +4123,7 @@ const SIDE_ICONS = {
   profile: actIcon('<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'),
   settings: actIcon('<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>'),
   metrics: actIcon('<path d="M4 20V4M4 20h16"/><path d="M7 15l4-5 3 3 5-6"/>'),
+  planq: actIcon('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>'),
   explorer: actIcon('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'),
   support: actIcon('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'),
 };
@@ -4147,7 +4158,7 @@ function renderSide(){
     <div class="side-sec">Exercises</div>
     ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
-    ${BETA ? `<div class="side-sec">Explore</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}` : ''}
+    ${BETA ? `<div class="side-sec">Explore</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}${item('planq', SIDE_ICONS.planq, 'Plan finder')}` : ''}
     <div class="side-sec">You</div>
     ${item('account', '<img class="side-app-icon" src="icons/icon.svg" alt="" aria-hidden="true">', displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
@@ -4640,7 +4651,9 @@ function renderHome(){
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small></span>
         </button>`; }).join('')}
       ${BETA ? `<button class="card xp-entry" id="xpOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.explorer}</span>
-          <span><span class="card-title">Strategy explorer <span class="title-badge">Beta</span></span><span class="card-desc">Play moves, watch the imbalances and plans shift.</span></span></button>` : ''}
+          <span><span class="card-title">Strategy explorer <span class="title-badge">Beta</span></span><span class="card-desc">Play moves, watch the imbalances and plans shift.</span></span></button>
+        <button class="card xp-entry" id="pqOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.planq}</span>
+          <span><span class="card-title">Plan finder <span class="title-badge">Beta</span></span><span class="card-desc">Choose the plan to follow in a master position.</span></span></button>` : ''}
     </div>
     <div class="home-donate"><button class="donate-badge" id="donateBtn"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button></div>
     ${engineErrorBanner()}
@@ -4650,6 +4663,7 @@ function renderHome(){
   app.querySelectorAll('.card[data-go]').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
   document.getElementById('accountBtn').onclick = ()=>{ screen = 'account'; render(); };
   const xpOpen = document.getElementById('xpOpen'); if(xpOpen) xpOpen.onclick = ()=>{ screen = 'explorer'; render(); };
+  const pqOpen = document.getElementById('pqOpen'); if(pqOpen) pqOpen.onclick = ()=>{ screen = 'planq'; render(); };
   document.getElementById('routineBtn').onclick = startRoutine;
   prefetchHome();
   progressJustLoaded = false;
@@ -7228,10 +7242,116 @@ function renderExplorer(){
   on('xpFlip', ()=>{ x.flip = !x.flip; render(); });
   app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; render(); });
 }
+// ================= Plan finder (beta prototype) =================
+// A master position and four plans in plain words: choose the one to follow. Graded with the plans the
+// app gives in Position evaluation's review (planFor): its first plan 100%, second 70%, third 50%,
+// anything else 0. The wrong choices include the opposite of a right plan (trade / avoid trades…).
+// Not recorded in your progress yet (a prototype). Only in the beta.
+const PLAN_LABELS = {
+  'Check forcing moves':'Look for the mating attack', 'Defend first':'Defend against the mate',
+  'Trade pieces':'Trade pieces', 'Avoid trades, attack':'Avoid trades and attack',
+  'Simplify, stay safe':'Simplify and stay safe', 'Complicate':'Complicate the game',
+  'Go for the pawns':'Use your king to win pawns', 'Centralize it':'Centralize your king',
+  'Open lines to it':'Open lines to their king', 'Trade attackers':'Trade their attacking pieces',
+  'Forcing moves first':'Play forcing moves', 'Parry them first':'Parry their threats',
+  'Push it':'Push your passed pawn', 'Attack them':'Attack their weak pawns',
+  'Blockade it':'Blockade their passed pawn', 'Keep pieces active':'Keep your pieces active',
+  'Avoid freeing trades':'Avoid trades that free them', 'Trade to breathe':'Trade pieces to free your game',
+  'Keep the initiative':'Keep the initiative', 'Improve the worst':'Improve your worst piece',
+  'Find a pawn break':'Prepare a pawn break',
+};
+const PLAN_OPPOSITE = {};
+[['Check forcing moves','Defend first'], ['Trade pieces','Avoid trades, attack'], ['Simplify, stay safe','Complicate'],
+ ['Go for the pawns','Centralize it'], ['Open lines to it','Trade attackers'], ['Forcing moves first','Parry them first'],
+ ['Push it','Blockade it'], ['Attack them','Keep pieces active'], ['Avoid freeing trades','Trade to breathe'],
+ ['Keep the initiative','Improve the worst']].forEach(([a, b])=>{ PLAN_OPPOSITE[a] = b; PLAN_OPPOSITE[b] = a; });
+const PLANQ_SCORES = [100, 70, 50];
+let planq = null;   // { p, plan, info, choices, pick, checked, aspView, aspPiece, aspKing, seen }
+function planqInfo(p){
+  const m = masterEvals && masterEvals[p.key];
+  return m ? toWhitePerspective({ cp: m[1], mate: m[2] }, p.fen) : null;
+}
+// The next position: one with a clear plan (its first plan not "find a pawn break", weight 3 or more).
+// Material plans would come up most of the time (a material edge outranks the rest): among up to 25 such
+// positions, the one whose main plan has come up least so far is chosen.
+const planqShown = {};
+function planqPick(){
+  const cands = [];
+  for(let i = 0; i < 25; i++){ const c = planqCandidate(cands); if(!c) break; cands.push(c); }
+  if(!cands.length) return null;
+  const n = c=>planqShown[c.plan.lines[0].plan] || 0, best = Math.min(...cands.map(n));
+  const pick = shuffled(cands.filter(c=>n(c)===best))[0];
+  planqShown[pick.plan.lines[0].plan] = n(pick) + 1; pick.seen.add(pick.p.key);
+  return pick;
+}
+function planqCandidate(taken){
+  const pool = POOLS.imbalances, seen = planq ? planq.seen : (planqCandidate.seen = planqCandidate.seen || new Set());
+  for(let tries = 0; tries < 400; tries++){
+    const p = pool[Math.floor(Math.random() * pool.length)];
+    if(seen.has(p.key) || taken.some(c=>c.p.key===p.key)) continue;
+    const info = planqInfo(p), vals = info && explorerVals(p.fen);
+    if(!vals || vals.special) continue;
+    const plan = planFor(p, vals, info), top = plan.lines[0];
+    if(!top || top.plan==='Find a pawn break' || top.weight < 3) continue;
+    // the choices: the first plan, often the second, the opposites of the right ones, then other plans
+    const right = plan.lines.map(l=>l.plan), opts = [right[0]];
+    if(right[1] && Math.random() < 0.5) opts.push(right[1]);
+    for(const r of right){ const o = PLAN_OPPOSITE[r]; if(o && !right.includes(o) && !opts.includes(o) && opts.length < 4) opts.push(o); }
+    const others = shuffled(Object.keys(PLAN_LABELS).filter(x=>!opts.includes(x) && !right.includes(x)));
+    while(opts.length < 4) opts.push(others.shift());
+    return { p, plan, info, vals, choices: shuffled(opts), pick:null, checked:false, aspView:null, aspPiece:null, aspKing:null, seen };
+  }
+  return null;
+}
+function renderPlanq(){
+  const app = document.getElementById('app');
+  loadMasterEvals();
+  if(!planq){
+    planq = masterEvals && Object.keys(masterEvals).length ? planqPick() : null;
+    if(!planq){ app.innerHTML = `<div class="title-row"><button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button><h1>Plan finder <span class="title-badge">Beta</span></h1><span class="title-spacer"></span></div><p class="mg-status mg-loading">Loading positions…</p>`;
+      document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; render(); };
+      clearTimeout(renderPlanq.t); renderPlanq.t = setTimeout(()=>{ if(screen==='planq') render(); }, 400); return; }
+  }
+  const q = planq, p = q.p, right = q.plan.lines.map(l=>l.plan);
+  side = p.side;
+  const score = q.checked ? (right.includes(q.pick) ? PLANQ_SCORES[right.indexOf(q.pick)] : 0) : null;
+  const choice = c=>{
+    const i = right.indexOf(c), cls = !q.checked ? (q.pick===c ? ' on' : '') : i===0 ? ' best' : i > 0 ? ' good' : q.pick===c ? ' bad' : ' off';
+    const tag = !q.checked ? '' : i===0 ? 'Main plan' : i > 0 ? 'Also good' : q.pick===c ? 'Not here' : '';
+    return `<button class="pq-choice${cls}" data-plan="${c}" ${q.checked ? 'disabled' : ''}><span>${PLAN_LABELS[c]}</span>${tag ? `<small>${tag}</small>` : ''}</button>`;
+  };
+  const choices = `<div class="pq-choices">${q.choices.map(choice).join('')}</div>`;
+  const ghostQ = `<p class="prompt">What's the plan for ${p.side==='w' ? 'White' : 'Black'}?</p><div class="pq-choices">${q.choices.map(c=>`<span class="pq-choice"><span>${PLAN_LABELS[c]}</span></span>`).join('')}</div><div class="actions-row"><span class="btn">Check</span></div>`;
+  const ghostR = `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="pq-choices">${q.choices.map(c=>`<span class="pq-choice"><span>${PLAN_LABELS[c]}</span><small>Also good</small></span>`).join('')}</div>${planHtml(null, null, false, true)}${GHOST_ACTIONS}`;
+  app.innerHTML = `
+    <div class="title-row">
+      <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
+      <h1>Plan finder <span class="title-badge">Beta</span></h1>
+      <span class="title-spacer" aria-hidden="true"></span>
+    </div>
+    ${posBar()}
+    ${boardHtml(false)}
+    ${stackedPanel(q.checked ? `
+        <div class="score"><span class="score-num">${score}%</span><span class="score-label">Accuracy</span></div>
+        ${choices}
+        ${planHtml(q.plan, q.aspView, false, false, p.fen)}
+        <div class="actions-row split">${lichessLink(p)}<button class="btn" id="pqNext">Next position</button></div>`
+      : `
+        <p class="prompt">What's the plan for ${p.side==='w' ? 'White' : 'Black'}?</p>
+        ${choices}
+        <div class="actions-row"><button class="btn" id="pqCheck" ${q.pick ? '' : 'disabled'}>Check</button></div>`, [ghostQ, ghostR])}`;
+  renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
+  if(q.checked) wireAspectView(p, q);
+  const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
+  on('homeBtn', ()=>{ screen = 'home'; render(); });
+  on('pqCheck', ()=>{ if(!q.pick) return; q.checked = true; render(); });
+  on('pqNext', ()=>{ planq = planqPick() || null; render(); });
+  app.querySelectorAll('.layer:not(.ghost) .pq-choice[data-plan]').forEach(b=>b.onclick = ()=>{ if(q.checked) return; q.pick = b.dataset.plan; render(); });
+}
 function renderScreen(){
   syncPos();
   const wrap = document.querySelector('.wrap');
-  wrap.classList.toggle('ex', ACTIVITIES.includes(screen) || screen==='explorer');
+  wrap.classList.toggle('ex', ACTIVITIES.includes(screen) || screen==='explorer' || screen==='planq');
   wrap.classList.toggle('home', screen==='home');
   wrap.dataset.scr = onProfile() ? 'account' : screen;
   renderSide();
@@ -7242,6 +7362,7 @@ function renderScreen(){
   else if(screen==='support') renderSupport();
   else if(screen==='metrics') renderMetrics();
   else if(screen==='explorer' && BETA) renderExplorer();
+  else if(screen==='planq' && BETA) renderPlanq();
   else if(screen==='analysis') renderAnalysis();
   else if(screen==='imbalances') renderImbalances();
   else if(screen==='candidates') renderCandidates();
