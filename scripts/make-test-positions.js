@@ -28,6 +28,9 @@ const T = [
   ['Threats marks', {fen:'r4rk1/1ppq1ppp/p1npn3/1B6/2PP3b/2N1PN2/PP3PPP/R2QK2R w KQ - 0 10'}, 'Bxc6'],
   // King activity marks (endgame: no queens): White Ke4 central (Centre +3), attacking d4 and f4 (Target), beside its passed e5 (Escort); Black Kf7 Centre +1.
   ['King activity marks', {fen:'8/5k2/8/4P3/3pKp2/8/8/8 w - - 0 40'}, 'Kxd4'],
+  // Development marks (beta; Ruy Lopez, Breyer-like): White's Bc1, Qd1, Ra1 never moved (−1 each), Black's Qd8, Ra8 (−1 each): Black + by 1.
+  // Black's Bf8 went back to its square (Be7-f8): it has moved, so it isn't counted (the game's moves are needed: sans).
+  ['Development marks', {moves:'e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3 Nb8 d4 Nbd7 Nbd2 Bb7 Bc2 Re8 Nf1 Bf8 Ng3 g6'}, 'a4'],
 ];
 const sf = spawn(SF); let buf = '', wait = null;
 sf.stdout.on('data', d=>{ buf += d; if(wait && buf.includes('bestmove')){ const o = buf; buf = ''; const w = wait; wait = null; w(o); } });
@@ -50,7 +53,7 @@ const run = cmd=>new Promise(r=>{ wait = r; sf.stdin.write(cmd); });
     // noImbalances: one side so far ahead that Stockfish gives no breakdown (kept out of Imbalance reading)
     const noImb = /knight fork|Stalemate/.test(name);
     out.push({ key:'test-'+out.length, fen, side:fen.split(' ')[1], moveNo:+fen.split(' ')[5], title:name, year:'', last,
-               hist:{ uci:mv.from+mv.to+(mv.promotion||''), san:mv.san, from:mv.from, to:mv.to }, ...(noImb ? { noImbalances:true } : {}) });
+               hist:{ uci:mv.from+mv.to+(mv.promotion||''), san:mv.san, from:mv.from, to:mv.to }, ...(src.moves ? { sans:src.moves } : {}), ...(noImb ? { noImbalances:true } : {}) });
   }
   require('fs').writeFileSync(process.argv[2], JSON.stringify(out));
   sf.kill();
