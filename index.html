@@ -7405,7 +7405,12 @@ function planqUrgent(p, vals, info){
   if(targets.includes(best.slice(2, 4))) return { ...out, kind: 'win', stop: l >= 2, san: san(best) };
   return { ...out, looks: { sq: targets[0], best: san(best) } };
 }
-const planqPhase = fen=>devActive(fen) ? 'opening' : isEndgame(fen) ? 'endgame' : 'middlegame';
+// The phase, for which explanation comes first (planqReasons): Stockfish's own phase, from the material
+// left (128 all of it, 0 a bare endgame): the endgame below half; the opening while a knight or bishop is
+// still to move (Stockfish has no opening of its own: its phase stays full until trades) with most of the
+// material on (96 or more)
+const planqPhase = fen=>{ const ev = sfEvalOf(fen), ph = ev && !ev.special ? ev.phase : 128;
+  return ph < 64 ? 'endgame' : devActive(fen) && ph >= 96 ? 'opening' : 'middlegame'; };
 // The two dilemmas for the side to play: each row's net vote, its answer (1, -1, or 0: Either) and
 // its reasons [{ key (the criterion, for its marks), situation, dir }]
 function planqRows(p, vals, info){
@@ -7443,8 +7448,14 @@ const PLANQ_ROW_PRIORITY = {
 };
 // the reason shown for each decided row: the strongest (++ before +), each row by its own preference,
 // and when both rows are decided, two different criteria whenever both have one voting their way
-function planqReasons(rows){
-  const cands = r=>r.answer ? r.reasons.filter(x=>x.dir===r.answer).sort((a, b)=>b.weight - a.weight || PLANQ_ROW_PRIORITY[r.key].indexOf(a.vk) - PLANQ_ROW_PRIORITY[r.key].indexOf(b.vk)) : [];
+// (each phase's own idea first, in both rows: development in the opening; the king, then passed pawns, in the endgame)
+const PLANQ_PHASE_FIRST = { opening: ['development'], middlegame: [], endgame: ['kingEg', 'passed'] };
+function planqRank(row, x, phase){
+  const k = x.vk==='pawns' && /passed/i.test(x.situation) ? 'passed' : x.vk, first = PLANQ_PHASE_FIRST[phase || 'middlegame'];
+  return first.includes(k) ? first.indexOf(k) - 100 : PLANQ_ROW_PRIORITY[row].indexOf(k==='passed' ? 'pawns' : k);
+}
+function planqReasons(rows, phase){
+  const cands = r=>r.answer ? r.reasons.filter(x=>x.dir===r.answer).sort((a, b)=>b.weight - a.weight || planqRank(r.key, a, phase) - planqRank(r.key, b, phase)) : [];
   const [A, B] = rows.map(cands), out = {};
   if(A.length && B.length){
     let best = null;
@@ -7602,7 +7613,7 @@ function planqRowsHtml(q, ghost){
     };
     let text = '';
     if(!ghost && q.checked){
-      const w = planqWhy(r, (q.reasonsShown = q.reasonsShown || planqReasons(q.rows))[r.key]), can = x=>x.key && hasMarks(q.p.fen, x.key);
+      const w = planqWhy(r, (q.reasonsShown = q.reasonsShown || planqReasons(q.rows, q.phase))[r.key]), can = x=>x.key && hasMarks(q.p.fen, x.key);
       const tapped = (x, html)=>can(x) ? `<button class="pq-reason${q.aspView===x.key ? ' sel' : ''}" data-key="${x.key}">${html}</button>` : html;
       // only the criterion's words are tappable (underlined), not the explanation
       text = w.inline ? w.text.replace(/\{(\d)\}/g, (_, i)=>{ const x = w.keys[+i], n = planqName(x); return tapped(x, +i===0 && w.text.startsWith('{0}') ? n[0].toUpperCase() + n.slice(1) : n); })
