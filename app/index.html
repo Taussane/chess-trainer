@@ -7326,10 +7326,6 @@ function renderExplorer(){
   app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; render(); });
 }
 // ================= Plan finder (beta prototype) =================
-// A master position and four plans in plain words: choose the one to follow. Graded with the plans the
-// app gives in Position evaluation's review (planFor): its first plan 100%, second 70%, third 50%,
-// anything else 0. The wrong choices include the opposite of a right plan (trade / avoid trades…).
-// Not recorded in your progress yet (a prototype). Only in the beta.
 // Plan finder (beta): three questions on a master position, in the order the books teach.
 // 1. Is anything urgent? (checks, captures, threats: Other threats at ++, 3 pawns or more, or a mate,
 //    for either side). If it is, the position ends there: the threat comes first.
