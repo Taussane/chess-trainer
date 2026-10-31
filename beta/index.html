@@ -6811,8 +6811,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Behind in development": "En retard de développement",
 "Open the centre": "Ouvrez le centre",
 "Finish developing": "Finissez votre développement",
-"Open the centre while you lead in development": "Ouvrez le centre tant que vous êtes en avance de développement",
-"Finish your development first": "Finissez d'abord votre développement",
+"Open the centre while ahead": "Ouvrez le centre tant que vous êtes en avance",
+"Finish your development": "Finissez votre développement",
 "Development marks": "Marques Développement",
 "No queens: the king becomes a fighter.": "Sans dames : le roi devient une pièce de combat.",
 "Centre: 3 on d4–e5, 2 on c3–f6, 1 on b2–g7, 0 on the edge (dashed rings).": "Centre : 3 sur d4–e5, 2 sur c3–f6, 1 sur b2–g7, 0 au bord (anneaux en pointillé).",
@@ -7359,7 +7359,7 @@ const PLAN_LABELS = {
   'Avoid freeing trades':'Avoid trades that free them', 'Trade to breathe':'Trade pieces to free your game',
   'Keep the initiative':'Keep the initiative', 'Improve the worst':'Improve your worst piece',
   'Find a pawn break':'Prepare a pawn break',
-  'Open the centre':'Open the centre while you lead in development', 'Finish developing':'Finish your development first',
+  'Open the centre':'Open the centre while ahead', 'Finish developing':'Finish your development',
 };
 const PLAN_OPPOSITE = {};
 [['Check forcing moves','Defend first'], ['Trade pieces','Avoid trades, attack'], ['Simplify, stay safe','Complicate'],
@@ -7442,8 +7442,9 @@ function planqCandidate(taken){
 function planqOptions(q){
   const who = q.p.side==='w' ? 'White' : 'Black';
   const step = PLANQ_STEPS[q.step];
-  if(step==='urgent') return [['no', "No, it's quiet"], ['win', 'Yes, I can win something'], ['defend', 'Yes, I must defend']];
-  if(step==='winning') return [['w', 'White is better'], ['=', 'Equal'], ['b', 'Black is better']];
+  const me = q.p.side, them = me==='w' ? 'b' : 'w', name = c=>c==='w' ? 'White' : 'Black';
+  if(step==='urgent') return [['no', "No, it's quiet"], ['win', `Yes, ${who} can win something`], ['defend', `Yes, ${who} must defend`]];
+  if(step==='winning') return [['=', 'Position is balanced'], [me, `${name(me)} is better`], [them, `${name(them)} is better`]];
   return q.choices.map(c=>[c, PLAN_LABELS[c]]);
 }
 function planqPrompt(q){
@@ -7462,7 +7463,7 @@ function planqAnswer(q){
 function planqNote(q){
   const step = PLANQ_STEPS[q.step], who = q.p.side==='w' ? 'White' : 'Black';
   if(step==='urgent') return q.urgent==='win' ? `${who} can win material${q.info.mate!=null ? ' (a mate)' : ''}: the threat comes first.` : q.urgent==='defend' ? `${who} must deal with a threat first${q.info.mate!=null ? ' (a mate)' : ''}.` : 'Nothing to win or to parry right now.';
-  if(step==='winning') return `Engine: ${planqEvalText(q.info)}. Equal under 0.5.`;
+  if(step==='winning') return `Engine: ${planqEvalText(q.info)}. Balanced under 0.5.`;
   return '';
 }
 function renderPlanq(){
@@ -7489,11 +7490,12 @@ function renderPlanq(){
     return `<button class="pq-choice${cls}" data-v="${v}" ${q.checked ? 'disabled' : ''}><span>${label}${l ? `<em>${l.situation}</em>` : ''}</span>${tag ? `<small>${tag}</small>` : ''}</button>`;
   };
   const steps = (q.urgent ? 1 : 3), asked = PLANQ_STEPS.slice(0, steps);
-  const dots = `<div class="pq-steps" aria-label="Question ${q.step + 1} of ${steps}">${asked.map((s, i)=>{ const sc = q.scores[s];
+  // always three dashes (an urgent position stops after the first: the others stay grey), so their number gives nothing away
+  const dots = `<div class="pq-steps" aria-label="Question ${q.step + 1} of 3">${PLANQ_STEPS.map((s, i)=>{ const sc = q.scores[s];
     return `<span class="pq-step${i===q.step ? ' cur' : ''}${sc!=null ? (sc===100 ? ' ok' : sc > 0 ? ' half' : ' ko') : ''}"></span>`; }).join('')}</div>`;
   const total = q.done ? Math.round(asked.reduce((t, s)=>t + (q.scores[s] || 0), 0) / steps) : null;
   const last = q.step===steps - 1;
-  const note = q.checked ? planqNote(q) : '';
+  const note = q.checked ? planqNote(q) : step==='urgent' ? 'Look at checks, captures and threats, for both sides.' : '';
   const prompt = `<div class="pq-prompt"><p class="prompt">${planqPrompt(q)}</p>${q.done ? '' : dots}</div>`;
   const panel = q.done ? `
         <div class="score"><span class="score-num">${total}%</span><span class="score-label">Accuracy</span>${dots}</div>
@@ -7508,11 +7510,12 @@ function renderPlanq(){
         ${note ? `<p class="pq-note">${note}</p>` : ''}
         <div class="actions-row">${q.checked ? `<button class="btn" id="pqGo">${last ? 'See the review' : 'Next question'}</button>` : `<button class="btn" id="pqCheck" ${pick ? '' : 'disabled'}>Check</button>`}</div>`;
   // ghosts: the tallest question (four plans, a note) and the final review, so the panel keeps its height
-  // (the position's own plan choices, known from the start: the height stays the same through the three questions)
-  const g4 = `<div class="pq-choices">${(q.choices.length ? q.choices.map(c=>PLAN_LABELS[c]) : ["No, it's quiet", 'Yes, I can win something', 'Yes, I must defend']).map(l=>`<span class="pq-choice"><span>${l}</span><small>Also good</small></span>`).join('')}</div>`;
-  const ghostQ = `<div class="pq-prompt"><p class="prompt">Choose a middlegame plan for White</p></div>${g4}<p class="pq-note">Nothing to win or to parry right now.</p><div class="actions-row"><span class="btn">Check</span></div>`;
-  const g4why = `<div class="pq-choices">${(q.choices.length ? q.choices.map(c=>PLAN_LABELS[c]) : ['', '', '']).map(l=>`<span class="pq-choice"><span>${l}<em>Enemy passed pawn</em></span><small>Also good</small></span>`).join('')}</div>`;
-  const ghostR = `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${g4why}<p class="pq-note">Tap a right plan to see why on the board.</p>${GHOST_ACTIONS}`;
+  // ghosts: the same for every position (the longest plan, four times), so the panel's height, and the
+  // board's size, give nothing away (an urgent position, the number of questions)
+  const longest = Object.values(PLAN_LABELS).reduce((x, y)=>y.length > x.length ? y : x);
+  const g4 = `<div class="pq-choices">${[0,1,2,3].map(i=>`<span class="pq-choice"><span>${longest}${i < 3 ? '<em>Enemy passed pawn</em>' : ''}</span><small>Also good</small></span>`).join('')}</div>`;   // (at most three right plans: a reason under each)
+  const ghostQ = `<div class="pq-prompt"><p class="prompt">Choose a middlegame plan for White</p></div>${g4}<p class="pq-note">Look at checks, captures and threats, for both sides.</p><div class="actions-row"><span class="btn">Check</span></div>`;
+  const ghostR = `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><p class="prompt">Is anything urgent for White?</p>${g4}<p class="pq-note">Tap a right plan to see why on the board.</p>${GHOST_ACTIONS}`;
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
