@@ -7455,7 +7455,7 @@ function planqWhy(r){
   if(r.answer){ const x = planqStrongest(r.reasons, r.answer); return { text: planqSentence(r.key, x), keys: [x] }; }
   // (in these, each criterion's words, {0} and {1}, can be tapped)
   const a = planqStrongest(r.reasons, 1), b = planqStrongest(r.reasons, -1);
-  if(a && b) return { text: `{0} says ${r.short[1].toLowerCase()}, {1} says ${r.short[-1].toLowerCase()}: they balance out.`, keys: [a, b], inline: true };
+  if(a && b) return { text: `{0} says ${r.short[1].toLowerCase()}, {1} says ${r.short[-1].toLowerCase()}.`, keys: [a, b], inline: true };
   const x = a || b;
   if(x) return { text: `Only {0} points to ${r.short[x.dir].toLowerCase()}: not enough to decide.`, keys: [x], inline: true };
   return { text: 'Nothing in the position pulls either way.', keys: [] };
@@ -7549,12 +7549,12 @@ function planqRowsHtml(q, ghost){
     const verdict = ghost ? 'Right' : sc==null ? '' : sc===100 ? 'Right' : sc ? 'Close' : 'Missed';
     // the review: one sentence (tap its criterion to see it on the board)
     let why = '';
-    if(ghost) why = `<p class="pq-why-line">Better pieces (++) says attack, weak pawns (−−) says improve: they balance out.</p>`;
+    if(ghost) why = `<p class="pq-why-line">Better pieces says attack, weak pawns says improve, and so on.</p>`;
     else if(q.checked){
       const w = planqWhy(r), can = x=>x.key && hasMarks(q.p.fen, x.key);
       const tapped = (x, html)=>can(x) ? `<button class="pq-reason${q.aspView===x.key ? ' sel' : ''}" data-key="${x.key}">${html}</button>` : html;
       // Either: each criterion's words tappable; a decided row: the whole sentence
-      const text = w.inline ? w.text.replace(/\{(\d)\}/g, (_, i)=>{ const x = w.keys[+i]; return tapped(x, `${x.situation.toLowerCase()} (${x.signs})`); }).replace(/^(<button[^>]*>)?(.)/, (m, b, c)=>(b || '') + c.toUpperCase()) : w.keys[0] ? tapped(w.keys[0], w.text) : w.text;
+      const text = w.inline ? w.text.replace(/\{(\d)\}/g, (_, i)=>{ const x = w.keys[+i]; return tapped(x, x.situation.toLowerCase()); }).replace(/^(<button[^>]*>)?(.)/, (m, b, c)=>(b || '') + c.toUpperCase()) : w.keys[0] ? tapped(w.keys[0], w.text) : w.text;
       why = `<p class="pq-why-line">${text}</p>`; }
     return `<div class="pq-row"><div class="pq-row-head"><span>${r.name}</span>${verdict ? `<small class="${sc===100 || ghost ? 'ok' : sc ? 'half' : 'ko'}">${verdict}</small>` : ''}</div><div class="pq-sides">${btn(1)}${btn(0)}${btn(-1)}</div>${why}</div>`;
   }).join('')}</div>`;
