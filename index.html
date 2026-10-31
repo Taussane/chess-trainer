@@ -7446,16 +7446,17 @@ const PLANQ_WHY = {   // {me}: the side to play, {them}: the other ('White', 'Bl
     'eval+':'{me} is clearly better: no hurry, keep control.', 'eval-':'{me} is clearly worse: complicate the game.',
   },
 };
-// each situation named with its side, for the Either sentences
-const PLANQ_NAMES = { 'Up material':"{me}'s extra material", 'Down material':"{them}'s extra material", 'Passed pawn':"{me}'s passed pawn", 'Enemy passed pawn':"{them}'s passed pawn",
-  'Weak pawns':"{me}'s weak pawns", 'Weak enemy pawns':"{them}'s weak pawns", 'More space':"{me}'s extra space", 'Less space':"{them}'s extra space",
-  'Better pieces':"{me}'s better pieces", 'Worse pieces':"{them}'s better pieces", 'Ahead in development':"{me}'s lead in development", 'Behind in development':"{them}'s lead in development",
-  'Weak enemy king':"{them}'s weak king", 'Weak king':"{me}'s weak king", 'More active king':"{me}'s active king", 'Passive king':"{them}'s active king",
-  'Clearly better':"{me}'s clear edge", 'Clearly worse':"{them}'s clear edge" };
+// each situation as a noun, seen by the side to play, for the Either sentences ("weak enemy king calls for…")
+const PLANQ_NAMES = { 'Up material':'extra material', 'Down material':'missing material', 'Passed pawn':'passed pawn', 'Enemy passed pawn':'enemy passed pawn',
+  'Weak pawns':'weak pawns', 'Weak enemy pawns':'weak enemy pawns', 'More space':'extra space', 'Less space':'lack of space',
+  'Better pieces':'better pieces', 'Worse pieces':'worse pieces', 'Ahead in development':'development lead', 'Behind in development':'lagging development',
+  'Weak enemy king':'weak enemy king', 'Weak king':'weak king', 'More active king':'more active king', 'Passive king':'passive king',
+  'Clearly better':'clear edge', 'Clearly worse':'clear disadvantage' };
 const planqSides = (t, me)=>t.replace(/\{me\}/g, me==='w' ? 'White' : 'Black').replace(/\{them\}/g, me==='w' ? 'Black' : 'White');
 const planqStrongest = (rs, dir)=>rs.filter(x=>x.dir===dir).sort((a, b)=>b.weight - a.weight || PLANQ_PRIORITY.indexOf(a.vk) - PLANQ_PRIORITY.indexOf(b.vk))[0];
 const planqSentence = (row, x, me)=>planqSides(PLANQ_WHY[row][x.vk==='pawns' ? x.situation : x.vk + (x.edge > 0 ? '+' : '-')], me);
-const planqName = (x, me)=>planqSides(PLANQ_NAMES[x.situation], me);
+// as seen by the side to play ("less space", "weak enemy king"): no side needed (the question names it)
+const planqName = x=>PLANQ_NAMES[x.situation];
 const planqPlural = x=>/(pawns|pieces)$/.test(PLANQ_NAMES[x.situation]);
 // one row's explanation: { text, keys (criteria to tap) }
 function planqWhy(r, me){
@@ -7561,7 +7562,7 @@ function planqRowsHtml(q, ghost){
       const w = planqWhy(r, q.p.side), can = x=>x.key && hasMarks(q.p.fen, x.key);
       const tapped = (x, html)=>can(x) ? `<button class="pq-reason${q.aspView===x.key ? ' sel' : ''}" data-key="${x.key}">${html}</button>` : html;
       // Either: each criterion's words tappable; a decided row: the whole sentence
-      const text = w.inline ? w.text.replace(/\{(\d)\}/g, (_, i)=>{ const x = w.keys[+i]; return tapped(x, planqName(x, q.p.side)); }) : w.keys[0] ? tapped(w.keys[0], w.text) : w.text;
+      const text = w.inline ? w.text.replace(/\{(\d)\}/g, (_, i)=>{ const x = w.keys[+i]; const n = planqName(x); return tapped(x, +i===0 && w.text.startsWith('{0}') ? n[0].toUpperCase() + n.slice(1) : n); }) : w.keys[0] ? tapped(w.keys[0], w.text) : w.text;
       why = `<p class="pq-why-line">${text}</p>`; }
     return `<div class="pq-row"><div class="pq-row-head"><span>${r.name}</span>${verdict ? `<small class="${sc===100 || ghost ? 'ok' : sc ? 'half' : 'ko'}">${verdict}</small>` : ''}</div><div class="pq-sides">${btn(1)}${btn(0)}${btn(-1)}</div>${why}</div>`;
   }).join('')}</div>`;
