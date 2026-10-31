@@ -210,6 +210,7 @@
   .pq-side.on{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent);}
   .pq-side:disabled{cursor:default;} .pq-side.best{border-color:var(--best-green); box-shadow:inset 0 0 0 1px var(--best-green);} .pq-side.bad{border-color:var(--bad);} .pq-side.off{opacity:.55;}
   .pq-why-line{margin:4px 0 0; font-size:0.82rem; color:var(--text-mute); line-height:1.35;}
+  .pf-resets{display:flex; flex-direction:column; align-items:flex-start; gap:6px; margin-top:10px;}
   .pq-reserve{display:grid;} .pq-reserve > *{grid-area:1 / 1;} .pq-ghost-text{visibility:hidden;}
   .pq-top{margin-bottom:6px;} .pq-top .pq-steps{margin-left:auto; flex:none;}
   .pq-ask{display:flex; align-items:baseline; gap:12px;} .pq-ask .prompt{margin:0;}
@@ -2649,6 +2650,14 @@ function syncPos(){
 let selSquare = null;          // piece being moved while entering a candidate
 let promoPending = null;       // {from, to}: a pawn move to the last rank, waiting for its piece
 let helpVisible = false;
+// Time spent (beta: how long each exercise takes): a clock that stops while the page is hidden (another
+// tab, the phone locked), so a position left open doesn't count its pause
+let hiddenMs = 0, hiddenSince = document.hidden ? Date.now() : null;
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ if(hiddenSince==null) hiddenSince = Date.now(); } else if(hiddenSince!=null){ hiddenMs += Date.now() - hiddenSince; hiddenSince = null; } });
+const activeNow = ()=>Date.now() - hiddenMs - (hiddenSince!=null ? Date.now() - hiddenSince : 0);
+const TIME_CAP_MS = 15 * 60e3;   // a position left open longer than that (on screen, away from it): not timed
+// the time from a position first shown to its Check (s.t0, s.tc), or null
+const timeSpent = s=>{ if(!s || s.t0==null) return null; const ms = (s.tc!=null ? s.tc : activeNow()) - s.t0; return ms > 0 && ms <= TIME_CAP_MS ? Math.round(ms) : null; };
 // `store`: per track and per position, so leaving an exercise and coming back keeps what was entered.
 function pos(){ return screen==='explorer' && explorer ? explorerPos() : screen==='planq' && planq ? planq.p : curPos; }
 function st(activity){
@@ -2659,6 +2668,7 @@ function st(activity){
                   : activity==='imbalances' ? { asp:{}, checked:false }
                   : activity==='candidates' ? { picks:[], checked:false, sortDone:false, countDone:false, sortStarted:false }
                   : { order:null, checked:false };
+    bucket[p.key].t0 = activeNow();   // (first shown: the time spent starts)
   }
   return bucket[p.key];
 }
@@ -4363,8 +4373,8 @@ try{ const v = JSON.parse(localStorage.getItem(PROFILE_LS) || 'null'); if(v) pro
 try{ const v = JSON.parse(localStorage.getItem(REPLAY_LS) || 'null'); if(Array.isArray(v)) legacyMissed = v; }catch(e){}
 function missedList(){
   const last = new Map();   // 'a|key' -> that position's latest result in that exercise
-  results.forEach(r=>{ if(r.key) last.set(r.a+'|'+r.key, r); });
-  const out = legacyMissed.filter(x=>!last.has(x.a+'|'+x.key)).map(x=>({ key:x.key, a:x.a, ts:x.ts }));
+  results.forEach(r=>{ if(r.key && r.ts > accFrom()) last.set(r.a+'|'+r.key, r); });
+  const out = legacyMissed.filter(x=>!last.has(x.a+'|'+x.key) && (x.ts || 0) > accFrom()).map(x=>({ key:x.key, a:x.a, ts:x.ts }));
   last.forEach(r=>{ if(r.miss) out.push({ key:r.key, a:r.a, ts:r.ts }); });
   return out;
 }
@@ -4437,6 +4447,8 @@ async function loadProfileMeta(db, id){
     const p = pd.exists ? pd.data() : null, r = rd.exists ? rd.data() : null;
     if(sd && sd.exists) mergeSettings(sd.data());   // your settings from another device, when newer
     if(p && p.joinedAt) profile.joinedAt = profile.joinedAt ? Math.min(profile.joinedAt, p.joinedAt) : p.joinedAt;
+    if(p && p.accResetAt) profile.accResetAt = Math.max(profile.accResetAt || 0, p.accResetAt);   // (beta resets, the latest wins)
+    if(p && p.timeResetAt) profile.timeResetAt = Math.max(profile.timeResetAt || 0, p.timeResetAt);
     if(p && p.onboard) profile.onboard = { ...(profile.onboard || {}), ...p.onboard };   // the onboarding drawn on another device wins
     if(r && Array.isArray(r.items)) r.items.forEach(x=>{ if(!legacyMissed.some(y=>y.key===x.key && y.a===x.a)) legacyMissed.push(x); });
     metaCol = col;   // written to only after a successful read
@@ -4475,9 +4487,12 @@ async function initProgress(){
   if(!profile.joinedAt){ profile.joinedAt = joinedAt(); saveProfile(); }
   progressReady(); render();
 }
+// Beta: progress can be reset (profile.accResetAt): averages, charts and missed positions start again from
+// then (the results stay, for the daily routine and the timing)
+const accFrom = ()=>profile.accResetAt || 0;
 function levelSeries(a){
   let L = null;
-  return results.filter(r=>r.a===a).map((r,i)=>{
+  return results.filter(r=>r.a===a && r.ts > accFrom()).map((r,i)=>{
     const k = Math.max(1/(i+1), LEVEL_K);
     L = L==null ? r.acc : L + k*(r.acc - L);
     return { ...r, level:L, n:i+1 };
@@ -4497,6 +4512,7 @@ function recordResult(s, a, acc){
   // src: where the position came from (results before it existed: masters). miss: below your
   // average at the time, so the position is on your missed list until played well again.
   const r = { a, acc: Math.round(acc), ts: Date.now(), src: pos().gameId ? 'mine' : 'masters', key: pos().key, miss: before.level!=null && acc < before.level };
+  if(BETA_SITE){ const ms = timeSpent(s); if(ms!=null) r.ms = ms; }   // (beta: the time it took)
   results.push(r);
   stat('pos', { a, acc: r.acc, src: r.src, n1: routine ? 1 : 0, n2: a!=='imbalances' && reviewDepth ? reviewDepth : 0 });   // (anonymous usage count; n2: the search's depth)
   if(resultsDb) resultsDb.add(r).catch(()=>{});
@@ -4681,6 +4697,40 @@ async function installApp(){
   if(installPrompt){ const e = installPrompt; try{ await e.prompt(); const r = await e.userChoice; if(r && r.outcome==='accepted') installPrompt = null; }catch(err){} render(); return; }
   installHelp = !installHelp; render();
 }
+// Beta: how long each exercise takes (from a position shown to its Check; the last 20 timed), and
+// the two resets (accuracy progress, timing)
+let pfConfirmReset = null;   // 'acc' | 'time': waiting for a second tap
+function timingSection(){
+  const from = profile.timeResetAt || 0, fmt = ms=>{ const t = Math.round(ms / 1000); return t < 60 ? t + ' s' : Math.floor(t / 60) + ' min ' + String(t % 60).padStart(2, '0'); };
+  const acts = ACTS.concat(BETA_SITE ? ['analysis'] : []);
+  const rows = acts.map(a=>{ const ms = results.filter(r=>r.a===a && r.ms!=null && r.ts > from).map(r=>r.ms), last = ms.slice(-20);
+    if(!last.length) return `<tr><th scope="row"><span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}</th><td>·</td><td>·</td><td>0</td></tr>`;
+    const sorted = last.slice().sort((x, y)=>x - y), med = sorted[Math.floor((sorted.length - 1) / 2)], avg = last.reduce((t, x)=>t + x, 0) / last.length;
+    return `<tr><th scope="row"><span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}</th><td>${fmt(med)}</td><td>${fmt(avg)}</td><td>${ms.length}</td></tr>`; }).join('');
+  const reset = (k, label, q)=>pfConfirmReset===k
+    ? `<div class="mg-confirm"><span>${q}</span><button class="btn small danger" id="pfReset_${k}">Reset</button><button class="btn small ghost" id="pfResetNo">Keep</button></div>`
+    : `<button class="link-btn quiet" id="pfAsk_${k}">${label}</button>`;
+  return `
+      <h2 class="pf-h">Time per position <span class="title-badge">Beta</span></h2>
+      <section class="mg-card">
+        <div class="mg-table-wrap"><table class="mg-table">
+          <thead><tr><th></th><th scope="col">Median</th><th scope="col">Average</th><th scope="col">Timed</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+        <p class="mg-status">From a position shown to its Check (the Plan finder: all its questions); the last 20 of each. Time with the page hidden doesn't count.</p>
+        <div class="pf-resets">
+          ${reset('acc', 'Reset accuracy progress', 'Start averages, charts and missed positions again from now?')}
+          ${reset('time', 'Reset timing stats', 'Start the timing again from now?')}
+        </div>
+      </section>`;
+}
+function wireTiming(){
+  const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
+  on('pfAsk_acc', ()=>{ pfConfirmReset = 'acc'; render(); }); on('pfAsk_time', ()=>{ pfConfirmReset = 'time'; render(); });
+  on('pfResetNo', ()=>{ pfConfirmReset = null; render(); });
+  on('pfReset_acc', ()=>{ profile.accResetAt = Date.now(); pfConfirmReset = null; saveProfile(); render(); });
+  on('pfReset_time', ()=>{ profile.timeResetAt = Date.now(); pfConfirmReset = null; saveProfile(); render(); });
+}
 // The profile: who you are, your progress, your account and games, the positions found; then links.
 function renderAccount(){
   const app = document.getElementById('app'), esc = x=>String(x).replace(/</g,'&lt;');
@@ -4700,12 +4750,13 @@ function renderAccount(){
           <div class="pf-facts"><span><b>${results.length}</b> position${results.length===1?'':'s'} played since ${since}</span></div></div></div>
       </section>`, acct = DIRECT_LICHESS ? accountSection() : '';
         // desktop: two columns (you, your account, your games and positions; progress)
-        return isDesk() ? `<div class="pf-cols"><div class="pf-col">${head}${id}${acct}${positionsSection()}</div><div class="pf-col pf-wide">${prog.html}</div></div>`
-                        : `${id}${prog.html}${positionsSection()}${acct}`; })()}
+        const timing = BETA ? timingSection() : '';
+        return isDesk() ? `<div class="pf-cols"><div class="pf-col">${head}${id}${acct}${positionsSection()}</div><div class="pf-col pf-wide">${prog.html}${timing}</div></div>`
+                        : `${id}${prog.html}${timing}${positionsSection()}${acct}`; })()}
       <p class="ac-foot">${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}${installLink()}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
     </div>`;
-  document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; render(); };
+  document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; pfConfirmReset = null; render(); };
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('testsBtn', ()=>{ screen = 'tests'; render(); });
   on('metricsBtn', ()=>{ screen = 'metrics'; loadMetrics(); });
@@ -4714,7 +4765,7 @@ function renderAccount(){
   on('lichessLogin', ()=>lichessLogin()); on('googleLogin', ()=>googleLogin());
   on('pfLogout', logout);
   on('pfDelete', ()=>{ pfConfirmDelete = true; render(); }); on('pfDeleteNo', ()=>{ pfConfirmDelete = false; render(); }); on('pfDeleteYes', deleteMyAccount);
-  prog.wire(); wireGames();
+  prog.wire(); wireGames(); if(BETA) wireTiming();
 }
 // Level over the positions played (line) with each position's accuracy (faint dots), last 60.
 const CH = { w:340, h:170, l:26, r:8, t:8, b:18 };
@@ -5756,7 +5807,7 @@ function renderAnalysis(){
     setupGauge(s);
     introFade(s, ['anaPrompt', 'anaCheckRow']);
     if(!s.barMoved) hintStart();
-    document.getElementById('check').onclick = ()=>{ s.checked = true; s.animT = null; s.justDone = false; fenEval(p.fen); aspectsEntry(p.fen); render(); };
+    document.getElementById('check').onclick = ()=>{ s.checked = true; s.tc = activeNow(); s.animT = null; s.justDone = false; fenEval(p.fen); aspectsEntry(p.fen); render(); };
   }
   wireCommon('analysis', s.checked);
   s.justDone = false;   // the buttons' fade plays once, when the reveal lands — not on later redraws
@@ -5791,7 +5842,7 @@ function renderImbalances(){
   if(!s.checked){
     introFade(s, ['imbPrompt', 'imbCheckRow']);   // the grades themselves are there at once
     wireAspectsInput(s);
-    document.getElementById('check').onclick = ()=>{ closeAspPicker(); s.checked = true; s.justDone = false; aspectsEntry(p.fen); render(); };
+    document.getElementById('check').onclick = ()=>{ closeAspPicker(); s.checked = true; s.tc = activeNow(); s.justDone = false; aspectsEntry(p.fen); render(); };
   }
   wireCommon('imbalances', s.checked);
   s.justDone = false;
@@ -6016,7 +6067,7 @@ function renderCandidates(){
     listEl.appendChild(row);
   });
   introFade(s, ['candHint', 'candCheckRow']);
-  document.getElementById('check').onclick = ()=>{ s.checked = true; s.sortDone = false; s.countStarted = false; s.countDone = false; s.sortStarted = false; s.topAt = null; selSquare = null; candidatesEval(p, s.picks); render(); };
+  document.getElementById('check').onclick = ()=>{ s.checked = true; s.tc = activeNow(); s.sortDone = false; s.countStarted = false; s.countDone = false; s.sortStarted = false; s.topAt = null; selSquare = null; candidatesEval(p, s.picks); render(); };
   wireCommon('candidates', false);
 }
 
@@ -6265,7 +6316,7 @@ function renderFinal(){
   rankedEl.classList.toggle('hinting', !s.rankTouched && hintsOn('final'));
   if(!s.rankTouched && hintsOn('final')){ rankedEl.addEventListener('pointerdown', ()=>{ if(!s.rankTouched){ s.rankTouched = true; hintStop(); } }, { capture:true, once:true }); hintStart(Math.max(HINT_PAUSE, tLast + SLIDE_MS - introEl + HINT_PAUSE)); }
   wireDragReorder(rankedEl, s.order, changed=>{ s.moved = true; if(changed) s.swapped = true; render(); });
-  document.getElementById('check').onclick = ()=>{ s.checked = true; s.revAt = null; s.revDone = false; render(); };
+  document.getElementById('check').onclick = ()=>{ s.checked = true; s.tc = activeNow(); s.revAt = null; s.revDone = false; render(); };
   wireCommon('final', false);
 }
 
@@ -6897,6 +6948,15 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Under each row, its main reason. Tap the underlined criterion to see it on the board, then the '?' button for how it's counted.": "Sous chaque ligne, sa raison principale. Touchez le critère souligné pour le voir sur l'échiquier, puis le bouton « ? » pour savoir comment il est compté.",
 "Plan finder": "Recherche du plan",
 "Spot the urgent, judge, choose a plan.": "Repérer l'urgent, juger, choisir un plan.",
+"Time per position": "Temps par position",
+"Median": "Médiane",
+"Timed": "Chronométrées",
+"From a position shown to its Check (the Plan finder: all its questions); the last 20 of each. Time with the page hidden doesn't count.": "D'une position affichée à sa vérification (la recherche du plan : toutes ses questions) ; les 20 dernières de chacune. Le temps où la page est cachée ne compte pas.",
+"Reset accuracy progress": "Remettre à zéro la progression",
+"Reset timing stats": "Remettre à zéro le chronométrage",
+"Start averages, charts and missed positions again from now?": "Repartir de maintenant pour les moyennes, les graphiques et les positions manquées ?",
+"Start the timing again from now?": "Repartir de maintenant pour le chronométrage ?",
+"Reset": "Remettre à zéro",
 "Development": "Développement",
 "Development (minors to move)": "Développement (pièces mineures à sortir)",
 "Minors to move: Development replaces Activity.": "Pièces mineures à sortir : le Développement remplace l'Activité.",
@@ -7716,6 +7776,7 @@ function renderPlanq(){
       clearTimeout(renderPlanq.t); renderPlanq.t = setTimeout(()=>{ if(screen==='planq') render(); }, 400); return; }
   }
   const q = planq, p = q.p, step = PLANQ_STEPS[q.step], isPlan = step==='plan';
+  if(q.t0==null) q.t0 = activeNow();   // (first shown: the time spent starts)
   const ans = isPlan ? null : planqAnswer(q), pick = q.picks[step];
   side = p.side;
   // the board: the threats once question 1 is checked, in an urgent position
@@ -7769,7 +7830,7 @@ function renderPlanq(){
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ helpVisible = false; if(replayMode){ replayMode = false; planq = null; screen = 'account'; return render(); } if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
   on('helpBtn', ()=>{ helpVisible = true; render(); });
-  on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.scores[step] = isPlan ? planqPlanScore(q) : ans.score(pick);
+  on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.tc = activeNow(); q.scores[step] = isPlan ? planqPlanScore(q) : ans.score(pick);
     if(last){ q.done = true; planqRecord(q, Math.round(asked.reduce((t, s)=>t + (q.scores[s] || 0), 0) / steps)); }
     render(); });
   on('pqGo', ()=>{ q.step++; q.checked = false; q.aspView = q.aspPiece = q.aspKing = null; render(); });
@@ -7801,6 +7862,7 @@ function planqRecord(q, acc){
   markPlayed(q.p.key);
   const before = levelNow('planq');
   const r = { a:'planq', acc: Math.round(acc), ts: Date.now(), src:'masters', key: q.p.key, miss: before.level!=null && acc < before.level };
+  { const ms = timeSpent(q); if(ms!=null) r.ms = ms; }   // (the time from question 1 shown to the last Check)
   results.push(r);
   stat('pos', { a:'planq', acc: r.acc, src: r.src, n1: routine ? 1 : 0, n2: 0 });
   if(resultsDb) resultsDb.add(r).catch(()=>{});
