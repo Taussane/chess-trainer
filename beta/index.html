@@ -7424,6 +7424,27 @@ function planqRows(p, vals, info){
 // PLANQ_PRIORITY), in a sentence (PLANQ_WHY: criterion, the side to play ahead (+) or behind (−), the row;
 // pawns by their situation). Either: the strongest vote each way, or the one vote short, or nothing.
 const PLANQ_PRIORITY = ['material', 'king', 'kingEg', 'pawns', 'activity', 'development', 'space', 'eval'];
+// each row's own preference, so the two rows tend to show different criteria: Trades is best told by
+// space, the king, pawns and pieces; Dynamic or positional by material, development and activity
+const PLANQ_ROW_PRIORITY = {
+  pieces:   ['space', 'king', 'pawns', 'activity', 'development', 'kingEg', 'material', 'eval'],
+  approach: ['material', 'development', 'activity', 'king', 'kingEg', 'pawns', 'space', 'eval'],
+};
+// the reason shown for each decided row: the strongest (++ before +), each row by its own preference,
+// and when both rows are decided, two different criteria whenever both have one voting their way
+function planqReasons(rows){
+  const cands = r=>r.answer ? r.reasons.filter(x=>x.dir===r.answer).sort((a, b)=>b.weight - a.weight || PLANQ_ROW_PRIORITY[r.key].indexOf(a.vk) - PLANQ_ROW_PRIORITY[r.key].indexOf(b.vk)) : [];
+  const [A, B] = rows.map(cands), out = {};
+  if(A.length && B.length){
+    let best = null;
+    A.forEach((a, i)=>B.forEach((b, j)=>{ if(a.vk===b.vk) return;
+      const sc = [-(a.weight + b.weight), i + j]; if(!best || sc[0] < best.sc[0] || (sc[0]===best.sc[0] && sc[1] < best.sc[1])) best = { a, b, sc }; }));
+    // (a + rather than a ++ is fine: it also votes for that answer)
+    if(best){ out[rows[0].key] = best.a; out[rows[1].key] = best.b; return out; }
+  }
+  rows.forEach((r, i)=>{ const c = [A, B][i]; if(c.length) out[r.key] = c[0]; });
+  return out;
+}
 const PLANQ_WHY = {   // seen by the side to play (the question names it)
   pieces: {   // (why, not the answer again: the row already says trade or keep)
     'material+':'Extra material: it counts more as the board empties.', 'material-':'Missing material: pieces on the board give chances to fight back.',
@@ -7460,8 +7481,8 @@ const planqSentence = (row, x)=>PLANQ_WHY[row][x.vk==='pawns' ? x.situation : x.
 const planqName = x=>PLANQ_NAMES[x.situation];
 const planqPlural = x=>/(pawns|pieces)$/.test(PLANQ_NAMES[x.situation]);
 // one row's explanation: { text, keys (criteria to tap) }
-function planqWhy(r){
-  if(r.answer){ const x = planqStrongest(r.reasons, r.answer); return { text: planqSentence(r.key, x), keys: [x] }; }
+function planqWhy(r, chosen){
+  if(r.answer){ const x = chosen || planqStrongest(r.reasons, r.answer); return { text: planqSentence(r.key, x), keys: [x] }; }
   // (in these, each criterion's words, {0} and {1}, can be tapped)
   const a = planqStrongest(r.reasons, 1), b = planqStrongest(r.reasons, -1), calls = x=>planqPlural(x) ? 'call' : 'calls';
   if(a && b) return { text: `{0} ${calls(a)} for ${r.wants[1]}, {1} for ${r.wants[-1]}.`, keys: [a, b], inline: true };
@@ -7560,7 +7581,7 @@ function planqRowsHtml(q, ghost){
     let why = '';
     if(ghost) why = `<p class="pq-why-line">White's better pieces call for dynamic play, Black's weak pawns for positional play.</p>`;
     else if(q.checked){
-      const w = planqWhy(r), can = x=>x.key && hasMarks(q.p.fen, x.key);
+      const w = planqWhy(r, (q.reasonsShown = q.reasonsShown || planqReasons(q.rows))[r.key]), can = x=>x.key && hasMarks(q.p.fen, x.key);
       const tapped = (x, html)=>can(x) ? `<button class="pq-reason${q.aspView===x.key ? ' sel' : ''}" data-key="${x.key}">${html}</button>` : html;
       // Either: each criterion's words tappable; a decided row: the whole sentence
       const text = w.inline ? w.text.replace(/\{(\d)\}/g, (_, i)=>{ const x = w.keys[+i]; const n = planqName(x); return tapped(x, +i===0 && w.text.startsWith('{0}') ? n[0].toUpperCase() + n.slice(1) : n); }) : w.keys[0] ? tapped(w.keys[0], w.text) : w.text;
