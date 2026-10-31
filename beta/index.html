@@ -7455,7 +7455,7 @@ function planqCandidate(taken){
 // Questions 1 and 2: their choices [value, label]
 function planqOptions(q){
   const me = q.p.side, them = me==='w' ? 'b' : 'w', name = c=>c==='w' ? 'White' : 'Black', who = name(me);
-  if(PLANQ_STEPS[q.step]==='urgent') return [['no', "No, it's quiet"], ['win', `Yes, ${who} can win something`], ['defend', `Yes, ${who} must defend`]];
+  if(PLANQ_STEPS[q.step]==='urgent') return [['no', 'No, the position is quiet'], ['win', `Yes, ${who} can win something`], ['defend', `Yes, ${who} must defend`]];
   return [['=', 'Position is balanced'], [me, `${name(me)} is better`], [them, `${name(them)} is better`]];
 }
 function planqPrompt(q){
@@ -7477,7 +7477,11 @@ const planqPlanScore = q=>Math.round(q.rows.reduce((t, r)=>t + planqRowScore(r, 
 function planqNote(q){
   const step = PLANQ_STEPS[q.step], who = q.p.side==='w' ? 'White' : 'Black';
   if(step==='urgent') return q.urgent==='win' ? `${who} can win material${q.info.mate!=null ? ' (a mate)' : ''}: the threat comes first.` : q.urgent==='defend' ? `${who} must deal with a threat first${q.info.mate!=null ? ' (a mate)' : ''}.` : 'Nothing to win or to parry right now.';
-  if(step==='winning') return `Engine: ${planqEvalText(q.info)}. Balanced under 0.5.`;
+  if(step==='winning'){
+    const i = q.info, w = planqWinner(i);
+    if(i.mate!=null) return `Stockfish sees a mate in ${Math.abs(i.mate)} for ${i.mate > 0 ? 'White' : 'Black'}.`;
+    return w==='=' ? `Stockfish gives ${planqEvalText(i)}: balanced, within ±0.5.` : `Stockfish gives ${planqEvalText(i)}: ${w==='w' ? 'White' : 'Black'} is better. Balanced would be within ±0.5.`;
+  }
   return '';
 }
 // The plan question: one row per dilemma, its two sides and Either between them; once checked, each row's verdict and its reasons
