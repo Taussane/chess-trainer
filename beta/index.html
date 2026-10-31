@@ -4278,7 +4278,7 @@ const SIDE_ICONS = {
 };
 // Leaving an exercise from the sidebar: as its own back arrow does (the routine remembers where it was).
 function leaveExercise(){
-  if(screen==='planq'){ if(routine){ routine = false; setRoutineNext(planq && planq.done ? routineAfter('planq') : 'planq'); } return; }
+  if(screen==='planq'){ if(routine){ routine = false; setRoutineNext(planq && planq.done ? routineAfter('planq') : 'planq'); } if(replayMode){ replayMode = false; planq = null; } return; }
   if(!ACTIVITIES.includes(screen)) return;
   if(routine){ const s = st(screen); routine = false; setRoutineNext(s.checked ? routineAfter(screen) : screen); }
   testMode = false; replayMode = false; selSquare = null; promoPending = null;
@@ -4372,7 +4372,7 @@ function missedList(){
 }
 function joinedAt(){ return Math.min(...[profile.joinedAt, results.length ? results[0].ts : null, Date.now()].filter(x=>x!=null)); }
 function saveProfile(){ if(leaving) return; try{ localStorage.setItem(PROFILE_LS, JSON.stringify(profile)); }catch(e){} if(metaCol) metaCol.doc('profile').set(profile).catch(()=>{}); }
-function findPosition(key, a){ return POOLS[a].find(p=>p.key===key) || myPositions.find(p=>p.key===key && posIn(p, a)) || null; }
+function findPosition(key, a){ return POOLS[a==='planq' ? 'imbalances' : a].find(p=>p.key===key) || myPositions.find(p=>p.key===key && posIn(p, a)) || null; }
 // Imbalance reading in your games: Position evaluation's positions less the tactical ones, as for the
 // masters (IMBALANCE_SKIP): the evaluation your game already has (Lichess's, or the app's scan) 2
 // squares of the bar or more from the imbalances' total. Each is checked once, in the background
@@ -4426,6 +4426,7 @@ function startReplay(a){
   openReplayAt(0);
 }
 function openReplayAt(i){
+  if(replayQueue[i].a==='planq') return planqReplay(replayQueue[i]);
   const e = replayQueue[i], t = 'x-' + e.a;
   orders[t] = [e.pos]; seqBy[t] = 0; store[t] = {};
   delete poolShuffleCache['final' + t + e.pos.key];
@@ -7749,7 +7750,7 @@ function renderPlanq(){
         ${top}
         ${prompt}
         ${body}
-        ${q.done ? `<div class="actions-row split">${lichessLink(p)}<button class="btn" id="pqNext">${routine ? nextLabel() : 'Next position'}</button></div>`
+        ${q.done ? `<div class="actions-row split">${lichessLink(p)}<button class="btn" id="pqNext">${routine || replayMode ? nextLabel() : 'Next position'}</button></div>`
           : `<div class="actions-row">${q.checked ? `<button class="btn" id="pqGo">${last ? 'See the review' : 'Next question'}</button>` : `<button class="btn" id="pqCheck" ${ready ? '' : 'disabled'}>Check</button>`}</div>`}`;
   // ghost: the same for every position (the plan question, the tallest), so the panel's height, and the
   // board's size, give nothing away
@@ -7759,7 +7760,7 @@ function renderPlanq(){
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
-      <h1>${routine ? `Routine <span class="title-badge">Plan finder</span>` : q.test!=null ? `Test <span class="title-badge">Plan finder</span>` : `Plan finder <span class="title-badge">Beta</span>`}</h1>
+      <h1>${routine ? `Routine <span class="title-badge">Plan finder</span>` : replayMode ? `Replay <span class="title-badge">Plan finder</span>` : q.test!=null ? `Test <span class="title-badge">Plan finder</span>` : `Plan finder <span class="title-badge">Beta</span>`}</h1>
       <button class="icon-btn" id="helpBtn" aria-label="How this exercise works">?</button>
     </div>
     ${posBar()}
@@ -7768,7 +7769,7 @@ function renderPlanq(){
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(q.checked && (q.step===0 || isPlan)) wireAspectView(p, q);
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
-  on('homeBtn', ()=>{ helpVisible = false; if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
+  on('homeBtn', ()=>{ helpVisible = false; if(replayMode){ replayMode = false; planq = null; screen = 'account'; return render(); } if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
   on('helpBtn', ()=>{ helpVisible = true; render(); });
   on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.scores[step] = isPlan ? planqPlanScore(q) : ans.score(pick);
     if(last){ q.done = true; planqRecord(q, Math.round(asked.reduce((t, s)=>t + (q.scores[s] || 0), 0) / steps)); }
@@ -7776,6 +7777,7 @@ function renderPlanq(){
   on('pqGo', ()=>{ q.step++; q.checked = false; q.aspView = q.aspPiece = q.aspKing = null; render(); });
   on('pqNext', ()=>{
     helpVisible = false;
+    if(replayMode){ planq = null; return nextPosition(); }
     if(routine){ const a = routineAfter('planq'); setRoutineNext(a); planq = null; return openActivity(a); }
     if(q.test!=null){ const j = TEST_POSITIONS.findIndex((x, k)=>k > q.test && x.eval); if(j >= 0) planqTest(j); else { planq = null; screen = 'tests'; render(); } return; }
     planq = planqPick() || null; render(); });
@@ -7793,19 +7795,29 @@ function renderPlanq(){
     document.getElementById('closeHelp').onclick = ()=>{ helpVisible = false; render(); };
   }
 }
-// A finished position's result (beta: the Plan finder counts in the routine and the averages): kept like the
-// other exercises' (recordResult), never on the missed list (Replay opens the four exercises only)
+// A finished position's result (beta: the Plan finder counts in the routine, the averages and the missed
+// list): kept like the other exercises' (recordResult)
 function planqRecord(q, acc){
   if(q.rec || acc==null) return;
   if(q.test!=null){ q.rec = { test:true }; return; }   // test positions never count
+  markPlayed(q.p.key);
   const before = levelNow('planq');
-  const r = { a:'planq', acc: Math.round(acc), ts: Date.now(), src:'masters', key: q.p.key, miss:false };
+  const r = { a:'planq', acc: Math.round(acc), ts: Date.now(), src:'masters', key: q.p.key, miss: before.level!=null && acc < before.level };
   results.push(r);
   stat('pos', { a:'planq', acc: r.acc, src: r.src, n1: routine ? 1 : 0, n2: 0 });
   if(resultsDb) resultsDb.add(r).catch(()=>{});
   saveLocal();
   const after = levelNow('planq');
   q.rec = { n: after.n, level: after.level, delta: before.rated ? Math.round(after.level) - Math.round(before.level) : null, rated: after.rated };
+}
+// Replay (the profile's missed positions): a Plan finder position opened again (its evaluations first)
+function planqReplay(e){
+  loadMasterEvals();
+  if(!masterEvals || !Object.keys(masterEvals).length){ setTimeout(()=>{ if(replayMode) planqReplay(e); }, 300); return; }
+  const info = planqInfo(e.pos), vals = info && explorerVals(e.pos.fen);
+  if(!vals){ replayIdx++; if(replayIdx < replayQueue.length) return openReplayAt(replayIdx); replayMode = false; screen = 'account'; return render(); }
+  planq = planqMake(e.pos, info, vals, planq ? planq.seen : new Set());
+  screen = 'planq'; helpVisible = false; render();
 }
 function renderScreen(){
   syncPos();
