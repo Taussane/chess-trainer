@@ -7369,8 +7369,8 @@ function renderExplorer(){
 const PLANQ_EDGE = 50, PLANQ_NEAR = 15;   // centipawns: balanced under 0.5; half credit within 0.15 of it
 const PLANQ_STEPS = ['urgent', 'winning', 'plan'];
 const PLANQ_ROWS = [
-  { key:'pieces',   name:'Trades',   sides:{ 1:'Trade pieces', '-1':'Keep pieces' }, short:{ 1:'Trade', '-1':'Keep' } },
-  { key:'approach', name:'Dynamic or positional', sides:{ 1:'Open / Attack', '-1':'Close / Improve' }, short:{ 1:'Attack', '-1':'Improve' } },
+  { key:'pieces',   name:'Trades',   sides:{ 1:'Trade pieces', '-1':'Keep pieces' }, short:{ 1:'Trade', '-1':'Keep' }, wants:{ 1:'trades', '-1':'keeping pieces' } },
+  { key:'approach', name:'Dynamic or positional', sides:{ 1:'Open / Attack', '-1':'Close / Improve' }, short:{ 1:'Attack', '-1':'Improve' }, wants:{ 1:'dynamic play', '-1':'positional play' } },
 ];
 const PLANQ_CLEAR = 2;
 // a criterion at + for the side to play: its votes [pieces (1 trade), approach (1 open / attack)]
@@ -7461,10 +7461,10 @@ const planqPlural = x=>/(pawns|pieces)$/.test(PLANQ_NAMES[x.situation]);
 function planqWhy(r, me){
   if(r.answer){ const x = planqStrongest(r.reasons, r.answer); return { text: planqSentence(r.key, x, me), keys: [x] }; }
   // (in these, each criterion's words, {0} and {1}, can be tapped)
-  const a = planqStrongest(r.reasons, 1), b = planqStrongest(r.reasons, -1), says = x=>planqPlural(x) ? 'say' : 'says';
-  if(a && b) return { text: `{0} ${says(a)} ${r.short[1].toLowerCase()}, {1} ${says(b)} ${r.short[-1].toLowerCase()}.`, keys: [a, b], inline: true };
+  const a = planqStrongest(r.reasons, 1), b = planqStrongest(r.reasons, -1), calls = x=>planqPlural(x) ? 'call' : 'calls';
+  if(a && b) return { text: `{0} ${calls(a)} for ${r.wants[1]}, {1} for ${r.wants[-1]}.`, keys: [a, b], inline: true };
   const x = a || b;
-  if(x) return { text: `Only {0} ${planqPlural(x) ? 'point' : 'points'} to ${r.short[x.dir].toLowerCase()}: not enough to decide.`, keys: [x], inline: true };
+  if(x) return { text: `Only {0} ${calls(x)} for ${r.wants[x.dir]}: not enough to decide.`, keys: [x], inline: true };
   return { text: 'Nothing in the position pulls either way.', keys: [] };
 }
 // Who's winning, from White's side: 'w', '=' or 'b'
@@ -7556,7 +7556,7 @@ function planqRowsHtml(q, ghost){
     const verdict = ghost ? 'Right' : sc==null ? '' : sc===100 ? 'Right' : sc ? 'Close' : 'Missed';
     // the review: one sentence (tap its criterion to see it on the board)
     let why = '';
-    if(ghost) why = `<p class="pq-why-line">White's better pieces say attack, Black's weak pawns say improve.</p>`;
+    if(ghost) why = `<p class="pq-why-line">White's better pieces call for dynamic play, Black's weak pawns for positional play.</p>`;
     else if(q.checked){
       const w = planqWhy(r, q.p.side), can = x=>x.key && hasMarks(q.p.fen, x.key);
       const tapped = (x, html)=>can(x) ? `<button class="pq-reason${q.aspView===x.key ? ' sel' : ''}" data-key="${x.key}">${html}</button>` : html;
