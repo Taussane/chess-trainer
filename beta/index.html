@@ -7424,28 +7424,28 @@ function planqRows(p, vals, info){
 // PLANQ_PRIORITY), in a sentence (PLANQ_WHY: criterion, the side to play ahead (+) or behind (−), the row;
 // pawns by their situation). Either: the strongest vote each way, or the one vote short, or nothing.
 const PLANQ_PRIORITY = ['material', 'king', 'kingEg', 'pawns', 'activity', 'development', 'space', 'eval'];
-const PLANQ_WHY = {   // {me}: the side to play, {them}: the other ('White', 'Black')
+const PLANQ_WHY = {   // seen by the side to play (the question names it)
   pieces: {
-    'material+':'{me} is up material: each trade brings a won endgame closer.', 'material-':'{me} is down material: keep pieces on to keep chances.',
-    'Passed pawn':"{me}'s passed pawn grows stronger as pieces come off.", 'Weak enemy pawns':"{them}'s weak pawns are easier to win once pieces come off.",
-    'Enemy passed pawn':"{them}'s passed pawn grows stronger as pieces come off: keep pieces on.", 'Weak pawns':"{me}'s weak pawns would fall in an endgame: keep pieces on.",
-    'space+':'{me} has more space: keep pieces on so {them} stays cramped.', 'space-':'{me} is cramped: trades free up room.',
-    'activity+':"{me}'s pieces are better: keep them on.", 'activity-':"{me}'s pieces are worse: trade the worst ones for {them}'s best.",
-    'development+':'{me} is ahead in development: keep pieces on to use the lead.', 'development-':"{me} is behind in development: trade off {them}'s developed pieces.",
-    'king+':"{them}'s king is weak: keep the attackers on.", 'king-':"{me}'s king is weak: trade off {them}'s attackers.",
-    'kingEg+':"{me}'s king is more active: every trade makes it count more.", 'kingEg-':"{them}'s king is more active: keep pieces on, trades would help it.",
-    'eval+':'{me} is clearly better: trades bring a won endgame closer.', 'eval-':'{me} is clearly worse: keep pieces on to keep chances.',
+    'material+':'Extra material: each trade brings a won endgame closer.', 'material-':'Missing material: keep pieces on to keep chances.',
+    'Passed pawn':'Passed pawn: it grows stronger as pieces come off.', 'Weak enemy pawns':'Weak enemy pawns: easier to win once pieces come off.',
+    'Enemy passed pawn':'Enemy passed pawn: it grows stronger as pieces come off, keep pieces on.', 'Weak pawns':'Weak pawns: they would fall in an endgame, keep pieces on.',
+    'space+':'Extra space: keep pieces on so the opponent stays cramped.', 'space-':'Lack of space: trades free up room.',
+    'activity+':'Better pieces: keep them on.', 'activity-':"Worse pieces: trade the worst ones for the opponent's best.",
+    'development+':'Development lead: keep pieces on to use it.', 'development-':"Lagging development: trade off the opponent's developed pieces.",
+    'king+':'Weak enemy king: keep the attackers on.', 'king-':'Weak king: trade off the attackers.',
+    'kingEg+':'More active king: every trade makes it count more.', 'kingEg-':'Passive king: keep pieces on, trades would help the enemy king.',
+    'eval+':'Clear edge: trades bring a won endgame closer.', 'eval-':'Clear disadvantage: keep pieces on to keep chances.',
   },
   approach: {
-    'material+':'{me} is up material: no hurry, keep control and improve.', 'material-':'{me} is down material: open the game and look for chances.',
-    'Passed pawn':"{me}'s passed pawn is a lasting edge: no hurry, improve first.", 'Weak enemy pawns':"{them}'s weak pawns will not run away: no hurry, improve first.",
-    'Enemy passed pawn':"{them}'s passed pawn is a lasting edge: play actively before it counts.", 'Weak pawns':"{me}'s weak pawns are a lasting problem: play actively before they fall.",
-    'space+':'{me} has more space: keep it closed and squeeze.', 'space-':'{me} is cramped: break open with a pawn.',
-    'activity+':"{me}'s pieces are better: open lines and attack before {them} catches up.", 'activity-':"{me}'s pieces are worse: improve the worst one first.",
-    'development+':'{me} is ahead in development: open the centre before {them} catches up.', 'development-':'{me} is behind in development: keep it closed and finish developing.',
-    'king+':"{them}'s king is weak: open lines towards it.", 'king-':"{me}'s king is weak: keep it closed and consolidate.",
-    'kingEg+':"{me}'s king is active: use it, go after {them}'s pawns.", 'kingEg-':"{me}'s king is passive: bring it into play first.",
-    'eval+':'{me} is clearly better: no hurry, keep control.', 'eval-':'{me} is clearly worse: complicate the game.',
+    'material+':'Extra material: no hurry, keep control and improve.', 'material-':'Missing material: open the game and look for chances.',
+    'Passed pawn':'Passed pawn: a lasting edge, no hurry, improve first.', 'Weak enemy pawns':'Weak enemy pawns: they will not run away, improve first.',
+    'Enemy passed pawn':'Enemy passed pawn: a lasting edge for the opponent, play actively before it counts.', 'Weak pawns':'Weak pawns: a lasting problem, play actively before they fall.',
+    'space+':'Extra space: keep it closed and squeeze.', 'space-':'Lack of space: break open with a pawn.',
+    'activity+':'Better pieces: open lines and attack before the opponent catches up.', 'activity-':'Worse pieces: improve the worst one first.',
+    'development+':'Development lead: open the centre before the opponent catches up.', 'development-':'Lagging development: keep it closed and finish developing.',
+    'king+':'Weak enemy king: open lines towards it.', 'king-':'Weak king: keep it closed and consolidate.',
+    'kingEg+':'More active king: use it, go after the enemy pawns.', 'kingEg-':'Passive king: bring it into play first.',
+    'eval+':'Clear edge: no hurry, keep control.', 'eval-':'Clear disadvantage: complicate the game.',
   },
 };
 // each situation as a noun, seen by the side to play, for the Either sentences ("weak enemy king calls for…")
@@ -7454,15 +7454,14 @@ const PLANQ_NAMES = { 'Up material':'extra material', 'Down material':'missing m
   'Better pieces':'better pieces', 'Worse pieces':'worse pieces', 'Ahead in development':'development lead', 'Behind in development':'lagging development',
   'Weak enemy king':'weak enemy king', 'Weak king':'weak king', 'More active king':'more active king', 'Passive king':'passive king',
   'Clearly better':'clear edge', 'Clearly worse':'clear disadvantage' };
-const planqSides = (t, me)=>t.replace(/\{me\}/g, me==='w' ? 'White' : 'Black').replace(/\{them\}/g, me==='w' ? 'Black' : 'White');
 const planqStrongest = (rs, dir)=>rs.filter(x=>x.dir===dir).sort((a, b)=>b.weight - a.weight || PLANQ_PRIORITY.indexOf(a.vk) - PLANQ_PRIORITY.indexOf(b.vk))[0];
-const planqSentence = (row, x, me)=>planqSides(PLANQ_WHY[row][x.vk==='pawns' ? x.situation : x.vk + (x.edge > 0 ? '+' : '-')], me);
+const planqSentence = (row, x)=>PLANQ_WHY[row][x.vk==='pawns' ? x.situation : x.vk + (x.edge > 0 ? '+' : '-')];
 // as seen by the side to play ("less space", "weak enemy king"): no side needed (the question names it)
 const planqName = x=>PLANQ_NAMES[x.situation];
 const planqPlural = x=>/(pawns|pieces)$/.test(PLANQ_NAMES[x.situation]);
 // one row's explanation: { text, keys (criteria to tap) }
-function planqWhy(r, me){
-  if(r.answer){ const x = planqStrongest(r.reasons, r.answer); return { text: planqSentence(r.key, x, me), keys: [x] }; }
+function planqWhy(r){
+  if(r.answer){ const x = planqStrongest(r.reasons, r.answer); return { text: planqSentence(r.key, x), keys: [x] }; }
   // (in these, each criterion's words, {0} and {1}, can be tapped)
   const a = planqStrongest(r.reasons, 1), b = planqStrongest(r.reasons, -1), calls = x=>planqPlural(x) ? 'call' : 'calls';
   if(a && b) return { text: `{0} ${calls(a)} for ${r.wants[1]}, {1} for ${r.wants[-1]}.`, keys: [a, b], inline: true };
@@ -7561,7 +7560,7 @@ function planqRowsHtml(q, ghost){
     let why = '';
     if(ghost) why = `<p class="pq-why-line">White's better pieces call for dynamic play, Black's weak pawns for positional play.</p>`;
     else if(q.checked){
-      const w = planqWhy(r, q.p.side), can = x=>x.key && hasMarks(q.p.fen, x.key);
+      const w = planqWhy(r), can = x=>x.key && hasMarks(q.p.fen, x.key);
       const tapped = (x, html)=>can(x) ? `<button class="pq-reason${q.aspView===x.key ? ' sel' : ''}" data-key="${x.key}">${html}</button>` : html;
       // Either: each criterion's words tappable; a decided row: the whole sentence
       const text = w.inline ? w.text.replace(/\{(\d)\}/g, (_, i)=>{ const x = w.keys[+i]; const n = planqName(x); return tapped(x, +i===0 && w.text.startsWith('{0}') ? n[0].toUpperCase() + n.slice(1) : n); }) : w.keys[0] ? tapped(w.keys[0], w.text) : w.text;
