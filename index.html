@@ -199,6 +199,19 @@
   .pq-choice em{display:block; font-style:normal; font-size:0.76rem; color:var(--text-mute); margin-top:1px;}
   .pq-choice.pq-why.sel{box-shadow:inset 0 0 0 1px currentColor; background:var(--panel);}
   .pq-choice.pq-why.best.sel{box-shadow:inset 0 0 0 1px var(--best-green);} .pq-choice.pq-why.good.sel{box-shadow:inset 0 0 0 1px var(--good);}
+  .pq-rows{display:flex; flex-direction:column; gap:6px; margin:2px 0 4px;}
+  .pq-row-head{display:flex; justify-content:space-between; align-items:baseline; font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px;}
+  .pq-row-head small{font-size:0.74rem; font-weight:700; text-transform:none; letter-spacing:0;}
+  .pq-row-head small.ok{color:var(--best-green);} .pq-row-head small.ko{color:var(--bad);} .pq-row-head small.either{color:var(--text-mute);}
+  .pq-sides{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .pq-side{padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); font:inherit; font-size:0.9rem; cursor:pointer; text-align:center;}
+  @media (hover:hover){ button.pq-side:not(:disabled):hover{border-color:var(--accent);} }
+  .pq-side.on{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent);}
+  .pq-side:disabled{cursor:default;} .pq-side.best{border-color:var(--best-green); box-shadow:inset 0 0 0 1px var(--best-green);} .pq-side.bad{border-color:var(--bad);} .pq-side.off{opacity:.55;}
+  .pq-reasons{display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:3px; min-height:1.2em;}
+  .pq-reason{font:inherit; font-size:0.76rem; color:var(--text-mute); background:none; border:0; padding:0;}
+  button.pq-reason{cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px;}
+  button.pq-reason.sel{color:var(--accent);}
   .pq-prompt{display:flex; align-items:baseline; justify-content:space-between; gap:12px;}
   .pq-prompt .pq-steps{flex:none;}
   .score .pq-steps{margin-left:auto;}
@@ -7345,37 +7358,27 @@ function renderExplorer(){
 // app gives in Position evaluation's review (planFor): its first plan 100%, second 70%, third 50%,
 // anything else 0. The wrong choices include the opposite of a right plan (trade / avoid trades…).
 // Not recorded in your progress yet (a prototype). Only in the beta.
-const PLAN_LABELS = {
-  'Check forcing moves':'Look for the mating attack', 'Defend first':'Defend against the mate',
-  'Trade pieces':'Trade pieces', 'Avoid trades, attack':'Avoid trades and attack',
-  'Simplify, stay safe':'Simplify and stay safe', 'Complicate':'Complicate the game',
-  'Go for the pawns':'Use your king to win pawns', 'Centralize it':'Centralize your king',
-  'Open lines to it':'Open lines to their king', 'Trade attackers':'Trade their attacking pieces',
-  'Forcing moves first':'Play forcing moves', 'Parry them first':'Parry their threats',
-  'Push it':'Push your passed pawn', 'Attack them':'Attack their weak pawns',
-  'Blockade it':'Blockade their passed pawn', 'Keep pieces active':'Keep your pieces active',
-  'Avoid freeing trades':'Avoid trades that free them', 'Trade to breathe':'Trade pieces to free your game',
-  'Keep the initiative':'Keep the initiative', 'Improve the worst':'Improve your worst piece',
-  'Find a pawn break':'Prepare a pawn break',
-  'Open the centre':'Open the centre while ahead', 'Finish developing':'Finish your development',
-};
-const PLAN_OPPOSITE = {};
-[['Check forcing moves','Defend first'], ['Trade pieces','Avoid trades, attack'], ['Simplify, stay safe','Complicate'],
- ['Go for the pawns','Centralize it'], ['Open lines to it','Trade attackers'], ['Forcing moves first','Parry them first'],
- ['Push it','Blockade it'], ['Attack them','Keep pieces active'], ['Avoid freeing trades','Trade to breathe'],
- ['Keep the initiative','Improve the worst'], ['Open the centre','Finish developing']].forEach(([a, b])=>{ PLAN_OPPOSITE[a] = b; PLAN_OPPOSITE[b] = a; });
 // Plan finder (beta): three questions on a master position, in the order the books teach.
 // 1. Is anything urgent? (checks, captures, threats: Other threats at ++, 3 pawns or more, or a mate,
 //    for either side). If it is, the position ends there: the threat comes first.
-// 2. Who's winning? (the engine: Equal under 0.5; near that line, ±0.15, the neighbouring answer gets half)
-// 3. Choose a plan: titled with the phase (opening while a knight or bishop is still to move, endgame
-//    with no queens, middlegame otherwise); the plans from the criteria, less the threats ones (question 1).
+// 2. Who's winning? (the engine: balanced under 0.5; near that line, ±0.15, the neighbouring answer gets half)
+// 3. Choose a plan, titled with the phase: three dilemmas, one side each (PLANQ_ROWS). Each criterion votes
+//    on them (PLANQ_VOTES: + 1, ++ 2, for the side to play); a row is decided when its net vote reaches 2,
+//    else either side works (not scored). A quiet position needs one decided row at least.
 // A wrong answer shows the correction and the next question follows. Results are not recorded.
-const PLANQ_SCORES = [100, 70, 50];
-const PLANQ_THREAT_PLANS = ['Check forcing moves', 'Defend first', 'Forcing moves first', 'Parry them first'];
-const PLANQ_EDGE = 50, PLANQ_NEAR = 15;   // centipawns: Equal under 0.5; half credit within 0.15 of it
+const PLANQ_EDGE = 50, PLANQ_NEAR = 15;   // centipawns: balanced under 0.5; half credit within 0.15 of it
 const PLANQ_STEPS = ['urgent', 'winning', 'plan'];
-let planq = null;   // { p, plan, info, vals, urgent, phase, step, picks, done, choices, aspView, aspPiece, aspKing, seen }
+const PLANQ_ROWS = [
+  { key:'pieces',   name:'Pieces',   sides:{ 1:'Trade pieces', '-1':'Keep pieces' }, short:{ 1:'Trade', '-1':'Keep' } },
+  { key:'position', name:'Position', sides:{ 1:'Open it', '-1':'Keep it closed' }, short:{ 1:'Open', '-1':'Closed' } },
+  { key:'pace',     name:'Pace',     sides:{ 1:'Act now', '-1':'Improve slowly' }, short:{ 1:'Act', '-1':'Improve' } },
+];
+const PLANQ_CLEAR = 2;
+// a criterion at + for the side to play: its votes [pieces (1 trade), position (1 open), pace (1 act)]; at − the reverse
+// (static edges: trade, no hurry, but space wants pieces on and the position closed; dynamic edges: keep
+// pieces, open, act now; in an endgame an active king wants trades)
+const PLANQ_VOTES = { material:[1, 0, -1], pawns:[1, 0, -1], space:[-1, -1, -1], activity:[-1, 1, 1], development:[0, 1, 1], king:[-1, 1, 1], kingEg:[1, 0, 0], eval:[1, 0, -1] };
+let planq = null;   // { p, info, vals, urgent, phase, rows, step, picks, scores, checked, done, aspView, aspPiece, aspKing, seen }
 function planqInfo(p){
   const m = masterEvals && masterEvals[p.key];
   return m ? toWhitePerspective({ cp: m[1], mate: m[2] }, p.fen) : null;
@@ -7388,20 +7391,44 @@ function planqUrgent(p, vals, info){
   return l >= 2 ? 'win' : l <= -2 ? 'defend' : null;
 }
 const planqPhase = fen=>devActive(fen) ? 'opening' : isEndgame(fen) ? 'endgame' : 'middlegame';
+// The three dilemmas for the side to play: each row's net vote, its answer (1, -1, or 0: either works) and
+// its reasons [{ key (the criterion, for its marks), situation, dir }]
+function planqRows(p, vals, info){
+  const me = p.side, sgn = me==='w' ? 1 : -1, them = other(me);
+  const lv = k=>vals.off.includes(k) ? 0 : aspectLevel(vals[k], k) * sgn;
+  const pp = pawnPoints(p.fen).items, passed = c=>pp.some(x=>x.c===c && x.text==='Passed');
+  const dev = devActive(p.fen), eg = isEndgame(p.fen);
+  const E = info.mate!=null ? 0 : info.cp / 100 * sgn;
+  const crit = [
+    ['material', 'material', lv('material'), 'Up material', 'Down material'],
+    ['pawns', 'pawns', lv('pawns'), passed(me) ? 'Passed pawn' : 'Weak enemy pawns', passed(them) ? 'Enemy passed pawn' : 'Weak pawns'],
+    ['space', 'space', lv('space'), 'More space', 'Less space'],
+    dev ? ['activity', 'development', lv('activity'), 'Ahead in development', 'Behind in development'] : ['activity', 'activity', lv('activity'), 'Better pieces', 'Worse pieces'],
+    eg ? ['king', 'kingEg', lv('king'), 'More active king', 'Passive king'] : ['king', 'king', lv('king'), 'Weak enemy king', 'Weak king'],
+    [null, 'eval', !lv('material') && Math.abs(E) >= 2 ? Math.sign(E) : 0, 'Clearly better', 'Clearly worse'],
+  ];
+  return PLANQ_ROWS.map((row, i)=>{
+    let net = 0; const reasons = [];
+    for(const [key, vk, l, plus, minus] of crit){
+      const v = PLANQ_VOTES[vk][i] * l; if(!v) continue;
+      net += v; reasons.push({ key, situation: l > 0 ? plus : minus, signs: SIGNS(l), dir: Math.sign(v) });
+    }
+    return { ...row, net, answer: Math.abs(net) >= PLANQ_CLEAR ? Math.sign(net) : 0, reasons };
+  });
+}
 // Who's winning, from White's side: 'w', '=' or 'b'
 const planqWinner = info=>info.mate!=null ? (info.mate > 0 ? 'w' : 'b') : info.cp >= PLANQ_EDGE ? 'w' : info.cp <= -PLANQ_EDGE ? 'b' : '=';
 function planqWinScore(info, pick){
   const w = planqWinner(info); if(pick===w) return 100;
   if(info.mate!=null || Math.abs(Math.abs(info.cp) - PLANQ_EDGE) > PLANQ_NEAR) return 0;
-  const near = info.cp > 0 ? 'w' : 'b';   // the line between Equal and the side ahead
+  const near = info.cp > 0 ? 'w' : 'b';   // the line between balanced and the side ahead
   return (w==='=' && pick===near) || (w===near && pick==='=') ? 50 : 0;
 }
 const planqEvalText = info=>info.mate!=null ? `${info.mate > 0 ? 'White' : 'Black'} mates in ${Math.abs(info.mate)}` : `${info.cp > 0 ? '+' : info.cp < 0 ? '−' : ''}${(Math.abs(info.cp) / 100).toFixed(1)}`;
-// The next position: an urgent one, or a quiet one with a clear plan (its first plan not "find a pawn
-// break", weight 3 or more). Material plans would come up most of the time (a material edge outranks the
-// rest): among up to 25 such positions, the one whose main plan (or urgency) has come up least so far.
+// The next position: an urgent one, or a quiet one with a decided row at least. Among up to 25 such
+// positions, the one whose kind (urgency, or its first decided row and side) has come up least so far.
 const planqShown = {};
-const planqTopic = c=>c.urgent ? 'urgent:' + c.urgent : c.plan.lines[0].plan;
+const planqTopic = c=>c.urgent ? 'urgent:' + c.urgent : (r=>r.key + ':' + r.answer)(c.rows.find(r=>r.answer));
 function planqPick(){
   const cands = [];
   for(let i = 0; i < 25; i++){ const c = planqCandidate(cands); if(!c) break; cands.push(c); }
@@ -7418,51 +7445,56 @@ function planqCandidate(taken){
     if(seen.has(p.key) || taken.some(c=>c.p.key===p.key)) continue;
     const info = planqInfo(p), vals = info && explorerVals(p.fen);
     if(!vals || vals.special) continue;
-    const urgent = planqUrgent(p, vals, info);
-    const full = planFor(p, vals, info), plan = { ...full, lines: full.lines.filter(l=>!PLANQ_THREAT_PLANS.includes(l.plan)) }, top = plan.lines[0];
-    if(!urgent && (!top || top.plan==='Find a pawn break' || top.weight < 3)) continue;
-    // the plan choices: the first plan, often the second, the opposites of the right ones, then other plans
-    let choices = [];
-    if(!urgent){
-      const right = plan.lines.map(l=>l.plan); choices = [right[0]];
-      if(right[1] && Math.random() < 0.5) choices.push(right[1]);
-      for(const r of right){ const o = PLAN_OPPOSITE[r]; if(o && !right.includes(o) && !choices.includes(o) && !PLANQ_THREAT_PLANS.includes(o) && choices.length < 4) choices.push(o); }
-      const others = shuffled(Object.keys(PLAN_LABELS).filter(x=>!choices.includes(x) && !right.includes(x) && !PLANQ_THREAT_PLANS.includes(x)));
-      while(choices.length < 4) choices.push(others.shift());
-      choices = shuffled(choices);
-    }
-    return { p, plan, info, vals, urgent, phase: planqPhase(p.fen), step: 0, picks: {}, scores: {}, checked: false, done: false, choices,
+    const urgent = planqUrgent(p, vals, info), rows = planqRows(p, vals, info);
+    if(!urgent && !rows.some(r=>r.answer)) continue;
+    return { p, info, vals, urgent, rows, phase: planqPhase(p.fen), step: 0, picks: {}, scores: {}, checked: false, done: false,
              aspView: null, aspPiece: null, aspKing: null, seen };
   }
   return null;
 }
-// One question's choices: [value, label]
+// Questions 1 and 2: their choices [value, label]
 function planqOptions(q){
-  const who = q.p.side==='w' ? 'White' : 'Black';
-  const step = PLANQ_STEPS[q.step];
-  const me = q.p.side, them = me==='w' ? 'b' : 'w', name = c=>c==='w' ? 'White' : 'Black';
-  if(step==='urgent') return [['no', "No, it's quiet"], ['win', `Yes, ${who} can win something`], ['defend', `Yes, ${who} must defend`]];
-  if(step==='winning') return [['=', 'Position is balanced'], [me, `${name(me)} is better`], [them, `${name(them)} is better`]];
-  return q.choices.map(c=>[c, PLAN_LABELS[c]]);
+  const me = q.p.side, them = me==='w' ? 'b' : 'w', name = c=>c==='w' ? 'White' : 'Black', who = name(me);
+  if(PLANQ_STEPS[q.step]==='urgent') return [['no', "No, it's quiet"], ['win', `Yes, ${who} can win something`], ['defend', `Yes, ${who} must defend`]];
+  return [['=', 'Position is balanced'], [me, `${name(me)} is better`], [them, `${name(them)} is better`]];
 }
 function planqPrompt(q){
   const who = q.p.side==='w' ? 'White' : 'Black', step = PLANQ_STEPS[q.step];
   return step==='urgent' ? `Is anything urgent for ${who}?` : step==='winning' ? "Who's winning?" : `Choose ${q.phase==='opening' ? 'an opening' : q.phase==='endgame' ? 'an endgame' : 'a middlegame'} plan for ${who}`;
 }
-// the right answer(s) for this question: { best, also, score(pick) }
 function planqAnswer(q){
   const step = PLANQ_STEPS[q.step];
-  if(step==='urgent'){ const r = q.urgent || 'no'; return { best: r, also: [], score: x=>x===r ? 100 : 0 }; }
-  if(step==='winning') return { best: planqWinner(q.info), also: [], score: x=>planqWinScore(q.info, x) };
-  const right = q.plan.lines.map(l=>l.plan);
-  return { best: right[0], also: right.slice(1), score: x=>right.includes(x) ? PLANQ_SCORES[right.indexOf(x)] : 0 };
+  if(step==='urgent'){ const r = q.urgent || 'no'; return { best: r, score: x=>x===r ? 100 : 0 }; }
+  return { best: planqWinner(q.info), score: x=>planqWinScore(q.info, x) };
 }
-// what the correction says under the choices
+// the plan's score: the decided rows answered right, out of the decided rows
+function planqPlanScore(q){
+  const dec = q.rows.filter(r=>r.answer);
+  return Math.round(100 * dec.filter(r=>+q.picks['row:' + r.key]===r.answer).length / dec.length);
+}
 function planqNote(q){
   const step = PLANQ_STEPS[q.step], who = q.p.side==='w' ? 'White' : 'Black';
   if(step==='urgent') return q.urgent==='win' ? `${who} can win material${q.info.mate!=null ? ' (a mate)' : ''}: the threat comes first.` : q.urgent==='defend' ? `${who} must deal with a threat first${q.info.mate!=null ? ' (a mate)' : ''}.` : 'Nothing to win or to parry right now.';
   if(step==='winning') return `Engine: ${planqEvalText(q.info)}. Balanced under 0.5.`;
   return '';
+}
+// The plan question: one row per dilemma, two sides; once checked, each row's verdict and its reasons
+// (tap one to see that criterion on the board)
+function planqRowsHtml(q, ghost){
+  return `<div class="pq-rows">${(ghost ? PLANQ_ROWS.map(r=>({ ...r, answer: 1, reasons: [{ situation:'Weak enemy pawns', signs:'++', dir:1 }, { situation:'More space', signs:'+', dir:-1 }, { situation:'Ahead in development', signs:'++', dir:1 }, { situation:'Clearly better', signs:'+', dir:1 }] })) : q.rows).map(r=>{
+    const pick = ghost ? null : q.picks['row:' + r.key];
+    const btn = d=>{
+      const on = pick!=null && +pick===d, ok = r.answer===d;
+      const cls = !q.checked || ghost ? (on ? ' on' : '') : !r.answer ? (on ? ' on' : ' off') : ok ? ' best' : on ? ' bad' : ' off';
+      return ghost ? `<span class="pq-side">${r.sides[d]}</span>` : `<button class="pq-side${cls}" data-row="${r.key}" data-d="${d}" ${q.checked ? 'disabled' : ''}>${r.sides[d]}</button>`;
+    };
+    const verdict = !q.checked && !ghost ? '' : !r.answer ? 'Both work' : (+pick===r.answer ? 'Right' : 'Missed');
+    const why = (q.checked || ghost) && r.reasons.length ? `<div class="pq-reasons">${r.reasons.map(x=>{
+      const pk = !ghost && x.key && hasMarks(q.p.fen, x.key);
+      const t = `${r.short[x.dir]}: ${x.situation} ${x.signs}`;
+      return pk ? `<button class="pq-reason${q.aspView===x.key ? ' sel' : ''}" data-key="${x.key}">${t}</button>` : `<span class="pq-reason">${t}</span>`; }).join('')}</div>` : (q.checked ? '<div class="pq-reasons"><span class="pq-reason">Nothing pulls either way</span></div>' : '');
+    return `<div class="pq-row"><div class="pq-row-head"><span>${r.name}</span>${verdict ? `<small class="${!r.answer ? 'either' : +pick===r.answer ? 'ok' : 'ko'}">${verdict}</small>` : ''}</div><div class="pq-sides">${btn(1)}${btn(-1)}</div>${why}</div>`;
+  }).join('')}</div>`;
 }
 function renderPlanq(){
   const app = document.getElementById('app');
@@ -7473,21 +7505,18 @@ function renderPlanq(){
       document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; render(); };
       clearTimeout(renderPlanq.t); renderPlanq.t = setTimeout(()=>{ if(screen==='planq') render(); }, 400); return; }
   }
-  const q = planq, p = q.p, step = PLANQ_STEPS[q.step], ans = planqAnswer(q), pick = q.picks[step];
+  const q = planq, p = q.p, step = PLANQ_STEPS[q.step], isPlan = step==='plan';
+  const ans = isPlan ? null : planqAnswer(q), pick = q.picks[step];
   side = p.side;
-  // the board: the threats once question 1 is checked (until a criterion is tapped in the plan review)
+  // the board: the threats once question 1 is checked, in an urgent position
   if(q.step===0 && q.checked && q.urgent && !q.aspView) q.aspView = 'threats';
-  // in the plan's review, a right plan can be tapped to draw the criterion it comes from
-  const lineOf = v=>step==='plan' && q.plan.lines.find(l=>l.plan===v);
   const choice = ([v, label])=>{
-    const best = v===ans.best, also = ans.also.includes(v);
-    const cls = !q.checked ? (pick===v ? ' on' : '') : best ? ' best' : also ? ' good' : pick===v ? ' bad' : ' off';
-    const tag = !q.checked ? '' : best ? (step==='plan' ? 'Main plan' : 'Right') : also ? 'Also good' : pick===v ? (step==='plan' ? 'Not here' : 'Your answer') : '';
-    const l = q.checked && lineOf(v), key = l && l.key && hasMarks(p.fen, l.key) ? l.key : null;
-    if(key) return `<button class="pq-choice${cls} pq-why${q.aspView===key ? ' sel' : ''}" data-key="${key}" aria-pressed="${q.aspView===key}"><span>${label}<em>${l.situation}</em></span><small>${tag}</small></button>`;
-    return `<button class="pq-choice${cls}" data-v="${v}" ${q.checked ? 'disabled' : ''}><span>${label}${l ? `<em>${l.situation}</em>` : ''}</span>${tag ? `<small>${tag}</small>` : ''}</button>`;
+    const best = v===ans.best;
+    const cls = !q.checked ? (pick===v ? ' on' : '') : best ? ' best' : pick===v ? ' bad' : ' off';
+    const tag = !q.checked ? '' : best ? 'Right' : pick===v ? 'Your answer' : '';
+    return `<button class="pq-choice${cls}" data-v="${v}" ${q.checked ? 'disabled' : ''}><span>${label}</span>${tag ? `<small>${tag}</small>` : ''}</button>`;
   };
-  const steps = (q.urgent ? 1 : 3), asked = PLANQ_STEPS.slice(0, steps);
+  const steps = q.urgent ? 1 : 3, asked = PLANQ_STEPS.slice(0, steps);
   // always three dashes (an urgent position stops after the first: the others stay grey), so their number gives nothing away
   const dots = `<div class="pq-steps" aria-label="Question ${q.step + 1} of 3">${PLANQ_STEPS.map((s, i)=>{ const sc = q.scores[s];
     return `<span class="pq-step${i===q.step ? ' cur' : ''}${sc!=null ? (sc===100 ? ' ok' : sc > 0 ? ' half' : ' ko') : ''}"></span>`; }).join('')}</div>`;
@@ -7495,25 +7524,21 @@ function renderPlanq(){
   const last = q.step===steps - 1;
   const note = q.checked ? planqNote(q) : step==='urgent' ? 'Look at checks, captures and threats, for both sides.' : '';
   const prompt = `<div class="pq-prompt"><p class="prompt">${planqPrompt(q)}</p>${q.done ? '' : dots}</div>`;
+  const ready = isPlan ? PLANQ_ROWS.every(r=>q.picks['row:' + r.key]!=null) : !!pick;
+  const body = isPlan ? planqRowsHtml(q) : `<div class="pq-choices">${planqOptions(q).map(choice).join('')}</div>${note ? `<p class="pq-note">${note}</p>` : ''}`;
   const panel = q.done ? `
         <div class="score"><span class="score-num">${total}%</span><span class="score-label">Accuracy</span>${dots}</div>
-        ${step==='plan' ? '' : prompt}
-        <div class="pq-choices">${planqOptions(q).map(choice).join('')}</div>
-        ${note ? `<p class="pq-note">${note}</p>` : ''}
-        ${step==='plan' && q.plan.lines.some(l=>l.key && hasMarks(p.fen, l.key)) ? '<p class="pq-note">Tap a right plan to see why on the board.</p>' : ''}
+        ${isPlan ? '' : prompt}
+        ${body}
         <div class="actions-row split">${lichessLink(p)}<button class="btn" id="pqNext">Next position</button></div>`
     : `
         ${prompt}
-        <div class="pq-choices">${planqOptions(q).map(choice).join('')}</div>
-        ${note ? `<p class="pq-note">${note}</p>` : ''}
-        <div class="actions-row">${q.checked ? `<button class="btn" id="pqGo">${last ? 'See the review' : 'Next question'}</button>` : `<button class="btn" id="pqCheck" ${pick ? '' : 'disabled'}>Check</button>`}</div>`;
-  // ghosts: the tallest question (four plans, a note) and the final review, so the panel keeps its height
-  // ghosts: the same for every position (the longest plan, four times), so the panel's height, and the
-  // board's size, give nothing away (an urgent position, the number of questions)
-  const longest = Object.values(PLAN_LABELS).reduce((x, y)=>y.length > x.length ? y : x);
-  const g4 = `<div class="pq-choices">${[0,1,2,3].map(i=>`<span class="pq-choice"><span>${longest}${i < 3 ? '<em>Enemy passed pawn</em>' : ''}</span><small>Also good</small></span>`).join('')}</div>`;   // (at most three right plans: a reason under each)
-  const ghostQ = `<div class="pq-prompt"><p class="prompt">Choose a middlegame plan for White</p></div>${g4}<p class="pq-note">Look at checks, captures and threats, for both sides.</p><div class="actions-row"><span class="btn">Check</span></div>`;
-  const ghostR = `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><p class="prompt">Is anything urgent for White?</p>${g4}<p class="pq-note">Tap a right plan to see why on the board.</p>${GHOST_ACTIONS}`;
+        ${body}
+        <div class="actions-row">${q.checked ? `<button class="btn" id="pqGo">${last ? 'See the review' : 'Next question'}</button>` : `<button class="btn" id="pqCheck" ${ready ? '' : 'disabled'}>Check</button>`}</div>`;
+  // ghosts: the same for every position (the plan question's review, at its tallest), so the panel's
+  // height, and the board's size, give nothing away
+  const ghostR = `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planqRowsHtml(q, true)}${GHOST_ACTIONS}`;
+  const ghostQ = `<div class="pq-prompt"><p class="prompt">Choose a middlegame plan for White</p></div>${planqRowsHtml(q, true)}<div class="actions-row"><span class="btn">Check</span></div>`;
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
@@ -7524,14 +7549,15 @@ function renderPlanq(){
     ${boardHtml(false)}
     ${stackedPanel(panel, [ghostQ, ghostR])}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
-  if(q.checked && (q.step===0 || step==='plan')) wireAspectView(p, q);
+  if(q.checked && (q.step===0 || isPlan)) wireAspectView(p, q);
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ screen = 'home'; render(); });
-  on('pqCheck', ()=>{ if(!pick) return; q.checked = true; q.scores[step] = ans.score(pick); if(last) q.done = true; render(); });
+  on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.scores[step] = isPlan ? planqPlanScore(q) : ans.score(pick); if(last) q.done = true; render(); });
   on('pqGo', ()=>{ q.step++; q.checked = false; q.aspView = q.aspPiece = q.aspKing = null; render(); });
   on('pqNext', ()=>{ planq = planqPick() || null; render(); });
-  app.querySelectorAll('.layer:not(.ghost) .pq-why[data-key]').forEach(b=>b.onclick = ()=>{ q.aspView = q.aspView===b.dataset.key ? null : b.dataset.key; q.aspPiece = q.aspKing = null; render(); });
+  app.querySelectorAll('.layer:not(.ghost) .pq-reason[data-key]').forEach(b=>b.onclick = ()=>{ q.aspView = q.aspView===b.dataset.key ? null : b.dataset.key; q.aspPiece = q.aspKing = null; render(); });
   app.querySelectorAll('.layer:not(.ghost) .pq-choice[data-v]').forEach(b=>b.onclick = ()=>{ if(q.checked) return; q.picks[step] = b.dataset.v; render(); });
+  app.querySelectorAll('.layer:not(.ghost) .pq-side[data-row]').forEach(b=>b.onclick = ()=>{ if(q.checked) return; q.picks['row:' + b.dataset.row] = b.dataset.d; render(); });
 }
 function renderScreen(){
   syncPos();
