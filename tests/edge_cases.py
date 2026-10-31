@@ -54,6 +54,7 @@ async def main():
         await pg.screenshot(path=str(SHOTS/'00_list.png'))
         names = await pg.evaluate("TEST_POSITIONS.map(p=>p.title)")
         for i, name in enumerate(names):
+            if name not in CAND: continue   # (the marks' and the Plan finder's test positions: checked by aspects.py and by hand)
             # ---- Candidate moves: tap the moves in
             await pg.click(f'.chip-btn[data-i="{i}"][data-a="candidates"]'); await pg.wait_for_timeout(300)
             check = await pg.evaluate("document.querySelectorAll('#board .sq.check').length")
