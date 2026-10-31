@@ -7331,7 +7331,7 @@ function renderExplorer(){
 // 1. Is anything urgent? (checks, captures, threats: Other threats at ++, 3 pawns or more, or a mate,
 //    for either side). If it is, the position ends there: the threat comes first.
 // 2. Who's winning? (the engine: balanced under 0.5; near that line, ±0.15, the neighbouring answer gets half)
-// 3. Choose a plan, titled with the phase: two dilemmas, a side or Either for each (PLANQ_ROWS). Each
+// 3. Choose a plan: two dilemmas, a side or Either for each (PLANQ_ROWS). Each
 //    criterion votes on them (PLANQ_VOTES: + 1, ++ 2, for the side to play); a row goes to a side when its
 //    net vote reaches 2, else the answer is Either (a vote short: that side gets half, planqRowScore).
 //    A quiet position needs one row that goes to a side at least.
@@ -7430,7 +7430,7 @@ function planqOptions(q){
 }
 function planqPrompt(q){
   const who = q.p.side==='w' ? 'White' : 'Black', step = PLANQ_STEPS[q.step];
-  return step==='urgent' ? `Is anything urgent for ${who}?` : step==='winning' ? "Who's winning?" : `Choose ${q.phase==='opening' ? 'an opening' : q.phase==='endgame' ? 'an endgame' : 'a middlegame'} plan for ${who}`;
+  return step==='urgent' ? `Is anything urgent for ${who}?` : step==='winning' ? "Who's winning?" : `Choose a plan for ${who}`;
 }
 function planqAnswer(q){
   const step = PLANQ_STEPS[q.step];
@@ -7515,7 +7515,7 @@ function renderPlanq(){
   // ghosts: the same for every position (the plan question's review, at its tallest), so the panel's
   // height, and the board's size, give nothing away
   const ghostR = `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planqRowsHtml(q, true)}${GHOST_ACTIONS}`;
-  const ghostQ = `<div class="pq-prompt"><p class="prompt">Choose a middlegame plan for White</p></div>${planqRowsHtml(q, true)}<div class="actions-row"><span class="btn">Check</span></div>`;
+  const ghostQ = `<div class="pq-prompt"><p class="prompt">Choose a plan for White</p></div>${planqRowsHtml(q, true)}<div class="actions-row"><span class="btn">Check</span></div>`;
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
