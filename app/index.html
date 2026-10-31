@@ -7395,16 +7395,16 @@ function planqRows(p, vals, info){
 // pawns by their situation). Either: the strongest vote each way, or the one vote short, or nothing.
 const PLANQ_PRIORITY = ['material', 'king', 'kingEg', 'pawns', 'activity', 'development', 'space', 'eval'];
 const PLANQ_WHY = {   // seen by the side to play (the question names it)
-  pieces: {
-    'material+':'Extra material: each trade brings a won endgame closer.', 'material-':'Missing material: keep pieces on to keep chances.',
+  pieces: {   // (why, not the answer again: the row already says trade or keep)
+    'material+':'Extra material: it counts more as the board empties.', 'material-':'Missing material: pieces on the board give chances to fight back.',
     'Passed pawn':'Passed pawn: it grows stronger as pieces come off.', 'Weak enemy pawns':'Weak enemy pawns: easier to win once pieces come off.',
-    'Enemy passed pawn':'Enemy passed pawn: it grows stronger as pieces come off, keep pieces on.', 'Weak pawns':'Weak pawns: they would fall in an endgame, keep pieces on.',
-    'space+':'Extra space: keep pieces on so the opponent stays cramped.', 'space-':'Lack of space: trades free up room.',
-    'activity+':'Better pieces: keep them on.', 'activity-':"Worse pieces: trade the worst ones for the opponent's best.",
-    'development+':'Development lead: keep pieces on to use it.', 'development-':"Lagging development: trade off the opponent's developed pieces.",
-    'king+':'Weak enemy king: keep the attackers on.', 'king-':'Weak king: trade off the attackers.',
-    'kingEg+':'More active king: every trade makes it count more.', 'kingEg-':'Passive king: keep pieces on, trades would help the enemy king.',
-    'eval+':'Clear edge: trades bring a won endgame closer.', 'eval-':'Clear disadvantage: keep pieces on to keep chances.',
+    'Enemy passed pawn':'Enemy passed pawn: it grows stronger as pieces come off.', 'Weak pawns':'Weak pawns: they would fall in an endgame.',
+    'space+':"Extra space: the opponent's pieces stay cramped.", 'space-':'Lack of space: every trade frees up room.',
+    'activity+':"Better pieces: they do more than the opponent's.", 'activity-':"Worse pieces: swap the worst ones for the opponent's best.",
+    'development+':'Development lead: it only counts while pieces are on.', 'development-':"Lagging development: the opponent's developed pieces are worth more.",
+    'king+':'Weak enemy king: attackers are needed to exploit it.', 'king-':'Weak king: fewer attackers, less danger.',
+    'kingEg+':'More active king: it counts more as the board empties.', 'kingEg-':'Passive king: the enemy king would count more as the board empties.',
+    'eval+':'Clear edge: a simpler position is easier to win.', 'eval-':'Clear disadvantage: complications give chances to fight back.',
   },
   approach: {
     'material+':'Extra material: no hurry, keep control and improve.', 'material-':'Missing material: open the game and look for chances.',
