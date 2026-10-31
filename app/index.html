@@ -7345,8 +7345,9 @@ const PLANQ_ROWS = [
 const PLANQ_CLEAR = 2;
 // a criterion at + for the side to play: its votes [pieces (1 trade), approach (1 open and attack)]; at − the reverse
 // (static edges: trade, keep it closed and improve, no hurry; but space wants pieces on; dynamic edges:
-// keep pieces, open and attack before they fade; in an endgame an active king wants trades)
-const PLANQ_VOTES = { material:[1, -1], pawns:[1, -1], space:[-1, -1], activity:[-1, 1], development:[0, 1], king:[-1, 1], kingEg:[1, 0], eval:[1, -1] };
+// keep pieces, open and attack before they fade, and behind, trade their better pieces and improve; in an
+// endgame an active king wants trades and attacks, a passive one comes first: improve)
+const PLANQ_VOTES = { material:[1, -1], pawns:[1, -1], space:[-1, -1], activity:[-1, 1], development:[-1, 1], king:[-1, 1], kingEg:[1, 1], eval:[1, -1] };
 let planq = null;   // { p, info, vals, urgent, phase, rows, step, picks, scores, checked, done, aspView, aspPiece, aspKing, seen }
 function planqInfo(p){
   const m = masterEvals && masterEvals[p.key];
