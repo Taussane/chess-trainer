@@ -7479,11 +7479,7 @@ const planqPlanScore = q=>Math.round(q.rows.reduce((t, r)=>t + planqRowScore(r, 
 function planqNote(q){
   const step = PLANQ_STEPS[q.step], who = q.p.side==='w' ? 'White' : 'Black';
   if(step==='urgent') return q.urgent==='win' ? `${who} can win material${q.info.mate!=null ? ' (a mate)' : ''}: the threat comes first.` : q.urgent==='defend' ? `${who} must deal with a threat first${q.info.mate!=null ? ' (a mate)' : ''}.` : 'Nothing to win or to parry right now.';
-  if(step==='winning'){
-    const i = q.info, w = planqWinner(i);
-    if(i.mate!=null) return `Stockfish sees a mate in ${Math.abs(i.mate)} for ${i.mate > 0 ? 'White' : 'Black'}.`;
-    return `Stockfish gives ${planqEvalText(i)}. Balanced would be within ±0.5.`;
-  }
+  if(step==='winning') return `Stockfish gives ${planqEvalText(q.info)}. Balanced would be within ±0.5.`;   // (a mate is urgent: it never gets here)
   return '';
 }
 // The plan question: one row per dilemma, its two sides and Either between them; once checked, each row's verdict and its reasons
