@@ -7480,7 +7480,7 @@ function planqNote(q){
   if(step==='winning'){
     const i = q.info, w = planqWinner(i);
     if(i.mate!=null) return `Stockfish sees a mate in ${Math.abs(i.mate)} for ${i.mate > 0 ? 'White' : 'Black'}.`;
-    return w==='=' ? `Stockfish gives ${planqEvalText(i)}: balanced, within ±0.5.` : `Stockfish gives ${planqEvalText(i)}: ${w==='w' ? 'White' : 'Black'} is better. Balanced would be within ±0.5.`;
+    return `Stockfish gives ${planqEvalText(i)}. Balanced would be within ±0.5.`;
   }
   return '';
 }
