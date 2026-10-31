@@ -210,7 +210,8 @@
   .pq-side:disabled{cursor:default;} .pq-side.best{border-color:var(--best-green); box-shadow:inset 0 0 0 1px var(--best-green);} .pq-side.bad{border-color:var(--bad);} .pq-side.off{opacity:.55;}
   .pq-why-line{margin:4px 0 0; font-size:0.82rem; color:var(--text-mute); line-height:1.35;}
   .pq-reserve{display:grid;} .pq-reserve > *{grid-area:1 / 1;} .pq-ghost-text{visibility:hidden;}
-  .pq-top{margin-bottom:6px;} .pq-top .pq-steps{margin-left:auto;}
+  .pq-top{margin-bottom:6px;} .pq-top .pq-steps{margin-left:auto; flex:none;}
+  .pq-ask{display:flex; align-items:baseline; gap:12px;} .pq-ask .prompt{margin:0;}
   .pq-why-line .pq-reason{display:inline; text-align:left; line-height:inherit;}
   .pq-reason{font:inherit; font-size:inherit; color:inherit; background:none; border:0; padding:0;}
   button.pq-reason{cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; display:inline;}
@@ -7623,8 +7624,12 @@ function renderPlanq(){
   const note = q.checked ? planqNote(q) : step==='urgent' ? 'Look at checks, captures and threats, for both sides.' : '';
   // the same layout before and after Check: the score's line (empty until the end), the question, the options,
   // the note or explanations at their longest (planqReserve): nothing moves once checked
-  const top = `<div class="score pq-top"><span class="score-num"${q.done ? '' : ' style="visibility:hidden"'}>${q.done ? total : 100}%</span><span class="score-label"${q.done ? '' : ' style="visibility:hidden"'}>Accuracy</span>${dots}</div>`;
-  const prompt = `<p class="prompt">${planqPrompt(q)}</p>`;
+  // the first line, as in the other exercises: the question, then the score in its place at the end (both
+  // kept in the layout, the other one hidden, so the line keeps its height)
+  const scoreLine = `<div class="score pq-top">${q.done ? `<span class="score-num">${total}%</span><span class="score-label">Accuracy</span>` : ''}${dots}</div>`;
+  const promptLine = `<div class="pq-top pq-ask"><p class="prompt">${planqPrompt(q)}</p>${dots}</div>`;
+  const top = `<div class="pq-reserve">${q.done ? `<div aria-hidden="true" class="pq-ghost-text">${promptLine}</div>${scoreLine}` : `<div aria-hidden="true" class="pq-ghost-text"><div class="score pq-top"><span class="score-num">100%</span></div></div>${promptLine}`}</div>`;
+  const prompt = '';   // (at the end the score takes the question's place, as in the other exercises)
   const ready = isPlan ? PLANQ_ROWS.every(r=>q.picks['row:' + r.key]!=null) : !!pick;
   const noteLongest = planqLongest(['Look at checks, captures and threats, for both sides.', 'White can win material: the threat comes first.', 'White must deal with a threat first.', 'Nothing to win or to parry right now.', 'Stockfish gives −12.3. Balanced sits within ±0.5.']);
   const body = isPlan ? planqRowsHtml(q) : `<div class="pq-choices">${planqOptions(q).map(choice).join('')}</div>${planqReserve('pq-note', note, noteLongest)}`;
@@ -7636,7 +7641,7 @@ function renderPlanq(){
           : `<div class="actions-row">${q.checked ? `<button class="btn" id="pqGo">${last ? 'See the review' : 'Next question'}</button>` : `<button class="btn" id="pqCheck" ${ready ? '' : 'disabled'}>Check</button>`}</div>`}`;
   // ghost: the same for every position (the plan question, the tallest), so the panel's height, and the
   // board's size, give nothing away
-  const ghostR = `<div class="score pq-top"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><p class="prompt">Choose a plan for White</p>${planqRowsHtml(q, true)}${GHOST_ACTIONS}`;
+  const ghostR = `<div class="pq-reserve"><div class="pq-top pq-ask"><p class="prompt">${planqPrompt({ ...q, step: 2 })}</p>${dots}</div><div class="score pq-top"><span class="score-num">100%</span><span class="score-label">Accuracy</span>${dots}</div></div>${planqRowsHtml(q, true)}${GHOST_ACTIONS}`;   // (the review: score line, rows)
   const ghostQ = ghostR;
   app.innerHTML = `
     <div class="title-row">
