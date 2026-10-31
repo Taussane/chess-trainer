@@ -181,8 +181,9 @@
   @media (hover:hover){ button.pq-side:not(:disabled):hover{border-color:var(--accent);} }
   .pq-side.on{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent);}
   .pq-side:disabled{cursor:default;} .pq-side.best{border-color:var(--best-green); box-shadow:inset 0 0 0 1px var(--best-green);} .pq-side.bad{border-color:var(--bad);} .pq-side.off{opacity:.55;}
-  .pq-reasons{display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:3px; min-height:1.2em;}
-  .pq-reason{font:inherit; font-size:0.76rem; color:var(--text-mute); background:none; border:0; padding:0;}
+  .pq-why-line{margin:4px 0 0; font-size:0.82rem; color:var(--text-mute); line-height:1.35;}
+  .pq-why-line .pq-reason{display:inline; text-align:left; line-height:inherit;}
+  .pq-reason{font:inherit; font-size:inherit; color:inherit; background:none; border:0; padding:0;}
   button.pq-reason{cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px;}
   button.pq-reason.sel{color:var(--accent);}
   .pq-prompt{display:flex; align-items:baseline; justify-content:space-between; gap:12px;}
@@ -7384,10 +7385,50 @@ function planqRows(p, vals, info){
     let net = 0; const reasons = [];
     for(const [key, vk, l, plus, minus] of crit){
       const v = PLANQ_VOTES[vk][i] * l; if(!v) continue;
-      net += v; reasons.push({ key, situation: l > 0 ? plus : minus, signs: SIGNS(l), dir: Math.sign(v) });
+      net += v; reasons.push({ key, vk, edge: Math.sign(l), weight: Math.abs(l), situation: l > 0 ? plus : minus, signs: SIGNS(l), dir: Math.sign(v) });
     }
     return { ...row, net, answer: Math.abs(net) >= PLANQ_CLEAR ? Math.sign(net) : 0, reasons };
   });
+}
+// The review explains each row with one reason: the strongest vote for its answer (++ before +; then
+// PLANQ_PRIORITY), in a sentence (PLANQ_WHY: criterion, the side to play ahead (+) or behind (−), the row;
+// pawns by their situation). Either: the strongest vote each way, or the one vote short, or nothing.
+const PLANQ_PRIORITY = ['material', 'king', 'kingEg', 'pawns', 'activity', 'development', 'space', 'eval'];
+const PLANQ_WHY = {
+  pieces: {
+    'material+':"You're up material: each trade brings a won endgame closer.", 'material-':"You're down material: keep pieces on to keep your chances.",
+    'Passed pawn':'Your passed pawn grows stronger as pieces come off.', 'Weak enemy pawns':'Their weak pawns are easier to win once pieces come off.',
+    'Enemy passed pawn':'Their passed pawn grows stronger as pieces come off: keep pieces on.', 'Weak pawns':'Your weak pawns would fall in an endgame: keep pieces on.',
+    'space+':'You have more space: keep pieces on so they stay cramped.', 'space-':"You're cramped: trades give your pieces room.",
+    'activity+':'Your pieces are better: keep them on.', 'activity-':'Your pieces are worse: trade your worst ones for their best.',
+    'development+':"You're ahead in development: keep pieces on to use your lead.", 'development-':"You're behind in development: trade off their developed pieces.",
+    'king+':'Their king is weak: keep your attackers on.', 'king-':'Your king is weak: trade off their attackers.',
+    'kingEg+':'Your king is more active: every trade makes it count more.', 'kingEg-':'Their king is more active: keep pieces on, trades would help it.',
+    'eval+':"You're clearly better: trades bring a won endgame closer.", 'eval-':"You're clearly worse: keep pieces on to keep your chances.",
+  },
+  approach: {
+    'material+':"You're up material: no hurry, keep control and improve.", 'material-':"You're down material: open the game and look for chances.",
+    'Passed pawn':'Your passed pawn is a lasting edge: no hurry, improve first.', 'Weak enemy pawns':'Their weak pawns will not run away: no hurry, improve first.',
+    'Enemy passed pawn':'Their passed pawn is a lasting edge: play actively before it counts.', 'Weak pawns':'Your weak pawns are a lasting problem: play actively before they fall.',
+    'space+':'You have more space: keep it closed and squeeze.', 'space-':"You're cramped: break open with a pawn.",
+    'activity+':'Your pieces are better: open lines and attack before they catch up.', 'activity-':'Your pieces are worse: improve your worst piece first.',
+    'development+':"You're ahead in development: open the centre before they catch up.", 'development-':"You're behind in development: keep it closed and finish developing.",
+    'king+':'Their king is weak: open lines towards it.', 'king-':'Your king is weak: keep it closed and consolidate.',
+    'kingEg+':'Your king is active: use it, go after their pawns.', 'kingEg-':'Your king is passive: bring it into play first.',
+    'eval+':"You're clearly better: no hurry, keep control.", 'eval-':"You're clearly worse: complicate the game.",
+  },
+};
+const planqStrongest = (rs, dir)=>rs.filter(x=>x.dir===dir).sort((a, b)=>b.weight - a.weight || PLANQ_PRIORITY.indexOf(a.vk) - PLANQ_PRIORITY.indexOf(b.vk))[0];
+const planqSentence = (row, x)=>PLANQ_WHY[row][x.vk==='pawns' ? x.situation : x.vk + (x.edge > 0 ? '+' : '-')];
+// one row's explanation: { text, keys (criteria to tap) }
+function planqWhy(r){
+  if(r.answer){ const x = planqStrongest(r.reasons, r.answer); return { text: planqSentence(r.key, x), keys: [x] }; }
+  // (in these, each criterion's words, {0} and {1}, can be tapped)
+  const a = planqStrongest(r.reasons, 1), b = planqStrongest(r.reasons, -1);
+  if(a && b) return { text: `{0} says ${r.short[1].toLowerCase()}, {1} says ${r.short[-1].toLowerCase()}: they balance out.`, keys: [a, b], inline: true };
+  const x = a || b;
+  if(x) return { text: `Only {0} points to ${r.short[x.dir].toLowerCase()}: not enough to decide.`, keys: [x], inline: true };
+  return { text: 'Nothing in the position pulls either way.', keys: [] };
 }
 // Who's winning, from White's side: 'w', '=' or 'b'
 const planqWinner = info=>info.mate!=null ? (info.mate > 0 ? 'w' : 'b') : info.cp >= PLANQ_EDGE ? 'w' : info.cp <= -PLANQ_EDGE ? 'b' : '=';
@@ -7476,10 +7517,15 @@ function planqRowsHtml(q, ghost){
     };
     const sc = ghost || !q.checked ? null : planqRowScore(r, +pick);
     const verdict = ghost ? 'Right' : sc==null ? '' : sc===100 ? 'Right' : sc ? 'Close' : 'Missed';
-    const why = (q.checked || ghost) && r.reasons.length ? `<div class="pq-reasons">${r.reasons.map(x=>{
-      const pk = !ghost && x.key && hasMarks(q.p.fen, x.key);
-      const t = `${r.short[x.dir]}: ${x.situation} ${x.signs}`;
-      return pk ? `<button class="pq-reason${q.aspView===x.key ? ' sel' : ''}" data-key="${x.key}">${t}</button>` : `<span class="pq-reason">${t}</span>`; }).join('')}</div>` : (q.checked ? '<div class="pq-reasons"><span class="pq-reason">Nothing pulls either way</span></div>' : '');
+    // the review: one sentence (tap its criterion to see it on the board)
+    let why = '';
+    if(ghost) why = `<p class="pq-why-line">Better pieces (++) says attack, weak pawns (−−) says improve: they balance out.</p>`;
+    else if(q.checked){
+      const w = planqWhy(r), can = x=>x.key && hasMarks(q.p.fen, x.key);
+      const tapped = (x, html)=>can(x) ? `<button class="pq-reason${q.aspView===x.key ? ' sel' : ''}" data-key="${x.key}">${html}</button>` : html;
+      // Either: each criterion's words tappable; a decided row: the whole sentence
+      const text = w.inline ? w.text.replace(/\{(\d)\}/g, (_, i)=>{ const x = w.keys[+i]; return tapped(x, `${x.situation.toLowerCase()} (${x.signs})`); }).replace(/^(<button[^>]*>)?(.)/, (m, b, c)=>(b || '') + c.toUpperCase()) : w.keys[0] ? tapped(w.keys[0], w.text) : w.text;
+      why = `<p class="pq-why-line">${text}</p>`; }
     return `<div class="pq-row"><div class="pq-row-head"><span>${r.name}</span>${verdict ? `<small class="${sc===100 || ghost ? 'ok' : sc ? 'half' : 'ko'}">${verdict}</small>` : ''}</div><div class="pq-sides">${btn(1)}${btn(0)}${btn(-1)}</div>${why}</div>`;
   }).join('')}</div>`;
 }
