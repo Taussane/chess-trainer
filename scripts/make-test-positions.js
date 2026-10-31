@@ -31,6 +31,13 @@ const T = [
   // Development marks (beta; Ruy Lopez, Breyer-like): White's developed pieces Nf3 Ng3 Bc2 Re1 (+1 each; Bc1 Qd1 Ra1 never moved),
   // Black's Nd7 Nf6 Bb7 Re8 Bf8 (+1 each): Black + by 1. Bf8 went back to its square (Be7-f8): it has moved, so it counts (the game's moves are needed: sans).
   ['Development marks', {moves:'e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3 Nb8 d4 Nbd7 Nbd2 Bb7 Bc2 Re8 Nf1 Bf8 Ng3 g6'}, 'a4'],
+  // Plan finder (beta): master positions (Steinitz's and Lasker's matches) with their evaluation (eval, White's side):
+  // Black can win something, White must defend, two quiet ones with both rows decided, one with Either on Trades.
+  ['Plan finder: can win something', {moves:'e4 e5 Nf3 Nc6 Nc3 Nf6 Bb5 Bb4 O-O O-O Nd5 Nxd5 exd5 e4 dxc6 exf3 Qxf3 dxc6 Bd3 Bd6 b3 Qg5 Bb2 Qxd2 Bc1 Qa5 Bf4 Be6 Rae1 Rfe8 Re3 Bd5 Bxh7+ Kxh7 Qh5+ Kg8 Rh3', planq:true}, 'f6'],
+  ['Plan finder: must defend', {moves:'e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 Re1 Nd6 Nxe5 Nxe5 Rxe5+ Be7 Bf1 O-O d4 Bf6 Re1 Re8 c3 Rxe1 Qxe1 Nf5 Bf4 d6 Nd2 Be6 Bd3 Nh4 Ne4 Ng6 Bd2 d5 Nc5 Bc8 Qe3 b6 Nb3 Qd6 Qe8+ Nf8 Re1 Bb7', planq:true}, 'Qe3'],
+  ['Plan finder: trade, close / improve', {moves:'e4 e5 Nf3 Nc6 Bb5 Nf6 d3 d6 c3 g6 d4 Bd7 Nbd2 Bg7 dxe5 Nxe5 Nxe5 dxe5 Qe2 O-O f3 a5 Bd3 Qe7 Nf1 Be6 g4 Rfd8 h4 Qd7 Bc2 h5 g5 Ne8 Ne3 Qc6 c4 Nd6 Bd3 Rab8 Nd5 Bxd5 cxd5 Qd7 Bd2 Ra8 Rc1 c6 Rc5 cxd5 Rxd5 Qa4 a3 b6 Bc3 Qe8 Qf2 Nc8 Bb5 Qe7 Rxd8+ Qxd8 O-O Na7 Bc4 Nc6 Bd5 Rc8 f4 Qd7 f5 Ne7', planq:true}, 'Ba2'],
+  ['Plan finder: keep, open / attack', {moves:'e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 Re1 Nd6 Nxe5 Nxe5 Rxe5+ Be7 Nc3 O-O Bd3 Bf6 Re3 g6 b3 Re8 Qf3 Bg5', planq:true}, 'Rxe8+'],
+  ['Plan finder: either on trades', {moves:'e4 e5 Nf3 Nc6 Bc4 Bc5 Nc3 Nf6 d3 d6 Be3 Bxe3 fxe3 Na5 Bb3 Nxb3 axb3 Ng4 Qe2 f6 d4 c6 O-O-O Qe7 h3 Nh6 g4 Bd7 Nh4 g6 Nf3 Nf7 Rdg1 O-O-O b4 Kb8 Qf2 Rdf8', planq:true}, 'Qg3'],
 ];
 const sf = spawn(SF); let buf = '', wait = null;
 sf.stdout.on('data', d=>{ buf += d; if(wait && buf.includes('bestmove')){ const o = buf; buf = ''; const w = wait; wait = null; w(o); } });
@@ -43,17 +50,18 @@ const run = cmd=>new Promise(r=>{ wait = r; sf.stdin.write(cmd); });
     else g = new Chess(src.fen);
     const fen = g.fen(), mv = g.move(gm); if(!mv) throw new Error(name+': bad game move '+gm); g.undo();
     const r = await run(`setoption name MultiPV value 5\nposition fen ${fen}\ngo depth 18\n`);
-    const L = {};
+    const L = {}; let ev = null;
     r.split('\n').filter(l=>/^info .* pv /.test(l)).forEach(l=>{
       const k = +l.match(/multipv (\d+)/)[1], sc = l.match(/score (cp|mate) (-?\d+)/), u = l.match(/ pv (\S+)/)[1];
       const h = new Chess(fen), x = h.move({from:u.slice(0,2), to:u.slice(2,4), promotion:u[4]});
       L[k] = (x ? x.san : u)+' '+(sc[1]==='mate' ? '#'+sc[2] : sc[2]);
+      if(k===1){ const w = fen.split(' ')[1]==='w' ? 1 : -1; ev = sc[1]==='mate' ? { cp:null, mate:w * +sc[2] } : { cp:w * +sc[2], mate:null }; }
     });
     console.log(name.padEnd(32), g.moves().length+' legal', '| top:', Object.values(L).join(', '));
     // noImbalances: one side so far ahead that Stockfish gives no breakdown (kept out of Imbalance reading)
     const noImb = /knight fork|Stalemate/.test(name);
     out.push({ key:'test-'+out.length, fen, side:fen.split(' ')[1], moveNo:+fen.split(' ')[5], title:name, year:'', last,
-               hist:{ uci:mv.from+mv.to+(mv.promotion||''), san:mv.san, from:mv.from, to:mv.to }, ...(src.moves ? { sans:src.moves } : {}), ...(noImb ? { noImbalances:true } : {}) });
+               hist:{ uci:mv.from+mv.to+(mv.promotion||''), san:mv.san, from:mv.from, to:mv.to }, ...(src.moves ? { sans:src.moves } : {}), ...(src.planq ? { eval:ev, planq:true } : {}), ...(noImb ? { noImbalances:true } : {}) });
   }
   require('fs').writeFileSync(process.argv[2], JSON.stringify(out));
   sf.kill();
