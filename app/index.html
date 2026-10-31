@@ -1338,6 +1338,9 @@ const IMBALANCE_SKIP = /*IMBALANCE_SKIP*/["r2qk1nr/ppbn1ppp/2p5/2Pppb2/1P1P4/P1N
 // by FEN; filled for the master positions, the explorer and test positions). Without them: a piece on
 // its first square counts as never moved (a rook only with its castling right).
 const DEV_ON = true;   // (was beta only)
+// The beta site (beta/index.html), known from the start: some lists below depend on it (BETA, further
+// down, is the same)
+const BETA_SITE = document.documentElement.classList.contains('beta');
 const DEV_SQ = { w:['b1','g1','c1','f1','d1','a1','h1'], b:['b8','g8','c8','f8','d8','a8','h8'] };
 const DEV_MINOR = { w:['b1','g1','c1','f1'], b:['b8','g8','c8','f8'] };
 const DEV_PIECE = { b1:'N', g1:'N', c1:'B', f1:'B', d1:'Q', a1:'R', h1:'R', b8:'n', g8:'n', c8:'b', f8:'b', d8:'q', a8:'r', h8:'r' };
@@ -1502,6 +1505,43 @@ const GRADES = ["<strong>Best</strong>: the engine's top choice.", "<strong>Good
 // a string, or [heading, text, bullets?] (text may be ''). In a review with an imbalance selected (a
 // row, or a plan line), that imbalance's own help shows instead (ASP_HELP).
 const HELP = {
+  // the Plan finder: one help per question, while answering (task) and once checked (review)
+  planq_urgent: {
+    title:'Anything urgent?',
+    task:[
+      "First, what can't wait: checks, captures and threats, for both sides.",
+      ['The answers', '', ["Quiet: nothing to win or to parry right now.", "Can win something: a capture or a threat wins material, and Stockfish's best move goes for it.", "Must defend: the opponent threatens a piece, or mates."]],
+      ['Tips', '', ["Look at every check, capture and threat, yours and theirs.", "A pawn that looks free may be poisoned: look at what follows.", "A pawn of yours under attack isn't urgent when nothing can be done about it."]],
+    ],
+    review:[
+      ['Score', "The right answer: 100%. Anything else: nothing."],
+      ['What follows', '', ["A piece or more at stake, or a mate: the position ends here. The threat comes first.", "A pawn or two: noted, then the next questions."]],
+      ['Board', "The threats are drawn: what can be won, and by whom."],
+    ],
+  },
+  planq_winning: {
+    title:"Who's winning?",
+    task:[
+      "Judge the position as a whole: who is better?",
+      ['The answers', '', ["Balanced: Stockfish within ±0.5.", "Better: half a pawn or more ahead."]],
+      ['Tips', '', ["Start with material, then what lasts (pawns, space), then what can change fast (pieces, kings).", "A pawn won in question 1 counts: Stockfish sees the capture."]],
+    ],
+    review:[
+      ['Score', "The right answer: 100%. Within 0.15 of the ±0.5 line, the neighbouring answer: half."],
+    ],
+  },
+  planq_plan: {
+    title:'Choose a plan',
+    task:[
+      "Two decisions follow from the imbalances: whether to trade, and how to play.",
+      ['Trades', '', ["Trade: up material, better pawns, cramped, or worse pieces.", "Keep pieces: down material, more space, better pieces, or their king is weak.", "Either: the reasons cancel out."]],
+      ['Dynamic or positional', '', ["Open / Attack: an edge that fades (better pieces, development lead, weak enemy king): use it now.", "Close / Improve: an edge that lasts (material, pawns, space): no hurry, improve first.", "Either: the reasons cancel out."]],
+    ],
+    review:[
+      ['Score', "Each row counts half.", ["Right: full points.", "One reason short of a side (yellow): half.", "Missed: nothing."]],
+      ['Why', "Under each row, its main reason. Tap the underlined criterion to see it on the board, then the '?' button for how it's counted."],
+    ],
+  },
   imbalances: {
     title:'Imbalance reading',
     task:[
@@ -2566,7 +2606,7 @@ function waitText(a, r, short){
   if(source!=='masters' && myWorkPending()) return short ? 'Finding positions…' : 'Finding positions in your games…';
   return none ? 'No positions yet' : 'All played today';
 }
-const canOpen = (a, r)=>progressLoaded && upcomingFor(ctx(a, r))[1] >= 0;   // never before your results are known
+const canOpen = (a, r)=>progressLoaded && (a==='planq' || upcomingFor(ctx(a, r))[1] >= 0);   // never before your results are known (the Plan finder picks its own master positions)
 // Points curPos/side at the open exercise's own position.
 function syncPos(){
   if(!ACTIVITIES.includes(screen)) return;
@@ -2615,7 +2655,7 @@ function prefetchNext(){
   withPrep('front', ()=>{
     if(replayMode){ const e = replayQueue[replayIdx+1]; if(e) prepareFor(e.a, e.pos); return; }
     const [t, i] = nextTarget();
-    if(i>=0) prepareFor(exerciseOf(t), posAt(t, i));
+    if(i>=0 && t!=='planq') prepareFor(exerciseOf(t), posAt(t, i));
   });
 }
 // Move selection ahead of time: once a position's top 5 (and the game move's search) are in, its four
@@ -2641,7 +2681,7 @@ function upcomingFor(t){
 // picks) and Move selection would open, and where the routine resumes.
 function prefetchHome(){
   const ts = [ctx('analysis', false), ctx('final', false), ctx('candidates', false)];
-  if(routineNext!=='imbalances') ts.push(ctx(routineNext, true));
+  if(routineNext!=='imbalances' && routineNext!=='planq') ts.push(ctx(routineNext, true));   // (the Plan finder has no track)
   ts.push(ctx('imbalances', false));
   withPrep('low', ()=>ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0) prepareFor(exerciseOf(t), posAt(x, i)); }));
 }
@@ -2658,7 +2698,7 @@ function advance(a){
 // find the candidate moves, choose between them — then round again. Each step is on that
 // exercise's own next position (doing them on one position would let Candidate moves' review
 // give away the Move selection answer).
-const ROUTINE = ['imbalances', 'analysis', 'candidates', 'final'];
+const ROUTINE = BETA_SITE ? ['imbalances', 'planq', 'candidates', 'final'] : ['imbalances', 'analysis', 'candidates', 'final'];   // (beta: the Plan finder)
 let routine = false;
 // "Next" button: in routine mode, on to the next exercise of the loop; otherwise this exercise's
 // next position.
@@ -2678,6 +2718,7 @@ function nextPosition(){
 // Opening an exercise: an unfinished question carries on where it was left; a position whose
 // review was already reached moves on to a new position.
 function openActivity(name){
+  if(name==='planq'){ screen = 'planq'; helpVisible = false; if(planq && (planq.done || planq.test!=null)) planq = null; render(); return; }   // (its own positions: renderPlanq)
   screen = name; helpVisible = false; selSquare = null; promoPending = null;
   syncPos();
   if(!curPos){ render(); return; }
@@ -2703,7 +2744,7 @@ const replayLeft = ()=>replayQueue.slice(replayIdx+1).filter(e=>!isPlayed(e.key)
 // Where "Next" leads: the routine's next exercise, or this exercise's next position.
 function nextTarget(){
   if(replayMode) return [ctx(screen), 0];   // a replay always goes on (or finishes)
-  return routine ? upcomingFor(ctx(routineAfter(screen)))
+  return routine ? (routineAfter(screen)==='planq' ? ['planq', 0] : upcomingFor(ctx(routineAfter(screen))))   // (the Plan finder always has a position)
                  : [ctx(screen), firstAvailable(ctx(screen), seqBy[ctx(screen)]+1)];
 }
 function nextLabel(){
@@ -4171,7 +4212,10 @@ function miniRowHtml(m, highlight, fadeIn){
 // LEVEL_K (15%) of the way toward its accuracy. So one bad position costs a little, a run of
 // good ones lifts it steadily, and old results fade out. Not Elo: there's no win/lose, just how
 // close you were — and no opponent rating, since every position is scored on the same scale.
-const ACTS = ['imbalances', 'analysis', 'candidates', 'final'];
+// (beta: the Plan finder in Position evaluation's place in the routine, the averages and the profile;
+// Position evaluation stays, as a side exercise)
+const ACTS = BETA_SITE ? ['imbalances', 'planq', 'candidates', 'final'] : ['imbalances', 'analysis', 'candidates', 'final'];
+const ALL_ACTS = ['imbalances', 'analysis', 'candidates', 'final', 'planq'];   // every kind of result kept (both sites share them)
 const zeroCounts = ()=>Object.fromEntries(ACTS.map(a=>[a, 0]));
 // The exercises' icons (line drawings in the text colour): a balance, a gauge, a light bulb, sorting best first.
 const actIcon = d=>`<svg class="act-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -4180,8 +4224,10 @@ const ACT_GLYPHS = {
   analysis:   actIcon('<path d="M3.5 17a8.5 8.5 0 1 1 17 0"/><path d="M12 17l4.5-5"/><circle cx="12" cy="17" r="1.3"/><path d="M6 13.5l1 .6M12 8.5v1.2M18 13.5l-1 .6"/>'),
   candidates: actIcon('<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2h5c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>'),
   final:      actIcon('<path d="M4 6h10M4 11h7M4 16h4"/><path d="M18 5v14M15 16l3 3 3-3"/>'),
+  planq:      actIcon('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>'),
 };
-const ACT_NAMES = { imbalances:'Imbalance reading', analysis:'Position evaluation', candidates:'Candidate moves', final:'Move selection' };
+const ACT_DESC = { imbalances:'Ponder each strategic aspect.', analysis:'Gauge the overall position.', candidates:'Identify the most promising moves.', final:'Decide what you should play.', planq:'Spot the urgent, judge, choose a plan.' };
+const ACT_NAMES = { imbalances:'Imbalance reading', analysis:'Position evaluation', candidates:'Candidate moves', final:'Move selection', planq:'Plan finder' };
 // ---- The desktop layout (html.desk2: the sidebar menu and the pages laid out for a computer) ----
 // A sidebar on every page: the logo (home), the routine, the four exercises with your averages, your
 // profile, settings, support; the language and installing the app at the bottom.
@@ -4202,13 +4248,14 @@ const SIDE_ICONS = {
 };
 // Leaving an exercise from the sidebar: as its own back arrow does (the routine remembers where it was).
 function leaveExercise(){
+  if(screen==='planq'){ if(routine){ routine = false; setRoutineNext(planq && planq.done ? routineAfter('planq') : 'planq'); } return; }
   if(!ACTIVITIES.includes(screen)) return;
   if(routine){ const s = st(screen); routine = false; setRoutineNext(s.checked ? routineAfter(screen) : screen); }
   testMode = false; replayMode = false; selSquare = null; promoPending = null;
 }
 function sideGo(where){
   if(where==='routine'){ leaveExercise(); return startRoutine(); }
-  if(ACTIVITIES.includes(where)){ if(!canOpen(where, false)) return; leaveExercise(); routine = false; return openActivity(where); }
+  if(ACTIVITIES.includes(where) || where==='planq'){ if(!canOpen(where, false)) return; leaveExercise(); routine = false; return openActivity(where); }
   leaveExercise();
   if(where==='settings') settingsRebuild = true;
   if(where==='support'){ supportFrom = 'home'; supportRebuild = true; }
@@ -4223,7 +4270,7 @@ function renderSide(){
   if(!DESK) return;
   let nav = document.getElementById('side');
   if(!nav){ nav = document.createElement('nav'); nav.id = 'side'; nav.className = 'side'; nav.setAttribute('aria-label', 'Menu'); document.body.insertBefore(nav, document.querySelector('.wrap')); }
-  const at = routine && ACTIVITIES.includes(screen) ? 'routine' : onProfile() ? 'account' : screen;
+  const at = routine && (ACTIVITIES.includes(screen) || screen==='planq') ? 'routine' : onProfile() ? 'account' : screen;
   const c = todayBy(), total = ACTS.reduce((t,a)=>t+Math.min(c[a], DAILY_GOAL), 0);
   const item = (k, icon, name, extra, dis)=>`<button class="side-item${at===k ? ' on' : ''}" data-side="${k}"${dis ? ' disabled' : ''}${at===k ? ' aria-current="page"' : ''}>${icon}<span class="side-name">${name}</span>${extra ? `<span class="side-n">${extra}</span>` : ''}</button>`;
   const html = `
@@ -4231,7 +4278,7 @@ function renderSide(){
     <div class="side-sec">Exercises</div>
     ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
-    ${BETA ? `<div class="side-sec">Explore</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}${item('planq', SIDE_ICONS.planq, 'Plan finder')}` : ''}
+    ${BETA ? `<div class="side-sec">Explore</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}${(L=>item('analysis', ACT_GLYPHS.analysis, ACT_NAMES.analysis, progressLoaded && L.rated ? pct(L.level) : '', !canOpen('analysis', false)))(levelNow('analysis'))}` : ''}
     <div class="side-sec">You</div>
     ${item('account', '<img class="side-app-icon" src="icons/icon.svg" alt="" aria-hidden="true">', displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
@@ -4251,7 +4298,7 @@ function renderSide(){
 }
 const GEAR_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.85 1.85M16.65 16.65l1.85 1.85M5.5 18.5l1.85-1.85M16.65 7.35l1.85-1.85" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 const BACK_ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const ACT_SHORT = { imbalances:'Imbalances', analysis:'Evaluation', candidates:'Candidates', final:'Selection' };   // where space is short (profile)
+const ACT_SHORT = { imbalances:'Imbalances', analysis:'Evaluation', candidates:'Candidates', final:'Selection', planq:'Plans' };   // where space is short (profile)
 const LEVEL_K = 0.15, DAILY_GOAL = 3;
 // Shown as "Average 71%"; changes are whole points of the shown value ("▲ 3%").
 const pct = v => Math.round(v) + '%';
@@ -4380,7 +4427,7 @@ async function initProgress(){
         for(let after = -1;;){
           const snap = await col.where('ts', '>', after).orderBy('ts').limit(1000).get();
           const rows = snap.docs.map(d=>d.data());
-          fromDb.push(...rows.filter(r=>r && ACTS.includes(r.a) && typeof r.acc==='number'));
+          fromDb.push(...rows.filter(r=>r && ALL_ACTS.includes(r.a) && typeof r.acc==='number'));
           if(rows.length < 1000) break;
           after = rows[rows.length-1].ts;
         }
@@ -4712,10 +4759,7 @@ function renderHome(){
         return `<button class="seg-btn${k===source?' active':''}" role="radio" aria-checked="${k===source}" data-src="${k}" ${off ? 'disabled title="No positions from your games yet"' : ''}>${k==='mine' && LANG==='fr' ? '<span data-no-i18n>Miennes</span>' : v}</button>`; }).join('')}</div>
     </div>
     <div class="cards">
-      ${[['imbalances',ACT_GLYPHS.imbalances,'Ponder each strategic aspect.'],
-         ['analysis',ACT_GLYPHS.analysis,'Gauge the overall position.'],
-         ['candidates',ACT_GLYPHS.candidates,'Identify the most promising moves.'],
-         ['final',ACT_GLYPHS.final,'Decide what you should play.']].map(([a, glyph, desc])=>{
+      ${ACTS.concat(BETA ? ['analysis'] : []).map(a=>[a, ACT_GLYPHS[a], ACT_DESC[a]]).map(([a, glyph, desc])=>{
         const L = levelNow(a), open = canOpen(a, false);
         if(!open) desc = waitText(a, false);
         return `<button class="card" data-go="${a}" ${open ? '' : 'disabled'}>
@@ -4724,9 +4768,7 @@ function renderHome(){
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small></span>
         </button>`; }).join('')}
       ${BETA ? `<button class="card xp-entry" id="xpOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.explorer}</span>
-          <span><span class="card-title">Strategy explorer <span class="title-badge">Beta</span></span><span class="card-desc">Play moves, watch the imbalances and plans shift.</span></span></button>
-        <button class="card xp-entry" id="pqOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.planq}</span>
-          <span><span class="card-title">Plan finder <span class="title-badge">Beta</span></span><span class="card-desc">Choose the plan to follow in a master position.</span></span></button>` : ''}
+          <span><span class="card-title">Strategy explorer <span class="title-badge">Beta</span></span><span class="card-desc">Play moves, watch the imbalances and plans shift.</span></span></button>` : ''}
     </div>
     <div class="home-donate"><button class="donate-badge" id="donateBtn"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button></div>
     ${engineErrorBanner()}
@@ -4736,7 +4778,6 @@ function renderHome(){
   app.querySelectorAll('.card[data-go]').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
   document.getElementById('accountBtn').onclick = ()=>{ screen = 'account'; render(); };
   const xpOpen = document.getElementById('xpOpen'); if(xpOpen) xpOpen.onclick = ()=>{ screen = 'explorer'; render(); };
-  const pqOpen = document.getElementById('pqOpen'); if(pqOpen) pqOpen.onclick = ()=>{ screen = 'planq'; render(); };
   document.getElementById('routineBtn').onclick = startRoutine;
   prefetchHome();
   progressJustLoaded = false;
@@ -5564,7 +5605,7 @@ function siteLine(site){
   return r && r.error && !myFetching ? `Couldn't check ${name}: ${r.error}.` : '';
 }
 function positionsSection(){
-  const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = Object.fromEntries(ACTS.map(a=>[a, POOLS[a].length]));
+  const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = Object.fromEntries(ACTS.filter(a=>POOLS[a]).map(a=>[a, POOLS[a].length]));
   // One counter: a game is done once it is read (Lichess's analysis or the app's quick scan) and
   // each of its likely mistakes has been checked by the engine.
   const isDone = g=>g.status!=='queued' && !toPrepare.has(g) && !(g.positions||[]).some(p=>p.pending && !myTried.has(job(p)));
@@ -5588,7 +5629,7 @@ function positionsSection(){
       <section class="mg-card">
         <div class="mg-table-wrap"><table class="mg-table">
           <thead><tr><th></th>${cols.map(([label])=>`<th scope="col">${label}</th>`).join('')}</tr></thead>
-          <tbody>${row('Games', ([, games])=>games)}${ACTS.map(a=>row(`<span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}`, ([, , c])=>c[a])).join('')}</tbody>
+          <tbody>${row('Games', ([, games])=>games)}${ACTS.filter(a=>a!=='planq').map(a=>row(`<span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}`, ([, , c])=>c[a])).join('')}</tbody>
         </table></div>
         ${status ? `<p class="mg-status">${status}</p>` : ''}
         ${myGames.length ? (myConfirmClear
@@ -6789,6 +6830,44 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Forced mate: ++ (#n on the king and the mating piece, move in red).": "Mat forcé : ++ (#n sur le roi et la pièce qui mate, coup en rouge).",
 "Weak enemy king: bring pieces, open lines.": "Roi adverse faible : amenez des pièces, ouvrez des lignes.",
 "Weak king: trade attackers, keep your pawns, keep lines closed.": "Roi faible : échangez les attaquants, gardez vos pions, gardez les lignes fermées.",
+"Anything urgent?": "Quelque chose d'urgent ?",
+"First, what can't wait: checks, captures and threats, for both sides.": "D'abord, ce qui ne peut pas attendre : échecs, prises et menaces, des deux côtés.",
+"The answers": "Les réponses",
+"Quiet: nothing to win or to parry right now.": "Calme : rien à gagner ni à parer pour l'instant.",
+"Can win something: a capture or a threat wins material, and Stockfish's best move goes for it.": "Peut gagner quelque chose : une prise ou une menace gagne du matériel, et le meilleur coup de Stockfish y va.",
+"Must defend: the opponent threatens a piece, or mates.": "Doit se défendre : l'adversaire menace une pièce, ou mate.",
+"Look at every check, capture and threat, yours and theirs.": "Regardez chaque échec, prise et menace, les vôtres et les siennes.",
+"A pawn that looks free may be poisoned: look at what follows.": "Un pion qui semble gratuit peut être empoisonné : regardez la suite.",
+"A pawn of yours under attack isn't urgent when nothing can be done about it.": "Un de vos pions attaqué n'est pas urgent quand on ne peut rien y faire.",
+"The right answer: 100%. Anything else: nothing.": "La bonne réponse : 100 %. Le reste : rien.",
+"What follows": "La suite",
+"A piece or more at stake, or a mate: the position ends here. The threat comes first.": "Une pièce ou plus en jeu, ou un mat : la position s'arrête là. La menace passe d'abord.",
+"A pawn or two: noted, then the next questions.": "Un pion ou deux : c'est noté, puis les questions suivantes.",
+"The threats are drawn: what can be won, and by whom.": "Les menaces sont dessinées : ce qui peut être gagné, et par qui.",
+"Who's winning?": "Qui gagne ?",
+"Judge the position as a whole: who is better?": "Jugez la position dans son ensemble : qui est mieux ?",
+"Balanced: Stockfish within ±0.5.": "Équilibrée : Stockfish entre −0,5 et +0,5.",
+"Better: half a pawn or more ahead.": "Mieux : un demi-pion d'avance ou plus.",
+"Start with material, then what lasts (pawns, space), then what can change fast (pieces, kings).": "Commencez par le matériel, puis ce qui dure (pions, espace), puis ce qui peut vite changer (pièces, rois).",
+"A pawn won in question 1 counts: Stockfish sees the capture.": "Un pion gagné à la question 1 compte : Stockfish voit la prise.",
+"The right answer: 100%. Within 0.15 of the ±0.5 line, the neighbouring answer: half.": "La bonne réponse : 100 %. À moins de 0,15 de la limite de ±0,5, la réponse voisine : la moitié.",
+"Choose a plan": "Choisissez un plan",
+"Two decisions follow from the imbalances: whether to trade, and how to play.": "Deux décisions découlent des déséquilibres : échanger ou non, et comment jouer.",
+"Trades": "Échanges",
+"Trade: up material, better pawns, cramped, or worse pieces.": "Échanger : matériel en plus, meilleurs pions, à l'étroit, ou moins bonnes pièces.",
+"Keep pieces: down material, more space, better pieces, or their king is weak.": "Garder les pièces : matériel en moins, plus d'espace, meilleures pièces, ou leur roi est faible.",
+"Either: the reasons cancel out.": "Au choix : les raisons s'annulent.",
+"Dynamic or positional": "Dynamique ou positionnel",
+"Open / Attack: an edge that fades (better pieces, development lead, weak enemy king): use it now.": "Ouvrir / Attaquer : un avantage qui s'efface (meilleures pièces, avance de développement, roi adverse faible) : utilisez-le maintenant.",
+"Close / Improve: an edge that lasts (material, pawns, space): no hurry, improve first.": "Fermer / Améliorer : un avantage qui dure (matériel, pions, espace) : rien ne presse, améliorez d'abord.",
+"Each row counts half.": "Chaque ligne compte pour moitié.",
+"Right: full points.": "Juste : tous les points.",
+"One reason short of a side (yellow): half.": "À une raison près (jaune) : la moitié.",
+"Missed: nothing.": "Manqué : rien.",
+"Why": "Pourquoi",
+"Under each row, its main reason. Tap the underlined criterion to see it on the board, then the '?' button for how it's counted.": "Sous chaque ligne, sa raison principale. Touchez le critère souligné pour le voir sur l'échiquier, puis le bouton « ? » pour savoir comment il est compté.",
+"Plan finder": "Recherche du plan",
+"Spot the urgent, judge, choose a plan.": "Repérer l'urgent, juger, choisir un plan.",
 "Development": "Développement",
 "Development (minors to move)": "Développement (pièces mineures à sortir)",
 "Minors to move: Development replaces Activity.": "Pièces mineures à sortir : le Développement remplace l'Activité.",
@@ -7629,7 +7708,7 @@ function renderPlanq(){
   // the note or explanations at their longest (planqReserve): nothing moves once checked
   // the first line, as in the other exercises: the question, then the score in its place at the end (both
   // kept in the layout, the other one hidden, so the line keeps its height)
-  const scoreLine = `<div class="score pq-top">${q.done ? `<span class="score-num">${total}%</span><span class="score-label">Accuracy</span>` : ''}${dots}</div>`;
+  const scoreLine = `<div class="score pq-top">${q.done ? `<span class="score-num">${total}%</span><span class="score-label">Accuracy</span>${levelChip(q, true)}` : ''}${dots}</div>`;
   const promptLine = `<div class="pq-top pq-ask"><p class="prompt">${planqPrompt(q)}</p>${dots}</div>`;
   const top = `<div class="pq-reserve">${q.done ? `<div aria-hidden="true" class="pq-ghost-text">${promptLine}</div>${scoreLine}` : `<div aria-hidden="true" class="pq-ghost-text"><div class="score pq-top"><span class="score-num">100%</span></div></div>${promptLine}`}</div>`;
   const prompt = '';   // (at the end the score takes the question's place, as in the other exercises)
@@ -7640,7 +7719,7 @@ function renderPlanq(){
         ${top}
         ${prompt}
         ${body}
-        ${q.done ? `<div class="actions-row split">${lichessLink(p)}<button class="btn" id="pqNext">Next position</button></div>`
+        ${q.done ? `<div class="actions-row split">${lichessLink(p)}<button class="btn" id="pqNext">${routine ? nextLabel() : 'Next position'}</button></div>`
           : `<div class="actions-row">${q.checked ? `<button class="btn" id="pqGo">${last ? 'See the review' : 'Next question'}</button>` : `<button class="btn" id="pqCheck" ${ready ? '' : 'disabled'}>Check</button>`}</div>`}`;
   // ghost: the same for every position (the plan question, the tallest), so the panel's height, and the
   // board's size, give nothing away
@@ -7650,8 +7729,8 @@ function renderPlanq(){
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
-      <h1>Plan finder <span class="title-badge">Beta</span></h1>
-      <span class="title-spacer" aria-hidden="true"></span>
+      <h1>${routine ? `Routine <span class="title-badge">Plan finder</span>` : q.test!=null ? `Test <span class="title-badge">Plan finder</span>` : `Plan finder <span class="title-badge">Beta</span>`}</h1>
+      <button class="icon-btn" id="helpBtn" aria-label="How this exercise works">?</button>
     </div>
     ${posBar()}
     ${boardHtml(false)}
@@ -7659,15 +7738,44 @@ function renderPlanq(){
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(q.checked && (q.step===0 || isPlan)) wireAspectView(p, q);
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
-  on('homeBtn', ()=>{ if(q.test!=null){ planq = null; screen = 'tests'; } else screen = 'home'; render(); });
-  on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.scores[step] = isPlan ? planqPlanScore(q) : ans.score(pick); if(last) q.done = true; render(); });
+  on('homeBtn', ()=>{ helpVisible = false; if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
+  on('helpBtn', ()=>{ helpVisible = true; render(); });
+  on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.scores[step] = isPlan ? planqPlanScore(q) : ans.score(pick);
+    if(last){ q.done = true; planqRecord(q, Math.round(asked.reduce((t, s)=>t + (q.scores[s] || 0), 0) / steps)); }
+    render(); });
   on('pqGo', ()=>{ q.step++; q.checked = false; q.aspView = q.aspPiece = q.aspKing = null; render(); });
   on('pqNext', ()=>{
+    helpVisible = false;
+    if(routine){ const a = routineAfter('planq'); setRoutineNext(a); planq = null; return openActivity(a); }
     if(q.test!=null){ const j = TEST_POSITIONS.findIndex((x, k)=>k > q.test && x.eval); if(j >= 0) planqTest(j); else { planq = null; screen = 'tests'; render(); } return; }
     planq = planqPick() || null; render(); });
   app.querySelectorAll('.layer:not(.ghost) .pq-reason[data-key]').forEach(b=>b.onclick = ()=>{ q.aspView = q.aspView===b.dataset.key ? null : b.dataset.key; q.aspPiece = q.aspKing = null; render(); });
   app.querySelectorAll('.layer:not(.ghost) .pq-choice[data-v]').forEach(b=>b.onclick = ()=>{ if(q.checked) return; q.picks[step] = b.dataset.v; render(); });
   app.querySelectorAll('.layer:not(.ghost) .pq-side[data-row]').forEach(b=>b.onclick = ()=>{ if(q.checked) return; q.picks['row:' + b.dataset.row] = b.dataset.d; render(); });
+  // help: the question's own (while answering, then its review); a criterion tapped on the board: that criterion's
+  if(helpVisible){
+    const h = helpBody('planq_' + step, q.checked, q.checked && q.aspView && ASP_HELP[q.aspView] ? q.aspView : null);
+    const div = document.createElement('div');
+    div.className = 'modal-backdrop';
+    div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box" role="dialog" aria-label="${h.title}"><h3>${h.title}</h3>${h.html}<div class="modal-actions"><button class="btn" id="closeHelp">Got it</button></div></div></div>`;
+    app.appendChild(div);
+    div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')){ helpVisible = false; render(); } });
+    document.getElementById('closeHelp').onclick = ()=>{ helpVisible = false; render(); };
+  }
+}
+// A finished position's result (beta: the Plan finder counts in the routine and the averages): kept like the
+// other exercises' (recordResult), never on the missed list (Replay opens the four exercises only)
+function planqRecord(q, acc){
+  if(q.rec || acc==null) return;
+  if(q.test!=null){ q.rec = { test:true }; return; }   // test positions never count
+  const before = levelNow('planq');
+  const r = { a:'planq', acc: Math.round(acc), ts: Date.now(), src:'masters', key: q.p.key, miss:false };
+  results.push(r);
+  stat('pos', { a:'planq', acc: r.acc, src: r.src, n1: routine ? 1 : 0, n2: 0 });
+  if(resultsDb) resultsDb.add(r).catch(()=>{});
+  saveLocal();
+  const after = levelNow('planq');
+  q.rec = { n: after.n, level: after.level, delta: before.rated ? Math.round(after.level) - Math.round(before.level) : null, rated: after.rated };
 }
 function renderScreen(){
   syncPos();
