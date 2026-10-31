@@ -7358,7 +7358,7 @@ function renderExplorer(){
 // 1. Is anything urgent? (checks, captures, threats: Other threats at ++, 3 pawns or more, or a mate,
 //    for either side). If it is, the position ends there: the threat comes first.
 // 2. Who's winning? (the engine: balanced under 0.5; near that line, ±0.15, the neighbouring answer gets half)
-// 3. Choose a plan, titled with the phase: three dilemmas, one side each (PLANQ_ROWS). Each criterion votes
+// 3. Choose a plan, titled with the phase: two dilemmas, one side each (PLANQ_ROWS). Each criterion votes
 //    on them (PLANQ_VOTES: + 1, ++ 2, for the side to play); a row is decided when its net vote reaches 2,
 //    else either side works (not scored). A quiet position needs one decided row at least.
 // A wrong answer shows the correction and the next question follows. Results are not recorded.
@@ -7366,14 +7366,13 @@ const PLANQ_EDGE = 50, PLANQ_NEAR = 15;   // centipawns: balanced under 0.5; hal
 const PLANQ_STEPS = ['urgent', 'winning', 'plan'];
 const PLANQ_ROWS = [
   { key:'pieces',   name:'Pieces',   sides:{ 1:'Trade pieces', '-1':'Keep pieces' }, short:{ 1:'Trade', '-1':'Keep' } },
-  { key:'position', name:'Position', sides:{ 1:'Open it', '-1':'Keep it closed' }, short:{ 1:'Open', '-1':'Closed' } },
-  { key:'pace',     name:'Pace',     sides:{ 1:'Act now', '-1':'Improve slowly' }, short:{ 1:'Act', '-1':'Improve' } },
+  { key:'approach', name:'Approach', sides:{ 1:'Open and attack', '-1':'Close and improve' }, short:{ 1:'Attack', '-1':'Improve' } },
 ];
 const PLANQ_CLEAR = 2;
-// a criterion at + for the side to play: its votes [pieces (1 trade), position (1 open), pace (1 act)]; at − the reverse
-// (static edges: trade, no hurry, but space wants pieces on and the position closed; dynamic edges: keep
-// pieces, open, act now; in an endgame an active king wants trades)
-const PLANQ_VOTES = { material:[1, 0, -1], pawns:[1, 0, -1], space:[-1, -1, -1], activity:[-1, 1, 1], development:[0, 1, 1], king:[-1, 1, 1], kingEg:[1, 0, 0], eval:[1, 0, -1] };
+// a criterion at + for the side to play: its votes [pieces (1 trade), approach (1 open and attack)]; at − the reverse
+// (static edges: trade, keep it closed and improve, no hurry; but space wants pieces on; dynamic edges:
+// keep pieces, open and attack before they fade; in an endgame an active king wants trades)
+const PLANQ_VOTES = { material:[1, -1], pawns:[1, -1], space:[-1, -1], activity:[-1, 1], development:[0, 1], king:[-1, 1], kingEg:[1, 0], eval:[1, -1] };
 let planq = null;   // { p, info, vals, urgent, phase, rows, step, picks, scores, checked, done, aspView, aspPiece, aspKing, seen }
 function planqInfo(p){
   const m = masterEvals && masterEvals[p.key];
@@ -7387,7 +7386,7 @@ function planqUrgent(p, vals, info){
   return l >= 2 ? 'win' : l <= -2 ? 'defend' : null;
 }
 const planqPhase = fen=>devActive(fen) ? 'opening' : isEndgame(fen) ? 'endgame' : 'middlegame';
-// The three dilemmas for the side to play: each row's net vote, its answer (1, -1, or 0: either works) and
+// The two dilemmas for the side to play: each row's net vote, its answer (1, -1, or 0: either works) and
 // its reasons [{ key (the criterion, for its marks), situation, dir }]
 function planqRows(p, vals, info){
   const me = p.side, sgn = me==='w' ? 1 : -1, them = other(me);
