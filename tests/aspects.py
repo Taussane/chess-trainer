@@ -281,7 +281,7 @@ async def main():
             knight: M('4k3/8/8/8/8/8/8/1N2K3 w - - 0 1', 'activity').n,
             knightOut: M('4k3/8/8/8/8/2N5/8/4K3 w - - 0 1', 'activity').n,
           }; })()""")
-        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2w d5b g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'e1Total +0 e8Total +0', 'knightOut': 'c3+8 e1Total +8 e8Total +0'}   # (a knight never moved: Development, nothing developed)
+        want = {'material': 'b1w d2w e2w', 'pair': 'c1w f1w', 'pawns': 'a2w c2w d5b g2w h2w', 'threats': 'd5c6w', 'hanging': 'd2d5w d5d2b', 'guarded': '', 'spaceFew': 0, 'knight': 'b1+3 e1Total +3 e8Total +0', 'knightOut': 'c3+8 e1Total +8 e8Total +0'}   # (a knight never moved, but a bare ending: Activity, not Development)
         for k, v in want.items():
             if marks[k] != v: fails.append(f'{k} marks: {marks[k]}, expected {v}')
         # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (the move's arrow, no rings)
