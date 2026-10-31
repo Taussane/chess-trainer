@@ -102,6 +102,9 @@
   .icon-btn,.del-btn,.chip-btn{position:relative;}
   .icon-btn::after,.del-btn::after{content:''; position:absolute; inset:-8px;}
   .chip-btn::after{content:''; position:absolute; inset:-8px -2px;}
+  /* no blue flash or ring on tap or click (phones' tap highlight, the browser's focus ring after a click); the keyboard's ring stays (:focus-visible) */
+  html{-webkit-tap-highlight-color:transparent;}
+  :focus:not(:focus-visible){outline:none;}
   .icon-btn:focus-visible,.btn:focus-visible,.card:focus-visible,.evalbar-v:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 
   /* Home */
