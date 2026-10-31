@@ -32,12 +32,14 @@ const T = [
   // Black's Nd7 Nf6 Bb7 Re8 Bf8 (+1 each): Black + by 1. Bf8 went back to its square (Be7-f8): it has moved, so it counts (the game's moves are needed: sans).
   ['Development marks', {moves:'e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3 Nb8 d4 Nbd7 Nbd2 Bb7 Bc2 Re8 Nf1 Bf8 Ng3 g6'}, 'a4'],
   // Plan finder (beta): master positions (Steinitz's and Lasker's matches) with their evaluation (eval, White's side):
-  // Black can win something, White must defend, two quiet ones with both rows decided, one with Either on Trades.
-  ['Plan finder: can win something', {moves:'e4 e5 Nf3 Nc6 Nc3 Nf6 Bb5 Bb4 O-O O-O Nd5 Nxd5 exd5 e4 dxc6 exf3 Qxf3 dxc6 Bd3 Bd6 b3 Qg5 Bb2 Qxd2 Bc1 Qa5 Bf4 Be6 Rae1 Rfe8 Re3 Bd5 Bxh7+ Kxh7 Qh5+ Kg8 Rh3', planq:true}, 'f6'],
+  // looks free but Stockfish doesn't take, must defend, two quiet ones with both rows decided, Either on Trades, a piece to win (stops), a pawn to win (goes on).
+  ['Plan finder: looks free, not taken', {moves:'e4 e5 Nf3 Nc6 Nc3 Nf6 Bb5 Bb4 O-O O-O Nd5 Nxd5 exd5 e4 dxc6 exf3 Qxf3 dxc6 Bd3 Bd6 b3 Qg5 Bb2 Qxd2 Bc1 Qa5 Bf4 Be6 Rae1 Rfe8 Re3 Bd5 Bxh7+ Kxh7 Qh5+ Kg8 Rh3', planq:true}, 'f6'],
   ['Plan finder: must defend', {moves:'e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 Re1 Nd6 Nxe5 Nxe5 Rxe5+ Be7 Bf1 O-O d4 Bf6 Re1 Re8 c3 Rxe1 Qxe1 Nf5 Bf4 d6 Nd2 Be6 Bd3 Nh4 Ne4 Ng6 Bd2 d5 Nc5 Bc8 Qe3 b6 Nb3 Qd6 Qe8+ Nf8 Re1 Bb7', planq:true}, 'Qe3'],
   ['Plan finder: trade, close / improve', {moves:'e4 e5 Nf3 Nc6 Bb5 Nf6 d3 d6 c3 g6 d4 Bd7 Nbd2 Bg7 dxe5 Nxe5 Nxe5 dxe5 Qe2 O-O f3 a5 Bd3 Qe7 Nf1 Be6 g4 Rfd8 h4 Qd7 Bc2 h5 g5 Ne8 Ne3 Qc6 c4 Nd6 Bd3 Rab8 Nd5 Bxd5 cxd5 Qd7 Bd2 Ra8 Rc1 c6 Rc5 cxd5 Rxd5 Qa4 a3 b6 Bc3 Qe8 Qf2 Nc8 Bb5 Qe7 Rxd8+ Qxd8 O-O Na7 Bc4 Nc6 Bd5 Rc8 f4 Qd7 f5 Ne7', planq:true}, 'Ba2'],
   ['Plan finder: keep, open / attack', {moves:'e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 Re1 Nd6 Nxe5 Nxe5 Rxe5+ Be7 Nc3 O-O Bd3 Bf6 Re3 g6 b3 Re8 Qf3 Bg5', planq:true}, 'Rxe8+'],
   ['Plan finder: either on trades', {moves:'e4 e5 Nf3 Nc6 Bc4 Bc5 Nc3 Nf6 d3 d6 Be3 Bxe3 fxe3 Na5 Bb3 Nxb3 axb3 Ng4 Qe2 f6 d4 c6 O-O-O Qe7 h3 Nh6 g4 Bd7 Nh4 g6 Nf3 Nf7 Rdg1 O-O-O b4 Kb8 Qf2 Rdf8', planq:true}, 'Qg3'],
+  ['Plan finder: can win a piece, stops', {moves:'e4 e5 Nf3 Nc6 Bb5 a6 Ba4 d6 c3 Bd7 d4 g6 Bg5 f6 Be3 Nh6 O-O Bg7 h3 Nf7 Nbd2 O-O dxe5 dxe5 Bc5 Re8 Bb3 b6 Be3 Qe7 Qe2 Nd8 Bd5 Bc6 c4 Bxd5 cxd5 f5 Nc4', planq:true}, 'Nb7'],
+  ['Plan finder: can win a pawn, goes on', {moves:'d4 d5 c4 c6 e3 Bf5 a3 e6 c5 a5 Qb3 Qc7 Nc3 Nd7 Na4 Ngf6 Ne2 Be7 Ng3 Bg6 Bd2 O-O Be2 Rfb8 O-O b6 cxb6 Nxb6 Nxb6 Rxb6 Qc3 Qb7 Ra2 Nd7 Bd1 c5 Ba4 c4 Qc1 Nf6 Bc3 Bd6 f3 Qb8 f4 Bd3 Re1 h5 h4 Qd8 Bd1 g6 Qd2 Rbb8 Qf2 Be7 Bf3 Ne4 Bxe4 dxe4 Nh1', planq:true}, 'Bxh4'],
 ];
 const sf = spawn(SF); let buf = '', wait = null;
 sf.stdout.on('data', d=>{ buf += d; if(wait && buf.includes('bestmove')){ const o = buf; buf = ''; const w = wait; wait = null; w(o); } });
