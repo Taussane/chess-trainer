@@ -529,7 +529,7 @@
   .asp-grid:has(.asp-pair){column-gap:12px;}   /* (beta) two badges a row: a little more room for the names */ .asp-badge.slot{visibility:hidden;}   /* (beta) the real level's place, empty during the question */
   .asp-badge.unset.mine{opacity:.55;}
   .asp-picker.pick{flex-wrap:wrap;} .asp-picker-q{flex:1 0 100%; font-size:0.82rem; color:var(--text-mute); text-align:center; padding:0 0 4px;}
-  .asp-badge.unpicked{opacity:.55;} .asp-badge.unpicked.missed{opacity:1; border-color:transparent; outline:2px dashed var(--bad); outline-offset:-1px;}
+  .asp-badge.unpicked{opacity:.55;}
   .asp-badge.off{background:transparent; color:var(--text-mute); border-color:var(--border); border-style:dashed; opacity:.75;}
   .asp-picker.note{justify-content:center; padding:9px 10px; font-size:0.84rem; color:var(--text-mute); text-align:center;}
   .asp-pick.editing{box-shadow:0 0 0 2px var(--dubious);}
@@ -1603,7 +1603,7 @@ const HELP = {
     note:"Inspired by Stockfish's former evaluation system.",
     review:BETA_SITE ? [
       ['Score', "Whether you found the decisive ones, on the right side.", ["The decisive ones: the big edges (++ or −−), up to 3; when there are none, the small ones (+ or −).", "Each one you found: full points. A small edge when there are big ones: half. Balanced, or the wrong side: nothing.", "The points are shared by the decisive ones, or by your choices if you made more: leaving one out, or adding one, costs its share."]],
-      ['Colours', "The real size shows beside each answer, ringed green, yellow or red; the others show theirs, faded. A decisive one you didn't choose gets a dashed red ring."],
+      ['Colours', "The sizes show from the biggest down: ++ and −− first, then + and −, then =. Each one you chose gets a green, yellow or red ring; the others show faded."],
       ['Details', "Tap an imbalance to see it on the board, then the '?' button for how it's counted."],
       ['Keep in mind', "Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all."],
     ] : [
@@ -3563,15 +3563,19 @@ function reviewBadge(vals, guesses, x, i, shown){
   return `<span class="asp-badge ${levelCls(v)} ${cr >= 0.8 ? 'ok' : cr > 0 ? 'near' : 'bad'}">${SIGNS(v)}</span>`;
 }
 // (beta) Two badges: your side (coloured, empty, as answered), then the real level (empty until revealed;
-// ringed green where your answer gets full points, yellow half, red nothing; faded where you didn't choose it,
-// a dashed red ring for a decisive one left out).
+// ringed green where your answer gets full points, yellow half, red nothing; faded where you didn't choose it).
+// (beta) The review reveals by size: the ++ and −− first, then the + and −, then the "=" (and what's left out),
+// each group at once. `shown` counts the criteria revealed in this order.
+const pickRank = vals=>{ const t = x=>isOff(vals, x) ? -1 : Math.abs(aspectLevel(vals[x.key], x.key));
+  const order = ASPECTS.slice().sort((a, b)=>t(b) - t(a)); return x=>order.indexOf(x); };
+const pickTier = (vals, x)=>isOff(vals, x) ? 0 : Math.abs(aspectLevel(vals[x.key], x.key));
 function pickReviewBadges(vals, guesses, x, i, shown){
-  const g = (guesses && guesses[x.key]) || 0, open = vals && i < shown;
+  const g = (guesses && guesses[x.key]) || 0, open = vals && pickRank(vals)(x) < shown;
   const k = open ? pickInfo(vals, guesses) : null, cr = k && g ? k.credit(x.key) : null;
   const mine = g ? `<span class="asp-badge ${levelCls(g)}" aria-label="${g > 0 ? 'White' : 'Black'}">&nbsp;</span>` : `<span class="asp-badge unset mine">?</span>`;   // your answer stays as it was
   if(!open) return mine + `<span class="asp-badge real slot">&nbsp;</span>`;   // empty until revealed
   const l = aspectLevel(vals[x.key], x.key);
-  return mine + `<span class="asp-badge ${levelCls(l)} real${g ? (cr >= 1 ? ' ok' : cr > 0 ? ' near' : ' bad') : ' unpicked'}${!g && k.missed(x.key) ? ' missed' : ''}">${SIGNS(l)}</span>`;
+  return mine + `<span class="asp-badge ${levelCls(l)} real${g ? (cr >= 1 ? ' ok' : cr > 0 ? ' near' : ' bad') : ' unpicked'}">${SIGNS(l)}</span>`;
 }
 // `view`: once revealed, every aspect can be tapped (one at a time, like radio buttons) to draw on the
 // board what it's about; `view` is the one shown (or null), `pickable` whether tapping works yet.
@@ -3651,7 +3655,8 @@ function pickInfo(vals, guesses){
 function pickScore(vals, guesses, shown){
   if(!vals) return 0;
   const k = pickInfo(vals, guesses);
-  return 100 * ASPECTS.slice(0, shown).filter(x=>!isOff(vals, x)).reduce((t, x)=>t + k.credit(x.key), 0) / k.share;
+  const rank = pickRank(vals);
+  return 100 * ASPECTS.filter(x=>!isOff(vals, x) && rank(x) < shown).reduce((t, x)=>t + k.credit(x.key), 0) / k.share;
 }
 function imbalanceScore(vals, guesses, shown){
   if(ASP_PICK) return pickScore(vals, guesses, shown);
@@ -3667,7 +3672,24 @@ function startAspectsReveal(p, s, vals){
   const tick = ()=>{
     // Left the screen or moved on: just finish it silently.
     if(screen!=='imbalances' || pos().key!==key){ s.aspShown = ASPECTS.length; s.aspDone = true; return; }
-    if(s.aspShown < ASPECTS.length){
+    if(ASP_PICK && s.aspShown < ASPECTS.length){   // (beta) a whole size group at once: ++ and −−, then + and −, then "="
+      const rank = pickRank(vals), order = ASPECTS.slice().sort((a, b)=>rank(a) - rank(b)), from0 = s.aspShown, tier = pickTier(vals, order[from0]);
+      while(s.aspShown < ASPECTS.length && pickTier(vals, order[s.aspShown])===tier) s.aspShown++;
+      order.slice(from0, s.aspShown).forEach(x=>{ const el = document.querySelector(`#aspects .asp-item[data-asp="${x.key}"]`); if(!el) return;
+        el.querySelector('.asp-pair').outerHTML = reviewBadge(vals, s.asp, x, ASPECTS.indexOf(x), s.aspShown);
+        if(!isOff(vals, x)) el.querySelectorAll('.asp-badge.real').forEach(nb=>{ const final = nb.className; nb.className = 'asp-badge eq real'; nb.offsetWidth; nb.className = final; }); });
+      const from = imbalanceScore(vals, s.asp, from0), to = imbalanceScore(vals, s.asp, s.aspShown);
+      let t0 = null;
+      const climb = ts=>{
+        if(t0===null) t0 = ts;
+        const k = Math.min(1, (ts - t0) / ASP_CLIMB_MS), a = document.getElementById('revealAcc');
+        if(!a || pos().key!==key) return;
+        a.textContent = Math.round(from + (to - from) * easeOut(k)) + '%';
+        if(k < 1) requestAnimationFrame(climb);
+      };
+      if(to > from) requestAnimationFrame(climb);
+      setTimeout(tick, ASP_STEP * 1.6);
+    } else if(s.aspShown < ASPECTS.length){
       const i = s.aspShown, x = ASPECTS[i], el = document.querySelector(`#aspects .asp-item[data-asp="${x.key}"]`);
       s.aspShown++;
       if(el) (el.querySelector('.asp-pair') || el.querySelector('.asp-badge')).outerHTML = reviewBadge(vals, s.asp, x, i, s.aspShown);
@@ -7116,7 +7138,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "The decisive ones: the big edges (++ or −−), up to 3; when there are none, the small ones (+ or −).": "Les décisifs : les gros avantages (++ ou −−), jusqu'à 3 ; s'il n'y en a aucun, les petits (+ ou −).",
 "Each one you found: full points. A small edge when there are big ones: half. Balanced, or the wrong side: nothing.": "Chacun trouvé : tous les points. Un petit avantage alors qu'il y en a de gros : la moitié. Équilibré, ou le mauvais camp : rien.",
 "The points are shared by the decisive ones, or by your choices if you made more: leaving one out, or adding one, costs its share.": "Les points se partagent entre les décisifs, ou entre vos choix s'ils sont plus nombreux : en oublier un, ou en ajouter un, coûte sa part.",
-"The real size shows beside each answer, ringed green, yellow or red; the others show theirs, faded. A decisive one you didn't choose gets a dashed red ring.": "La vraie taille s'affiche à côté de chaque réponse, entourée de vert, jaune ou rouge ; les autres montrent la leur, estompés. Un décisif que vous n'avez pas choisi est entouré de pointillés rouges.",
+"The sizes show from the biggest down: ++ and −− first, then + and −, then =. Each one you chose gets a green, yellow or red ring; the others show faded.": "Les tailles s'affichent de la plus grande à la plus petite : ++ et −− d'abord, puis + et −, puis =. Chacun de vos choix s'entoure de vert, jaune ou rouge ; les autres apparaissent estompés.",
 "Three chosen: clear one first.": "Trois choisis : retirez-en un d'abord.",
 "Not chosen": "Non choisi",
 "Development": "Développement",
