@@ -3662,7 +3662,7 @@ function startAspectsReveal(p, s, vals){
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const END = ASPECTS.length + (ASP_PICK ? 1 : 0);   // (beta: one more step, the rings)
   if(reduced){ s.aspShown = END; s.aspDone = true; s.justDone = true; return; }
-  s.aspShown = 0;
+  s.aspShown = ASP_PICK ? ASPECTS.length : 0;   // (beta) the real levels show with the review itself, the score at 0; then the rings
   const key = p.key;
   const tick = ()=>{
     // Left the screen or moved on: just finish it silently.
