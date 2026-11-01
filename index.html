@@ -522,7 +522,7 @@
   .asp-item.off .asp-name{color:var(--text-mute);}
   .asp-badge.unset{background:transparent; border-style:dashed; border-color:var(--border); color:var(--text-mute);}
   .asp-badge.unset.full{opacity:.4;} .asp-badge.unset.clear{border-style:solid;}
-  .asp-badge.unpicked{opacity:.55;} .asp-badge.unpicked.missed{opacity:1; border-color:var(--bad); box-shadow:0 0 0 1px var(--bad);}
+  .asp-badge.unpicked{opacity:.55;} .asp-badge.unpicked.missed{opacity:1; border-color:transparent; outline:2px dashed var(--bad); outline-offset:-1px;}
   .asp-badge.off{background:transparent; color:var(--text-mute); border-color:var(--border); border-style:dashed; opacity:.75;}
   .asp-picker.note{justify-content:center; padding:9px 10px; font-size:0.84rem; color:var(--text-mute); text-align:center;}
   .asp-pick.editing{box-shadow:0 0 0 2px var(--dubious);}
@@ -1596,7 +1596,7 @@ const HELP = {
     note:"Inspired by Stockfish's former evaluation system.",
     review:BETA_SITE ? [
       ['Score', "Whether you found the decisive ones, on the right side.", ["The decisive ones: the big edges (++ or −−), up to 3; when there are none, the small ones (+ or −).", "Each one you found: full points. A small edge when there are big ones: half. Balanced, or the wrong side: nothing.", "The points are shared by the decisive ones, or by your choices if you made more: leaving one out, or adding one, costs its share."]],
-      ['Colours', "Your badges show the real size and turn green, yellow or red; the others show theirs, faded. A decisive one you didn't choose is ringed in red."],
+      ['Colours', "Your badges show the real size and turn green, yellow or red; the others show theirs, faded. A decisive one you didn't choose gets a dashed red ring."],
       ['Details', "Tap an imbalance to see it on the board, then the '?' button for how it's counted."],
       ['Keep in mind', "Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all."],
     ] : [
@@ -7099,7 +7099,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "The decisive ones: the big edges (++ or −−), up to 3; when there are none, the small ones (+ or −).": "Les décisifs : les gros avantages (++ ou −−), jusqu'à 3 ; s'il n'y en a aucun, les petits (+ ou −).",
 "Each one you found: full points. A small edge when there are big ones: half. Balanced, or the wrong side: nothing.": "Chacun trouvé : tous les points. Un petit avantage alors qu'il y en a de gros : la moitié. Équilibré, ou le mauvais camp : rien.",
 "The points are shared by the decisive ones, or by your choices if you made more: leaving one out, or adding one, costs its share.": "Les points se partagent entre les décisifs, ou entre vos choix s'ils sont plus nombreux : en oublier un, ou en ajouter un, coûte sa part.",
-"Your badges show the real size and turn green, yellow or red; the others show theirs, faded. A decisive one you didn't choose is ringed in red.": "Vos badges montrent la vraie taille et deviennent verts, jaunes ou rouges ; les autres montrent la leur, estompés. Un décisif que vous n'avez pas choisi est entouré de rouge.",
+"Your badges show the real size and turn green, yellow or red; the others show theirs, faded. A decisive one you didn't choose gets a dashed red ring.": "Vos badges montrent la vraie taille et deviennent verts, jaunes ou rouges ; les autres montrent la leur, estompés. Un décisif que vous n'avez pas choisi est entouré de pointillés rouges.",
 "Three chosen: clear one first.": "Trois choisis : retirez-en un d'abord.",
 "Not chosen": "Non choisi",
 "Development": "Développement",
