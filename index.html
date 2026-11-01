@@ -524,7 +524,7 @@
   .asp-badge.unset.full{opacity:.4;} .asp-badge.unset.clear{border-style:solid;}
   .asp-badge.unset.asp-pick, .asp-badge.unset.real{border-style:solid;}   /* (beta) "?": undecided (dashed is for a criterion left out) */
   .asp-pair{display:flex; gap:3px; flex:none;} .asp-pair .asp-badge{min-width:1.6em; padding:1px 1px; letter-spacing:0;}
-  .asp-grid:has(.asp-pair){column-gap:12px;}   /* (beta) two badges a row: a little more room for the names */ .asp-badge.slot{visibility:hidden;} .pick-left{color:var(--text-mute); white-space:nowrap; margin-right:auto; align-self:center;} .asp-badge.unset.mine{opacity:.55;}
+  .asp-grid:has(.asp-pair){column-gap:12px;}   /* (beta) two badges a row: a little more room for the names */ .asp-badge.slot{visibility:hidden;} .pick-left{color:var(--text-mute); white-space:nowrap; align-self:center;} .asp-badge.unset.mine{opacity:.55;}
   .asp-badge.slide-in{animation:asp-slide .45s ease-out both;} @keyframes asp-slide{from{opacity:0;} to{opacity:1;}} .asp-badge.slide-in{animation-duration:.6s;}   /* (beta) the real level's place, empty during the question */
 
   .asp-picker.pick{flex-wrap:wrap;} .asp-picker-q{flex:1 0 100%; font-size:0.82rem; color:var(--text-mute); text-align:center; padding:0 0 4px;}
@@ -3793,8 +3793,8 @@ function setAspect(s, key, l){
 // In the tutorial (the first answers, while the hints show), Check waits for a first grade other than "=".
 const aspAnyGraded = s=>Object.values(s.asp || {}).some(l=>l);
 const aspCheckWaits = s=>ASP_PICK ? Object.values(s.asp || {}).filter(l=>l).length < ASP_PICK_MAX : hintsOn('imbalances') && !aspAnyGraded(s);   // (beta: three chosen)
-// (beta) beside Check: how many are left to choose (nothing before the first, nor once three are chosen)
-const aspLeftText = s=>{ const n = ASP_PICK_MAX - Object.values((s && s.asp) || {}).filter(l=>l).length; return n > 0 && n < ASP_PICK_MAX ? `${n} left` : ''; };
+// (beta) right beside Check: how many are left to choose, why it's greyed out (nothing once three are chosen)
+const aspLeftText = s=>{ const n = ASP_PICK_MAX - Object.values((s && s.asp) || {}).filter(l=>l).length; return n > 0 ? `${n} left` : ''; };
 const aspPickFull = s=>ASP_PICK && Object.values(s.asp || {}).filter(l=>l).length >= ASP_PICK_MAX;
 function openAspPicker(s, key){
   closeAspPicker();
