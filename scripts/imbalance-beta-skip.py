@@ -2,7 +2,7 @@
 # engine (master-evals.json: the finder's search, the app's engine at 1.2 s) has one side 1.0 or more
 # ahead, and the grades' sum (+ 1, ++ 2, from White's side; Development in place of Activity while a
 # knight or bishop has never moved) is "=" or leans the other way. Writes the list into app/index.html
-# (/*IMBALANCE_SKIP_BETA*/); the app leaves those positions out too (on top of IMBALANCE_SKIP).
+# (/*IMBALANCE_SKIP_BETA*/), with the positions where every criterion is "="; the app leaves those positions out too (on top of IMBALANCE_SKIP).
 # Needs playwright and the site built (python3 scripts/build-site.py). Usage: python3 scripts/imbalance-beta-skip.py
 import asyncio, json, pathlib, re, subprocess, sys, time
 from playwright.async_api import async_playwright
@@ -13,7 +13,8 @@ EVALS = json.loads((ROOT / 'master-evals.json').read_text())
 JS = r"""()=>POOLS.analysis.filter(p=>!IMBALANCE_SKIP.includes(p.key)).map(p=>{
   let d = null; try{ d = adaptAspects(parseAspects(sfTableLines(p.fen), p.fen), p.fen); }catch(e){}
   if(!d) return { key: p.key, sum: null };
-  return { key: p.key, side: p.side, sum: ASPECTS.reduce((s, x)=>s + (d.off.includes(x.key) ? 0 : aspectLevel(d[x.key], x.key)), 0) };
+  return { key: p.key, side: p.side, sum: ASPECTS.reduce((s, x)=>s + (d.off.includes(x.key) ? 0 : aspectLevel(d[x.key], x.key)), 0),
+           graded: ASPECTS.some(x=>!d.off.includes(x.key) && aspectLevel(d[x.key], x.key)) };
 })"""
 async def main():
     server = subprocess.Popen([sys.executable, '-m', 'http.server', '8799'], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -40,6 +41,7 @@ async def main():
         cp = (1e5 if e[2] > 0 else -1e5) if e[2] is not None else e[1]
         if r['side'] == 'b': cp = -cp   # mover's point of view -> White's
         if abs(cp) >= 100 and (r['sum'] == 0 or (r['sum'] > 0) != (cp > 0)): skip.append(r['key'])
+        elif not r['graded']: skip.append(r['key'])   # every criterion "=": nothing to choose (the beta grades 1 to 3, never "=")
     s = APP.read_text(encoding='utf-8')
     s = re.sub(r'/\*IMBALANCE_SKIP_BETA\*/.*?/\*END IMBALANCE_SKIP_BETA\*/', lambda m: '/*IMBALANCE_SKIP_BETA*/' + json.dumps(skip, ensure_ascii=False) + '/*END IMBALANCE_SKIP_BETA*/', s, flags=re.S)
     APP.write_text(s, encoding='utf-8')
