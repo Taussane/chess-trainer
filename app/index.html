@@ -3685,7 +3685,7 @@ function startAspectsReveal(p, s, vals){
       setTimeout(tick, isOff(vals, x) ? 0 : ASP_STEP);   // a criterion left out here: straight on to the next
     } else { s.aspDone = true; s.justDone = true; render(); }
   };
-  setTimeout(tick, ASP_PICK ? ASP_FADE_MS + 700 : ASP_START);   // (beta: the real levels fade in, a pause, then the rings)
+  setTimeout(tick, ASP_PICK ? ASP_FADE_MS + 400 : ASP_START);   // (beta: the real levels fade in, a pause, then the rings)
 }
 // The question: the same grid, every aspect "=" until you gauge it.
 // Tap a badge: a scale from −− to ++ opens above it; tap a level, or slide along the scale and let go. Arrow keys on a badge
