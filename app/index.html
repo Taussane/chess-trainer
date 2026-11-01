@@ -497,7 +497,7 @@
   .asp-badge.unset.asp-pick, .asp-badge.unset.real{border-style:solid;}   /* (beta) "?": undecided (dashed is for a criterion left out) */
   .asp-pair{display:flex; gap:3px; flex:none;} .asp-pair .asp-badge{min-width:1.6em; padding:1px 1px; letter-spacing:0;}
   .asp-grid:has(.asp-pair){column-gap:12px;}   /* (beta) two badges a row: a little more room for the names */ .asp-badge.slot{visibility:hidden;} .pick-left{color:var(--text-mute); white-space:nowrap; margin-right:auto; align-self:center;} .asp-badge.unset.mine{opacity:.55;}
-  .asp-badge.slide-in{animation:asp-slide .45s ease-out both;} @keyframes asp-slide{from{opacity:0;} to{opacity:1;}}   /* (beta) the real level's place, empty during the question */
+  .asp-badge.slide-in{animation:asp-slide .45s ease-out both;} @keyframes asp-slide{from{opacity:0;} to{opacity:1;}} .asp-badge.slide-in{animation-duration:.6s;}   /* (beta) the real level's place, empty during the question */
 
   .asp-picker.pick{flex-wrap:wrap;} .asp-picker-q{flex:1 0 100%; font-size:0.82rem; color:var(--text-mute); text-align:center; padding:0 0 4px;}
  
@@ -3543,7 +3543,7 @@ function pickReviewBadges(vals, guesses, x, i, shown){
   const mine = g ? `<span class="asp-badge ${levelCls(g)}${ring}" aria-label="${g > 0 ? 'White' : 'Black'}">&nbsp;</span>` : `<span class="asp-badge unset mine${ring}">?</span>`;
   if(!open) return mine + `<span class="asp-badge real slot">&nbsp;</span>`;   // empty until revealed
   const l = aspectLevel(vals[x.key], x.key);
-  return mine + `<span class="asp-badge ${levelCls(l)} real">${SIGNS(l)}</span>`;
+  return mine + `<span class="asp-badge ${levelCls(l)} real${ringed ? '' : ' slide-in'}">${SIGNS(l)}</span>`;   // (before the rings: fading in)
 }
 // `view`: once revealed, every aspect can be tapped (one at a time, like radio buttons) to draw on the
 // board what it's about; `view` is the one shown (or null), `pickable` whether tapping works yet.
