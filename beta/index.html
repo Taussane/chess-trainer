@@ -524,6 +524,9 @@
   .asp-item.off .asp-name{color:var(--text-mute);}
   .asp-badge.unset{background:transparent; border-style:dashed; border-color:var(--border); color:var(--text-mute);}
   .asp-badge.unset.full{opacity:.4;} .asp-badge.unset.clear{border-style:solid;}
+  .asp-badge.unset.asp-pick, .asp-badge.unset.real{border-style:solid;}   /* (beta) "?": undecided (dashed is for a criterion left out) */
+  .asp-pair{display:flex; gap:4px; flex:none;}
+  .asp-picker.pick{flex-wrap:wrap;} .asp-picker-q{flex:1 0 100%; font-size:0.82rem; color:var(--text-mute); text-align:center; padding:0 0 4px;}
   .asp-badge.unpicked{opacity:.55;} .asp-badge.unpicked.missed{opacity:1; border-color:transparent; outline:2px dashed var(--bad); outline-offset:-1px;}
   .asp-badge.off{background:transparent; color:var(--text-mute); border-color:var(--border); border-style:dashed; opacity:.75;}
   .asp-picker.note{justify-content:center; padding:9px 10px; font-size:0.84rem; color:var(--text-mute); text-align:center;}
@@ -1587,7 +1590,7 @@ const HELP = {
   imbalances: {
     title:'Imbalance reading',
     task:BETA_SITE ? [   // (beta: choose 1 to 3)
-      "Choose up to 3 imbalances, the ones that decide the position, and say who has the edge: + for White, − for Black. Tap × to clear one.",
+      "Choose up to 3 imbalances, the ones that decide the position, and say who has the edge: White or Black. Tap ? to clear one.",
       ['The idea', "Strong players don't weigh everything: they spot what decides the position. Each imbalance is a count of points on the board; the review shows them all, with their size."],
       ['Tips', '', ["Look for the big edges first: those are the ones to find.", "No big edge? Then the small, clear ones.", "Don't choose one that's balanced: it scores nothing.", "Choosing more than there are costs points too.", "Few pieces left: no Space. No queens: King activity replaces King safety.", "Minors to move: Development replaces Activity."]],
     ] : [
@@ -1598,7 +1601,7 @@ const HELP = {
     note:"Inspired by Stockfish's former evaluation system.",
     review:BETA_SITE ? [
       ['Score', "Whether you found the decisive ones, on the right side.", ["The decisive ones: the big edges (++ or −−), up to 3; when there are none, the small ones (+ or −).", "Each one you found: full points. A small edge when there are big ones: half. Balanced, or the wrong side: nothing.", "The points are shared by the decisive ones, or by your choices if you made more: leaving one out, or adding one, costs its share."]],
-      ['Colours', "Your badges show the real size and turn green, yellow or red; the others show theirs, faded. A decisive one you didn't choose gets a dashed red ring."],
+      ['Colours', "Your answers turn green, yellow or red, with the real size beside them; the others show theirs, faded. A decisive one you didn't choose gets a dashed red ring."],
       ['Details', "Tap an imbalance to see it on the board, then the '?' button for how it's counted."],
       ['Keep in mind', "Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all."],
     ] : [
@@ -3550,19 +3553,22 @@ function reviewBadge(vals, guesses, x, i, shown){
   if(isOff(vals, x)) return OFF_BADGE(vals);
   if(vals && guesses===null) return aspectBadge(vals[x.key], x.key);
   const g = (guesses && guesses[x.key]) || 0;
-  if(ASP_PICK){   // (beta) not chosen: empty until revealed, then its level, ringed in red if it was a decisive one left out;
-                 // chosen: your side until revealed, then its level, green (full points), yellow (half) or red
-    if(!vals || i >= shown) return g ? `<span class="asp-badge ${levelCls(g)}">${SIGNS(g)}</span>` : `<span class="asp-badge unset">&nbsp;</span>`;
-    const l = aspectLevel(vals[x.key], x.key), k = pickInfo(vals, guesses);
-    if(!g) return `<span class="asp-badge ${levelCls(l)} unpicked${k.missed(x.key) ? ' missed' : ''}">${SIGNS(l)}</span>`;
-    const cr = k.credit(x.key);
-    return `<span class="asp-badge ${levelCls(l)} ${cr >= 1 ? 'ok' : cr > 0 ? 'near' : 'bad'}">${SIGNS(l)}</span>`;
-  }
+  if(ASP_PICK) return `<span class="asp-pair">${pickReviewBadges(vals, guesses, x, i, shown)}</span>`;
   if(!vals || i >= shown) return `<span class="asp-badge ${levelCls(g)}">${SIGNS(g)}</span>`;
   const l = aspectLevel(vals[x.key], x.key);
   const cr = aspectCredit(vals[x.key], g, x.key);   // green from 80% of the share, yellow for some of it
   const v = cr >= 0.8 ? g : l;                      // in the green: your own grade stays
   return `<span class="asp-badge ${levelCls(v)} ${cr >= 0.8 ? 'ok' : cr > 0 ? 'near' : 'bad'}">${SIGNS(v)}</span>`;
+}
+// (beta) Two badges: your side (coloured, empty; ringed green for full points, yellow for half, red), then
+// the real level ("?" until revealed; faded where you didn't choose it, a dashed red ring for a decisive one left out).
+function pickReviewBadges(vals, guesses, x, i, shown){
+  const g = (guesses && guesses[x.key]) || 0, open = vals && i < shown;
+  const k = open ? pickInfo(vals, guesses) : null, cr = k && g ? k.credit(x.key) : null;
+  const mine = g ? `<span class="asp-badge ${levelCls(g)}${cr==null ? '' : cr >= 1 ? ' ok' : cr > 0 ? ' near' : ' bad'}" aria-label="${g > 0 ? 'White' : 'Black'}">&nbsp;</span>` : '';
+  if(!open) return mine + `<span class="asp-badge unset real">?</span>`;
+  const l = aspectLevel(vals[x.key], x.key);
+  return mine + `<span class="asp-badge ${levelCls(l)} real${g ? '' : ' unpicked'}${!g && k.missed(x.key) ? ' missed' : ''}">${SIGNS(l)}</span>`;
 }
 // `view`: once revealed, every aspect can be tapped (one at a time, like radio buttons) to draw on the
 // board what it's about; `view` is the one shown (or null), `pickable` whether tapping works yet.
@@ -3661,10 +3667,11 @@ function startAspectsReveal(p, s, vals){
     if(s.aspShown < ASPECTS.length){
       const i = s.aspShown, x = ASPECTS[i], el = document.querySelector(`#aspects .asp-item[data-asp="${x.key}"]`);
       s.aspShown++;
-      if(el) el.querySelector('.asp-badge').outerHTML = reviewBadge(vals, s.asp, x, i, s.aspShown);
-      // the new badge starts from your level's look, then fades to the engine's
-      const nb = el && el.querySelector('.asp-badge'), g = s.asp[x.key] || 0;
-      if(nb && !isOff(vals, x)){ const final = nb.className; nb.className = `asp-badge ${levelCls(g)}`; nb.offsetWidth; nb.className = final; }
+      if(el) (el.querySelector('.asp-pair') || el.querySelector('.asp-badge')).outerHTML = reviewBadge(vals, s.asp, x, i, s.aspShown);
+      // the new badge starts from your level's look (beta: the real one from "?"; yours from your side), then fades to the engine's
+      const g = s.asp[x.key] || 0;
+      if(el && !isOff(vals, x)) el.querySelectorAll('.asp-badge').forEach(nb=>{ const final = nb.className, real = nb.classList.contains('real');
+        nb.className = ASP_PICK ? (real ? 'asp-badge unset real' : `asp-badge ${levelCls(g)}`) : `asp-badge ${levelCls(g)}`; nb.offsetWidth; nb.className = final; });
       // the score climbs to its new value while the badge fades
       const from = imbalanceScore(vals, s.asp, s.aspShown - 1), to = imbalanceScore(vals, s.asp, s.aspShown);
       let t0 = null;
@@ -3692,7 +3699,9 @@ function aspectsInputHtml(s, hidden){
       : off
       ? `<button class="asp-badge off asp-pick" data-asp="${x.key}" data-off="1" aria-label="${aspNameText(x, fen)}: not counted here" aria-haspopup="true">·</button>`
       : ASP_PICK && !l
-      ? `<button class="asp-badge unset asp-pick${aspPicker && aspPicker.key===x.key ? ' editing' : ''}${aspPickFull(s) ? ' full' : ''}" data-asp="${x.key}" data-hint="${x.key}" aria-label="${aspNameText(x, fen)}: not chosen" aria-haspopup="true">&nbsp;</button>`
+      ? `<button class="asp-badge unset asp-pick${aspPicker && aspPicker.key===x.key ? ' editing' : ''}${aspPickFull(s) ? ' full' : ''}" data-asp="${x.key}" data-hint="${x.key}" aria-label="${aspNameText(x, fen)}: not chosen" aria-haspopup="true">?</button>`
+      : ASP_PICK
+      ? `<button class="asp-badge ${levelCls(l)} asp-pick${aspPicker && aspPicker.key===x.key ? ' editing' : ''}" data-asp="${x.key}" data-hint="${x.key}" aria-label="${aspNameText(x, fen)}: ${l > 0 ? 'White' : 'Black'}" aria-haspopup="true">&nbsp;</button>`
       : `<button class="asp-badge ${levelCls(l)} asp-pick${aspPicker && aspPicker.key===x.key ? ' editing' : ''}" data-asp="${x.key}" data-hint="${x.key}" aria-label="${aspNameText(x, fen)}: ${SIGNS(l)}" aria-haspopup="true">${SIGNS(l)}</button>`}</div>`; };
   return `<div class="aspects asp-input${!hidden && s && !s.aspTouched && hintsOn('imbalances') ? ' hinting' : ''}"${hidden ? '' : ' id="aspInput"'}>
       <div class="asp-grid"><div class="asp-head">Static</div>${ASPECTS.slice(0,3).map(item).join('')}<div class="asp-head">Dynamic</div>${ASPECTS.slice(3).map(item).join('')}</div>
@@ -3745,7 +3754,7 @@ function setAspect(s, key, l){
   s.asp[key] = Math.max(-m, Math.min(m, l));
   const b = document.querySelector(`.asp-pick[data-asp="${key}"]`);
   if(ASP_PICK){   // (beta) not chosen: an empty badge; three chosen: the others dimmed
-    if(b){ const on = !!s.asp[key]; b.className = `asp-badge ${on ? levelCls(s.asp[key]) : 'unset'} asp-pick${aspPicker && aspPicker.key===key ? ' editing' : ''}`; b.innerHTML = on ? SIGNS(s.asp[key]) : '&nbsp;'; }
+    if(b){ const on = !!s.asp[key]; b.className = `asp-badge ${on ? levelCls(s.asp[key]) : 'unset'} asp-pick${aspPicker && aspPicker.key===key ? ' editing' : ''}`; b.innerHTML = on ? '&nbsp;' : '?'; }
     const full = aspPickFull(s); document.querySelectorAll('#aspInput .asp-pick.unset').forEach(x=>x.classList.toggle('full', full));
   }
   else if(b){ b.className = `asp-badge ${levelCls(s.asp[key])} asp-pick${aspPicker && aspPicker.key===key ? ' editing' : ''}`; b.textContent = SIGNS(s.asp[key]); b.setAttribute('aria-label', `${ASPECTS.find(x=>x.key===key).name}: ${SIGNS(s.asp[key])}`); }
@@ -3762,7 +3771,7 @@ function openAspPicker(s, key){
   const box = document.getElementById('aspInput'), badge = box && box.querySelector(`.asp-pick[data-asp="${key}"]`);
   if(!badge) return;
   const el = document.createElement('div');
-  el.className = 'asp-picker'; el.setAttribute('role', 'listbox'); el.setAttribute('aria-label', ASPECTS.find(x=>x.key===key).name);
+  el.className = 'asp-picker' + (ASP_PICK ? ' pick' : ''); el.setAttribute('role', 'listbox'); el.setAttribute('aria-label', ASPECTS.find(x=>x.key===key).name);
   const fullNote = ASP_PICK && !(s.asp[key]) && aspPickFull(s);
   if(badge.dataset.off || fullNote){   // a criterion left out here (or, beta, three already chosen): a note instead of the levels
     el.classList.add('note'); el.setAttribute('role', 'note');
@@ -3773,9 +3782,12 @@ function openAspPicker(s, key){
     el.addEventListener('pointerup', ()=>{ closeAspPicker(); swallowNextClick(); });
     return;
   }
-  el.innerHTML = (ASP_PICK ? [-1, 0, 1] : Array.from({ length: 2*ASPECT_MAX + 1 }, (_, i)=>i - ASPECT_MAX)).map(l=>ASP_PICK && !l
-    ? `<button class="asp-badge unset clear" data-l="0" role="option" aria-label="Not chosen">×</button>`   // (beta) no "=": clear instead
-    : `<button class="asp-badge ${levelCls(l)}${((s.asp[key]||0)===l) ? ' on' : ''}" data-l="${l}" role="option"${ASP_PICK ? ` aria-label="${l > 0 ? 'White' : 'Black'}"` : ''}>${SIGNS(l)}</button>`).join('');
+  el.innerHTML = (ASP_PICK ? `<div class="asp-picker-q">${aspNameText(ASPECTS.find(x=>x.key===key), pos().fen)}: who has the decisive edge?</div>` : '')
+    + (ASP_PICK ? [-1, 0, 1] : Array.from({ length: 2*ASPECT_MAX + 1 }, (_, i)=>i - ASPECT_MAX)).map(l=>ASP_PICK && !l
+    ? `<button class="asp-badge unset clear${!s.asp[key] ? ' on' : ''}" data-l="0" role="option" aria-label="Not chosen">?</button>`   // (beta) no "=": undecided instead
+    : ASP_PICK
+    ? `<button class="asp-badge ${levelCls(l)}${((s.asp[key]||0)===l) ? ' on' : ''}" data-l="${l}" role="option">${l > 0 ? 'White' : 'Black'}</button>`
+    : `<button class="asp-badge ${levelCls(l)}${((s.asp[key]||0)===l) ? ' on' : ''}" data-l="${l}" role="option">${SIGNS(l)}</button>`).join('');
   box.appendChild(el);
   const item = badge.closest('.asp-item');
   el.style.top = (item.offsetTop - el.offsetHeight - 4) + 'px';   // above the badge, so the finger doesn't hide it
@@ -4713,7 +4725,7 @@ const FAQ = [
     ["What's an imbalance?", "A difference between the two sides that shapes the game: who has more material, better pawns, more room, better pieces, a safer king. Jeremy Silman made the idea famous: list the imbalances before looking for moves, because they tell you what to play for."],
     ['Which ones does the app use, and how are they counted?', "Six, each a count of points you can see on the board (tap one in the review to draw it):<ul><li><b>Material:</b> pawn 1, knight 3, bishop 3, rook 5, queen 9; the bishop pair +½.</li><li><b>Pawns:</b> passed pawns (more as they advance), connected pawns on the 5th rank or beyond; −1 for each isolated, doubled or backward pawn.</li><li><b>Space:</b> pawns and safe squares behind them in the centre (files c to f, ranks 3 to 6).</li><li><b>Activity:</b> safe squares each piece reaches, plus outposts, rooks on open files or deep in enemy territory, minus pins.</li><li><b>King safety:</b> pawns sheltering the king, minus enemy pieces aiming at its zone or able to give check; a forced mate is ++.</li><li><b>Other threats:</b> what can be won right now, and threats for the next move.</li></ul>"],
     ['Why do some names change?', "Each phase has its own idea, so three criteria switch:<ul><li><b>Development</b> replaces Activity while a knight or bishop has never moved and few pieces have been traded: each piece that has moved counts +1.</li><li><b>King activity</b> replaces King safety once the queens are off: a central, active king counts.</li><li><b>Space</b> stops counting once many pieces are traded, as in Stockfish.</li></ul>"],
-    ['How do I answer? (beta)', "Choose up to 3 imbalances, the ones that decide the position, and say who has the edge: + for White, − for Black. No sizes to guess. The decisive ones are the big edges (++ or −−), up to 3, or the small ones when there are no big ones. Each one you find on the right side scores full points; a small edge when there are big ones, half; a balanced one or the wrong side, nothing. The points are shared by the decisive ones, or by your choices if you made more, so leaving one out or adding one too many both cost. Positions where Stockfish 10's own terms read the decisive imbalances otherwise are left out."],
+    ['How do I answer? (beta)', "Choose up to 3 imbalances, the ones that decide the position, and say who has the edge: White or Black. No sizes to guess; the review shows them. The decisive ones are the big edges (++ or −−), up to 3, or the small ones when there are no big ones. Each one you find on the right side scores full points; a small edge when there are big ones, half; a balanced one or the wrong side, nothing. The points are shared by the decisive ones, or by your choices if you made more, so leaving one out or adding one too many both cost. Positions where Stockfish 10's own terms read the decisive imbalances otherwise are left out."],
     ['What do =, + and ++ mean?', "The difference between the two sides, white for White, black for Black. Each criterion has its own thresholds, set so that in master games about 40% are \"=\", 40% \"+\" and 20% \"++\"."],
     ["Why don't the grades simply add up?", "They describe the position, they don't weigh it. One big imbalance can outweigh several small ones, and a tactic beats them all. Positions where the engine sees one side clearly better while the grades lean the other way are left out."],
   ]],
@@ -5966,7 +5978,7 @@ function renderImbalances(){
         ${aspectsGridHtml(vals, s.asp, s.aspShown || 0, false, s.aspView, done && p.fen)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
-        <p class="prompt" id="imbPrompt">${ASP_PICK ? 'Choose up to 3 decisive imbalances: who has the edge?' : 'Grade each positional imbalance.'}</p>
+        <p class="prompt" id="imbPrompt">${ASP_PICK ? 'Gauge most decisive imbalances, up to 3.' : 'Grade each positional imbalance.'}</p>
         ${aspectsInputHtml(s)}
         <div class="actions-row" id="imbCheckRow"><button class="btn" id="check" ${sfState==='error' || aspCheckWaits(s) ? 'disabled' : ''}>Check</button></div>`}`, GHOST_IMBALANCES, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
@@ -7090,8 +7102,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Start averages, charts and missed positions again from now?": "Repartir de maintenant pour les moyennes, les graphiques et les positions manquées ?",
 "Start the timing again from now?": "Repartir de maintenant pour le chronométrage ?",
 "Reset": "Remettre à zéro",
-"Choose up to 3 decisive imbalances: who has the edge?": "Choisissez jusqu'à 3 déséquilibres décisifs : qui a l'avantage ?",
-"Choose up to 3 imbalances, the ones that decide the position, and say who has the edge: + for White, − for Black. Tap × to clear one.": "Choisissez jusqu'à 3 déséquilibres, ceux qui décident de la position, et dites qui a l'avantage : + pour les Blancs, − pour les Noirs. Touchez × pour en retirer un.",
+"Gauge most decisive imbalances, up to 3.": "Évaluez les déséquilibres les plus décisifs, jusqu'à 3.",
+"Choose up to 3 imbalances, the ones that decide the position, and say who has the edge: White or Black. Tap ? to clear one.": "Choisissez jusqu'à 3 déséquilibres, ceux qui décident de la position, et dites qui a l'avantage : Blancs ou Noirs. Touchez ? pour en retirer un.",
 "Strong players don't weigh everything: they spot what decides the position. Each imbalance is a count of points on the board; the review shows them all, with their size.": "Les forts joueurs ne pèsent pas tout : ils repèrent ce qui décide de la position. Chaque déséquilibre est un compte de points sur l'échiquier ; la correction les montre tous, avec leur taille.",
 "Look for the big edges first: those are the ones to find.": "Cherchez d'abord les gros avantages : ce sont eux qu'il faut trouver.",
 "No big edge? Then the small, clear ones.": "Aucun gros avantage ? Alors les petits, s'ils sont nets.",
@@ -7101,7 +7113,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "The decisive ones: the big edges (++ or −−), up to 3; when there are none, the small ones (+ or −).": "Les décisifs : les gros avantages (++ ou −−), jusqu'à 3 ; s'il n'y en a aucun, les petits (+ ou −).",
 "Each one you found: full points. A small edge when there are big ones: half. Balanced, or the wrong side: nothing.": "Chacun trouvé : tous les points. Un petit avantage alors qu'il y en a de gros : la moitié. Équilibré, ou le mauvais camp : rien.",
 "The points are shared by the decisive ones, or by your choices if you made more: leaving one out, or adding one, costs its share.": "Les points se partagent entre les décisifs, ou entre vos choix s'ils sont plus nombreux : en oublier un, ou en ajouter un, coûte sa part.",
-"Your badges show the real size and turn green, yellow or red; the others show theirs, faded. A decisive one you didn't choose gets a dashed red ring.": "Vos badges montrent la vraie taille et deviennent verts, jaunes ou rouges ; les autres montrent la leur, estompés. Un décisif que vous n'avez pas choisi est entouré de pointillés rouges.",
+"Your answers turn green, yellow or red, with the real size beside them; the others show theirs, faded. A decisive one you didn't choose gets a dashed red ring.": "Vos réponses deviennent vertes, jaunes ou rouges, avec la vraie taille à côté ; les autres montrent la leur, estompés. Un décisif que vous n'avez pas choisi est entouré de pointillés rouges.",
 "Three chosen: clear one first.": "Trois choisis : retirez-en un d'abord.",
 "Not chosen": "Non choisi",
 "Development": "Développement",
@@ -7174,6 +7186,7 @@ const I18N_FR_RE = [
   [/^Next \((\d+) left\) ›$/, 'Suivante ($1 restantes) ›'],
   [/^(.+) ›$/, (m, a)=>tr(a) + ' ›'],
   [/^(\d+) of 4$/, '$1 sur 4'],
+  [/^(.+): who has the decisive edge\?$/, (m, a)=>tr(a) + " : qui a l'avantage décisif ?"],
   [/^Accuracy (\d+)% · Average (.+)$/, 'Précision $1 % · Moyenne $2'],
   [/^(Added \d+ games? by|Finished \d+ games? that)/, t=>t   // the games import note, piece by piece
     .replace(/^Added (\d+) games? by /, (m, n)=>`${n} partie${n==='1' ? '' : 's'} ajoutée${n==='1' ? '' : 's'} de `)
