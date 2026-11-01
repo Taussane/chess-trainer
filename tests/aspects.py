@@ -27,89 +27,88 @@ async def main():
           return ASPECTS.map(x=>[x.key, +a[x.key].toFixed(3), +b[x.key].toFixed(3)]); }""", [TABLE, FEN])
         if any(abs(x[1] - x[2]) > 0.006 for x in r): fails.append(f'port table differs from the engine: {r}')
         await pg.evaluate("sfWorker = null")
-        # 3. Imbalance reading: no bar; the prompt; every imbalance "=" at first.
+        # 3. Imbalance reading: no bar; the prompt; every imbalance "?" at first; "3 left" beside a greyed Check.
         await pg.click('.card[data-go="imbalances"]'); await pg.wait_for_timeout(300)
         # (all six criteria in play, whatever position comes up: Space counted)
         await pg.evaluate("""t=>{ window._spaceCounts = spaceCounts; spaceCounts = ()=>true; engineAspects = fen=>Promise.resolve(t.split('\\n')); aspectsStore = {}; render(); }""", TABLE)
         prompt = await pg.text_content('#imbPrompt')
-        if prompt != 'Grade each positional imbalance.': fails.append(f'prompt: {prompt}')
+        if prompt != 'Gauge the 3 most decisive imbalances.': fails.append(f'prompt: {prompt}')
         if await pg.query_selector('#evalBar'): fails.append('Imbalance reading has no evaluation bar')
         start = await pg.evaluate("[...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' ')")
-        if start != '= = = = = =': fails.append(f'imbalances should start at =: {start}')
+        if start != '? ? ? ? ? ?': fails.append(f'imbalances should start at ?: {start}')
+        left0 = await pg.evaluate("[document.getElementById('pickLeft').textContent, document.getElementById('check').disabled]")
+        if left0 != ['3 left', True]: fails.append(f'3 left, Check greyed: {left0}')
         h1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
         n1 = await pg.evaluate("(()=>{ const p = document.querySelector('.panel').getBoundingClientRect().top; return [...document.querySelectorAll('.panel .layer:not(.ghost) .asp-name')].map(n=>Math.round(n.getBoundingClientRect().top - p)); })()")
-        # 4. Gauging: tap a badge, then a level (the scale opens above it); slide; arrow keys; a tap elsewhere closes it.
+        # 4. Choosing: tap a badge, then a side (Black, ?, White open above it, under their question); slide; arrow keys.
         await pg.click('.asp-pick[data-asp="material"]'); await pg.wait_for_timeout(100)
         above = await pg.evaluate("document.querySelector('.asp-picker').getBoundingClientRect().bottom <= document.querySelector('.asp-pick[data-asp=\"material\"]').getBoundingClientRect().top")
-        if not above: fails.append('the scale should open above the badge')
-        await pg.click('.asp-picker [data-l="2"]'); await pg.wait_for_timeout(100)
+        if not above: fails.append('the choices should open above the badge')
+        q = await pg.evaluate("[document.querySelector('.asp-picker-q').textContent, [...document.querySelectorAll('.asp-picker [data-l]')].map(b=>b.textContent).join(' ')]")
+        if q != ['Material: who has the decisive edge?', 'Black ? White']: fails.append(f'the choices: {q}')
+        await pg.click('.asp-picker [data-l="1"]'); await pg.wait_for_timeout(100)
+        if await pg.text_content('#pickLeft') != '2 left': fails.append('2 left after one')
         await pg.click('.asp-pick[data-asp="king"]'); await pg.wait_for_timeout(100)
-        xy = await pg.evaluate("[0,-2].map(l=>{ const r = document.querySelector('.asp-picker [data-l=\"'+l+'\"]').getBoundingClientRect(); return [r.x+r.width/2, r.y+r.height/2]; })")
+        xy = await pg.evaluate("[0,-1].map(l=>{ const r = document.querySelector('.asp-picker [data-l=\"'+l+'\"]').getBoundingClientRect(); return [r.x+r.width/2, r.y+r.height/2]; })")
         await pg.mouse.move(*xy[0]); await pg.mouse.down(); await pg.mouse.move(xy[1][0], xy[1][1], steps=8); await pg.mouse.up(); await pg.wait_for_timeout(100)
-        await pg.focus('.asp-pick[data-asp="space"]'); await pg.keyboard.press('ArrowUp'); await pg.keyboard.press('ArrowUp'); await pg.keyboard.press('ArrowDown')
-        await pg.click('.asp-pick[data-asp="threats"]'); await pg.wait_for_timeout(100)
-        if not await pg.evaluate("document.querySelector('.asp-pick[data-asp=\"threats\"]').classList.contains('editing')"): fails.append('the badge being set should be highlighted')
-        await pg.mouse.click(5, 5); await pg.wait_for_timeout(100)
-        r = await pg.evaluate("({ asp: st('imbalances').asp, badges: [...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.textContent).join(' '), open: !!document.querySelector('.asp-picker') })")
-        print('gauged:', r)
-        if await pg.query_selector('.asp-pick.editing'): fails.append('highlight should go when the scale closes')
-        # A choice drawn over another row: picking it doesn't open that row's scale.
-        await pg.click('.asp-pick[data-asp="pawns"]'); await pg.wait_for_timeout(100)
+        # a choice drawn over another row ("?" clears) doesn't click through to the badge under it
+        await pg.click('.asp-pick[data-asp="king"]'); await pg.wait_for_timeout(100)
         await pg.click('.asp-picker [data-l="0"]'); await pg.wait_for_timeout(100)
         if await pg.query_selector('.asp-picker'): fails.append('a choice should not click through to the badge under it')
-        if r['asp'] != {'material': 2, 'king': -2, 'space': 1} or r['badges'] != '++ = + = −− =' or r['open']: fails.append(f'gauging: {r}')
-        # 5. The review: your levels first; then one by one the engine's, the score climbing; the buttons last.
+        if await pg.evaluate("st('imbalances').asp.king || 0") != 0: fails.append('? should clear a choice')
+        await pg.click('.asp-pick[data-asp="king"]'); await pg.wait_for_timeout(100); await pg.click('.asp-picker [data-l="-1"]'); await pg.wait_for_timeout(100)
+        await pg.focus('.asp-pick[data-asp="space"]'); await pg.keyboard.press('ArrowUp'); await pg.keyboard.press('ArrowUp')
+        # a fourth: a note instead
+        await pg.click('.asp-pick[data-asp="threats"]'); await pg.wait_for_timeout(100)
+        if not await pg.evaluate("document.querySelector('.asp-pick[data-asp=\"threats\"]').classList.contains('editing')"): fails.append('the badge being set should be highlighted')
+        note = await pg.evaluate("document.querySelector('.asp-picker.note') && document.querySelector('.asp-picker.note').textContent")
+        if note != 'Three chosen already: clear one first.': fails.append(f'a fourth: {note}')
+        await pg.mouse.click(5, 5); await pg.wait_for_timeout(100)
+        r = await pg.evaluate("({ asp: Object.fromEntries(Object.entries(st('imbalances').asp).filter(([k,v])=>v)), badges: [...document.querySelectorAll('#aspInput .asp-pick')].map(b=>b.className.match(/\\b(w|b|unset)\\b/)[1]).join(' '), open: !!document.querySelector('.asp-picker'), left: document.getElementById('pickLeft').textContent, check: document.getElementById('check').disabled })")
+        print('chosen:', r)
+        if await pg.query_selector('.asp-pick.editing'): fails.append('highlight should go when the choices close')
+        if r != {'asp': {'material': 1, 'king': -1, 'space': 1}, 'badges': 'w unset w unset b unset', 'open': False, 'left': '', 'check': False}: fails.append(f'choosing: {r}')
+        # 5. The review: the real levels at once beside your answers (the score at 0); then your picks ringed, the score climbing.
         await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_selector('#aspects', timeout=5000); await pg.wait_for_timeout(150)
-        first = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>b.textContent).join(' | ')"); acc0 = await pg.text_content('#revealAcc')
-        print('at first:', first, acc0)
-        if first != '++ | = | + | = | −− | =' or acc0 not in ('—', '0%'): fails.append(f'the review should open on your levels: {first} {acc0}')
-        seen = set(); scores = []
-        for _ in range(120):
-            seen.add(await pg.evaluate("st('imbalances').aspShown || 0"))
+        first = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge.real')].map(b=>b.textContent).join(' | ')"); acc0 = await pg.text_content('#revealAcc')
+        rings0 = await pg.evaluate("document.querySelectorAll('#aspects .asp-badge.ok, #aspects .asp-badge.near, #aspects .asp-badge.bad').length")
+        print('at first:', first, acc0, rings0)
+        if len(first.split(' | ')) != 6 or acc0 != '0%' or rings0: fails.append(f'the review should open on the real levels, the score at 0, no rings: {first} {acc0} {rings0}')
+        scores = []
+        for _ in range(60):
             sc = await pg.text_content('#revealAcc')
             if not scores or scores[-1] != sc: scores.append(sc)
             if await pg.evaluate("!!st('imbalances').aspDone"): break
             await pg.wait_for_timeout(100)
         await pg.wait_for_timeout(500)
-        print('revealed in steps:', sorted(seen), 'score:', scores)
-        if len(seen) < 4: fails.append(f'the imbalances should turn one by one: {sorted(seen)}')
-        rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+[...r.querySelector('.asp-badge').classList].filter(c=>['w','b','eq'].includes(c))[0]+' '+r.querySelector('.asp-badge').textContent)")
+        print('score:', scores)
+        rows = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(r=>r.querySelector('.asp-name').textContent+': '+[...r.querySelector('.asp-badge.real').classList].filter(c=>['w','b','eq'].includes(c))[0]+' '+r.querySelector('.asp-badge.real').textContent)")
         heads = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-head')].map(h=>h.firstChild.textContent)")
         eg = await pg.evaluate("isEndgame(pos().fen)")
         dev = await pg.evaluate("devActive(pos().fen)")   # Development in place of Activity while minors are to move
-
         print('rows:', rows, heads)
         if [x.split(':')[0] for x in rows] != ['Material', 'Pawns', 'Space', 'Developmentminors to move' if dev else 'Activity', 'King activityno queens' if eg else 'King safety', 'Other threats']: fails.append(f'rows: {rows}')
         if heads != ['Static', 'Dynamic']: fails.append(f'column titles: {heads}')
         vals = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>a[x.key]); })()")
         LEVELS = await pg.evaluate("ASPECTS.map(x=>x.levels)")   # the app's own thresholds
+        def level(v, t):
+            n = sum(abs(v) >= x for x in t); return n if v >= 0 else -n
         def badge(v, t):
-            n = sum(abs(v) >= x for x in t)
-            return 'eq =' if n == 0 else ('w ' + '+'*n if v > 0 else 'b ' + '−'*n)
-        # the engine's level, or your own where it earns the green (80% or more of the share)
-        kept = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data, g = st('imbalances').asp; return ASPECTS.map(x=>aspectCredit(a[x.key], g[x.key]||0, x.key) >= 0.8 ? (g[x.key]||0) : null); })()")
-        def mine(n): return 'eq =' if n == 0 else ('w ' + '+'*n if n > 0 else 'b ' + '−'*-n)
-        want = [badge(v, t) if k is None else mine(k) for v, t, k in zip(vals, LEVELS, kept)]
-        if [r.split(': ')[1] for r in rows] != want: fails.append(f'badges {rows} vs values {vals}')
-        borders = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-badge')].map(b=>['ok','near','far','bad'].find(c=>b.classList.contains(c)) || '?')")
-        lv = await pg.evaluate("(()=>{ const a = aspectsStore[pos().fen].data; return ASPECTS.map(x=>aspectLevel(a[x.key], x.key)); })()")
-        mine = [2, 0, 1, 0, -2, 0]
-        POINTS = await pg.evaluate("ASPECTS.map(x=>!!x.points)")   # counted in points (Material, Pawns): exact levels
-        def credit(v, g, t, pts=False):   # the app's aspectCredit
-            n = sum(abs(v) >= x for x in t); lv = n if v >= 0 else -n
-            if g == lv: return 1
-            if pts: return 0.5 if g * lv > 0 else 0   # in points: the right side at the wrong strength, half
-            if abs(g - lv) > 1: return 0
-            e = [float('-inf'), -t[1], -t[0], t[0], t[1], float('inf')]; lo, hi = e[g + 2], e[g + 3]
-            d, th = (lo - v, abs(lo)) if v < lo else (v - hi, abs(hi))
-            d = max(0, d)
-            return max(0, 1 - d / (0.5 * th))
-        cr = [credit(v, m, t, q) for v, m, t, q in zip(vals, mine, LEVELS, POINTS)]
-        want = ['ok' if c >= 0.8 else 'near' if c > 0 else 'bad' for c in cr]
+            n = level(v, t)
+            return 'eq =' if n == 0 else ('w ' + '+'*n if n > 0 else 'b ' + '−'*-n)
+        if [r.split(': ')[1] for r in rows] != [badge(v, t) for v, t in zip(vals, LEVELS)]: fails.append(f'badges {rows} vs values {vals}')
+        # each pick on the right side: among the 3 biggest edges full, a smaller one half (shared when too many); else nothing
+        mine = [1, 0, 1, 0, -1, 0]; lv = [level(v, t) for v, t in zip(vals, LEVELS)]
+        right = [g != 0 and l != 0 and (g > 0) == (l > 0) for g, l in zip(mine, lv)]
+        big = sum(abs(l) == 2 for l in lv); room = max(0, 3 - big); small = sum(r and abs(l) == 1 for r, l in zip(right, lv))
+        small_cr = 0 if not small else 1 if small <= room else (room + (small - room) * 0.5) / small
+        cr = [0 if not r else 1 if abs(l) == 2 else small_cr for r, l in zip(right, lv)]
+        borders = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item .asp-pair > .asp-badge:first-child')].map(b=>['ok','near','bad'].find(c=>b.classList.contains(c)) || '-')")
+        want = ['-' if not g else 'ok' if c >= 1 else 'near' if c > 0 else 'bad' for g, c in zip(mine, cr)]
         print('borders:', borders)
         if borders != want: fails.append(f'borders: {borders}, expected {want}')
         final = await pg.text_content('#revealAcc')
-        pts = round(sum(100 / 6 * c for c in cr))
+        pts = round(100 * sum(cr) / 3)
         nums = [int(x[:-1]) for x in scores if x.endswith('%')]
         if final != f'{pts}%': fails.append(f'score {final}, expected {pts}%')
         if nums != sorted(nums) or not nums or nums[0] != 0: fails.append(f'the score should climb from 0: {scores}')
@@ -128,9 +127,9 @@ async def main():
         async def tapped(k):
             await pg.click(f'#aspects .asp-item[data-asp="{k}"]'); await pg.wait_for_timeout(100)
             return await pg.evaluate("({ sel: [...document.querySelectorAll('#aspects .asp-item.sel')].map(e=>e.dataset.asp).join(), nums: document.querySelectorAll('#arrows text').length, marks: document.getElementById('arrows').children.length })")
-        # only imbalances with something to draw are tappable (and underlined)
-        pk = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(e=>[e.dataset.asp, e.classList.contains('pickable'), hasMarks(pos().fen, e.dataset.asp)])")
-        if any(x[1] != x[2] for x in pk): fails.append(f'pickable should match marks: {pk}')
+        # every imbalance counted here is tappable (and underlined), even with little to draw
+        pk = await pg.evaluate("[...document.querySelectorAll('#aspects .asp-item')].map(e=>[e.dataset.asp, e.classList.contains('pickable'), !e.classList.contains('off')])")
+        if any(x[1] != x[2] for x in pk): fails.append(f'every imbalance should be tappable: {pk}')
         other_k = next(x[0] for x in pk if x[1] and x[0] != 'activity')
         r1 = await tapped('activity'); r2 = await tapped(other_k); r3 = await tapped(other_k)
         print('tap:', r1, r2, r3, other_k)
@@ -230,15 +229,21 @@ async def main():
         if ad != ['b6 c3 c7 e7 f4', 'c5b4 g7f6', '+10']: fails.append(f'activity detail: {ad}')
         di = await pg.evaluate("aspectMarks('4k3/p7/3p4/8/8/2P5/2P5/4K3 w - - 0 1', 'pawns').labels.map(l=>l.sq+':'+l.text).sort().join(' ')")
         if di != 'a7:Passed c2:Isolated c3:Doubled d6:Isolated': fails.append(f'doubled isolated pair: {di}')
-        # Space left out when few pieces remain: scored over the other five, greyed in the question
+        # Space left out when few pieces remain: not counted (a pick of it scores nothing), greyed in the question
         await pg.evaluate("void (spaceCounts = window._spaceCounts)")
-        so = await pg.evaluate("""(()=>{ const v = { material:0, pawns:0, space:0.5, activity:0, king:0, threats:0 }; Object.defineProperty(v, 'off', { value:['space'] });
-          return [Math.round(imbalanceScore(v, { space:2 }, 6)), Math.round(imbalanceScore(v, { material:2 }, 6)), spaceCounts('r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'), spaceCounts(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen)]; })()""")
+        so = await pg.evaluate("""(()=>{ const v = { material:2, pawns:0, space:5, activity:0, king:0, threats:0 }; Object.defineProperty(v, 'off', { value:['space'] });
+          return [Math.round(imbalanceScore(v, { space:1 }, 7)), Math.round(imbalanceScore(v, { material:1 }, 7)), spaceCounts('r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'), spaceCounts(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen)]; })()""")
         print('space left out:', so)
-        if so != [100, 80, True, False]: fails.append(f'space left out: {so}')
-        # every criterion in points: the exact level, all of it; the right side at the wrong strength (+ for ++), half; else nothing
-        ac = await pg.evaluate("[[1,1],[3,1],[1,2],[1,0],[1,-1],[-3,-1],[0,1]].map(([v,g])=>aspectCredit(v, g, 'threats'))")
-        if ac != [1, 0.5, 0.5, 0, 0, 0.5, 0]: fails.append(f'credit (exact 1, right side 0.5): {ac}')
+        if so != [0, 33, True, False]: fails.append(f'space left out: {so}')
+        # the scoring, on made-up levels (raw values: Material ++ from 1.5, the others ++ from 3)
+        sc = await pg.evaluate("""(()=>{ const V = o=>Object.defineProperty({ material:0, pawns:0, space:0, activity:0, king:0, threats:0, ...o }, 'off', { value:[] }), S = (v, g)=>Math.round(imbalanceScore(V(v), g, 7));
+          return [S({ material:2, pawns:3, king:3 }, { material:1, pawns:1, king:1 }),      // three ++, all found: 100
+                  S({ material:2, pawns:1, space:1, king:-1 }, { material:1, pawns:1, space:1 }),   // one ++ and two +: 100
+                  S({ material:2, pawns:1, space:1, king:-1 }, { pawns:1, space:1, king:-1 }),     // the ++ skipped for a third +: 83
+                  S({ material:2, pawns:3, king:3, space:1 }, { material:1, pawns:1, space:1 }),   // three ++, a + picked: 83
+                  S({ material:2, pawns:1 }, { material:-1, threats:1, pawns:1 }),                 // wrong side, balanced, right: 33
+                  imbalanceScore(V({ material:2 }), { material:1 }, 6)]; })()""")
+        if sc != [100, 100, 83, 83, 33, 0]: fails.append(f'scoring: {sc}')
         # an ending Stockfish rates on its own (all-zero table): only Material (in points: the queen's 9), the rest left out
         sp = await pg.evaluate("""(()=>{ const z = ['Material','Imbalance','Initiative','Pawns','Knights','Bishops','Rooks','Queens','Mobility','King safety','Threats','Passed','Space'].map(k=>`  ${k} |  0.00  0.00 |  0.00  0.00 |  0.00  0.00`).concat(['Total evaluation: 61.20 (white side)']);
           const v = parseAspects(z, '7k/8/5K2/8/8/8/8/6Q1 w - - 0 60'); return [Math.round(v.material), v.activity, v.off.join(' '), !!v.special]; })()""")
@@ -287,9 +292,9 @@ async def main():
         # Threats: a pawn fork, a pawn hitting a pinned knight, a knight forking queen and king (the move's arrow, no rings)
         for k, a, c in [('fork', 'c6d4b d4d5w e6c4b', 'c4b d4b'), ('pin', 'e4e5w', ''), ('queenFork', 'c3d5w', '')]:
             if marks[k]['a'] != a or marks[k]['c'] != c: fails.append(f'{k} threats: {marks[k]}')
-        # the pool: Position evaluation's positions less the tactical ones; neither has a castling right
+        # the pool: Position evaluation's positions less the tactical ones and those unfit for choosing 3; neither has a castling right
         # lost with king and rook still on their first squares
-        n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, POOLS.analysis.filter(p=>IMBALANCE_SKIP.includes(p.key) || IMBALANCE_SKIP_BETA.includes(p.key)).length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key) || IMBALANCE_SKIP_BETA.includes(p.key)), POOLS.analysis.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss)]")
+        n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, POOLS.analysis.filter(p=>IMBALANCE_SKIP.includes(p.key) || IMBALANCE_SKIP_BETA.includes(p.key) || IMBALANCE_SKIP_PICK.includes(p.key)).length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key) || IMBALANCE_SKIP_BETA.includes(p.key) || IMBALANCE_SKIP_PICK.includes(p.key)), POOLS.analysis.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss)]")
         print('pools:', n)
         if n[0] != n[1] - n[2] or n[3] or n[2] < 5 or n[4] or n[5] != [True, False, False]: fails.append(f'Imbalance reading pool: {n}')
         await b.close()
