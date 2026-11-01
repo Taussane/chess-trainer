@@ -3,8 +3,8 @@
 # ahead, and the grades' sum (+ 1, ++ 2, from White's side; Development in place of Activity while a
 # knight or bishop has never moved) is "=" or leans the other way. Writes the list into app/index.html
 # (/*IMBALANCE_SKIP_BETA*/), with the positions where every criterion is "="; the app leaves those positions out too (on top of IMBALANCE_SKIP).
-# And, for the beta only (/*IMBALANCE_SKIP_PICK*/), the positions where Stockfish 10's own terms read the
-# decisive criteria otherwise (pickDisagrees, below), or that have fewer than 3 criteria graded (the beta asks for 3).
+# And (/*IMBALANCE_SKIP_PICK*/, for choosing the 3 most decisive), the positions where Stockfish 10's own terms read the
+# decisive criteria otherwise (pickDisagrees, below), or that have fewer than 3 criteria graded (Imbalance reading asks for 3).
 # Needs playwright and the site built (python3 scripts/build-site.py). Usage: python3 scripts/imbalance-beta-skip.py
 import asyncio, json, pathlib, re, subprocess, sys, time
 from playwright.async_api import async_playwright
@@ -13,7 +13,7 @@ APP = ROOT / 'app' / 'index.html'
 CJ = (ROOT / 'vendor' / 'chess.js' / 'chess.js').read_text()
 EVALS = json.loads((ROOT / 'master-evals.json').read_text())
 JS = r"""()=>{
-// The beta's check (choose the decisive criteria): Stockfish 10's own term for each criterion (parseAspects,
+// The check for choosing the 3 most decisive: Stockfish 10's own term for each criterion (parseAspects,
 // in pawns; Material left out, a plain count, and Activity while it's Development, King safety in an
 // endgame, King activity) against our grade: one of its three biggest (half a pawn or more) on the other
 // side, or one of our ++ that it reads the other way or next to nothing (under 0.1).
@@ -56,11 +56,11 @@ async def main():
         cp = (1e5 if e[2] > 0 else -1e5) if e[2] is not None else e[1]
         if r['side'] == 'b': cp = -cp   # mover's point of view -> White's
         if abs(cp) >= 100 and (r['sum'] == 0 or (r['sum'] > 0) != (cp > 0)): skip.append(r['key'])
-        elif not r['graded']: skip.append(r['key'])   # every criterion "=": nothing to choose (the beta grades 1 to 3, never "=")
-        elif r.get('pick') or r['gradedN'] < 3: pick.append(r['key'])   # the beta only: Stockfish 10 reads the decisive criteria otherwise, or fewer than 3 to choose
+        elif not r['graded']: skip.append(r['key'])   # every criterion "=": nothing to choose (never "=" to choose)
+        elif r.get('pick') or r['gradedN'] < 3: pick.append(r['key'])   # Stockfish 10 reads the decisive criteria otherwise, or fewer than 3 to choose
     s = APP.read_text(encoding='utf-8')
     s = re.sub(r'/\*IMBALANCE_SKIP_BETA\*/.*?/\*END IMBALANCE_SKIP_BETA\*/', lambda m: '/*IMBALANCE_SKIP_BETA*/' + json.dumps(skip, ensure_ascii=False) + '/*END IMBALANCE_SKIP_BETA*/', s, flags=re.S)
     s = re.sub(r'/\*IMBALANCE_SKIP_PICK\*/.*?/\*END IMBALANCE_SKIP_PICK\*/', lambda m: '/*IMBALANCE_SKIP_PICK*/' + json.dumps(pick, ensure_ascii=False) + '/*END IMBALANCE_SKIP_PICK*/', s, flags=re.S)
     APP.write_text(s, encoding='utf-8')
-    print(len(rows), 'positions,', len(skip), 'left out on both sites,', len(pick), 'more on beta,', len(rows) - len(skip) - len(pick), 'kept on beta')
+    print(len(rows), 'positions,', len(skip), 'left out on both sites,', len(pick), 'more for choosing 3,', len(rows) - len(skip) - len(pick), 'kept')
 asyncio.run(main())
