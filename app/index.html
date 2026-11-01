@@ -3533,12 +3533,12 @@ function reviewBadge(vals, guesses, x, i, shown){
   return `<span class="asp-badge ${levelCls(v)} ${cr >= 0.8 ? 'ok' : cr > 0 ? 'near' : 'bad'}">${SIGNS(v)}</span>`;
 }
 // (beta) Two badges: your side (coloured, empty; ringed green for full points, yellow for half, red), then
-// the real level ("?" until revealed; faded where you didn't choose it, a dashed red ring for a decisive one left out).
+// the real level (empty until revealed; faded where you didn't choose it, a dashed red ring for a decisive one left out).
 function pickReviewBadges(vals, guesses, x, i, shown){
   const g = (guesses && guesses[x.key]) || 0, open = vals && i < shown;
   const k = open ? pickInfo(vals, guesses) : null, cr = k && g ? k.credit(x.key) : null;
   const mine = g ? `<span class="asp-badge ${levelCls(g)}${cr==null ? '' : cr >= 1 ? ' ok' : cr > 0 ? ' near' : ' bad'}" aria-label="${g > 0 ? 'White' : 'Black'}">&nbsp;</span>` : `<span class="asp-badge unset mine">?</span>`;
-  if(!open) return mine + `<span class="asp-badge unset real">?</span>`;
+  if(!open) return mine + `<span class="asp-badge real slot">&nbsp;</span>`;   // empty until revealed
   const l = aspectLevel(vals[x.key], x.key);
   return mine + `<span class="asp-badge ${levelCls(l)} real${g ? '' : ' unpicked'}${!g && k.missed(x.key) ? ' missed' : ''}">${SIGNS(l)}</span>`;
 }
@@ -3643,7 +3643,7 @@ function startAspectsReveal(p, s, vals){
       // the new badge starts from your level's look (beta: the real one from "?"; yours from your side), then fades to the engine's
       const g = s.asp[x.key] || 0;
       if(el && !isOff(vals, x)) el.querySelectorAll(ASP_PICK ? '.asp-badge.real' : '.asp-badge').forEach(nb=>{ const final = nb.className;
-        nb.className = ASP_PICK ? 'asp-badge unset real' : `asp-badge ${levelCls(g)}`; nb.offsetWidth; nb.className = final; });
+        nb.className = ASP_PICK ? 'asp-badge eq real' : `asp-badge ${levelCls(g)}`; nb.offsetWidth; nb.className = final; });
       // the score climbs to its new value while the badge fades
       const from = imbalanceScore(vals, s.asp, s.aspShown - 1), to = imbalanceScore(vals, s.asp, s.aspShown);
       let t0 = null;
