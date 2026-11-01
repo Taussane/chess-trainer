@@ -4,7 +4,7 @@
 # knight or bishop has never moved) is "=" or leans the other way. Writes the list into app/index.html
 # (/*IMBALANCE_SKIP_BETA*/), with the positions where every criterion is "="; the app leaves those positions out too (on top of IMBALANCE_SKIP).
 # And, for the beta only (/*IMBALANCE_SKIP_PICK*/), the positions where Stockfish 10's own terms read the
-# decisive criteria otherwise (pickDisagrees, below).
+# decisive criteria otherwise (pickDisagrees, below), or that have fewer than 3 criteria graded (the beta asks for 3).
 # Needs playwright and the site built (python3 scripts/build-site.py). Usage: python3 scripts/imbalance-beta-skip.py
 import asyncio, json, pathlib, re, subprocess, sys, time
 from playwright.async_api import async_playwright
@@ -28,7 +28,8 @@ return POOLS.analysis.filter(p=>!IMBALANCE_SKIP.includes(p.key)).map(p=>{
   let d = null; try{ d = adaptAspects(parseAspects(sfTableLines(p.fen), p.fen), p.fen); }catch(e){}
   if(!d) return { key: p.key, sum: null };
   return { key: p.key, side: p.side, sum: ASPECTS.reduce((s, x)=>s + (d.off.includes(x.key) ? 0 : aspectLevel(d[x.key], x.key)), 0),
-           graded: ASPECTS.some(x=>!d.off.includes(x.key) && aspectLevel(d[x.key], x.key)), pick: pickDisagrees(p.fen, d) };
+           graded: ASPECTS.some(x=>!d.off.includes(x.key) && aspectLevel(d[x.key], x.key)),
+           gradedN: ASPECTS.filter(x=>!d.off.includes(x.key) && aspectLevel(d[x.key], x.key)).length, pick: pickDisagrees(p.fen, d) };
 });}"""
 async def main():
     server = subprocess.Popen([sys.executable, '-m', 'http.server', '8799'], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -56,7 +57,7 @@ async def main():
         if r['side'] == 'b': cp = -cp   # mover's point of view -> White's
         if abs(cp) >= 100 and (r['sum'] == 0 or (r['sum'] > 0) != (cp > 0)): skip.append(r['key'])
         elif not r['graded']: skip.append(r['key'])   # every criterion "=": nothing to choose (the beta grades 1 to 3, never "=")
-        elif r.get('pick'): pick.append(r['key'])   # the beta only: Stockfish 10 reads the decisive criteria otherwise
+        elif r.get('pick') or r['gradedN'] < 3: pick.append(r['key'])   # the beta only: Stockfish 10 reads the decisive criteria otherwise, or fewer than 3 to choose
     s = APP.read_text(encoding='utf-8')
     s = re.sub(r'/\*IMBALANCE_SKIP_BETA\*/.*?/\*END IMBALANCE_SKIP_BETA\*/', lambda m: '/*IMBALANCE_SKIP_BETA*/' + json.dumps(skip, ensure_ascii=False) + '/*END IMBALANCE_SKIP_BETA*/', s, flags=re.S)
     s = re.sub(r'/\*IMBALANCE_SKIP_PICK\*/.*?/\*END IMBALANCE_SKIP_PICK\*/', lambda m: '/*IMBALANCE_SKIP_PICK*/' + json.dumps(pick, ensure_ascii=False) + '/*END IMBALANCE_SKIP_PICK*/', s, flags=re.S)
