@@ -1603,7 +1603,7 @@ const HELP = {
     review:BETA_SITE ? [
       ['Score', "Each choice counts for a third.", ["Among the 3 biggest edges, on the right side: full points.", "A smaller edge, on the right side: half.", "Balanced, or the wrong side: nothing."]],
       ['Colours', "The real sizes appear beside your answers, then your choices get their rings: green, yellow or red."],
-      ['Details', "Tap an imbalance to see it on the board, then the '?' button for how it's counted."],
+      ['Details', "Tap an imbalance to see it on the board, then a king for that side alone, or the '?' button for how it's counted."],
       ['Keep in mind', "Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all."],
     ] : [
       ['Score', "Each imbalance counts equally.", ["Right level: full points.", "Right side, wrong size (+ instead of ++): half.", "Anything else: nothing."]],
@@ -3587,28 +3587,28 @@ function aspectsGridHtml(vals, guesses, shown, hidden, view, pickable, fadeIn){ 
     </div>`;
 }
 // Tapping an aspect in a review draws its marks (aspectMarks) on the board; tapping it again clears them.
+// (beta) Any imbalance: a king tapped shows only the marks for its side (King safety: what bears on that king).
+const marksForSide = (mk, c)=>{ if(!c) return mk; const out = {}; for(const k in mk) out[k] = Array.isArray(mk[k]) ? mk[k].filter(x=>x.c===c) : mk[k]; return out; };
 function wireAspectView(p, s){
   const svg = document.getElementById('arrows'), board = document.getElementById('board');
   const actTap = s.aspView==='activity' && !devActive(p.fen);   // (Activity only; not Development)
   if(!actTap) s.aspPiece = null;
-  if(s.aspView!=='king') s.aspKing = null;
-  const draw = ()=>{ if(s.aspView) drawMarks(svg, (s.aspPiece && activityDetail(p.fen, s.aspPiece)) || aspectMarks(p.fen, s.aspView, s.aspKing ? { only: s.aspKing } : null)); };
+  if(!BETA_SITE && s.aspView!=='king') s.aspKing = null;
+  const kingView = s.aspView==='king' && !isEndgame(p.fen);   // King safety (not King activity): its own one-side view
+  const draw = ()=>{ if(s.aspView) drawMarks(svg, (s.aspPiece && activityDetail(p.fen, s.aspPiece))
+    || (kingView ? aspectMarks(p.fen, s.aspView, s.aspKing ? { only: s.aspKing } : null) : marksForSide(aspectMarks(p.fen, s.aspView), s.aspKing))); };
   draw();
   // Activity: tap a piece to see which squares it counts (again, or elsewhere, to go back).
+  // A king (King safety; beta: every imbalance): only its side; again, or elsewhere, both.
   if(board){
-    const kingTap = s.aspView==='king' && !isEndgame(p.fen);   // (King safety only; not King activity)
+    const kingTap = !!s.aspView && (kingView || BETA_SITE);
     board.classList.toggle('asp-tappable', actTap || kingTap);
-    // King safety: tap a king to see only what bears on it (again, or elsewhere, to see both)
-    if(kingTap) board.onclick = e=>{
+    board.onclick = !(actTap || kingTap) ? null : e=>{
       const el = e.target.closest && e.target.closest('.sq'); if(!el) return;
-      const pc = boardMap(p.fen)[el.dataset.sq];
-      s.aspKing = pc && pc.t==='k' && s.aspKing!==pc.c ? pc.c : null;
-      draw();
-    };
-    else board.onclick = !actTap ? null : e=>{
-      const el = e.target.closest && e.target.closest('.sq'); if(!el) return;
-      const sq = el.dataset.sq;
-      s.aspPiece = s.aspPiece!==sq && activityDetail(p.fen, sq) ? sq : null;
+      const sq = el.dataset.sq, pc = boardMap(p.fen)[sq];
+      if(kingTap && pc && pc.t==='k'){ s.aspKing = s.aspKing!==pc.c ? pc.c : null; s.aspPiece = null; }
+      else if(actTap){ s.aspPiece = s.aspPiece!==sq && activityDetail(p.fen, sq) ? sq : null; if(BETA_SITE) s.aspKing = null; }
+      else s.aspKing = null;
       draw();
     };
   }
@@ -7184,6 +7184,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Support me on Ko-fi": "Soutenez-moi sur Ko-fi",
 "Free chess strategy training on master games and your own.": "Entraînement gratuit à la stratégie aux échecs, sur des parties de maîtres et les vôtres.",
 "Tap an imbalance to see it on the board, then the '?' button for how it's counted.": "Touchez un déséquilibre pour le voir sur l'échiquier, puis le bouton « ? » pour savoir comment il se compte.",
+"Tap an imbalance to see it on the board, then a king for that side alone, or the '?' button for how it's counted.": "Touchez un déséquilibre pour le voir sur l'échiquier, puis un roi pour ce camp seul, ou le bouton « ? » pour savoir comment il se compte.",
 "Tap a line to see its imbalance on the board, then the '?' button for how it's counted.": "Touchez une ligne pour voir son déséquilibre sur l'échiquier, puis le bouton « ? » pour savoir comment il se compte.",
 "Support me": "Soutenez-moi",
 "Feedback": "Commentaires",
