@@ -524,8 +524,7 @@
   .asp-badge.unset.full{opacity:.4;} .asp-badge.unset.clear{border-style:solid;}
   .asp-badge.unset.asp-pick, .asp-badge.unset.real{border-style:solid;}   /* (beta) "?": undecided (dashed is for a criterion left out) */
   .asp-pair{display:flex; gap:3px; flex:none;} .asp-pair .asp-badge{min-width:1.6em; padding:1px 1px; letter-spacing:0;}
-  .asp-grid:has(.asp-pair){column-gap:12px;}   /* (beta) two badges a row: a little more room for the names */ .asp-badge.slot{visibility:hidden;} .pick-left{color:var(--text-mute); white-space:nowrap;}
-  #imbPrompt.pick{min-height:calc(2 * 1.45em);}   /* (beta) room for the count left on a second line: nothing moves while choosing */ .asp-badge.unset.mine{opacity:.55;}
+  .asp-grid:has(.asp-pair){column-gap:12px;}   /* (beta) two badges a row: a little more room for the names */ .asp-badge.slot{visibility:hidden;} .pick-left{color:var(--text-mute); white-space:nowrap; margin-right:auto; align-self:center;} .asp-badge.unset.mine{opacity:.55;}
   .asp-badge.slide-in{animation:asp-slide .45s ease-out both;} @keyframes asp-slide{from{opacity:0;} to{opacity:1;}}   /* (beta) the real level's place, empty during the question */
 
   .asp-picker.pick{flex-wrap:wrap;} .asp-picker-q{flex:1 0 100%; font-size:0.82rem; color:var(--text-mute); text-align:center; padding:0 0 4px;}
@@ -3782,7 +3781,7 @@ function setAspect(s, key, l){
   if(ASP_PICK){   // (beta) not chosen: an empty badge; three chosen: the others dimmed
     if(b){ const on = !!s.asp[key]; b.className = `asp-badge ${on ? levelCls(s.asp[key]) : 'unset'} asp-pick${aspPicker && aspPicker.key===key ? ' editing' : ''}`; b.innerHTML = on ? '&nbsp;' : '?'; }
     const full = aspPickFull(s); document.querySelectorAll('#aspInput .asp-pick.unset').forEach(x=>x.classList.toggle('full', full));
-    const left = document.querySelector('#imbPrompt .pick-left'); if(left) left.textContent = aspLeftText(s);
+    const left = document.getElementById('pickLeft'); if(left) left.textContent = aspLeftText(s);
   }
   else if(b){ b.className = `asp-badge ${levelCls(s.asp[key])} asp-pick${aspPicker && aspPicker.key===key ? ' editing' : ''}`; b.textContent = SIGNS(s.asp[key]); b.setAttribute('aria-label', `${ASPECTS.find(x=>x.key===key).name}: ${SIGNS(s.asp[key])}`); }
   if(aspPicker && aspPicker.key===key) aspPicker.el.querySelectorAll('[data-l]').forEach(o=>o.classList.toggle('on', +o.dataset.l===s.asp[key]));
@@ -3792,8 +3791,8 @@ function setAspect(s, key, l){
 // In the tutorial (the first answers, while the hints show), Check waits for a first grade other than "=".
 const aspAnyGraded = s=>Object.values(s.asp || {}).some(l=>l);
 const aspCheckWaits = s=>ASP_PICK ? Object.values(s.asp || {}).filter(l=>l).length < ASP_PICK_MAX : hintsOn('imbalances') && !aspAnyGraded(s);   // (beta: three chosen)
-// (beta) after the prompt: how many are left to choose (nothing before the first, nor once three are chosen)
-const aspLeftText = s=>{ const n = ASP_PICK_MAX - Object.values((s && s.asp) || {}).filter(l=>l).length; return n > 0 && n < ASP_PICK_MAX ? ` ${n} left` : ''; };
+// (beta) beside Check: how many are left to choose (nothing before the first, nor once three are chosen)
+const aspLeftText = s=>{ const n = ASP_PICK_MAX - Object.values((s && s.asp) || {}).filter(l=>l).length; return n > 0 && n < ASP_PICK_MAX ? `${n} left` : ''; };
 const aspPickFull = s=>ASP_PICK && Object.values(s.asp || {}).filter(l=>l).length >= ASP_PICK_MAX;
 function openAspPicker(s, key){
   closeAspPicker();
@@ -4291,7 +4290,7 @@ const GHOST_ANALYSIS = [
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planHtml(null, null, false, true)}${GHOST_ACTIONS}`,
 ];
 const GHOST_IMBALANCES = [
-  `<p class="prompt${ASP_PICK ? ' pick' : ''}">${ASP_PICK ? 'Gauge the 3 most decisive imbalances.<span class="pick-left"> 2 left</span>' : 'Grade each positional imbalance.'}</p>${aspectsInputHtml(null, true)}<div class="actions-row"><span class="btn">Check</span></div>`,
+  `<p class="prompt">${ASP_PICK ? 'Gauge the 3 most decisive imbalances.' : 'Grade each positional imbalance.'}</p>${aspectsInputHtml(null, true)}<div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, 0, true)}${GHOST_ACTIONS}`,
 ];
 function ghostCandidates(){
@@ -6007,9 +6006,9 @@ function renderImbalances(){
         ${aspectsGridHtml(vals, s.asp, s.aspShown || 0, false, s.aspView, done && p.fen)}
         <div class="actions-row split${done ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
-        <p class="prompt${ASP_PICK ? ' pick' : ''}" id="imbPrompt">${ASP_PICK ? `Gauge the 3 most decisive imbalances.<span class="pick-left">${aspLeftText(s)}</span>` : 'Grade each positional imbalance.'}</p>
+        <p class="prompt" id="imbPrompt">${ASP_PICK ? 'Gauge the 3 most decisive imbalances.' : 'Grade each positional imbalance.'}</p>
         ${aspectsInputHtml(s)}
-        <div class="actions-row" id="imbCheckRow"><button class="btn" id="check" ${sfState==='error' || aspCheckWaits(s) ? 'disabled' : ''}>Check</button></div>`}`, GHOST_IMBALANCES, engineErrorBanner())}`;
+        <div class="actions-row" id="imbCheckRow">${ASP_PICK ? `<span class="pick-left" id="pickLeft">${aspLeftText(s)}</span>` : ''}<button class="btn" id="check" ${sfState==='error' || aspCheckWaits(s) ? 'disabled' : ''}>Check</button></div>`}`, GHOST_IMBALANCES, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(s.checked) fadeOnce(s, 'score', reviewPart('.score'));   // the accuracy, as the review opens
   if(done) wireAspectView(p, s);
