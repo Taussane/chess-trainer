@@ -3566,6 +3566,7 @@ function reviewBadge(vals, guesses, x, i, shown){
 // (beta) Two badges: your answer (its side, empty; or "?"), then the real level. The review goes in two
 // steps (`shown`): every real level at once (ASPECTS.length), then your picks ringed (one more):
 // green for full points, yellow some, red nothing.
+let aspFadeT0 = -Infinity; const ASP_FADE_MS = 600;   // (beta) when the review's real levels started fading in
 const pickRingCls = (k, key, g)=>{ if(!g) return ''; const cr = k.credit(key); return cr >= 1 ? ' ok' : cr > 0 ? ' near' : ' bad'; };   // only your picks
 function pickReviewBadges(vals, guesses, x, i, shown){
   const g = (guesses && guesses[x.key]) || 0, open = vals && shown >= ASPECTS.length, ringed = vals && shown > ASPECTS.length;
@@ -3573,7 +3574,8 @@ function pickReviewBadges(vals, guesses, x, i, shown){
   const mine = g ? `<span class="asp-badge ${levelCls(g)}${ring}" aria-label="${g > 0 ? 'White' : 'Black'}">&nbsp;</span>` : `<span class="asp-badge unset mine${ring}">?</span>`;
   if(!open) return mine + `<span class="asp-badge real slot">&nbsp;</span>`;   // empty until revealed
   const l = aspectLevel(vals[x.key], x.key);
-  return mine + `<span class="asp-badge ${levelCls(l)} real${ringed ? '' : ' slide-in'}">${SIGNS(l)}</span>`;   // (before the rings: fading in)
+  const since = performance.now() - aspFadeT0, fading = !ringed && since < ASP_FADE_MS;   // (the review opening: fading in; a redraw carries on where it was)
+  return mine + `<span class="asp-badge ${levelCls(l)} real${fading ? ' slide-in' : ''}"${fading ? ` style="animation-delay:${-Math.round(since)}ms"` : ''}>${SIGNS(l)}</span>`;
 }
 // `view`: once revealed, every aspect can be tapped (one at a time, like radio buttons) to draw on the
 // board what it's about; `view` is the one shown (or null), `pickable` whether tapping works yet.
@@ -3664,7 +3666,7 @@ function startAspectsReveal(p, s, vals){
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const END = ASPECTS.length + (ASP_PICK ? 1 : 0);   // (beta: one more step, the rings)
   if(reduced){ s.aspShown = END; s.aspDone = true; s.justDone = true; return; }
-  s.aspShown = ASP_PICK ? ASPECTS.length : 0;   // (beta) the real levels show with the review itself, the score at 0; then the rings
+  s.aspShown = ASP_PICK ? ASPECTS.length : 0; aspFadeT0 = performance.now();   // (beta) the real levels show with the review itself, the score at 0; then the rings
   const key = p.key;
   const tick = ()=>{
     // Left the screen or moved on: just finish it silently.
