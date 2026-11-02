@@ -7884,7 +7884,7 @@ const planqPlanScore = q=>Math.round(q.rows.reduce((t, r)=>t + planqRowScore(r, 
 function planqNote(q){
   const step = PLANQ_STEPS[q.step], who = q.p.side==='w' ? 'White' : 'Black';
   if(step==='urgent'){ const u = q.urgent, mate = q.info.mate!=null;
-    if(u.kind==='win') return mate ? `${who} has a mate: it comes first.` : u.stop ? `${u.san} wins material: it comes first.` : `${u.san} wins material: keep it in mind for what follows.`;
+    if(u.kind==='win') return mate ? `${who} has a mate: it comes first.` : u.stop ? `${u.san} wins material: it comes first.` : `${u.san} wins material, but the general plan still holds.`;
     if(u.kind==='defend') return mate ? `${who} must stop a mate first.` : `${who} must deal with a threat first.`;
     return u.looks ? `Taking on ${u.looks.sq} looks free, but Stockfish prefers ${u.looks.best}.` : 'Nothing to win or to parry right now.'; }
   if(step==='winning') return `Stockfish gives ${planqEvalText(q.info)}. Balanced sits within ±0.5.`;   // (a mate is urgent: it never gets here)
