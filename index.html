@@ -7718,46 +7718,48 @@ function planqOwnOk(p){
 }
 // Your positions checked for the Plan finder in the background, one at a time while the page is idle, at most one
 // engine search waiting (never a flood of them: the page stays responsive); the profile redraws as counts come in
-let planqScanBusy = false;
+let planqScanBusy = false, planqScanAgain = false;
 function planqOwnScan(){
-  if(planqScanBusy) return;
+  if(planqScanBusy){ planqScanAgain = true; return; }
   const todo = myPositions.filter(p=>p.gameId && posIn(p, 'planq') && !planqOwnKnown.has(p.key) && ownStored(p, 'planqChk')===undefined);
   if(!todo.length) return;
-  planqScanBusy = true;
-  const idle = f=>window.requestIdleCallback ? requestIdleCallback(f, { timeout: 2000 }) : setTimeout(f, 80);
+  planqScanBusy = true; planqScanAgain = false;
+  const idle = f=>window.requestIdleCallback ? requestIdleCallback(f, { timeout: 2000 }) : setTimeout(f, 60);
   let i = 0, found = 0;
-  const step = ()=>{
-    for(; i < todo.length; i++){
-      const p = todo[i];
-      if(planqOwnKnown.has(p.key)) continue;
-      const en = fenEvalStore[p.fen];
-      if(en && en.status==='pending'){ en.promise.then(()=>idle(step)); return; }   // (its search under way: on once it's in)
-      const r = planqOwnOk(p);
-      if(r!==undefined){ found++; i++; break; }
-      if(fenEvalStore[p.fen] && fenEvalStore[p.fen].status==='pending'){ fenEvalStore[p.fen].promise.then(()=>idle(step)); return; }
-      if(quietOwn(p)===undefined){ setTimeout(()=>idle(step), 300); return; }   // (its quiet check queued)
-    }
-    if(found && onProfile()) render();
-    found = 0;
-    if(i < todo.length) idle(step); else planqScanBusy = false;
+  const step = deadline=>{
+    const t0 = performance.now(), left = ()=>deadline && deadline.timeRemaining ? deadline.timeRemaining() > 4 : performance.now() - t0 < 10;
+    while(i < todo.length && left()){ if(planqOwnOk(todo[i])!==undefined) found++; i++; }   // (undefined: its search is out; back to it once in)
+    if(found && onProfile()){ found = 0; render(); }
+    if(i < todo.length) idle(step);
+    else { planqScanBusy = false; if(planqScanAgain){ planqScanAgain = false; setTimeout(planqOwnScan, 200); } }
   };
   idle(step);
 }
 // The Plan finder open on your games with nothing ready: the engine's search for one unchecked position goes
 // to the front of the queue (otherwise they wait behind the games' background analysis)
 function planqHurry(){
-  const p = planqPool().find(x=>x.gameId && planqOwnKnown.get(x.key)===undefined && ownStored(x, 'planqChk')===undefined && !(fenEvalStore[x.fen] && fenEvalStore[x.fen].status==='done'));
-  if(!p) return;
-  const en = fenEvalStore[p.fen];
-  if(en && en.status==='pending') bumpJob(p.fen); else withPrep('front', ()=>fenEvalEntry(p.fen));
+  const p = planqPool().find(x=>x.gameId && planqOwnKnown.get(x.key)===undefined && ownStored(x, 'planqChk')===undefined && !planqShortAsked.has(x.fen));
+  if(p) withPrep('front', ()=>planqEngineLine(p));   // (its short search ahead of the rest)
 }
 // Your games' positions: the engine's best line, from a search asked at low priority (null until it's in)
 function planqEngineLine(p){
   const en = fenEvalStore[p.fen];
-  if(en && en.status==='done') return en.data && en.data.lines && en.data.lines[0] || null;
-  if(!en) withPrep('low', ()=>fenEvalEntry(p.fen));
+  if(en && en.status==='done') return en.data && en.data.lines && en.data.lines[0] || null;   // (a full search done already: read)
+  if(planqShort.has(p.fen)) return planqShort.get(p.fen);
+  if(!planqShortAsked.has(p.fen) && sfState!=='error' && sfWorker){   // a short search (0.4 s: enough for the best move), low priority
+    planqShortAsked.add(p.fen);
+    withPrep('low', ()=>queueJob({ fen: p.fen, multipv: 1, movetime: 400, resolve: r=>{
+      const l = r && !r.failed && r.lines && r.lines[0] || null;
+      planqShort.set(p.fen, l);
+      if(l && l.uci){ const g = myGames.find(x=>x.id===p.gameId), e = g && g.evals && p.ply > 0 ? g.evals[p.ply - 1] : null;
+        if(e && !e.best){ e.best = l.uci; ownDirty.add(g); clearTimeout(ownDirtyT); ownDirtyT = setTimeout(()=>{ ownDirty.forEach(saveMyGame); ownDirty.clear(); }, 1500); } }   // (kept with the game: never searched again)
+      planqScanAgain = true; planqOwnScan();
+    } }));
+    pumpEngineQueue();
+  }
   return null;
 }
+const planqShort = new Map(), planqShortAsked = new Set();   // FEN -> the short search's best line (null: none)
 // Stockfish's best move: shipped with the master positions; for yours, the engine's (undefined while it's searching)
 function planqBest(p){
   const m = masterEvals && masterEvals[p.fen.split(' ').slice(0, 4).join(' ')];
