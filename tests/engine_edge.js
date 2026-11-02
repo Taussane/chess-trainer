@@ -86,6 +86,23 @@ const reviewDone = (p, ms) => p.waitForFunction(() => !!document.getElementById(
     let fails = [];
     for (let k = 0; k < 8; k++) {
       const a = await p.evaluate(() => screen);
+      if (a === 'planq') {   // the Plan finder (no engine in the page: its own buttons): answer both phases, then on
+        const done = await p.waitForFunction(() => !!document.querySelector('#pqCheck'), null, { timeout: 15000 }).then(async () => {
+          for (let i = 0; i < 2; i++) {
+            const over = await p.evaluate(() => { if (document.getElementById('pqNext')) return true;
+              document.querySelectorAll('#app .layer:not(.ghost) .pq-sides').forEach(r => { const b = r.querySelector('button:not([disabled])'); if (b) b.click(); });
+              const c = document.getElementById('pqCheck'); if (c) c.click(); const g = document.getElementById('pqGo'); if (g) g.click(); return false; });
+            if (over) break;
+            await p.waitForTimeout(150);
+            await p.evaluate(() => { const g = document.getElementById('pqGo'); if (g) g.click(); });
+            await p.waitForTimeout(150);
+          }
+          return p.waitForFunction(() => !!document.getElementById('pqNext') && !document.querySelector('#app .layer:not(.ghost) .actions-row.pending'), null, { timeout: 15000 }).then(() => true, () => false);
+        }, () => false);
+        if (!done) { fails.push('planq'); break; }
+        await p.evaluate(() => document.getElementById('pqNext').click()); await p.waitForTimeout(100);
+        continue;
+      }
       const shown = await p.waitForFunction(() => !!document.getElementById('check'), null, { timeout: 15000 }).then(() => true, () => false);
       if (!shown) { fails.push(a + ' question'); break; }
       await answer(p, a); if (!await reviewDone(p, 15000)) { fails.push(a + ' review'); break; }
