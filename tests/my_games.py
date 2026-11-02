@@ -24,14 +24,14 @@ engineEval = (fen, sm)=>new Promise(res=>setTimeout(()=>res(__fakeSearch(fen, sm
 bgEval = (fen, o)=>new Promise(res=>setTimeout(()=>res(__fakeSearch(fen, o&&o.searchmoves, o&&o.multipv)), 2));
 failEngine = ()=>{}; sfState = 'ready'; engineErrorBanner = ()=>'';
 """
-async def page_with_app(p, storage=None, in_claude=True):
+async def page_with_app(p, storage=None, in_claude=True, beta=False):   # beta: the page as the beta site (Position evaluation there)
     # in_claude: the page as published inside Claude (window.claude present, nothing granted);
     # False: the website, where games are fetched from Lichess directly.
     b = await p.chromium.launch(); ctx = await b.new_context(viewport={'width':390,'height':760})
     pg = await ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
     async def route(r):
         if 'chess.js' in r.request.url: await r.fulfill(body=CHESS, content_type='application/javascript')
-        elif r.request.url.startswith('https://app.test/') and '/vendor/' not in r.request.url: await r.fulfill(body='<!doctype html><html><head><meta charset="utf-8"></head><body>'+SRC+'</body></html>', content_type='text/html')
+        elif r.request.url.startswith('https://app.test/') and '/vendor/' not in r.request.url: await r.fulfill(body='<!doctype html><html'+(' class="beta"' if beta else '')+'><head><meta charset="utf-8"></head><body>'+SRC+'</body></html>', content_type='text/html')
         else: await r.abort()
     await pg.route('http*://**/*', lambda r: asyncio.ensure_future(route(r)))
     if in_claude: await pg.add_init_script("window.claude = { use: async()=>null };")
@@ -88,7 +88,7 @@ async def main():
         await pg.screenshot(path=str(SHOTS/'mg_3_home.png'))
         for act in ['analysis','candidates','final']:
             if counts[act] == 0: continue
-            await pg.click(f'.card[data-go="{act}"]'); await pg.wait_for_timeout(1500)
+            await pg.evaluate(f"openActivity('{act}')"); await pg.wait_for_timeout(1500)   # (Position evaluation: no card on the live site)
             t = await pg.evaluate("pos().key+' | '+pos().title+' | '+pos().year")
             print(act, '→', t)
             if not t.startswith('own:'): fails.append(f'{act} did not open one of your positions: {t}')

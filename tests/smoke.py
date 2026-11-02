@@ -28,7 +28,7 @@ async def main():
         print('pools', sizes)
         assert all(sizes.get(k,0) > 0 for k in ('analysis','candidates','final')), 'empty pool'
         for act in ['analysis','candidates','final']:
-            await pg.click(f'.card[data-go="{act}"]'); await pg.wait_for_timeout(1500)
+            await pg.evaluate(f"openActivity('{act}')"); await pg.wait_for_timeout(1500)   # (Position evaluation: no card on the live site)
             for i in range(3):
                 title = await pg.evaluate("document.querySelector('.pos-title').innerText.replace(/\\n/g,' · ')")
                 if act == 'candidates':

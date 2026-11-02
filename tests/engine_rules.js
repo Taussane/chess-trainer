@@ -95,13 +95,14 @@ setInterval(hook, 5);
     await p.click('#routineBtn, .routine-card, [data-go="routine"]').catch(()=>{});
     for (let k = 0; k < 5; k++) {
       const a = await p.evaluate(() => screen);
+      if (a === 'planq') break;   // (the Plan finder: no engine in the page, its own test elsewhere)
       const shown = await waitReady(() => !!document.getElementById('check'));
       expect(`routine ${a} question shown`, shown, 3400); await mark(`routine ${a} (${await p.evaluate(()=>__tag(curPos.fen))}) question shown after ${shown} ms, answering after 2 s`); await p.waitForTimeout(2000);
       await p.evaluate(a => { const s = st(a), q = pos(); s.barMoved = true; s.swapped = true; if (a === 'imbalances') ASPECTS.forEach(x => { s.asp[x.key] = s.asp[x.key] || 1; });
         if (a === 'candidates') { const u = new Chess(q.fen).moves({ verbose: true })[0]; s.picks = [{ uci: u.from + u.to + (u.promotion || ''), from: u.from, to: u.to, san: u.san }]; }
         render(); const c = document.getElementById('check'); c.disabled = false; c.click(); }, a);
       const ms = await waitReady(() => !!document.getElementById('nextPos') && !document.querySelector('.actions-row.pending'));
-      await mark(`routine ${a} review done after ${ms} ms; next is ${await p.evaluate(()=>{ const [t,i]=nextTarget(); return t+' '+__tag(posAt(t,i).fen); })}`);
+      await mark(`routine ${a} review done after ${ms} ms; next is ${await p.evaluate(()=>{ const [t,i]=nextTarget(); return t==='planq' ? t : t+' '+__tag(posAt(t,i).fen); })}`);
       await p.waitForTimeout(1500); await dump(); await next();
     }
   }

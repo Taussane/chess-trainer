@@ -12,7 +12,7 @@ UNGATE = "(()=>{ const s = st(screen); s.barMoved = true; s.swapped = true; cons
 async def main():
     fails = []
     async with async_playwright() as p:
-        b, pg, errs = await T.page_with_app(p)
+        b, pg, errs = await T.page_with_app(p, beta=True)
         await pg.evaluate("fenEvalStore = {}; poolEvalStore = {}")   # forget searches the blocked real engine failed before the stand-in took over
         # A history: 8 Board analysis positions at 80%, two days ago and today.
         await pg.evaluate("""(()=>{ const t0=new Date(); t0.setHours(0,10,0,0); const now=Math.max(Date.now(), t0.getTime()); results = Array.from({length:8},(_,i)=>({a:'analysis', acc:80, ts: now - (i<4 ? 2*864e5 : 0) - (8-i)*6e4, src:'masters'})); saveLocal(); progressReady(); render(); })()""")
