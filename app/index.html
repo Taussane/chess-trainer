@@ -191,6 +191,7 @@
   .faq-q summary::-webkit-details-marker{display:none;} .faq-q summary::after{content:'+'; color:var(--text-mute); font-weight:400;} .faq-q[open] summary::after{content:'−';}
   .faq-a{padding:0 0 12px; color:var(--text-mute); line-height:1.5;} .faq-a ol, .faq-a ul{margin:6px 0 0; padding-left:20px;} .faq-a li{margin:3px 0;} .faq-a b{color:var(--text);}
   .pf-scroll.faq{max-width:720px;}
+  .diag-pre{font-size:0.72rem; line-height:1.35; white-space:pre-wrap; margin:0; max-height:340px; overflow:auto; user-select:text;}
   .pf-resets{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px 12px; margin-top:10px;}
   .pq-reserve{display:grid;} .pq-reserve > *{grid-area:1 / 1;} .pq-ghost-text{visibility:hidden;}
   .pq-top, .score.pq-top{margin-bottom:0;}   /* (the line above the rows: no more room under it than in Move selection) */ .pq-top .pq-steps{margin-left:auto; flex:none;}
@@ -4364,7 +4365,42 @@ let results = cached || [];   // every recorded position, oldest first
 // Without a copy in this browser (first launch here), the routine card's progress and the
 // averages stay hidden until the database answers, then fade in — never an empty state first.
 let progressLoaded = !!cached, progressJustLoaded = false;
-function progressReady(){ if(!progressLoaded){ progressLoaded = true; progressJustLoaded = true; } }
+function progressReady(){ if(!progressLoaded){ progressLoaded = true; progressJustLoaded = true; diagMark('progress loaded'); } }
+// ---- Timing log (the owner's, in the profile): how long the page takes to get your games' positions ready ----
+// Milestones from the page's start, the background work's searches (count, average, longest), the Plan finder's
+// waits, and every 5 s the positions found per exercise. Kept on this device for the session; "Copy" gives the report.
+const DIAG = { start: new Date().toISOString(), t0: Date.now(), marks: {}, jobs: {}, waits: [], samples: [] };
+const diagT = ()=>Math.round((Date.now() - DIAG.t0) / 100) / 10;   // seconds since the page started
+function diagMark(k){ if(DIAG.marks[k]==null) DIAG.marks[k] = diagT(); }
+function diagJob(kind, ms){ const j = DIAG.jobs[kind] = DIAG.jobs[kind] || { n: 0, ms: 0, max: 0 }; j.n++; j.ms += ms; j.max = Math.max(j.max, Math.round(ms)); }
+const diagTimed = (kind, promise)=>{ const t = performance.now(); return promise.then(r=>{ diagJob(kind, performance.now() - t); return r; }); };
+function diagSample(){
+  if(typeof myGames==='undefined') return;
+  const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), c = countsOf(myPositions.filter(p=>!retired.has(p.gameId)));
+  const row = { t: diagT(), games: myGames.length, queued: myGames.filter(g=>g.status==='queued').length, engineQueue: sfQueue.length,
+    imbalances: c.imbalances, planq: c.planq, candidates: c.candidates, final: c.final };
+  const last = DIAG.samples[DIAG.samples.length - 1];
+  if(!last || ['games', 'queued', 'imbalances', 'planq', 'candidates', 'final'].some(k=>last[k]!==row[k])) DIAG.samples.push(row);   // (only changes kept)
+  if(DIAG.samples.length > 300) DIAG.samples.splice(1, 1);
+  ['imbalances', 'planq', 'candidates', 'final'].forEach(a=>{ if(row[a] > 0) diagMark('first ' + a); });
+  if(row.games && !row.queued && !myBgRunning) diagMark('games analysed');
+  if(row.games && !myPositions.some(p=>p.gameId && posIn(p, 'imbalances') && quietOwn(p)===undefined)) diagMark('imbalances counted');
+  if(row.games && !myPositions.some(p=>p.gameId && posIn(p, 'planq') && !planqOwnKnown.has(p.key) && ownStored(p, 'planqChk')===undefined)) diagMark('plan counted');
+  try{ localStorage.setItem('cst.diag.v1', JSON.stringify(DIAG)); }catch(e){}
+  if(screen==='account' && isOwner() && document.getElementById('diagBox')) document.getElementById('diagBox').innerHTML = diagHtml();
+}
+setInterval(diagSample, 5000);
+function diagReport(){
+  const L = [`Timing log, session of ${DIAG.start} (seconds from the page's start)`, '', 'Milestones:'];
+  Object.entries(DIAG.marks).sort((a, b)=>a[1] - b[1]).forEach(([k, v])=>L.push(`  ${v}s  ${k}`));
+  L.push('', 'Searches (count, average ms, longest ms):');
+  Object.entries(DIAG.jobs).forEach(([k, j])=>L.push(`  ${k}: ${j.n}, ${Math.round(j.ms / j.n)}, ${j.max}`));
+  if(DIAG.waits.length) L.push('', 'Plan finder waits (ms): ' + DIAG.waits.join(', '));
+  L.push('', 'Positions found (s: games, queued, engine queue | imbalances, plan, candidates, selection):');
+  DIAG.samples.forEach(r=>L.push(`  ${r.t}s: ${r.games}, ${r.queued}, ${r.engineQueue} | ${r.imbalances}, ${r.planq}, ${r.candidates}, ${r.final}`));
+  return L.join('\n');
+}
+function diagHtml(){ return `<pre class="diag-pre">${diagReport().replace(/</g, '&lt;')}</pre>`; }
 // ---------- Profile: when you joined, and the missed positions ----------
 // Missed positions: those whose latest play scored below your average for that exercise at the
 // time (each result keeps its position and whether it was a miss), so the list is read from the
@@ -4425,8 +4461,9 @@ function runQuietChecks(){
   quietTimer = null;
   const t0 = performance.now();
   while(quietQueue.length && performance.now() - t0 < 12){
-    const p = quietQueue.shift(); let q = true;
+    const p = quietQueue.shift(); let q = true; const tq = performance.now();
     try{ q = quietOf(p); }catch(e){}
+    diagJob('imbalances: quiet check', performance.now() - tq);
     quietChecked.set(p.key, q); ownStoreCheck(p, 'quietChk', q);
     if(q) quietFound = true;
   }
@@ -4833,14 +4870,17 @@ function renderAccount(){
       </section>`, acct = DIRECT_LICHESS ? accountSection() : '';
         // desktop: two columns (you, your account, your games and positions; progress)
         const timing = BETA ? timingSection() : '';
-        return isDesk() ? `<div class="pf-cols"><div class="pf-col">${head}${id}${acct}${positionsSection()}</div><div class="pf-col pf-wide">${prog.html}${timing}</div></div>`
-                        : `${id}${prog.html}${timing}${positionsSection()}${acct}`; })()}
+        const diag = isOwner() ? `<h2 class="pf-h">Timing log <span class="title-badge">Owner</span></h2><section class="mg-card"><div id="diagBox">${diagHtml()}</div><div class="pf-resets"><button class="link-btn quiet" id="diagCopy">Copy the report</button></div></section>` : '';
+        return isDesk() ? `<div class="pf-cols"><div class="pf-col">${head}${id}${acct}${positionsSection()}</div><div class="pf-col pf-wide">${prog.html}${timing}${diag}</div></div>`
+                        : `${id}${prog.html}${timing}${positionsSection()}${acct}${diag}`; })()}
       <p class="ac-foot">${siteLinks()}${installLink()}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; pfConfirmReset = null; render(); };
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('testsBtn', ()=>{ screen = 'tests'; render(); });
+  on('diagCopy', e=>{ const b = e && e.currentTarget || document.getElementById('diagCopy'), done = ok=>{ b.textContent = ok ? 'Copied' : 'Copy failed: select the text above'; };
+    (navigator.clipboard ? navigator.clipboard.writeText(diagReport()).then(()=>done(true), ()=>done(false)) : done(false)); });
   on('metricsBtn', ()=>{ screen = 'metrics'; loadMetrics(); });
   on('installBtn', installApp);
   on('settingsBtn', ()=>{ screen = 'settings'; settingsRebuild = true; render(); });
@@ -5287,6 +5327,7 @@ let resyncWanted = false;   // asked for during a sync (e.g. Chess.com just conn
 async function syncGames(){
   if(!signedIn() && !chesscomName) return;   // a guest's games: Chess.com only
   if(myFetching){ resyncWanted = true; return; }
+  diagMark('games sync started');
   myFetching = true; if(onProfile()) render();
   const lichess = lichessName() ? await syncLichess() : null;
   const chesscom = chesscomName && API_BASE ? await syncChesscom() : null;
@@ -5581,7 +5622,7 @@ async function myBackground(){
         const p = g1.positions.find(x=>x.pending && !myTried.has(job(x)));
         myTried.add(job(p));
         let r = null;
-        try{ r = p.prep==='final' ? await prepFinal(p) : await checkMistake(p); }
+        try{ r = p.prep==='final' ? await diagTimed('selection: check of the 4 moves', prepFinal(p)) : await diagTimed('candidates: mistake check', checkMistake(p)); }
         catch(e){ r = 0; }   // a position that can't be checked is left out
         if(r==null){ myTried.delete(job(p)); retry = true; break; }
         const g = currentGame(g1.id); if(!g) continue;
@@ -5593,7 +5634,7 @@ async function myBackground(){
       if(!g2) break;
       myTried.add('scan:'+g2.id);
       let evals = null, failed = false;
-      try{ evals = await scanOwnGame(g2); }
+      try{ evals = await diagTimed('game scan (unanalysed game)', scanOwnGame(g2)); }
       catch(e){ failed = true; }
       if(!evals && !failed){ myTried.delete('scan:'+g2.id); retry = true; break; }
       const g = currentGame(g2.id); if(!g) continue;
@@ -5731,7 +5772,7 @@ async function initMyGames(){
     }
   }catch(e){ /* this browser's copy only */ }
   myGames.forEach(g=>{ if(g.status==='failed') g.status = 'queued'; });   // a failed scan is tried again on each launch
-  myGamesLoaded = true;
+  myGamesLoaded = true; diagMark('games loaded');
   rotateMyGames();
   if(DIRECT_LICHESS && (signedIn() || chesscomName)) syncGames();   // new games from Lichess and Chess.com, every visit
   reextractAll();
@@ -7721,7 +7762,9 @@ function planqEngineLine(p){
   if(planqShort.has(p.fen)) return planqShort.get(p.fen);
   if(!planqShortAsked.has(p.fen) && sfState!=='error' && sfWorker){   // a short search (0.4 s: enough for the best move), low priority
     planqShortAsked.add(p.fen);
+    const tq = performance.now();
     withPrep('low', ()=>queueJob({ fen: p.fen, multipv: 1, movetime: 400, resolve: r=>{
+      diagJob('plan: quick search (queued + searched)', performance.now() - tq);
       const l = r && !r.failed && r.lines && r.lines[0] || null;
       planqShort.set(p.fen, l);
       if(l && l.uci){ const g = myGames.find(x=>x.id===p.gameId), e = g && g.evals && p.ply > 0 ? g.evals[p.ply - 1] : null;
@@ -7953,7 +7996,8 @@ function planqFullSearch(p, how){
   const job = planqFullAsked.get(p.fen);
   if(job){ if(how==='front' && job.low){ const i = sfQueue.indexOf(job); if(i > 0){ sfQueue.splice(i, 1); job.low = false; sfQueue.unshift(job); } } return; }
   if(sfState==='error' || !sfWorker) return;
-  const j = { fen: p.fen, multipv: 1, movetime: 1200, resolve: r=>{ planqFull.set(p.fen, r && !r.failed && r.lines && r.lines[0] || null); planqFullAsked.delete(p.fen); if(screen==='planq' && !planq) render(); } };
+  const tq = performance.now();
+  const j = { fen: p.fen, multipv: 1, movetime: 1200, resolve: r=>{ diagJob('plan: confirming search (queued + searched)', performance.now() - tq); planqFull.set(p.fen, r && !r.failed && r.lines && r.lines[0] || null); planqFullAsked.delete(p.fen); if(screen==='planq' && !planq) render(); } };
   planqFullAsked.set(p.fen, j);
   withPrep(how, ()=>queueJob(j)); pumpEngineQueue();
 }
@@ -8087,6 +8131,7 @@ function renderPlanq(){
   loadMasterEvals();
   if(!planq){
     planq = planqEvalsReady() ? planqPick() : null;
+    if(!planq){ if(DIAG.waitFrom==null) DIAG.waitFrom = performance.now(); } else if(DIAG.waitFrom!=null){ DIAG.waits.push(Math.round(performance.now() - DIAG.waitFrom)); DIAG.waitFrom = null; }
     if(!planq && source!=='masters') planqHurry();   // (your games, none checked yet: the engine on one of them first)
     if(!planq){ app.innerHTML = `<div class="title-row"><button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button><h1>Plan finder</h1><span class="title-spacer"></span></div><p class="mg-status mg-loading">Loading positions…</p>`;
       document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; render(); };
