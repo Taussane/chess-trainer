@@ -5775,7 +5775,7 @@ function lichessExportUrl(name){
   const perf = 'bullet,blitz,rapid,classical';
   return `https://lichess.org/api/games/user/${encodeURIComponent(name || 'USERNAME')}?max=${CORE_GAMES}&perfType=${perf}&evals=true&clocks=false&opening=false`;
 }
-function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTIVITIES.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); c.planq = list.filter(p=>posIn(p, 'planq') && planqOwnOk(p)===true).length; return c; }   // (the Plan finder: those of Position evaluation's it accepts)
+function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTIVITIES.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); c.planq = list.filter(p=>planqOwnKnown.get(p.key)===true).length; planqOwnScan(); return c; }   // (the Plan finder: those of Position evaluation's it accepts, as far as checked: planqOwnScan)
 // Only a problem: "Couldn't check Lichess: …" (or why it couldn't check)
 function siteLine(site){
   const r = mySync[site], name = SITE_NAMES[site];
@@ -7702,6 +7702,33 @@ function planqOwnOk(p){
   const ok = !c.urgent.ambiguous && (c.urgent.stop || c.rows.some(r=>r.answer)) && planqFits(p, c);
   planqOwnKnown.set(p.key, ok); return ok;
 }
+// Your positions checked for the Plan finder in the background, one at a time while the page is idle, at most one
+// engine search waiting (never a flood of them: the page stays responsive); the profile redraws as counts come in
+let planqScanBusy = false;
+function planqOwnScan(){
+  if(planqScanBusy) return;
+  const todo = myPositions.filter(p=>p.gameId && posIn(p, 'planq') && !planqOwnKnown.has(p.key));
+  if(!todo.length) return;
+  planqScanBusy = true;
+  const idle = f=>window.requestIdleCallback ? requestIdleCallback(f, { timeout: 2000 }) : setTimeout(f, 80);
+  let i = 0, found = 0;
+  const step = ()=>{
+    for(; i < todo.length; i++){
+      const p = todo[i];
+      if(planqOwnKnown.has(p.key)) continue;
+      const en = fenEvalStore[p.fen];
+      if(en && en.status==='pending'){ en.promise.then(()=>idle(step)); return; }   // (its search under way: on once it's in)
+      const r = planqOwnOk(p);
+      if(r!==undefined){ found++; i++; break; }
+      if(fenEvalStore[p.fen] && fenEvalStore[p.fen].status==='pending'){ fenEvalStore[p.fen].promise.then(()=>idle(step)); return; }
+      if(quietOwn(p)===undefined){ setTimeout(()=>idle(step), 300); return; }   // (its quiet check queued)
+    }
+    if(found && onProfile()) render();
+    found = 0;
+    if(i < todo.length) idle(step); else planqScanBusy = false;
+  };
+  idle(step);
+}
 // Your games' positions: the engine's best line, from a search asked at low priority (null until it's in)
 function planqEngineLine(p){
   const en = fenEvalStore[p.fen];
@@ -7911,9 +7938,12 @@ function planqPick(){
 function planqCandidate(taken){
   const pool = planqPool(), seen = planq ? planq.seen : (planqCandidate.seen = planqCandidate.seen || new Set());
   if(!pool.length) return null;
-  for(let tries = 0; tries < 400; tries++){
+  let heavy = 0;   // (positions read this call: Stockfish 10's reading each; bounded, so the page never stalls)
+  for(let tries = 0; tries < 400 && heavy < 12; tries++){
     const p = pool[Math.floor(Math.random() * pool.length)];
     if(seen.has(p.key) || taken.some(c=>c.p.key===p.key)) continue;
+    if(p.gameId){ const k = planqOwnKnown.get(p.key); if(k===false) continue; if(k===undefined){ heavy++; if(planqOwnOk(p)!==true) continue; } }   // (yours: checked once, remembered)
+    heavy++;
     const info = planqInfo(p), vals = info && explorerVals(p.fen);
     if(!vals || vals.special) continue;
     const c = planqMake(p, info, vals, seen);
