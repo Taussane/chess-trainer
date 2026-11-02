@@ -7638,7 +7638,20 @@ function planqUrgent(p, vals, info){
   const san = u=>{ try{ return new Chess(p.fen).move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q' }).san; }catch(e){ return u; } };
   if(!best) return out;
   if(targets.includes(best.slice(2, 4))) return { ...out, kind: 'win', stop: l >= 2, san: san(best) };
-  return { ...out, looks: { sq: targets[0], best: san(best) } };
+  // Stockfish plays something else. When that move is forcing itself (a capture, a check, or a new attack
+  // on a bigger or undefended piece), "quiet" would be a doubtful answer: such positions are left out
+  // (ambiguous). Otherwise quiet, with a note only when something can really be taken now.
+  if(planqForcing(p.fen, best)) return { ...out, ambiguous: true };
+  const caps = new Chess(p.fen).moves({ verbose: true }).filter(x=>x.captured).map(x=>x.to), sq = targets.find(t=>caps.includes(t));
+  return { ...out, looks: sq ? { sq, best: san(best) } : null };
+}
+// A move that forces the play: a capture, a check, or a piece newly attacking a bigger enemy piece, or an undefended one
+function planqForcing(fen, uci){
+  const g = new Chess(fen); let mv; try{ mv = g.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] || 'q' }); }catch(e){ return false; }
+  if(!mv) return false;
+  if(mv.captured || g.in_check()) return true;
+  const b = boardMap(g.fen()), me = mv.color, val = { p:1, n:3, b:3, r:5, q:9, k:0 }, A = attackMaps(b);
+  return attacksFrom(b, mv.to).some(t=>{ const x = b[t]; return x && x.c!==me && x.t!=='k' && (val[x.t] > val[mv.piece] || !(A[x.c][t] || []).length); });
 }
 // The phase, for which explanation comes first (planqReasons): Stockfish's own phase, from the material
 // left (128 all of it, 0 a bare endgame): the endgame below half; the opening while a knight or bishop is
@@ -7797,7 +7810,7 @@ function planqCandidate(taken){
     const info = planqInfo(p), vals = info && explorerVals(p.fen);
     if(!vals || vals.special) continue;
     const c = planqMake(p, info, vals, seen);
-    if(!c.urgent.stop && !c.rows.some(r=>r.answer)) continue;
+    if(c.urgent.ambiguous || (!c.urgent.stop && !c.rows.some(r=>r.answer))) continue;
     return c;
   }
   return null;
