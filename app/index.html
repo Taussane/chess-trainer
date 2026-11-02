@@ -491,7 +491,7 @@
   .asp-badge.eq{background:var(--panel-2); color:var(--text-mute); border-color:var(--border);}   /* same border in the question and the review */
   /* Review borders come after the colour rules, so a black badge's own grey border doesn't show inside the red one. */
   .asp-badge.ok{border-color:var(--best-green); box-shadow:0 0 0 1px var(--best-green);}
-  .asp-badge.near{border-color:var(--dubious); box-shadow:0 0 0 1px var(--dubious);}
+  .asp-badge.near{border-color:var(--ok); box-shadow:0 0 0 1px var(--ok);}   /* half points: yellow-green, as in the Plan finder (yellow is the selection) */
   .asp-badge.bad{border-color:var(--bad); box-shadow:0 0 0 1px var(--bad);}
   .asp-picker .asp-badge.eq{border-color:var(--border);}
   .asp-item.off .asp-name{color:var(--text-mute);}
@@ -1559,7 +1559,7 @@ const HELP = {
       ['Dynamic or positional', '', ["Open / Attack: an edge that fades (better pieces, development lead, weak enemy king): use it now.", "Close / Improve: an edge that lasts (material, pawns, space): no hurry, improve first.", "Either: the reasons cancel out."]],
     ],
     review:[
-      ['Score', "Half of the position's score: a quarter for each row.", ["Right: full points.", "One reason short of a side (yellow): half.", "Missed: nothing."]],
+      ['Score', "Half of the position's score: a quarter for each row.", ["Right: full points.", "One reason short of a side (yellow-green): half.", "Missed: nothing."]],
       ['Why', "Under each row, its main reason. Tap the underlined criterion to see it on the board, then the '?' button for how it's counted."],
     ],
   },
@@ -1573,7 +1573,7 @@ const HELP = {
     note:"Inspired by Stockfish's former evaluation system.",
     review:[
       ['Score', "Each choice counts for a third.", ["Among the 3 biggest edges, on the right side: full points.", "A smaller edge, on the right side: half.", "Balanced, or the wrong side: nothing."]],
-      ['Colours', "The real sizes appear beside your answers, then your choices get their rings: green, yellow or red."],
+      ['Colours', "The real sizes appear beside your answers, then your choices get their rings: green, yellow-green or red."],
       ['Details', "Tap an imbalance to see it on the board, then a king for that side alone, or the '?' button for how it's counted."],
       ['Keep in mind', "Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all."],
     ],
@@ -7014,7 +7014,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Close / Improve: an edge that lasts (material, pawns, space): no hurry, improve first.": "Fermer / Améliorer : un avantage qui dure (matériel, pions, espace) : rien ne presse, améliorez d'abord.",
 "Half of the position's score: a quarter for each row.": "La moitié du score de la position : un quart par ligne.",
 "Right: full points.": "Juste : tous les points.",
-"One reason short of a side (yellow): half.": "À une raison près (jaune) : la moitié.",
+"One reason short of a side (yellow-green): half.": "À une raison près (vert-jaune) : la moitié.",
 "Missed: nothing.": "Manqué : rien.",
 "Why": "Pourquoi",
 "Under each row, its main reason. Tap the underlined criterion to see it on the board, then the '?' button for how it's counted.": "Sous chaque ligne, sa raison principale. Touchez le critère souligné pour le voir sur l'échiquier, puis le bouton « ? » pour savoir comment il est compté.",
@@ -7038,7 +7038,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Among the 3 biggest edges, on the right side: full points.": "Parmi les 3 plus gros avantages, du bon côté : tous les points.",
 "A smaller edge, on the right side: half.": "Un avantage plus petit, du bon côté : la moitié.",
 "Balanced, or the wrong side: nothing.": "Équilibré, ou le mauvais camp : rien.",
-"The real sizes appear beside your answers, then your choices get their rings: green, yellow or red.": "Les vraies tailles apparaissent à côté de vos réponses, puis vos choix s'entourent de vert, jaune ou rouge.",
+"The real sizes appear beside your answers, then your choices get their rings: green, yellow-green or red.": "Les vraies tailles apparaissent à côté de vos réponses, puis vos choix s'entourent de vert, vert-jaune ou rouge.",
 "Three chosen already: clear one first.": "Trois déjà choisis : retirez-en un d'abord.",
 "Not chosen": "Non choisi",
 "Development": "Développement",
