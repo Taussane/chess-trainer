@@ -190,7 +190,7 @@
   .xp-hbar.flip .xp-hbar-num.w{left:auto; right:6px;} .xp-hbar.flip .xp-hbar-num.b{right:auto; left:6px;}
   .asp-badge.xp-turn{animation:xpTurn .45s ease-out;}
   @keyframes xpTurn{from{box-shadow:0 0 0 2px var(--accent);} to{box-shadow:0 0 0 2px transparent;}}
-  .pq-grid{display:grid; grid-template-rows:repeat(4, var(--pq-row)); row-gap:6px; margin:4px 0 6px; --pq-row:34px;}   /* four rows, the same height in every question */
+  .pq-grid{display:grid; grid-template-rows:repeat(4, var(--pq-row)); row-gap:4px; margin:6px 0 3px; --pq-row:34px;}   /* four rows, the same height in every question */
   .pq-grid > *{min-height:0; height:var(--pq-row); box-sizing:border-box;}
   .pq-text{margin:0; font-size:0.82rem; line-height:1.28; color:var(--text-mute); align-self:start; height:auto !important; max-height:var(--pq-row); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
   .pq-choice{display:flex; justify-content:space-between; align-items:center; gap:10px; text-align:left; width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); font:inherit; font-size:0.92rem; cursor:pointer;}
@@ -219,7 +219,7 @@
   .pf-scroll.faq{max-width:720px;}
   .pf-resets{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px 12px; margin-top:10px;}
   .pq-reserve{display:grid;} .pq-reserve > *{grid-area:1 / 1;} .pq-ghost-text{visibility:hidden;}
-  .pq-top{margin-bottom:6px;} .pq-top .pq-steps{margin-left:auto; flex:none;}
+  .pq-top, .score.pq-top{margin-bottom:0;}   /* (the line above the rows: no more room under it than in Move selection) */ .pq-top .pq-steps{margin-left:auto; flex:none;}
   .pq-ask{display:flex; align-items:baseline; gap:12px;} .pq-ask .prompt{margin:0;}
   .pq-why-line .pq-reason{display:inline; text-align:left; line-height:inherit;}
   .pq-reason{font:inherit; font-size:inherit; color:inherit; background:none; border:0; padding:0;}
