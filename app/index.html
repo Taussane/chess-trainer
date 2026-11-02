@@ -4394,8 +4394,20 @@ const quietChecked = new Map();   // position key -> true (quiet) | false (tacti
 // counts fill in as they're done.
 const quietQueue = [];
 let quietTimer = null, quietRendered = 0, quietFound = false;
+// A check's result kept with the position in your games (saved with them, on this device and your account): read at
+// once next time, never worked out again. `v`: the rules' version, so a change of rule redoes it.
+const OWN_CHECK_V = 1;
+function ownStoreCheck(p, field, value){
+  const g = myGames.find(x=>x.id===p.gameId), gp = g && (g.positions || []).find(x=>x.ply===p.ply);
+  if(!gp) return;
+  gp[field] = { v: OWN_CHECK_V, ok: value }; p[field] = gp[field];
+  ownDirty.add(g); clearTimeout(ownDirtyT); ownDirtyT = setTimeout(()=>{ ownDirty.forEach(saveMyGame); ownDirty.clear(); }, 1500);   // (saved in batches)
+}
+const ownDirty = new Set(); let ownDirtyT = null;
+const ownStored = (p, field)=>p[field] && p[field].v===OWN_CHECK_V ? p[field].ok : undefined;
 function quietOwn(p){
   if(quietChecked.has(p.key)) return quietChecked.get(p.key);
+  { const k = ownStored(p, 'quietChk'); if(k!==undefined){ quietChecked.set(p.key, k); return k; } }   // (checked before: kept with the game)
   quietChecked.set(p.key, undefined);
   quietQueue.push(p);
   if(!quietTimer) quietTimer = setTimeout(runQuietChecks, 0);
@@ -4415,7 +4427,7 @@ function runQuietChecks(){
   while(quietQueue.length && performance.now() - t0 < 12){
     const p = quietQueue.shift(); let q = true;
     try{ q = quietOf(p); }catch(e){}
-    quietChecked.set(p.key, q);
+    quietChecked.set(p.key, q); ownStoreCheck(p, 'quietChk', q);
     if(q) quietFound = true;
   }
   // the page redrawn when the checks are done, or every half second meanwhile
@@ -5747,7 +5759,7 @@ function lichessExportUrl(name){
   const perf = 'bullet,blitz,rapid,classical';
   return `https://lichess.org/api/games/user/${encodeURIComponent(name || 'USERNAME')}?max=${CORE_GAMES}&perfType=${perf}&evals=true&clocks=false&opening=false`;
 }
-function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTIVITIES.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); c.planq = list.filter(p=>planqOwnKnown.get(p.key)===true).length; planqOwnScan(); return c; }   // (the Plan finder: those of Position evaluation's it accepts, as far as checked: planqOwnScan)
+function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTIVITIES.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); c.planq = list.filter(p=>(planqOwnKnown.has(p.key) ? planqOwnKnown.get(p.key) : ownStored(p, 'planqChk'))===true).length; planqOwnScan(); return c; }   // (the Plan finder: those of Position evaluation's it accepts, as far as checked: planqOwnScan)
 // Only a problem: "Couldn't check Lichess: …" (or why it couldn't check)
 function siteLine(site){
   const r = mySync[site], name = SITE_NAMES[site];
@@ -7666,20 +7678,21 @@ function planqFits(p, c){
 const planqOwnKnown = new Map();
 function planqOwnOk(p){
   if(planqOwnKnown.has(p.key)) return planqOwnKnown.get(p.key);
+  { const k = ownStored(p, 'planqChk'); if(k!==undefined){ planqOwnKnown.set(p.key, k); return k; } }   // (checked before: kept with the game)
   const info = planqInfo(p), vals = info && explorerVals(p.fen);
   if(!info) return undefined;
-  if(!vals || vals.special){ planqOwnKnown.set(p.key, false); return false; }
+  if(!vals || vals.special){ planqOwnKnown.set(p.key, false); ownStoreCheck(p, 'planqChk', false); return false; }
   const c = planqMake(p, info, vals, new Set());
   if(c.urgent.pending || (!c.urgent.stop && quietOwn(p)===undefined)) return undefined;
   const ok = !c.urgent.ambiguous && (c.urgent.stop || c.rows.some(r=>r.answer)) && planqFits(p, c);
-  planqOwnKnown.set(p.key, ok); return ok;
+  planqOwnKnown.set(p.key, ok); ownStoreCheck(p, 'planqChk', ok); return ok;
 }
 // Your positions checked for the Plan finder in the background, one at a time while the page is idle, at most one
 // engine search waiting (never a flood of them: the page stays responsive); the profile redraws as counts come in
 let planqScanBusy = false;
 function planqOwnScan(){
   if(planqScanBusy) return;
-  const todo = myPositions.filter(p=>p.gameId && posIn(p, 'planq') && !planqOwnKnown.has(p.key));
+  const todo = myPositions.filter(p=>p.gameId && posIn(p, 'planq') && !planqOwnKnown.has(p.key) && ownStored(p, 'planqChk')===undefined);
   if(!todo.length) return;
   planqScanBusy = true;
   const idle = f=>window.requestIdleCallback ? requestIdleCallback(f, { timeout: 2000 }) : setTimeout(f, 80);
