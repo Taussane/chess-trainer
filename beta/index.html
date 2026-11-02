@@ -1972,6 +1972,9 @@ function pumpEngineQueue(){
   for(const f of pick){ at = sfQueue.findIndex(f); if(at >= 0) break; }
   const job = at >= 0 ? sfQueue.splice(at, 1)[0] : bgQueue.length ? bgQueue.shift() : null;
   if(!job) return;
+  if(!job.diagWrapped){ job.diagWrapped = true; const res = job.resolve, kind = job.kind || (job.bg ? 'games: analysis and checks' : job.movetime ? 'exercise: timed search' : job.low ? 'exercise: search prepared ahead' : 'exercise: full search'), t = ()=>performance.now();
+    job.resolve = r=>{ diagJob('engine time > ' + kind, t() - job.diagStart); return res(r); }; }
+  job.diagStart = performance.now();
   const {fen, searchmoves, resolve} = job;
   sfCurrentJob = job;
   sfBusy = true; sfCurrentResolve = resolve; sfCurrentLines = {}; sfLinesByDepth = {}; sfCurrentDepth = 0; sfCurrentFen = fen;
@@ -2004,7 +2007,7 @@ function bgEval(fen, opts){
   opts = opts || {};
   return new Promise(resolve=>{
     if(sfState==='error'){ resolve(FAILED); return; }
-    bgQueue.push({fen, searchmoves:opts.searchmoves, multipv:opts.multipv, movetime:opts.movetime || OWN.checkMs, resolve});
+    bgQueue.push({fen, searchmoves:opts.searchmoves, multipv:opts.multipv, movetime:opts.movetime || OWN.checkMs, bg:true, resolve});
     pumpEngineQueue();
   });
 }
@@ -4407,15 +4410,15 @@ const diagTimed = (kind, promise)=>{ const t = performance.now(); return promise
 function diagSample(){
   if(typeof myGames==='undefined') return;
   const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), c = countsOf(myPositions.filter(p=>!retired.has(p.gameId)));
-  const row = { t: diagT(), games: myGames.length, queued: myGames.filter(g=>g.status==='queued').length, engineQueue: sfQueue.length,
+  const row = { t: diagT(), games: myGames.length, queued: myGames.filter(g=>g.status==='queued').length, engineQueue: sfQueue.length + bgQueue.length,
     imbalances: c.imbalances, planq: c.planq, candidates: c.candidates, final: c.final };
   const last = DIAG.samples[DIAG.samples.length - 1];
   if(!last || ['games', 'queued', 'imbalances', 'planq', 'candidates', 'final'].some(k=>last[k]!==row[k])) DIAG.samples.push(row);   // (only changes kept)
   if(DIAG.samples.length > 300) DIAG.samples.splice(1, 1);
   ['imbalances', 'planq', 'candidates', 'final'].forEach(a=>{ if(row[a] > 0) diagMark('first ' + a); });
   if(row.games && !row.queued && !myBgRunning) diagMark('games analysed');
-  if(row.games && !myPositions.some(p=>p.gameId && posIn(p, 'imbalances') && quietOwn(p)===undefined)) diagMark('imbalances counted');
-  if(row.games && !myPositions.some(p=>p.gameId && posIn(p, 'planq') && !planqOwnKnown.has(p.key) && ownStored(p, 'planqChk')===undefined)) diagMark('plan counted');
+  if(row.games && !row.queued && !myPositions.some(p=>p.gameId && posIn(p, 'imbalances') && quietOwn(p)===undefined)) diagMark('imbalances counted');
+  if(row.games && !row.queued && !myPositions.some(p=>p.gameId && posIn(p, 'planq') && !planqOwnKnown.has(p.key) && ownStored(p, 'planqChk')===undefined)) diagMark('plan counted');
   try{ localStorage.setItem('cst.diag.v1', JSON.stringify(DIAG)); }catch(e){}
   if(screen==='account' && isOwner() && document.getElementById('diagBox')) document.getElementById('diagBox').innerHTML = diagHtml();
 }
@@ -7765,6 +7768,7 @@ const planqOwnKnown = new Map();
 function planqOwnOk(p){
   if(planqOwnKnown.has(p.key)) return planqOwnKnown.get(p.key);
   { const k = ownStored(p, 'planqChk'); if(k!==undefined){ planqOwnKnown.set(p.key, k); return k; } }   // (checked before: kept with the game)
+  { const g = myGames.find(x=>x.id===p.gameId); if(g && g.status==='queued') return undefined; }   // (a game the app still has to analyse: its scan brings the evaluations and best moves, no search of its own)
   const info = planqInfo(p), vals = info && explorerVals(p.fen);
   if(!info) return undefined;
   if(!vals || vals.special){ planqOwnKnown.set(p.key, false); ownStoreCheck(p, 'planqChk', false); return false; }
@@ -7804,22 +7808,27 @@ function planqEngineLine(p){
   const en = fenEvalStore[p.fen];
   if(en && en.status==='done') return en.data && en.data.lines && en.data.lines[0] || null;   // (a full search done already: read)
   if(planqShort.has(p.fen)) return planqShort.get(p.fen);
-  if(!planqShortAsked.has(p.fen) && sfState!=='error' && sfWorker){   // a short search (0.4 s: enough for the best move), low priority
+  const asked = planqShortJobs.get(p.fen);
+  if(asked){ if(prepFront){ const i = bgQueue.indexOf(asked); if(i >= 0){ bgQueue.splice(i, 1); asked.kind = 'plan: quick search (hurried)'; queueJob(asked); pumpEngineQueue(); } } return null; }   // (waiting: to the front when you're waiting for it)
+  if(!planqShortAsked.has(p.fen) && sfState!=='error' && sfWorker && (prepFront || planqShortJobs.size < 2)){   // a short search (0.4 s: enough for the best move): background work, two waiting at most (the games' analysis goes on in between)
     planqShortAsked.add(p.fen);
     const tq = performance.now();
-    withPrep('low', ()=>queueJob({ fen: p.fen, multipv: 1, movetime: 400, resolve: r=>{
+    const j = { fen: p.fen, multipv: 1, movetime: 400, kind: 'plan: quick search', resolve: r=>{
+      planqShortJobs.delete(p.fen);
       diagJob('plan: quick search (queued + searched)', performance.now() - tq);
       const l = r && !r.failed && r.lines && r.lines[0] || null;
       planqShort.set(p.fen, l);
       if(l && l.uci){ const g = myGames.find(x=>x.id===p.gameId), e = g && g.evals && p.ply > 0 ? g.evals[p.ply - 1] : null;
         if(e && !e.best){ e.best = l.uci; ownDirty.add(g); clearTimeout(ownDirtyT); ownDirtyT = setTimeout(()=>{ ownDirty.forEach(saveMyGame); ownDirty.clear(); }, 1500); } }   // (kept with the game: never searched again)
       planqScanAgain = true; planqOwnScan();
-    } }));
+    } };
+    planqShortJobs.set(p.fen, j);
+    if(prepFront) queueJob(j); else bgQueue.push(j);
     pumpEngineQueue();
   }
   return null;
 }
-const planqShort = new Map(), planqShortAsked = new Set();   // FEN -> the short search's best line (null: none)
+const planqShort = new Map(), planqShortAsked = new Set(), planqShortJobs = new Map();   // FEN -> the short search's best line (null: none)
 // Stockfish's best move: shipped with the master positions; for yours, the engine's (undefined while it's searching)
 function planqBest(p){
   const m = masterEvals && masterEvals[p.fen.split(' ').slice(0, 4).join(' ')];
@@ -8041,7 +8050,7 @@ function planqFullSearch(p, how){
   if(job){ if(how==='front' && job.low){ const i = sfQueue.indexOf(job); if(i > 0){ sfQueue.splice(i, 1); job.low = false; sfQueue.unshift(job); } } return; }
   if(sfState==='error' || !sfWorker) return;
   const tq = performance.now();
-  const j = { fen: p.fen, multipv: 1, movetime: 1200, resolve: r=>{ diagJob('plan: confirming search (queued + searched)', performance.now() - tq); planqFull.set(p.fen, r && !r.failed && r.lines && r.lines[0] || null); planqFullAsked.delete(p.fen); if(screen==='planq' && !planq) render(); } };
+  const j = { fen: p.fen, multipv: 1, movetime: 1200, kind: 'plan: confirming search', resolve: r=>{ diagJob('plan: confirming search (queued + searched)', performance.now() - tq); planqFull.set(p.fen, r && !r.failed && r.lines && r.lines[0] || null); planqFullAsked.delete(p.fen); if(screen==='planq' && !planq) render(); } };
   planqFullAsked.set(p.fen, j);
   withPrep(how, ()=>queueJob(j)); pumpEngineQueue();
 }
