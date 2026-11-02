@@ -7779,7 +7779,6 @@ const planqTopic = c=>c.urgent.stop ? 'urgent:' + c.urgent.kind : (r=>r.key + ':
 // the position and the urgent check: tens of ms, more on a phone), so the next position is there at once.
 const PLANQ_CANDS = 10;
 const planqPre = { cands: [], busy: false };
-const PLANQ_WHY_GAP = 500;   // ms between the plan's two explanations fading in
 function planqPrefetch(){
   if(planqPre.busy || !masterEvals || !Object.keys(masterEvals).length) return;
   planqPre.busy = true;
@@ -7948,8 +7947,8 @@ function renderPlanq(){
   planqPrefetch();   // the next positions, while this one is played
   // the usual entrances: each question's instruction and its button fade and rise in; at the end the
   // accuracy, then its count, then the average and the buttons
-  // the plan's explanations, as the review opens: the trades one, then the type of play's (the score counts after both)
-  if(isPlan && q.checked) document.querySelectorAll('#app .layer:not(.ghost) .pq-why-line').forEach((el, i)=>fadeOnce(q, 'why' + i, el, i * PLANQ_WHY_GAP));
+  // the plan's explanations, both at once, as the review opens (the score counts once they're in)
+  if(isPlan && q.checked) document.querySelectorAll('#app .layer:not(.ghost) .pq-why-line').forEach((el, i)=>fadeOnce(q, 'why' + i, el));
   if(!q.done){
     fadeOnce(q, 'ask' + q.step, reviewPart('.pq-reserve > .pq-ask .prompt'));   // (the question, not the tracker)
     fadeOnce(q, 'grid' + q.step, reviewPart('.pq-grid'));   // its answers along with it (and question 1's reminder: checks, captures, threats); after Check, nothing replays
@@ -7965,10 +7964,11 @@ function renderPlanq(){
       const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if(reduced){ q.countDone = true; render(); }
       else setTimeout(()=>{ let t0 = null;
-        const tick = ts=>{ if(t0===null) t0 = ts; const f = Math.min(1, (ts - t0) / COUNT_MS), el = reviewPart('#pqAcc');
+        const dur = total ? COUNT_MS * Math.max(0.4, total / 100) : 0;   // (as long as there's something to count: 0% shows at once)
+        const tick = ts=>{ if(t0===null) t0 = ts; const f = dur ? Math.min(1, (ts - t0) / dur) : 1, el = reviewPart('#pqAcc');
           if(el && here()) el.textContent = Math.round(total * easeOut(f)) + '%';
           if(f < 1) requestAnimationFrame(tick); else { q.countDone = true; q.justCounted = true; if(here()) render(); } };
-        requestAnimationFrame(tick); }, SLIDE_MS + (isPlan ? PLANQ_WHY_GAP : 0) + 400);   // (once the explanations have faded in, and a pause, as Candidate moves waits for its re-order)
+        requestAnimationFrame(tick); }, SLIDE_MS + (isPlan ? 400 : 150));   // (once the explanations have faded in, and a pause, as Candidate moves waits for its re-order)
     }
   }
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
