@@ -17,13 +17,7 @@ JS = r"""()=>{
 // in pawns; Material left out, a plain count, and Activity while it's Development, King safety in an
 // endgame, King activity) against our grade: one of its three biggest (half a pawn or more) on the other
 // side, or one of our ++ that it reads the other way or next to nothing (under 0.1).
-const pickDisagrees = (fen, d)=>{
-  const raw = parseAspects(sfTableLines(fen), fen); if(!raw) return false;
-  const xs = ASPECTS.filter(x=>x.key!=='material' && !d.off.includes(x.key) && !(x.key==='activity' && devActive(fen)) && !(x.key==='king' && isEndgame(fen)));
-  const lv = x=>aspectLevel(d[x.key], x.key), top = xs.slice().sort((a, b)=>Math.abs(raw[b.key]) - Math.abs(raw[a.key])).slice(0, 3).filter(x=>Math.abs(raw[x.key]) >= 0.5);
-  return top.some(x=>lv(x) && Math.sign(lv(x))!==Math.sign(raw[x.key]))
-      || xs.some(x=>Math.abs(lv(x))===2 && (Math.abs(raw[x.key]) < 0.1 || Math.sign(raw[x.key])!==Math.sign(lv(x))));
-};
+const pickDisagrees = gradesDisagree;   // (the app's own check: gradesDisagree)
 return POOLS.analysis.filter(p=>!IMBALANCE_SKIP.includes(p.key)).map(p=>{
   let d = null; try{ d = adaptAspects(parseAspects(sfTableLines(p.fen), p.fen), p.fen); }catch(e){}
   if(!d) return { key: p.key, sum: null };

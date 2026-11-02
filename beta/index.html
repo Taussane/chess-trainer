@@ -5773,7 +5773,7 @@ function lichessExportUrl(name){
   const perf = 'bullet,blitz,rapid,classical';
   return `https://lichess.org/api/games/user/${encodeURIComponent(name || 'USERNAME')}?max=${CORE_GAMES}&perfType=${perf}&evals=true&clocks=false&opening=false`;
 }
-function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTIVITIES.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); c.planq = c.imbalances; return c; }   // (the Plan finder: Imbalance reading's positions)
+function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTIVITIES.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); c.planq = list.filter(p=>posIn(p, 'planq')).length; return c; }   // (the Plan finder: Position evaluation's positions, each checked as it comes)
 // Only a problem: "Couldn't check Lichess: …" (or why it couldn't check)
 function siteLine(site){
   const r = mySync[site], name = SITE_NAMES[site];
@@ -5781,7 +5781,7 @@ function siteLine(site){
   return r && r.error && !myFetching ? `Couldn't check ${name}: ${r.error}.` : '';
 }
 function positionsSection(){
-  const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = Object.fromEntries(ACTS.map(a=>[a, POOLS[a==='planq' ? 'imbalances' : a].length]));   // (the Plan finder: Imbalance reading's master positions)
+  const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = Object.fromEntries(ACTS.map(a=>[a, POOLS[a==='planq' ? 'analysis' : a].length]));   // (the Plan finder: Position evaluation's master positions, each checked as it comes)
   // One counter: a game is done once it is read (Lichess's analysis or the app's quick scan) and
   // each of its likely mistakes has been checked by the engine.
   const isDone = g=>g.status!=='queued' && !toPrepare.has(g) && !(g.positions||[]).some(p=>p.pending && !myTried.has(job(p)));
@@ -7664,6 +7664,29 @@ function planqInfo(p){
   const l = planqEngineLine(p);
   return l ? toWhitePerspective({ cp: l.cp, mate: l.mate }, p.fen) : null;
 }
+// Our grades against Stockfish 10's own terms (parseAspects, in pawns; Material left out, a plain count, and Activity
+// while it's Development, King safety in an endgame): one of its three biggest (half a pawn or more) on the other
+// side, or one of our ++ that it reads the other way or next to nothing (under 0.1). Imbalance reading and the
+// Plan finder (whose votes come from the grades) leave such positions out.
+function gradesDisagree(fen, d){
+  const raw = parseAspects(sfTableLines(fen), fen); if(!raw || !d) return false;
+  const xs = ASPECTS.filter(x=>x.key!=='material' && !d.off.includes(x.key) && !(x.key==='activity' && devActive(fen)) && !(x.key==='king' && isEndgame(fen)));
+  const lv = x=>aspectLevel(d[x.key], x.key), top = xs.slice().sort((a, b)=>Math.abs(raw[b.key]) - Math.abs(raw[a.key])).slice(0, 3).filter(x=>Math.abs(raw[x.key]) >= 0.5);
+  return top.some(x=>lv(x) && Math.sign(lv(x))!==Math.sign(raw[x.key]))
+      || xs.some(x=>Math.abs(lv(x))===2 && (Math.abs(raw[x.key]) < 0.1 || Math.sign(raw[x.key])!==Math.sign(lv(x))));
+}
+// The Plan finder's own selection (each exercise its own): Position evaluation's positions, less those whose grades
+// Stockfish 10 reads otherwise; a tactical position (the engine far from the static evaluation) or one whose grades
+// add up against a clearly better side, only when it stops after phase 1 (the threat is the lesson, no plan to read)
+let planqTacticalSet = null;
+function planqFits(p, c){
+  if(gradesDisagree(p.fen, c.vals)) return false;
+  if(c.urgent.stop) return true;
+  if(p.gameId){ const q = quietOwn(p); if(q!==true) return false; }   // (your games: quiet enough, known once checked)
+  else { planqTacticalSet = planqTacticalSet || new Set(IMBALANCE_SKIP); if(planqTacticalSet.has(p.key)) return false; }
+  const lean = ASPECTS.reduce((t, x)=>t + (c.vals.off.includes(x.key) ? 0 : aspectLevel(c.vals[x.key], x.key)), 0), cp = c.info.mate!=null ? 1e5 * Math.sign(c.info.mate) : c.info.cp;
+  return !(Math.abs(cp) >= 100 && (lean===0 || Math.sign(lean)!==Math.sign(cp)));
+}
 // Your games' positions: the engine's best line, from a search asked at low priority (null until it's in)
 function planqEngineLine(p){
   const en = fenEvalStore[p.fen];
@@ -7679,12 +7702,11 @@ function planqBest(p){
   const l = planqEngineLine(p);
   return l ? l.uci : undefined;
 }
-// The positions the Plan finder draws from, as the home page's source says: the masters', yours (those Imbalance
-// reading takes: quiet enough), or both
+// The positions the Plan finder draws from, as the home page's source says: the masters', yours, or both
 function planqPool(){
   const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id));
-  const mine = source==='masters' ? [] : myPositions.filter(p=>!retired.has(p.gameId) && posIn(p, 'planq') && quietOwn(p)===true);
-  return source==='mine' ? mine : source==='both' ? POOLS.imbalances.concat(mine) : POOLS.imbalances;
+  const mine = source==='masters' ? [] : myPositions.filter(p=>!retired.has(p.gameId) && posIn(p, 'planq'));
+  return source==='mine' ? mine : source==='both' ? POOLS.analysis.concat(mine) : POOLS.analysis;   // (each position then checked: planqFits)
 }
 // Question 1's answer for the side to move: { kind: 'win' | 'defend' | null, stop, san, looks }
 // - win: something can be won (Other threats + or more) and Stockfish's best move takes it (a poisoned pawn,
@@ -7880,7 +7902,7 @@ function planqCandidate(taken){
     const info = planqInfo(p), vals = info && explorerVals(p.fen);
     if(!vals || vals.special) continue;
     const c = planqMake(p, info, vals, seen);
-    if(c.urgent.pending || c.urgent.ambiguous || (!c.urgent.stop && !c.rows.some(r=>r.answer))) continue;
+    if(c.urgent.pending || c.urgent.ambiguous || (!c.urgent.stop && !c.rows.some(r=>r.answer)) || !planqFits(p, c)) continue;
     return c;
   }
   return null;
