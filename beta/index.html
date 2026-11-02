@@ -5811,6 +5811,17 @@ async function initMyGames(){
   myBackground();
   setTimeout(()=>myPositions.forEach(p=>{ if(posIn(p, 'analysis')) quietOwn(p); }), 1500);   // Imbalance reading's checks, ahead of time
 }
+// Beta: your games removed everywhere, then the page loads again and brings them back from Lichess and
+// Chess.com as if for the first time (analysis, checks and the timing log all start over).
+async function resetMyGames(){
+  const ids = myGames.map(g=>g.id);
+  myConfirmClear = 'resetting'; render();
+  myGames = []; saveMyLocal();
+  const waits = myGamesCol ? ids.map(id=>myGamesCol.doc(id).delete().catch(()=>{})) : [];
+  if(myClearedDoc) waits.push(myClearedDoc.set({ at: Date.now() }).catch(()=>{}));
+  await Promise.race([Promise.all(waits), new Promise(r=>setTimeout(r, 8000))]);
+  location.reload();
+}
 function clearMyGames(){
   const ids = myGames.map(g=>g.id);
   myGames = []; saveMyLocal();
@@ -5866,9 +5877,11 @@ function positionsSection(){
           <tbody>${row('Games', ([, games])=>games)}${ACTS.map(a=>row(`<span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}`, ([, , c])=>c[a])).join('')}</tbody>
         </table></div>
         ${status ? `<p class="mg-status">${status}</p>` : ''}
-        ${myGames.length ? (myConfirmClear
-          ? `<div class="mg-confirm"><span>Remove all your games and their positions?</span><button class="btn small danger" id="clearYes">Remove</button><button class="btn small ghost" id="clearNo">Keep</button></div>`
-          : myGamesLoaded && !DIRECT_LICHESS ? `<button class="link-btn quiet" id="clearBtn">Remove my games</button>` : '') : ''}
+        ${myConfirmClear==='resetting' ? `<p class="mg-status">Removing your games…</p>`
+          : myGames.length ? (myConfirmClear
+          ? (DIRECT_LICHESS ? `<div class="mg-confirm"><span>Remove your games and analyse them again from scratch?</span><button class="btn small danger" id="resetYes">Reset</button><button class="btn small ghost" id="clearNo">Keep</button></div>`
+                            : `<div class="mg-confirm"><span>Remove all your games and their positions?</span><button class="btn small danger" id="clearYes">Remove</button><button class="btn small ghost" id="clearNo">Keep</button></div>`)
+          : myGamesLoaded && (!DIRECT_LICHESS || BETA_SITE) ? `<button class="link-btn quiet" id="clearBtn">${DIRECT_LICHESS ? 'Reset my games' : 'Remove my games'}</button>${DIRECT_LICHESS ? ' <span class="title-badge">Beta</span>' : ''}` : '') : ''}
       </section>`;
 }
 function wireGames(){
@@ -5880,6 +5893,7 @@ function wireGames(){
   const mll = document.getElementById('mgLinkLichess'); if(mll) mll.onclick = ()=>lichessLogin(true);
   const cb = document.getElementById('clearBtn'); if(cb) cb.onclick = ()=>{ myConfirmClear = true; render(); };
   const cy = document.getElementById('clearYes'); if(cy) cy.onclick = ()=>clearMyGames();
+  const ry = document.getElementById('resetYes'); if(ry) ry.onclick = ()=>resetMyGames();
   const cn = document.getElementById('clearNo'); if(cn) cn.onclick = ()=>{ myConfirmClear = false; render(); };
 }
 
