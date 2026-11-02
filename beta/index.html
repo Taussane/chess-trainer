@@ -217,7 +217,7 @@
   .faq-q summary::-webkit-details-marker{display:none;} .faq-q summary::after{content:'+'; color:var(--text-mute); font-weight:400;} .faq-q[open] summary::after{content:'−';}
   .faq-a{padding:0 0 12px; color:var(--text-mute); line-height:1.5;} .faq-a ol, .faq-a ul{margin:6px 0 0; padding-left:20px;} .faq-a li{margin:3px 0;} .faq-a b{color:var(--text);}
   .pf-scroll.faq{max-width:720px;}
-  .pf-resets{display:flex; flex-direction:column; align-items:flex-start; gap:6px; margin-top:10px;}
+  .pf-resets{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px 12px; margin-top:10px;}
   .pq-reserve{display:grid;} .pq-reserve > *{grid-area:1 / 1;} .pq-ghost-text{visibility:hidden;}
   .pq-top{margin-bottom:6px;} .pq-top .pq-steps{margin-left:auto; flex:none;}
   .pq-ask{display:flex; align-items:baseline; gap:12px;} .pq-ask .prompt{margin:0;}
@@ -3569,6 +3569,8 @@ function aspectsGridHtml(vals, guesses, shown, hidden, view, pickable, fadeIn){ 
 }
 // Tapping an aspect in a review draws its marks (aspectMarks) on the board; tapping it again clears them.
 // Any imbalance: a king tapped shows only the marks for its side (King safety: what bears on that king).
+// The numbers on the kings get the dotted underline: tap one for its side alone.
+const kingNumsTap = (mk, fen)=>{ if(!mk || !mk.nums) return mk; const m = boardMap(fen); return { ...mk, nums: mk.nums.map(n=>m[n.sq] && m[n.sq].t==='k' ? { ...n, tap: true } : n) }; };
 const marksForSide = (mk, c)=>{ if(!c) return mk; const out = {}; for(const k in mk) out[k] = Array.isArray(mk[k]) ? mk[k].filter(x=>x.c===c) : mk[k]; return out; };
 function wireAspectView(p, s){
   const svg = document.getElementById('arrows'), board = document.getElementById('board');
@@ -3576,7 +3578,7 @@ function wireAspectView(p, s){
   if(!actTap) s.aspPiece = null;
   const kingView = s.aspView==='king' && !isEndgame(p.fen);   // King safety (not King activity): its own one-side view
   const draw = ()=>{ if(s.aspView) drawMarks(svg, (s.aspPiece && activityDetail(p.fen, s.aspPiece))
-    || (kingView ? aspectMarks(p.fen, s.aspView, s.aspKing ? { only: s.aspKing } : null) : marksForSide(aspectMarks(p.fen, s.aspView), s.aspKing))); };
+    || kingNumsTap(kingView ? aspectMarks(p.fen, s.aspView, s.aspKing ? { only: s.aspKing } : null) : marksForSide(aspectMarks(p.fen, s.aspView), s.aspKing), p.fen)); };
   draw();
   // Activity: tap a piece to see which squares it counts (again, or elsewhere, to go back).
   // A king: only its side; again, or elsewhere, both.
@@ -4295,7 +4297,7 @@ const ACT_GLYPHS = {
   final:      actIcon('<path d="M4 6h10M4 11h7M4 16h4"/><path d="M18 5v14M15 16l3 3 3-3"/>'),
   planq:      actIcon('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>'),
 };
-const ACT_DESC = { imbalances:'Ponder each strategic aspect.', analysis:'Gauge the overall position.', candidates:'Identify the most promising moves.', final:'Decide what you should play.', planq:'Spot the urgent, judge, choose a plan.' };
+const ACT_DESC = { imbalances:'Ponder each strategic aspect.', analysis:'Gauge the overall position.', candidates:'Identify the most promising moves.', final:'Decide what you should play.', planq:'Follow the process to set your goal.' };
 const ACT_NAMES = { imbalances:'Imbalance reading', analysis:'Position evaluation', candidates:'Candidate moves', final:'Move selection', planq:'Plan finder' };
 // ---- The desktop layout (html.desk2: the sidebar menu and the pages laid out for a computer) ----
 // A sidebar on every page: the logo (home), the routine, the four exercises with your averages, your
@@ -4332,8 +4334,9 @@ function sideGo(where){
   if(where==='metrics') return loadMetrics();
   render();
 }
+document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('.faq-link')){ screen = 'faq'; render(); } });   // the FAQ, from the links (beta)
 function siteLinks(){
-  return `${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>`;
+  return `${BETA ? `<button class="link-plain faq-link">FAQ</button> · ` : ''}${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>`;
 }
 function renderSide(){
   if(!DESK) return;
@@ -4367,7 +4370,7 @@ function renderSide(){
 }
 const GEAR_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.85 1.85M16.65 16.65l1.85 1.85M5.5 18.5l1.85-1.85M16.65 7.35l1.85-1.85" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 const BACK_ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const ACT_SHORT = { imbalances:'Imbalances', analysis:'Evaluation', candidates:'Candidates', final:'Selection', planq:'Plans' };   // where space is short (profile)
+const ACT_SHORT = { imbalances:'Imbalances', analysis:'Evaluation', candidates:'Candidates', final:'Selection', planq:'Plan' };   // where space is short (profile)
 const LEVEL_K = 0.15, DAILY_GOAL = 3;
 // Shown as "Average 71%"; changes are whole points of the shown value ("▲ 3%").
 const pct = v => Math.round(v) + '%';
@@ -4816,7 +4819,6 @@ function timingSection(){
           <thead><tr><th></th><th scope="col">Median</th><th scope="col">Average</th><th scope="col">Timed</th></tr></thead>
           <tbody>${rows}</tbody>
         </table></div>
-        <p class="mg-status">From a position shown to its Check (the Plan finder: all its questions); the last 20 of each. Time with the page hidden doesn't count.</p>
         <div class="pf-resets">
           ${reset('acc', 'Reset accuracy progress', 'Start averages, charts and missed positions again from now?')}
           ${reset('time', 'Reset timing stats', 'Start the timing again from now?')}
@@ -4838,7 +4840,7 @@ function renderAccount(){
   const head = `<div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to exercises">${BACK_ARROW}</button>
       <h1>Profile</h1>
-      ${BETA ? `<button class="title-chip" id="faqBtn">FAQ</button>` : ''}${isOwner() ? `<button class="title-chip" id="metricsBtn">Metrics</button>` : ''}<button class="title-chip" id="settingsBtn">Settings</button>
+      ${isOwner() ? `<button class="title-chip" id="testsBtn">Test</button>` : ''}${isOwner() ? `<button class="title-chip" id="metricsBtn">Metrics</button>` : ''}<button class="title-chip" id="settingsBtn">Settings</button>
     </div>`;
   app.innerHTML = `
     ${isDesk() ? '' : head}
@@ -4852,7 +4854,7 @@ function renderAccount(){
         const timing = BETA ? timingSection() : '';
         return isDesk() ? `<div class="pf-cols"><div class="pf-col">${head}${id}${acct}${positionsSection()}</div><div class="pf-col pf-wide">${prog.html}${timing}</div></div>`
                         : `${id}${prog.html}${timing}${positionsSection()}${acct}`; })()}
-      <p class="ac-foot">${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>${isOwner() ? ` · <button class="link-plain" id="testsBtn">Test positions</button>` : ''}${installLink()}</p>
+      <p class="ac-foot">${siteLinks()}${installLink()}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; pfConfirmReset = null; render(); };
@@ -4861,7 +4863,6 @@ function renderAccount(){
   on('metricsBtn', ()=>{ screen = 'metrics'; loadMetrics(); });
   on('installBtn', installApp);
   on('settingsBtn', ()=>{ screen = 'settings'; settingsRebuild = true; render(); });
-  on('faqBtn', ()=>{ screen = 'faq'; render(); });
   on('lichessLogin', ()=>lichessLogin()); on('googleLogin', ()=>googleLogin());
   on('pfLogout', logout);
   on('pfDelete', ()=>{ pfConfirmDelete = true; render(); }); on('pfDeleteNo', ()=>{ pfConfirmDelete = false; render(); }); on('pfDeleteYes', deleteMyAccount);
@@ -7033,11 +7034,10 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Why": "Pourquoi",
 "Under each row, its main reason. Tap the underlined criterion to see it on the board, then the '?' button for how it's counted.": "Sous chaque ligne, sa raison principale. Touchez le critère souligné pour le voir sur l'échiquier, puis le bouton « ? » pour savoir comment il est compté.",
 "Plan finder": "Recherche du plan",
-"Spot the urgent, judge, choose a plan.": "Repérer l'urgent, juger, choisir un plan.",
+"Follow the process to set your goal.": "Suivez la démarche pour fixer votre objectif.",
 "Time per position": "Temps par position",
 "Median": "Médiane",
 "Timed": "Chronométrées",
-"From a position shown to its Check (the Plan finder: all its questions); the last 20 of each. Time with the page hidden doesn't count.": "D'une position affichée à sa vérification (la recherche du plan : toutes ses questions) ; les 20 dernières de chacune. Le temps où la page est cachée ne compte pas.",
 "Reset accuracy progress": "Remettre à zéro la progression",
 "Reset timing stats": "Remettre à zéro le chronométrage",
 "Start averages, charts and missed positions again from now?": "Repartir de maintenant pour les moyennes, les graphiques et les positions manquées ?",
