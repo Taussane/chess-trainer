@@ -7884,7 +7884,7 @@ function planqRowsHtml(q, ghost){
     return `<div class="pq-sides">${btn(1)}${btn(0)}${btn(-1)}</div><p class="pq-text pq-why-line">${text}</p>`;
   }).join('')}</div>`;
 }
-const PLANQ_AUTO_MS = 1800;   // after a right answer to question 1 or 2: the time to read its explanation, then the next question
+const PLANQ_AUTO_MS = 1700;   // after a right answer to question 1 or 2: the time to read its explanation, then the next question
 const planqAuto = q=>!q.done && q.checked && q.scores[PLANQ_STEPS[q.step]]===100;
 // The position's accuracy: questions 1 and 2 a quarter each, the plan half (a quarter for each of its two rows);
 // an urgent position that stops after question 1: that question alone
