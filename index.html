@@ -192,6 +192,7 @@
   @keyframes xpTurn{from{box-shadow:0 0 0 2px var(--accent);} to{box-shadow:0 0 0 2px transparent;}}
   .pq-grid{display:grid; grid-template-rows:repeat(4, var(--pq-row)); row-gap:0; margin:6px 0 1px; --pq-row:34px; --pq-btn:30px;}   /* (Move selection's rows: 34 px, touching; the buttons a little shorter, so they don't) */   /* four rows, the same height in every question */
   .pq-grid > *{min-height:0; height:var(--pq-row); box-sizing:border-box;}
+  .pq-grid > .pq-note{align-self:center;}   /* questions 1 and 2: the note centred in its row (the plan's explanations stay at the top) */
   .pq-grid > .pq-choice{height:var(--pq-btn); align-self:center; padding-block:0;} .pq-grid > .pq-sides{align-items:center;}
   .pq-text{margin:0; font-size:0.82rem; line-height:1.28; color:var(--text-mute); align-self:start; height:auto !important; max-height:var(--pq-row); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
   .pq-choice{display:flex; justify-content:space-between; align-items:center; gap:10px; text-align:left; width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); font:inherit; font-size:0.92rem; cursor:pointer;}
