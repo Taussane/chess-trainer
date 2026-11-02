@@ -1557,28 +1557,18 @@ const GRADES = ["<strong>Best</strong>: the engine's top choice.", "<strong>Good
 // row, or a plan line), that imbalance's own help shows instead (ASP_HELP).
 const HELP = {
   // the Plan finder: one help per question, while answering (task) and once checked (review)
-  planq_urgent: {
-    title:'Anything urgent?',
+  planq_first: {   // phase 1: the two questions together
+    title:"Urgent? Who's better?",
     task:[
-      "First, what can't wait: checks, captures and threats, for both sides.",
-      ['The answers', '', ["Quiet: nothing to win or to parry right now.", "Can win something: a capture or a threat wins material, and Stockfish's best move goes for it.", "Must defend: the opponent threatens a piece, or mates."]],
-      ['Tips', '', ["Look at every check, capture and threat, yours and theirs.", "A pawn that looks free may be poisoned: look at what follows.", "A pawn of yours under attack isn't urgent when nothing can be done about it."]],
+      "First, what can't wait: checks, captures and threats, for both sides. Then judge the position as a whole.",
+      ['Anything urgent?', '', ["Quiet: nothing to win or to parry right now.", "Can win: a capture or a threat wins material, and Stockfish's best move goes for it.", "Must defend: the opponent threatens a piece, or mates."]],
+      ["Who's better?", '', ["Balanced: Stockfish within ±0.5.", "Better: half a pawn or more ahead."]],
+      ['Tips', '', ["Look at every check, capture and threat, yours and theirs.", "A pawn that looks free may be poisoned: look at what follows.", "Start with material, then what lasts (pawns, space), then what can change fast (pieces, kings)."]],
     ],
     review:[
-      ['Score', "The right answer: 100%. Anything else: nothing. A quarter of the position's score."],
-      ['What follows', '', ["A piece or more at stake, or a mate: the position ends here. The threat comes first.", "A pawn or two: noted, then the next questions."]],
+      ['Score', "Each row: a quarter of the position's score.", ["Urgent: the right answer, full points; anything else, nothing.", "Who's better: the right answer, full points; within 0.15 of the ±0.5 line, the neighbouring answer, half."]],
+      ['What follows', '', ["A piece or more at stake, or a mate: the position ends here, its two rows counting half each.", "A pawn or two: noted, then the plan."]],
       ['Board', "The threats are drawn: what can be won, and by whom."],
-    ],
-  },
-  planq_winning: {
-    title:"Who's winning?",
-    task:[
-      "Judge the position as a whole: who is better?",
-      ['The answers', '', ["Balanced: Stockfish within ±0.5.", "Better: half a pawn or more ahead."]],
-      ['Tips', '', ["Start with material, then what lasts (pawns, space), then what can change fast (pieces, kings).", "A pawn won in question 1 counts: Stockfish sees the capture."]],
-    ],
-    review:[
-      ['Score', "The right answer: 100%. Within 0.15 of the ±0.5 line, the neighbouring answer: half. A quarter of the position's score."],
     ],
   },
   planq_plan: {
@@ -4680,7 +4670,7 @@ const FAQ = [
     ['Where do the ideas come from?', "From the classic books on strategy (Steinitz, Nimzowitsch, Capablanca, Kotov, Silman, Dvoretsky, Aagaard, Shereshevsky) and from Stockfish's former evaluation, which counts the same things in its own way."],
   ]],
   ['The thinking process', [
-    ['Is there an order to thinking about a position?', "Yes. The books agree on one, and each exercise trains one step of it:<ol><li><b>Is anything urgent?</b> Checks, captures and threats, for both sides (Plan finder, question 1).</li><li><b>What's different between the two sides?</b> The imbalances (Imbalance reading).</li><li><b>Who's better?</b> The imbalances weighed together decide your attitude: the side with the edge plays to use it, the other defends (Plan finder, question 2; Position evaluation).</li><li><b>What's the plan?</b> Trade or keep pieces; open and attack, or keep it closed and improve (Plan finder, question 3).</li><li><b>Which moves?</b> Candidate moves that serve the plan, then the choice, checking each for a blunder (Candidate moves, Move selection).</li></ol>"],
+    ['Is there an order to thinking about a position?', "Yes. The books agree on one, and each exercise trains one step of it:<ol><li><b>Is anything urgent?</b> Checks, captures and threats, for both sides (Plan finder, phase 1).</li><li><b>What's different between the two sides?</b> The imbalances (Imbalance reading).</li><li><b>Who's better?</b> The imbalances weighed together decide your attitude: the side with the edge plays to use it, the other defends (Plan finder, question 2; Position evaluation).</li><li><b>What's the plan?</b> Trade or keep pieces; open and attack, or keep it closed and improve (Plan finder, question 3).</li><li><b>Which moves?</b> Candidate moves that serve the plan, then the choice, checking each for a blunder (Candidate moves, Move selection).</li></ol>"],
     ['Why separate exercises, not one position from start to finish?', "Each step gets its own review right away. On a single position, the review of one step would give away the next, and a long chain makes each round slow. The daily routine runs the steps in order, each on its own position."],
     ["What about the opponent's plan?", "Checking the opponent's checks, captures and threats (step 1) is the first part of prophylaxis. The full question, \"what does my opponent want?\", may become an exercise of its own later."],
   ]],
@@ -4693,8 +4683,8 @@ const FAQ = [
     ["Why don't the grades simply add up?", "They describe the position, they don't weigh it. One big imbalance can outweigh several small ones, and a tactic beats them all. Positions where the engine sees one side clearly better while the grades lean the other way are left out, and so are those with fewer than 3 imbalances, or where Stockfish 10's own terms read the decisive ones otherwise."],
   ]],
   ['Plan finder', [
-    ['What does it ask?', "Three questions on a master position, in the order the books teach: is anything urgent, who's winning, and which plan: trade or keep pieces, and open and attack or keep it closed and improve."],
-    ['When does a position stop after question 1?', "When a piece or more, or a mate, is at stake: then the threat is the plan. A pawn or two is noted, and the next questions follow."],
+    ['What does it ask?', "Two phases on a master position, in the order the books teach. First: is anything urgent, and who's better. Then the plan: trade or keep pieces, and open and attack or keep it closed and improve. Each of the four rows counts for a quarter of the score."],
+    ['When does a position stop after phase 1?', "When a piece or more, or a mate, is at stake: then the threat is the plan, and phase 1's two rows count half each. A pawn or two is noted, and the plan follows."],
     ['How does the app know something can be won?', "Two checks: something can be won by the count of threats, and Stockfish's best move actually takes it. A pawn that looks free but that Stockfish doesn't take is poisoned, or there's better: the answer is \"quiet\", and the review says what Stockfish prefers."],
     ['What counts as "balanced"?', "Stockfish within ±0.5 (half a pawn). Close to that line, the neighbouring answer gets half the points."],
     ['Why trades, and why dynamic or positional?', "They're the two decisions the imbalances lead to:<ul><li><b>Static edges</b> (material, better pawns) last, and grow as the board empties: trade pieces, keep it closed, improve, no hurry.</li><li><b>Dynamic edges</b> (better pieces, a development lead, a weak enemy king) fade: keep your pieces, open lines and attack before the opponent catches up.</li><li><b>Space</b> is the static edge that needs pieces on: the cramped side wants trades, the side with more room squeezes slowly.</li><li>In the endgame, <b>an active king</b> wants trades and goes after the pawns; a passive one comes into play first.</li></ul>"],
@@ -6832,6 +6822,18 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Worse pieces": "Pièces moins bonnes",
 "Improve the worst": "Améliorez la pire",
 "Balanced": "Équilibré",
+"Can win": "Peut gagner",
+"Quiet": "Calme",
+"Must defend": "Doit défendre",
+"Urgent? Who's better?": "Urgence ? Qui est mieux ?",
+"First, what can't wait: checks, captures and threats, for both sides. Then judge the position as a whole.": "D'abord, ce qui ne peut pas attendre : échecs, prises et menaces, des deux côtés. Puis jugez la position dans son ensemble.",
+"Anything urgent?": "Une urgence ?",
+"Who's better?": "Qui est mieux ?",
+"Each row: a quarter of the position's score.": "Chaque ligne : un quart du score de la position.",
+"Urgent: the right answer, full points; anything else, nothing.": "Urgence : la bonne réponse, tous les points ; le reste, rien.",
+"Who's better: the right answer, full points; within 0.15 of the ±0.5 line, the neighbouring answer, half.": "Qui est mieux : la bonne réponse, tous les points ; à moins de 0,15 de la limite de ±0,5, la réponse voisine, la moitié.",
+"A piece or more at stake, or a mate: the position ends here, its two rows counting half each.": "Une pièce ou plus en jeu, ou un mat : la position s'arrête ici, ses deux lignes comptant pour moitié chacune.",
+"A pawn or two: noted, then the plan.": "Un pion ou deux : noté, puis le plan.",
 "Find a pawn break": "Trouvez une rupture de pions",
 "Games and positions": "Parties et positions",
 "Games": "Parties",
@@ -7017,6 +7019,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "The answers": "Les réponses",
 "Quiet: nothing to win or to parry right now.": "Calme : rien à gagner ni à parer pour l'instant.",
 "Can win something: a capture or a threat wins material, and Stockfish's best move goes for it.": "Peut gagner quelque chose : une prise ou une menace gagne du matériel, et le meilleur coup de Stockfish y va.",
+"Can win: a capture or a threat wins material, and Stockfish's best move goes for it.": "Peut gagner : une prise ou une menace gagne du matériel, et le meilleur coup de Stockfish y va.",
 "Must defend: the opponent threatens a piece, or mates.": "Doit se défendre : l'adversaire menace une pièce, ou mate.",
 "Look at every check, capture and threat, yours and theirs.": "Regardez chaque échec, prise et menace, les vôtres et les siennes.",
 "A pawn that looks free may be poisoned: look at what follows.": "Un pion qui semble gratuit peut être empoisonné : regardez la suite.",
@@ -7147,7 +7150,8 @@ const I18N_FR_RE = [
   [/^Next \((\d+) left\) ›$/, 'Suivante ($1 restantes) ›'],
   [/^(.+) ›$/, (m, a)=>tr(a) + ' ›'],
   [/^(\d+) of 4$/, '$1 sur 4'],
-  [/^Check (\d)\/3$/, 'Vérifier $1/3'], [/^Next (\d)\/3$/, 'Suivante $1/3'],
+  [/^Check (\d)\/(\d)$/, 'Vérifier $1/$2'], [/^Next (\d)\/(\d)$/, 'Suivante $1/$2'],
+  [/^Anything urgent for (White|Black)\? Who's better\?$/, (m, c)=>`Une urgence pour les ${c==='White' ? 'Blancs' : 'Noirs'} ? Qui est mieux ?`],
   [/^(\d) left$/, (m, n)=>`${n} restant${n==='1' ? '' : 's'}`],
   [/^(.+): who has the decisive edge\?$/, (m, a)=>tr(a) + " : qui a l'avantage décisif ?"],
   [/^Accuracy (\d+)% · Average (.+)$/, 'Précision $1 % · Moyenne $2'],
@@ -7635,7 +7639,7 @@ function renderExplorer(){
 //    A quiet position needs one row that goes to a side at least.
 // A wrong answer shows the correction and the next question follows. Results are not recorded.
 const PLANQ_EDGE = 50, PLANQ_NEAR = 15;   // centipawns: balanced under 0.5; half credit within 0.15 of it
-const PLANQ_STEPS = ['urgent', 'winning', 'plan'];
+const PLANQ_PHASES = ['first', 'plan'];   // phase 1: anything urgent, who's better; phase 2: the plan (trades, type of play)
 const PLANQ_ROWS = [
   { key:'pieces',   name:'Trades',   sides:{ 1:'Trade pieces', '-1':'Keep pieces' }, short:{ 1:'Trade', '-1':'Keep' }, wants:{ 1:'trades', '-1':'keeping pieces' } },
   { key:'approach', name:'Dynamic or positional', sides:{ 1:'Open / Attack', '-1':'Close / Improve' }, short:{ 1:'Attack', '-1':'Improve' }, wants:{ 1:'dynamic play', '-1':'positional play' } },
@@ -7859,19 +7863,19 @@ function planqTest(i){
   planq = planqMake(p, p.eval, vals, planq ? planq.seen : new Set());
   planq.test = i; screen = 'planq'; render();
 }
-// Questions 1 and 2: their choices [value, label]
-function planqOptions(q){
-  const me = q.p.side, them = me==='w' ? 'b' : 'w', name = c=>c==='w' ? 'White' : 'Black', who = name(me);
-  if(PLANQ_STEPS[q.step]==='urgent') return [['no', 'No, the position is quiet'], ['win', `Yes, ${who} can win something`], ['defend', `Yes, ${who} must defend`]];
-  return [['=', 'Position is balanced'], [me, `${name(me)} is better`], [them, `${name(them)} is better`]];
+// Phase 1, two rows: anything urgent (the side to play can win something, it's quiet, or it must defend), and
+// who's better; each [value, label], the neutral answer in the middle
+function planqFirstRows(q){
+  const me = q.p.side, them = me==='w' ? 'b' : 'w', name = c=>c==='w' ? 'White' : 'Black';
+  return [{ key: 'urgent', opts: [['win', 'Can win'], ['no', 'Quiet'], ['defend', 'Must defend']] },
+          { key: 'winning', opts: [[me, `${name(me)} is better`], ['=', 'Balanced'], [them, `${name(them)} is better`]] }];
 }
 function planqPrompt(q){
-  const who = q.p.side==='w' ? 'White' : 'Black', step = PLANQ_STEPS[q.step];
-  return step==='urgent' ? `Is anything urgent for ${who}?` : step==='winning' ? "Who's winning?" : `Choose a plan for ${who}`;
+  const who = q.p.side==='w' ? 'White' : 'Black';
+  return PLANQ_PHASES[q.step]==='first' ? `Anything urgent for ${who}? Who's better?` : `Choose a plan for ${who}`;
 }
-function planqAnswer(q){
-  const step = PLANQ_STEPS[q.step];
-  if(step==='urgent'){ const r = q.urgent.kind || 'no'; return { best: r, score: x=>x===r ? 100 : 0 }; }
+function planqAnswer(q, key){
+  if(key==='urgent'){ const r = q.urgent.kind || 'no'; return { best: r, score: x=>x===r ? 100 : 0 }; }
   return { best: planqWinner(q.info), score: x=>planqWinScore(q.info, x) };
 }
 // a row's score: its answer 100; Either a vote short of a side (net 1), or that side, 50; else 0
@@ -7881,8 +7885,8 @@ function planqRowScore(r, pick){
 }
 // the plan's score: the rows' average
 const planqPlanScore = q=>Math.round(q.rows.reduce((t, r)=>t + planqRowScore(r, +q.picks['row:' + r.key]), 0) / q.rows.length);
-function planqNote(q){
-  const step = PLANQ_STEPS[q.step], who = q.p.side==='w' ? 'White' : 'Black';
+function planqNote(q, step){
+  const who = q.p.side==='w' ? 'White' : 'Black';
   if(step==='urgent'){ const u = q.urgent, mate = q.info.mate!=null;
     if(u.kind==='win') return mate ? `${who} has a mate: it comes first.` : u.stop ? `${u.san} wins material: it comes first.` : `${u.san} wins material, but the general plan still holds.`;
     if(u.kind==='defend') return mate ? `${who} must stop a mate first.` : `${who} must deal with a threat first.`;
@@ -7914,12 +7918,26 @@ function planqRowsHtml(q, ghost){
     return `<div class="pq-sides">${btn(1)}${btn(0)}${btn(-1)}</div><p class="pq-text pq-why-line">${text}</p>`;
   }).join('')}</div>`;
 }
-const PLANQ_AUTO_MS = 1650;   // after a right answer to question 1 or 2: the time to read its explanation, then the next question
-const planqAuto = q=>!q.done && q.checked && q.scores[PLANQ_STEPS[q.step]]===100;
-// The position's accuracy: questions 1 and 2 a quarter each, the plan half (a quarter for each of its two rows);
-// an urgent position that stops after question 1: that question alone
+// Phase 1's rows, as the plan's: three choices, then the row's explanation (before Check, question 1's reminder)
+function planqFirstHtml(q, ghost){
+  return `<div class="pq-grid">${planqFirstRows(q).map(row=>{
+    const pick = ghost ? null : q.picks[row.key], a = ghost ? null : planqAnswer(q, row.key);
+    const btn = ([v, label], i)=>{
+      const mid = i===1 ? ' mid' : '';
+      if(ghost) return `<span class="pq-side${mid}">${label}</span>`;
+      const cls = !q.checked ? (pick===v ? ' on' : '') : v===a.best ? ' best' : pick===v ? (a.score(v) ? ' half' : ' bad') : ' off';
+      return `<button class="pq-side${mid}${cls}" data-first="${row.key}" data-v="${v}" ${q.checked ? 'disabled' : ''}>${label}</button>`;
+    };
+    const text = ghost ? '' : q.checked ? planqNote(q, row.key) : row.key==='urgent' ? 'Look at checks, captures and threats, for both sides.' : '';
+    return `<div class="pq-sides">${row.opts.map(btn).join('')}</div><p class="pq-text pq-why-line pq-first-note">${text}</p>`;
+  }).join('')}</div>`;
+}
+const PLANQ_AUTO_MS = 1650;   // after phase 1 answered right (both rows): the time to read the explanations, then the plan
+const planqAuto = q=>!q.done && q.checked && q.step===0 && q.scores.urgent===100 && q.scores.winning===100;
+// The position's accuracy: a quarter for each row (urgent, who's better, trades, type of play); an urgent
+// position that stops after phase 1: its two rows, half each
 const PLANQ_WEIGHTS = { urgent: 0.25, winning: 0.25, plan: 0.5 };
-const planqTotal = q=>Math.round(q.urgent.stop ? (q.scores.urgent || 0) : PLANQ_STEPS.reduce((t, s)=>t + PLANQ_WEIGHTS[s] * (q.scores[s] || 0), 0));
+const planqTotal = q=>Math.round(q.urgent.stop ? ((q.scores.urgent || 0) + (q.scores.winning || 0)) / 2 : ['urgent', 'winning', 'plan'].reduce((t, s)=>t + PLANQ_WEIGHTS[s] * (q.scores[s] || 0), 0));
 function planqGo(q){ if(planq!==q || !q.checked || q.done) return; q.step++; q.checked = false; q.aspView = q.aspPiece = q.aspKing = null; render(); }
 function renderPlanq(){
   const app = document.getElementById('app');
@@ -7930,46 +7948,36 @@ function renderPlanq(){
       document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; render(); };
       clearTimeout(renderPlanq.t); renderPlanq.t = setTimeout(()=>{ if(screen==='planq') render(); }, 400); return; }
   }
-  const q = planq, p = q.p, step = PLANQ_STEPS[q.step], isPlan = step==='plan';
+  const q = planq, p = q.p, step = PLANQ_PHASES[q.step], isPlan = step==='plan';
   if(q.t0==null) q.t0 = activeNow();   // (first shown: the time spent starts)
-  const ans = isPlan ? null : planqAnswer(q), pick = q.picks[step];
   side = p.side;
-  // the board: the threats once question 1 is checked, in an urgent position
+  // the board: the threats once phase 1 is checked, in an urgent position
   if(q.step===0 && q.checked && (q.urgent.kind || q.urgent.looks) && !q.aspView && !q.aspSeen){ q.aspView = 'threats'; q.aspSeen = true; }
-  const choice = ([v, label])=>{
-    const best = v===ans.best;
-    const cls = !q.checked ? (pick===v ? ' on' : '') : best ? ' best' : pick===v ? ' bad' : ' off';
-    const tag = !q.checked ? '' : best ? 'Right' : pick===v ? 'Your answer' : '';
-    return `<button class="pq-choice${cls}" data-v="${v}" ${q.checked ? 'disabled' : ''}><span>${label}</span>${tag ? `<small>${tag}</small>` : ''}</button>`;
-  };
-  const steps = q.urgent.stop ? 1 : 3, asked = PLANQ_STEPS.slice(0, steps);
   const dots = '';   // (no question tracker)
   const total = q.done ? planqTotal(q) : null;
-  const last = q.step===steps - 1;
-  const note = q.checked ? planqNote(q) : step==='urgent' ? 'Look at checks, captures and threats, for both sides.' : '';
+  const last = q.step===(q.urgent.stop ? 0 : 1);   // (an urgent position stops after phase 1)
   // the same layout before and after Check: the score's line (empty until the end), the question, four rows: nothing moves once checked
   // the first line, as in the other exercises: the question, then the score in its place at the end (both
   // kept in the layout, the other one hidden, so the line keeps its height)
   const scoreLine = `<div class="score pq-top">${q.done ? `<span class="score-num" id="pqAcc">${q.countDone ? total : 0}%</span><span class="score-label">Accuracy</span>${levelChip(q, !!q.countDone)}` : ''}${dots}</div>`;
   const promptLine = `<div class="pq-top pq-ask"><p class="prompt">${planqPrompt(q)}</p>${dots}</div>`;
-  const allPrompts = ['w', 'b'].map(c=>PLANQ_STEPS.map((x, i)=>`<div aria-hidden="true" class="pq-ghost-text"><div class="pq-top pq-ask"><p class="prompt">${planqPrompt({ ...q, p: { ...q.p, side: c }, step: i })}</p>${dots}</div></div>`).join('')).join('');   // (the longest decides the line's height: the rows start at the same place in every question)
+  const allPrompts = ['w', 'b'].map(c=>PLANQ_PHASES.map((x, i)=>`<div aria-hidden="true" class="pq-ghost-text"><div class="pq-top pq-ask"><p class="prompt">${planqPrompt({ ...q, p: { ...q.p, side: c }, step: i })}</p>${dots}</div></div>`).join('')).join('');   // (the longest decides the line's height: the rows start at the same place in every question)
   const top = `<div class="pq-reserve">${allPrompts}${q.done ? scoreLine : `<div aria-hidden="true" class="pq-ghost-text"><div class="score pq-top"><span class="score-num">100%</span></div></div>${promptLine}`}</div>`;
   const prompt = '';   // (at the end the score takes the question's place, as in the other exercises)
-  const ready = isPlan ? PLANQ_ROWS.every(r=>q.picks['row:' + r.key]!=null) : !!pick;
-  // four rows of the same height in every question: questions 1 and 2, an answer a row and the note in the 4th;
-  // the plan, each dilemma's sides then its explanation (two lines)
-  const body = isPlan ? planqRowsHtml(q) : `<div class="pq-grid">${planqOptions(q).map(choice).join('')}<p class="pq-text pq-note">${note}</p></div>`;
+  const ready = isPlan ? PLANQ_ROWS.every(r=>q.picks['row:' + r.key]!=null) : q.picks.urgent!=null && q.picks.winning!=null;
+  // four rows of the same height in both phases: each dilemma's three choices, then its explanation (two lines)
+  const body = isPlan ? planqRowsHtml(q) : planqFirstHtml(q);
   const panel = `
         ${top}
         ${prompt}
         ${body}
         ${q.done ? `<div class="actions-row split${q.countDone ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="pqNext">${routine || replayMode ? nextLabel() : 'Next position'}</button></div>`
-          : `<div class="actions-row${planqAuto(q) ? ' pending' : ''}">${q.checked ? `<button class="btn" id="pqGo">${last ? 'See the review' : `Next ${q.step + 2}/3`}</button>` : `<button class="btn" id="pqCheck" ${ready ? '' : 'disabled'}>Check ${q.step + 1}/3</button>`}</div>`}`;
+          : `<div class="actions-row${planqAuto(q) ? ' pending' : ''}">${q.checked ? `<button class="btn" id="pqGo">Next ${q.step + 2}/2</button>` : `<button class="btn" id="pqCheck" ${ready ? '' : 'disabled'}>Check ${q.step + 1}/2</button>`}</div>`}`;
   // ghost: the same for every position (the plan question, the tallest), so the panel's height, and the
   // board's size, give nothing away
   const ghostR = `<div class="pq-reserve">${allPrompts}<div class="score pq-top"><span class="score-num">100%</span><span class="score-label">Accuracy</span>${dots}</div></div>${planqRowsHtml(q, true)}${GHOST_ACTIONS}`;   // (the review: score line, rows)
-  // (and question 1 at the end of an urgent position: score line, three answers, the note at its longest)
-  const ghostQ = `<div class="pq-reserve">${allPrompts}<div class="score pq-top"><span class="score-num">100%</span><span class="score-label">Accuracy</span>${dots}</div></div><div class="pq-grid">${planqOptions({ ...q, step: 0 }).map(([v, l])=>`<span class="pq-choice"><span>${l}</span><small>Your answer</small></span>`).join('')}<p class="pq-text pq-note"></p></div>${GHOST_ACTIONS}`;
+  // (and phase 1 at the end of an urgent position)
+  const ghostQ = `<div class="pq-reserve">${allPrompts}<div class="score pq-top"><span class="score-num">100%</span><span class="score-label">Accuracy</span>${dots}</div></div>${planqFirstHtml(q, true)}${GHOST_ACTIONS}`;
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
@@ -7984,15 +7992,13 @@ function renderPlanq(){
   planqPrefetch();   // the next positions, while this one is played
   // the usual entrances: each question's instruction and its button fade and rise in; at the end the
   // accuracy, then its count, then the average and the buttons
-  // the plan's explanations, both at once, as the review opens (the score counts once they're in)
-  if(isPlan && q.checked) document.querySelectorAll('#app .layer:not(.ghost) .pq-why-line').forEach((el, i)=>fadeOnce(q, 'why' + i, el));
+  // each phase's explanations, both at once, as its review opens (the score counts once they're in)
+  if(q.checked) document.querySelectorAll('#app .layer:not(.ghost) .pq-why-line').forEach((el, i)=>fadeOnce(q, 'why' + q.step + '-' + i, el));
   if(!q.done){
     fadeOnce(q, 'ask' + q.step, reviewPart('.pq-reserve > .pq-ask .prompt'));   // (the question, not the tracker)
-    fadeOnce(q, 'grid' + q.step, reviewPart('.pq-grid'));   // its answers along with it (and question 1's reminder: checks, captures, threats); after Check, nothing replays
-    if(q.checked) fadeOnce(q, 'note' + q.step, reviewPart('.pq-note'));   // questions 1 and 2: the explanation, as the answer shows
-    fadeOnce(q, 'btn' + q.step + (q.checked ? 'c' : ''), reviewPart('.actions-row'), q.checked ? SLIDE_MS + 550 : 0);   // after Check: Next question once the explanation is in
+    fadeOnce(q, 'grid' + q.step, reviewPart('.pq-grid'));   // its answers along with it (and the reminder: checks, captures, threats); after Check, nothing replays
+    fadeOnce(q, 'btn' + q.step + (q.checked ? 'c' : ''), reviewPart('.actions-row'), q.checked ? SLIDE_MS + 550 : 0);   // after Check: Next once the explanations are in
   } else {
-    if(!isPlan) fadeOnce(q, 'note' + q.step, reviewPart('.pq-note'));   // an urgent position, ended after question 1: its explanation, as in the other questions
     fadeOnce(q, 'score', reviewPart('#pqAcc')); fadeOnce(q, 'scoreLabel', reviewPart('.score.pq-top .score-label'));   // (not the tracker)
     if(q.countDone){ fadeOnce(q, 'level', reviewPart('.level')); fadeOnce(q, 'end', reviewPart('.actions-row')); }
     else if(!q.countStarted){
@@ -8005,17 +8011,18 @@ function renderPlanq(){
         const tick = ts=>{ if(t0===null) t0 = ts; const f = dur ? Math.min(1, (ts - t0) / dur) : 1, el = reviewPart('#pqAcc');
           if(el && here()) el.textContent = Math.round(total * easeOut(f)) + '%';
           if(f < 1) requestAnimationFrame(tick); else { q.countDone = true; q.justCounted = true; if(here()) render(); } };
-        requestAnimationFrame(tick); }, SLIDE_MS + (isPlan ? 400 : 150));   // (once the explanations have faded in, and a pause, as Candidate moves waits for its re-order)
+        requestAnimationFrame(tick); }, SLIDE_MS + 400);   // (once the explanations have faded in, and a pause, as Candidate moves waits for its re-order)
     }
   }
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ helpVisible = false; if(replayMode){ replayMode = false; planq = null; screen = 'account'; return render(); } if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
   on('helpBtn', ()=>{ helpVisible = true; render(); });
-  on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.tc = activeNow(); q.scores[step] = isPlan ? planqPlanScore(q) : ans.score(pick);
+  on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.tc = activeNow();
+    if(isPlan) q.scores.plan = planqPlanScore(q); else ['urgent', 'winning'].forEach(k=>{ q.scores[k] = planqAnswer(q, k).score(q.picks[k]); });
     if(last){ q.done = true; planqRecord(q, planqTotal(q)); }
     render(); });
   on('pqGo', ()=>planqGo(q));
-  // Right answer to question 1 or 2: no Next button; once the explanation is in and read, the next question comes by itself
+  // Phase 1 right on both rows: no Next button; once the explanations are in and read, the plan comes by itself
   if(planqAuto(q) && q.autoStep!==q.step){
     q.autoStep = q.step; const at = q.step;
     setTimeout(()=>{ if(planq===q && q.step===at && q.checked && screen==='planq') planqGo(q); }, SLIDE_MS + PLANQ_AUTO_MS);
@@ -8027,7 +8034,7 @@ function renderPlanq(){
     if(q.test!=null){ const j = TEST_POSITIONS.findIndex((x, k)=>k > q.test && x.eval); if(j >= 0) planqTest(j); else { planq = null; screen = 'tests'; render(); } return; }
     planq = planqPick() || null; render(); });
   app.querySelectorAll('.layer:not(.ghost) .pq-reason[data-key]').forEach(b=>b.onclick = ()=>{ q.aspView = q.aspView===b.dataset.key ? null : b.dataset.key; q.aspPiece = q.aspKing = null; render(); });
-  app.querySelectorAll('.layer:not(.ghost) .pq-choice[data-v]').forEach(b=>b.onclick = ()=>{ if(q.checked) return; q.picks[step] = b.dataset.v; render(); });
+  app.querySelectorAll('.layer:not(.ghost) .pq-side[data-first]').forEach(b=>b.onclick = ()=>{ if(q.checked) return; q.picks[b.dataset.first] = b.dataset.v; render(); });
   app.querySelectorAll('.layer:not(.ghost) .pq-side[data-row]').forEach(b=>b.onclick = ()=>{ if(q.checked) return; q.picks['row:' + b.dataset.row] = b.dataset.d; render(); });
   // help: the question's own (while answering, then its review); a criterion tapped on the board: that criterion's
   if(helpVisible){
