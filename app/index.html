@@ -7947,6 +7947,7 @@ function renderPlanq(){
   planqPrefetch();   // the next positions, while this one is played
   // the usual entrances: each question's instruction and its button fade and rise in; at the end the
   // accuracy, then its count, then the average and the buttons
+  if(isPlan && q.checked) document.querySelectorAll('#app .layer:not(.ghost) .pq-why-line').forEach((el, i)=>fadeOnce(q, 'why' + i, el));   // the plan's explanations, as the review opens
   if(!q.done){
     fadeOnce(q, 'ask' + q.step, reviewPart('.pq-reserve > .pq-ask .prompt'));   // (the question only: the tracker and the note stay still)
     fadeOnce(q, 'btn' + q.step + (q.checked ? 'c' : ''), reviewPart('.actions-row'));
