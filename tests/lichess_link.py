@@ -30,7 +30,7 @@ async def main():
         if list(r) != ['ok']: fails.append(f'my games: {r}')
         t = await pg.evaluate("lichessUrl(TEST_POSITIONS[0])")
         if 'analysis/standard/' not in t: fails.append('a test position should open on its own: ' + t)
-        await pg.click('#homeBtn'); await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
+        await pg.click('#homeBtn'); await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(300)
         await pg.evaluate("fenEvalStore = {}; render()"); await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
         href = await pg.get_attribute('a.btn.secondary', 'href'); print('review link:', href[:70] + '…' + href[-14:])
         if '/analysis/pgn/' not in href: fails.append('the review link is not the whole game')

@@ -74,11 +74,11 @@ async def main():
         # 2. Check, then home before the evaluation is in; reopen.
         b, pg, errs = await open_app(p); allerrs += errs
         await pg.evaluate("""(()=>{ const real = engineEval; engineEval = (f,s)=>new Promise(res=>setTimeout(()=>real(f,s).then(res), 1500)); fenEvalStore = {}; poolEvalStore = {}; })()""")
-        await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(200)
+        await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(200)
         k = await pg.evaluate("pos().key")
         await pg.evaluate("(()=>{ st('analysis').guess = 70; render(); })()")
         await pg.evaluate(UNGATE); await pg.click('#check'); await pg.click('#homeBtn'); await pg.wait_for_timeout(2000)
-        await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(2500)
+        await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(2500)
         n = await pg.evaluate(f"[pos().key, results.length, isPlayed({k!r})]"); print('2. reopened on', n[0]==k, 'results', n[1], 'played', n[2])
         if n != [k, 1, True]: fails.append(f'unrecorded review: {n}')
         await b.close()
@@ -154,7 +154,7 @@ async def main():
         # 8. The engine never answers: after the watchdog, the error shows.
         b, pg, errs = await open_app(p, fake_engine=False); allerrs += errs
         await pg.evaluate("""(()=>{ sfState='ready'; sfBusy=false; sfQueue=[]; bgQueue=[]; sfWorker = { postMessage(){} }; fenEvalStore = {}; render(); })()""")
-        await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(200)
+        await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(200)
         await pg.wait_for_timeout(20800)   # the search cap (10 s ahead of the review), then 5 s to stop, then 5 s to give up
         txt = await pg.inner_text('#app'); print('8.', 'stopped working' in txt)
         if 'stopped working' not in txt: fails.append('no error after the engine stopped answering')

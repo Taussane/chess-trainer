@@ -46,7 +46,7 @@ setInterval(hook, 5);
   
 
   await p.waitForTimeout(3000); await mark('home 3 s'); await dump();
-  const open = async a => { await p.click(`.card[data-go="${a}"]`); await p.waitForTimeout(50); };
+  const open = async a => { await p.evaluate(a => (document.querySelector(`.card[data-go="${a}"]`) || { click: () => openActivity(a) }).click(), a); await p.waitForTimeout(50); };
   const home = async () => { await p.click('#homeBtn'); await p.waitForTimeout(100); };
   const next = async () => { await p.evaluate(() => document.getElementById('nextPos').click()); await p.waitForTimeout(50); };
 

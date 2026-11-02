@@ -14,7 +14,7 @@ const server = spawn('python3', ['-m', 'http.server', '8795'], { cwd: path.join(
   const fails = [];
   const ready = await p.waitForFunction(() => sfState === 'ready', null, { timeout: 30000 }).then(() => true, () => false);
   if (!ready) fails.push('the engine did not start: ' + await p.evaluate(() => sfState + ' ' + sfLastError));
-  const open = a => p.evaluate(a => { screen = 'home'; render(); document.querySelector(`.card[data-go="${a}"]`).click(); }, a);
+  const open = a => p.evaluate(a => { screen = 'home'; render(); (document.querySelector(`.card[data-go="${a}"]`) || { click: () => openActivity(a) }).click(); }, a);
   for (const a of ['imbalances', 'analysis', 'candidates', 'final']) {
     await open(a);
     await p.waitForFunction(() => !!document.getElementById('check'), null, { timeout: 30000 });

@@ -137,7 +137,7 @@ async def main():
         # 7. Position evaluation: the bar alone, the tactics reminder beside Check; its review shows the
         #    engine's imbalances (no borders, not scored), tappable too.
         await pg.click('#homeBtn'); await pg.wait_for_timeout(200)
-        await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
+        await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(300)
         await pg.evaluate("""()=>{ const p = pos(); engineEval = fen=>new Promise(res=>setTimeout(()=>res({ lines:[{cp: p.side==='w' ? 250 : -250, mate:null, uci:null}], bestUci:null }), 20)); fenEvalStore = {}; render(); }""")
         prompt = await pg.text_content('#anaPrompt'); note = await pg.query_selector('#anaCheckRow .asp-note')
         if prompt != "Drag the evaluation bar to where you think it sits." or note: fails.append(f'evaluation question: {prompt} / {note}')

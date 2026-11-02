@@ -28,7 +28,7 @@ const cj = require('fs').readFileSync(path.join(__dirname, '../vendor/chess.js/c
   out.push('imbalances with scale (' + await where() + '): back -> ' + await back() + ', back -> ' + await back());
   await p.goto('http://localhost:8793/'); await p.waitForTimeout(1500);
   // 4. exercise, back, profile, back
-  await p.click('.card[data-go="analysis"]'); await p.waitForTimeout(300);
+  await p.evaluate(() => openActivity('analysis')); await p.waitForTimeout(300);
   const a = await back(); await p.click('#accountBtn'); await p.waitForTimeout(300);
   out.push('analysis: back -> ' + a + '; profile: back -> ' + await back() + ', back -> ' + await back());
   // 5. reload inside settings

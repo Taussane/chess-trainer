@@ -32,7 +32,7 @@ async def main():
         cards = await pg.evaluate("[...document.querySelectorAll('.card')].map(c=>c.dataset.go+':'+(c.disabled?'off':'on')+':'+c.querySelector('.card-desc').innerText)")
         print('home:', cards)
         on = lambda a: any(c.startswith(a + ':on') for c in cards)
-        if not (on('imbalances') and on('analysis') and on('candidates')): fails.append(f'Board analysis and Candidate moves should open at once: {cards}')
+        if not (on('imbalances') and on('planq') and on('candidates')): fails.append(f'Imbalance reading, the Plan finder and Candidate moves should open at once: {cards}')
         if ':off:Finding positions' not in cards[3]: fails.append(f'Move selection should wait: {cards}')
         await pg.screenshot(path=str(T.SHOTS/'fast_1_home_waiting.png'))
         # Release the engine: all checks must come before the first quick scan.
@@ -53,7 +53,7 @@ async def main():
         if not c['final']: fails.append('no Final choice positions after the searches')
         # Waiting at the review: everything but one Board analysis position already played today.
         await pg.evaluate("(()=>{ const t=ctx('analysis',false); ensureTrack(t); const pool=poolOf(t); const cur=posAt(t, firstAvailable(t, seqBy[t])); pool.forEach(p=>{ if(p.key!==cur.key) markPlayed(p.key); }); })()")
-        await pg.click('.card[data-go="analysis"]'); await pg.wait_for_timeout(300)
+        await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(300)
         await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
         n = await pg.evaluate("[document.getElementById('nextPos').disabled, document.getElementById('nextPos').innerText]")
         print('next after the last one:', n)

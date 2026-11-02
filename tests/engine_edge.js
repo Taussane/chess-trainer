@@ -18,7 +18,7 @@ const answer = (p, a) => p.evaluate(a => { const s = st(a), q = pos(); s.barMove
   if (a === 'imbalances') ASPECTS.forEach(x => { s.asp[x.key] = 1; });
   if (a === 'candidates') { const u = new Chess(q.fen).moves({ verbose: true })[0]; s.picks = [{ uci: u.from + u.to + (u.promotion || ''), from: u.from, to: u.to, san: u.san, slot: 0 }]; }
   render(); const c = document.getElementById('check'); if (!c) throw new Error('no Check button on ' + a); c.disabled = false; c.click(); }, a);
-const open = async (p, a) => { await p.evaluate(a => { screen = 'home'; render(); document.querySelector(`.card[data-go="${a}"]`).click(); }, a); };
+const open = async (p, a) => { await p.evaluate(a => { screen = 'home'; render(); (document.querySelector(`.card[data-go="${a}"]`) || { click: () => openActivity(a) }).click(); }, a); };
 const reviewDone = (p, ms) => p.waitForFunction(() => !!document.getElementById('nextPos') && !document.querySelector('.actions-row.pending'), null, { timeout: ms }).then(() => true, () => false);
 (async () => {
   await new Promise(r => setTimeout(r, 800));

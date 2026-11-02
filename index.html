@@ -4343,7 +4343,7 @@ function renderSide(){
     <div class="side-sec">Exercises</div>
     ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
-    ${`<div class="side-sec">Explore</div>${BETA ? item('explorer', SIDE_ICONS.explorer, 'Strategy explorer') : ''}${(L=>item('analysis', ACT_GLYPHS.analysis, ACT_NAMES.analysis, progressLoaded && L.rated ? pct(L.level) : '', !canOpen('analysis', false)))(levelNow('analysis'))}`}
+    ${BETA_SITE ? `<div class="side-sec">Explore</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}${(L=>item('analysis', ACT_GLYPHS.analysis, ACT_NAMES.analysis, progressLoaded && L.rated ? pct(L.level) : '', !canOpen('analysis', false)))(levelNow('analysis'))}` : ''}
     <div class="side-sec">You</div>
     ${item('account', '<img class="side-app-icon" src="icons/icon.svg" alt="" aria-hidden="true">', displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
@@ -4374,7 +4374,7 @@ function deltaHtml(d){
 }
 let resultsDb = null;      // db collection when the database is available
 let progressTab = null;   // the trend picked (null: the first exercise you've played, Imbalance reading first)
-const progressTabNow = ()=>progressTab || ACTS.concat(['analysis']).find(x=>results.some(r=>r.a===x)) || ACTS[0];
+const progressTabNow = ()=>{ const tabs = ACTS.concat(BETA_SITE ? ['analysis'] : []); return (tabs.includes(progressTab) && progressTab) || tabs.find(x=>results.some(r=>r.a===x)) || ACTS[0]; };   // (Position evaluation: the beta only)
 // This browser keeps a copy of the results too, so the home page can show the right routine and
 // averages instantly on launch instead of starting empty while the database answers.
 const LS_KEY = 'cst.results.v1';
@@ -4594,7 +4594,7 @@ function progressSection(){
       </table>
     </section>
     <h2 class="pf-h">Progress</h2>
-    <div class="seg" role="tablist">${ACTS.concat(['analysis']).map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_SHORT[x]}</button>`).join('')}</div>
+    <div class="seg" role="tablist">${ACTS.concat(BETA_SITE ? ['analysis'] : []).map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_SHORT[x]}</button>`).join('')}</div>
     ${info.n===0 ? `<p class="empty">No positions played yet in ${ACT_NAMES[a]}.</p>` : `
     <div class="chart-box" id="chartBox">
       <div class="chart-legend"><span><i class="lg-line"></i>Average</span><span><i class="lg-dot"></i>Masters</span><span><i class="lg-dot mine"></i>My games</span>
@@ -4690,7 +4690,7 @@ const FAQ = [
     ['Are these answers always right?', "They're the books' principles applied to the position, not a calculated line: a plan is a direction, not the next move. Checked on master games, they hold when the imbalances agree: when nothing argues against a trade, masters tried to trade (took or offered) 56 to 67% of the time, against about 45% on average; and Stockfish finds forcing play good twice as often where the plan says \"attack\" as where it says \"improve\". When imbalances pull both ways, concrete reasons decide, and the answer is less certain."],
   ]],
   ['The other exercises', [
-    ['Position evaluation', "Who's better, and by how much: drag the bar to your answer. Each square you're off costs 25%. It's a side exercise now: the Plan finder takes its place in the routine."],
+    ['Position evaluation', "Who's better, and by how much: drag the bar to your answer. Each square you're off costs 25%. On the beta site only, as a side exercise: the Plan finder takes its place in the routine."],
     ['Candidate moves', "Pick 1 to 3 strong moves. Several moves can be equally good: the point is to look before choosing. Each is compared with Stockfish's best; a Dubious or worse move scores zero, so when unsure, pick fewer."],
     ['Move selection', "Rank four moves, best first. One was played in the game; in your own games it's your move, always a mistake. First place counts 50%, second 30%, third 20%, each compared with the best move left."],
     ['What do Best, Good, Ok, Dubious, Mistake and Blunder mean?', "Best is Stockfish's top choice. The others say how much winning chance a move gives up compared with it, from a little (Good) to a lot (Blunder)."],
@@ -4933,7 +4933,7 @@ function renderHome(){
         return `<button class="seg-btn${k===source?' active':''}" role="radio" aria-checked="${k===source}" data-src="${k}" ${off ? 'disabled title="No positions from your games yet"' : ''}>${k==='mine' && LANG==='fr' ? '<span data-no-i18n>Miennes</span>' : v}</button>`; }).join('')}</div>
     </div>
     <div class="cards">
-      ${ACTS.concat(['analysis']).map(a=>[a, ACT_GLYPHS[a], ACT_DESC[a]]).map(([a, glyph, desc])=>{
+      ${ACTS.concat(BETA_SITE ? ['analysis'] : []).map(a=>[a, ACT_GLYPHS[a], ACT_DESC[a]]).map(([a, glyph, desc])=>{
         const L = levelNow(a), open = canOpen(a, false);
         if(!open) desc = waitText(a, false);
         return `<button class="card" data-go="${a}" ${open ? '' : 'disabled'}>
