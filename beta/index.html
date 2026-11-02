@@ -231,7 +231,7 @@
   .pq-step.cur{background:var(--text-mute);}
   .pq-step.ok{background:var(--best-green);} .pq-step.half{background:var(--ok);} .pq-step.ko{background:var(--bad);}
   .pq-note{margin:2px 0 6px; font-size:0.86rem; color:var(--text-mute);}
-  .xp-entry .card-title .title-badge{font-size:0.62rem; vertical-align:2px;}
+  .card-title .title-badge{font-size:0.62rem; vertical-align:2px;}
   .goal-dots{display:flex; gap:8px;}
   .goal-dots i{width:36px; height:8px; border-radius:4px; background:var(--panel-2); border:1px solid var(--border);}
   .goal-dots i.on{background:var(--accent); border-color:var(--accent);}
@@ -505,7 +505,7 @@
   .asp-picker .asp-badge{font-family:inherit; line-height:1.35; cursor:pointer;}
   .asp-picker{position:absolute; left:0; right:0; z-index:5; display:flex; justify-content:space-between; gap:4px; padding:6px;
     background:var(--panel-2); border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 18px var(--shadow); touch-action:none;}
-  .asp-picker .asp-badge{flex:1 1 0; min-width:0; padding:6px 0; font-size:0.8rem; letter-spacing:0;}
+  .asp-picker .asp-badge{flex:1 1 0; min-width:0; padding:6px 0; font-size:0.8rem; letter-spacing:0;} .asp-picker .asp-badge.clear{flex:0 0 2.6em;}
   .asp-picker .asp-badge.on{outline:2px solid var(--accent); outline-offset:1px;}
   .asp-item{display:flex; justify-content:space-between; align-items:center; gap:4px; font-size:0.88rem; min-width:0;}
   .asp-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
@@ -4224,7 +4224,7 @@ const GHOST_IMBALANCES = [
 ];
 function ghostCandidates(){
   const mini = `<div class="mini-row"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span><span class="mini-result"><span class="mini-label">Dubious</span><span class="move-eval">−1.6</span></span></div>`;
-  const col = `<div class="review-col"><div class="col-toggle"><span class="col-toggle-box"></span>Top moves</div>${mini.repeat(3)}</div>`;
+  const col = `<div class="review-col"><div class="col-toggle"><span class="col-toggle-box"></span>Top 3 moves</div>${mini.repeat(3)}</div>`;
   const pick = `<div class="review-row pick-row"><div class="move-tag"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span></div><span class="del-btn">✕</span></div>`;
   return [
     `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="review-cols">${col}${col}</div>${GHOST_ACTIONS}`,
@@ -4945,7 +4945,7 @@ function renderHome(){
         if(!open) desc = waitText(a, false);
         return `<button class="card" data-go="${a}" ${open ? '' : 'disabled'}>
           <span class="card-glyph" aria-hidden="true">${glyph}</span>
-          <span><span class="card-title">${ACT_NAMES[a]}</span><span class="card-desc">${desc}</span></span>
+          <span><span class="card-title">${ACT_NAMES[a]}${BETA_SITE && a==='analysis' ? ' <span class="title-badge">Beta</span>' : ''}</span><span class="card-desc">${desc}</span></span>
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small></span>
         </button>`; }).join('')}
       ${BETA ? `<button class="card xp-entry" id="xpOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.explorer}</span>
@@ -5786,7 +5786,7 @@ function siteLine(site){
   return r && r.error && !myFetching ? `Couldn't check ${name}: ${r.error}.` : '';
 }
 function positionsSection(){
-  const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = Object.fromEntries(ACTS.filter(a=>POOLS[a]).map(a=>[a, POOLS[a].length]));
+  const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = Object.fromEntries(ACTS.map(a=>[a, POOLS[a==='planq' ? 'imbalances' : a].length]));   // (the Plan finder: Imbalance reading's master positions)
   // One counter: a game is done once it is read (Lichess's analysis or the app's quick scan) and
   // each of its likely mistakes has been checked by the engine.
   const isDone = g=>g.status!=='queued' && !toPrepare.has(g) && !(g.positions||[]).some(p=>p.pending && !myTried.has(job(p)));
@@ -5810,7 +5810,7 @@ function positionsSection(){
       <section class="mg-card">
         <div class="mg-table-wrap"><table class="mg-table">
           <thead><tr><th></th>${cols.map(([label])=>`<th scope="col">${label}</th>`).join('')}</tr></thead>
-          <tbody>${row('Games', ([, games])=>games)}${ACTS.filter(a=>a!=='planq').map(a=>row(`<span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}`, ([, , c])=>c[a])).join('')}</tbody>
+          <tbody>${row('Games', ([, games])=>games)}${ACTS.map(a=>row(`<span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}`, ([label, , c])=>a==='planq' && label!=='Masters' ? '·' : c[a])).join('')}</tbody>
         </table></div>
         ${status ? `<p class="mg-status">${status}</p>` : ''}
         ${myGames.length ? (myConfirmClear
@@ -5886,7 +5886,7 @@ function renderAnalysis(){
     ? evalBarHtml(barPct, done ? fmtBarScore(truth.info) : truth ? fmtGuess(barPct) : '…', s.guess, false)
     : evalBarHtml(s.guess, fmtGuess(s.guess), s.guess, true, !s.barMoved && hintsOn('analysis'));   // the handle pulses until the bar is first touched
   app.innerHTML = `
-    ${header('Position evaluation')}
+    ${header(BETA_SITE && !routine && !replayMode && !testMode ? 'Position evaluation <span class="title-badge">Beta</span>' : 'Position evaluation')}
     ${posBar()}
     ${boardHtml(true, bar)}
     ${stackedPanel(`
@@ -6034,11 +6034,10 @@ function renderCandidates(){
     if(canSort && s.sortDone){
       mine = mine.slice().sort((a,b)=>pickSortKey(b) - pickSortKey(a)).map((r,i)=>({ ...r, num:String(i+1) }));
     }
-    // List 2: the engine's top N, N = how many moves the player picked (the same reference the
-    // accuracy uses). Anything already Dubious or worse (10+ win% points behind the best) is
-    // greyed out: it's in the list only because there aren't that many good moves.
+    // List 2: the engine's top 3, whatever you picked. Anything already Dubious or worse (10+ win%
+    // points behind the best) is greyed out: it's in the list only because there aren't that many good moves.
     let nextTop = 0;
-    const topN = Math.max(1, s.picks.length);
+    const topN = 3;
     const top = ev ? ev.lines.slice(0,topN).filter(l=>l.uci).map((l,i)=>{
       const u = l.uci, from = u.slice(0,2), to = u.slice(2,4);
       const picked = s.picks.find(m=>m.uci===u);
@@ -6072,7 +6071,7 @@ function renderCandidates(){
         <div class="score"><span class="score-num" id="candAcc">${s.countDone ? pctOrDash(acc) : s.countStarted ? '0%' : '—'}</span><span class="score-label" id="candAccLabel">${failed ? 'Engine unavailable' : s.countStarted || s.countDone ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.countDone, s.justCounted)}${depthBtnHtml(ev0, p.fen)}${depthNoteHtml(s, ev, p.fen)}</div>
         <div class="review-cols">
           ${col('Your moves', 'mine', showMine, mine, '')}
-          ${col('Top moves', 'top', showTop, top, failed ? 'Unavailable' : 'Evaluating…')}
+          ${col('Top 3 moves', 'top', showTop, top, failed ? 'Unavailable' : 'Evaluating…')}
         </div>
         <div class="actions-row split${s.countDone ? (s.justCounted ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`,
         ghostCandidates(), engineErrorBanner())}`;
@@ -6723,7 +6722,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Any last move worth considering?": "Un dernier coup à envisager ?",
 "Check when you're happy with your selection.": "Vérifiez quand votre sélection vous convient.",
 "Your moves": "Vos coups",
-"Top moves": "Meilleurs coups",
+"Top 3 moves": "3 meilleurs coups",
 "Order the moves, best first.": "Ordonnez les coups, le meilleur d'abord.",
 "Rank the four moves from best to worst.": "Classez les quatre coups du meilleur au pire.",
 "Choosing four moves to rank…": "Choix de quatre coups à classer…",
