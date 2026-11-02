@@ -7948,11 +7948,10 @@ function renderPlanq(){
   // the usual entrances: each question's instruction and its button fade and rise in; at the end the
   // accuracy, then its count, then the average and the buttons
   if(!q.done){
-    fadeOnce(q, 'ask' + q.step, reviewPart('.pq-reserve > .pq-ask'));
-    fadeOnce(q, 'note' + q.step + (q.checked ? 'c' : ''), reviewPart('.pq-note'));
+    fadeOnce(q, 'ask' + q.step, reviewPart('.pq-reserve > .pq-ask .prompt'));   // (the question only: the tracker and the note stay still)
     fadeOnce(q, 'btn' + q.step + (q.checked ? 'c' : ''), reviewPart('.actions-row'));
   } else {
-    fadeOnce(q, 'score', reviewPart('.score.pq-top'));
+    fadeOnce(q, 'score', reviewPart('#pqAcc')); fadeOnce(q, 'scoreLabel', reviewPart('.score.pq-top .score-label'));   // (not the tracker)
     if(q.countDone){ fadeOnce(q, 'level', reviewPart('.level')); fadeOnce(q, 'end', reviewPart('.actions-row')); }
     else if(!q.countStarted){
       q.countStarted = true;
