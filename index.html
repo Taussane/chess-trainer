@@ -4280,7 +4280,7 @@ function miniRowHtml(m, highlight, fadeIn){
 // Position evaluation stays, as a side exercise)
 const ACTS = ['imbalances', 'planq', 'candidates', 'final'];
 const ALL_ACTS = ['imbalances', 'analysis', 'candidates', 'final', 'planq'];   // every kind of result kept (both sites share them)
-const zeroCounts = ()=>Object.fromEntries(ACTS.map(a=>[a, 0]));
+const zeroCounts = ()=>Object.fromEntries(ALL_ACTS.map(a=>[a, 0]));   // (every exercise, Position evaluation too: its results and positions still count)
 // The exercises' icons (line drawings in the text colour): a balance, a gauge, a light bulb, sorting best first.
 const actIcon = d=>`<svg class="act-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ACT_GLYPHS = {
@@ -4374,7 +4374,7 @@ function deltaHtml(d){
 }
 let resultsDb = null;      // db collection when the database is available
 let progressTab = null;   // the trend picked (null: the first exercise you've played, Imbalance reading first)
-const progressTabNow = ()=>progressTab || ACTS.find(x=>results.some(r=>r.a===x)) || ACTS[0];
+const progressTabNow = ()=>progressTab || ACTS.concat(['analysis']).find(x=>results.some(r=>r.a===x)) || ACTS[0];
 // This browser keeps a copy of the results too, so the home page can show the right routine and
 // averages instantly on launch instead of starting empty while the database answers.
 const LS_KEY = 'cst.results.v1';
@@ -4594,7 +4594,7 @@ function progressSection(){
       </table>
     </section>
     <h2 class="pf-h">Progress</h2>
-    <div class="seg" role="tablist">${ACTS.map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_SHORT[x]}</button>`).join('')}</div>
+    <div class="seg" role="tablist">${ACTS.concat(['analysis']).map(x=>`<button class="seg-btn${x===a?' active':''}" role="tab" aria-selected="${x===a}" data-tab="${x}">${ACT_SHORT[x]}</button>`).join('')}</div>
     ${info.n===0 ? `<p class="empty">No positions played yet in ${ACT_NAMES[a]}.</p>` : `
     <div class="chart-box" id="chartBox">
       <div class="chart-legend"><span><i class="lg-line"></i>Average</span><span><i class="lg-dot"></i>Masters</span><span><i class="lg-dot mine"></i>My games</span>
@@ -5771,7 +5771,7 @@ function lichessExportUrl(name){
   const perf = 'bullet,blitz,rapid,classical';
   return `https://lichess.org/api/games/user/${encodeURIComponent(name || 'USERNAME')}?max=${CORE_GAMES}&perfType=${perf}&evals=true&clocks=false&opening=false`;
 }
-function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTS.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); return c; }
+function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTIVITIES.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); return c; }
 // Only a problem: "Couldn't check Lichess: …" (or why it couldn't check)
 function siteLine(site){
   const r = mySync[site], name = SITE_NAMES[site];

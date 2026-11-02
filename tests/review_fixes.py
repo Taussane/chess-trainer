@@ -44,6 +44,7 @@ async def open_app(p, results=None, games=None, meta=None, local=None, fake_engi
     pg = await ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
     async def route(r):
         if 'chess.js' in r.request.url: await r.fulfill(body=T.CHESS, content_type='application/javascript')
+        elif r.request.url.endswith('master-evals.json'): await r.fulfill(body=(pathlib.Path(__file__).resolve().parent.parent/'master-evals.json').read_text(), content_type='application/json')   # (the Plan finder's evaluations)
         elif r.request.url.startswith('https://app.test/') and '/vendor/' not in r.request.url: await r.fulfill(body='<!doctype html><html><head><meta charset="utf-8"></head><body>'+T.SRC+'</body></html>', content_type='text/html')
         else: await r.abort()
     await pg.route('http*://**/*', lambda r: asyncio.ensure_future(route(r)))
@@ -134,14 +135,19 @@ async def main():
         if n != ['X']: fails.append(f'a position played well stayed missed: {n}')
         await b.close()
 
-        # 7. Routine: Candidate moves has nothing left today -> the routine goes from Board
-        # analysis straight to Final choice.
+        # 7. Routine: Candidate moves has nothing left today -> the routine goes from the Plan
+        # finder straight to Move selection.
         b, pg, errs = await open_app(p); allerrs += errs
-        await pg.evaluate("(()=>{ POOLS.candidates.forEach(p=>markPlayed(p.key)); setRoutineNext('analysis'); render(); })()")
-        await pg.click('#routineBtn'); await pg.wait_for_timeout(200)
-        await pg.evaluate("(()=>{ st('analysis').guess = 70; render(); })()")
-        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
-        lbl = await pg.inner_text('#nextPos'); print('7. routine next:', lbl)
+        await pg.evaluate("(()=>{ POOLS.candidates.forEach(p=>markPlayed(p.key)); loadMasterEvals(); setRoutineNext('planq'); render(); })()")
+        await pg.wait_for_timeout(1500)
+        await pg.click('#routineBtn'); await pg.wait_for_function("!!document.getElementById('pqCheck')", timeout=15000)
+        for _ in range(4):   # both phases: the first choice of every row, Check, then on
+            if await pg.query_selector('#pqNext'): break
+            await pg.evaluate("(()=>{ document.querySelectorAll('#app .layer:not(.ghost) .pq-sides').forEach(r=>{ const x = r.querySelector('button:not([disabled])'); if(x) x.click(); }); const c = document.getElementById('pqCheck'); if(c) c.click(); })()")
+            await pg.wait_for_timeout(300)
+            await pg.evaluate("(()=>{ const g = document.getElementById('pqGo'); if(g) g.click(); })()"); await pg.wait_for_timeout(2500)
+        await pg.wait_for_function("!!document.getElementById('pqNext')", timeout=10000)
+        lbl = await pg.inner_text('#pqNext'); print('7. routine next:', lbl)
         if lbl != 'Move selection ›': fails.append(f'routine did not skip Candidate moves: {lbl}')
         await b.close()
 
