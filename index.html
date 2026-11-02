@@ -7584,9 +7584,9 @@ const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup"
 // The six imbalances at once, from Stockfish's evaluation table (no search): shown while the short mate
 // check (aspectsEntry) runs, which only changes them when there is a mate.
 const explorerStatic = {};
-function explorerVals(fen){
-  const asp = aspectsEntry(fen);
-  if(asp.status==='done') return asp.data;
+function explorerVals(fen, noMateCheck){   // noMateCheck: the reading alone, no 0.4 s mate search asked (your positions sorted in the background)
+  const asp = noMateCheck ? aspectsStore[fen] : aspectsEntry(fen);
+  if(asp && asp.status==='done') return asp.data;
   if(!(fen in explorerStatic)){ try{ explorerStatic[fen] = adaptAspects(parseAspects(sfTableLines(fen), fen), fen); }catch(e){ explorerStatic[fen] = null; } }
   return explorerStatic[fen];
 }
@@ -7767,7 +7767,7 @@ function planqOwnOk(p){
   if(planqOwnKnown.has(p.key)) return planqOwnKnown.get(p.key);
   { const k = ownStored(p, 'planqChk'); if(k!==undefined){ planqOwnKnown.set(p.key, k); return k; } }   // (checked before: kept with the game)
   { const g = myGames.find(x=>x.id===p.gameId); if(g && g.status==='queued') return undefined; }   // (a game the app still has to analyse: its scan brings the evaluations and best moves, no search of its own)
-  const info = planqInfo(p), vals = info && explorerVals(p.fen);
+  const info = planqInfo(p), vals = info && explorerVals(p.fen, true);   // (a mate shows in the engine's evaluation; the confirming check before it's shown reads it in full)
   if(!info) return undefined;
   if(!vals || vals.special){ planqOwnKnown.set(p.key, false); ownStoreCheck(p, 'planqChk', false); return false; }
   const c = planqMake(p, info, vals, new Set());
