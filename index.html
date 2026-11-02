@@ -1563,7 +1563,7 @@ const HELP = {
       ['Tips', '', ["Look at every check, capture and threat, yours and theirs.", "A pawn that looks free may be poisoned: look at what follows.", "A pawn of yours under attack isn't urgent when nothing can be done about it."]],
     ],
     review:[
-      ['Score', "The right answer: 100%. Anything else: nothing."],
+      ['Score', "The right answer: 100%. Anything else: nothing. A quarter of the position's score."],
       ['What follows', '', ["A piece or more at stake, or a mate: the position ends here. The threat comes first.", "A pawn or two: noted, then the next questions."]],
       ['Board', "The threats are drawn: what can be won, and by whom."],
     ],
@@ -1576,7 +1576,7 @@ const HELP = {
       ['Tips', '', ["Start with material, then what lasts (pawns, space), then what can change fast (pieces, kings).", "A pawn won in question 1 counts: Stockfish sees the capture."]],
     ],
     review:[
-      ['Score', "The right answer: 100%. Within 0.15 of the ±0.5 line, the neighbouring answer: half."],
+      ['Score', "The right answer: 100%. Within 0.15 of the ±0.5 line, the neighbouring answer: half. A quarter of the position's score."],
     ],
   },
   planq_plan: {
@@ -1587,7 +1587,7 @@ const HELP = {
       ['Dynamic or positional', '', ["Open / Attack: an edge that fades (better pieces, development lead, weak enemy king): use it now.", "Close / Improve: an edge that lasts (material, pawns, space): no hurry, improve first.", "Either: the reasons cancel out."]],
     ],
     review:[
-      ['Score', "Each row counts half.", ["Right: full points.", "One reason short of a side (yellow): half.", "Missed: nothing."]],
+      ['Score', "Half of the position's score: a quarter for each row.", ["Right: full points.", "One reason short of a side (yellow): half.", "Missed: nothing."]],
       ['Why', "Under each row, its main reason. Tap the underlined criterion to see it on the board, then the '?' button for how it's counted."],
     ],
   },
@@ -7019,7 +7019,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Look at every check, capture and threat, yours and theirs.": "Regardez chaque échec, prise et menace, les vôtres et les siennes.",
 "A pawn that looks free may be poisoned: look at what follows.": "Un pion qui semble gratuit peut être empoisonné : regardez la suite.",
 "A pawn of yours under attack isn't urgent when nothing can be done about it.": "Un de vos pions attaqué n'est pas urgent quand on ne peut rien y faire.",
-"The right answer: 100%. Anything else: nothing.": "La bonne réponse : 100 %. Le reste : rien.",
+"The right answer: 100%. Anything else: nothing. A quarter of the position's score.": "La bonne réponse : 100 %. Le reste : rien. Un quart du score de la position.",
 "What follows": "La suite",
 "A piece or more at stake, or a mate: the position ends here. The threat comes first.": "Une pièce ou plus en jeu, ou un mat : la position s'arrête là. La menace passe d'abord.",
 "A pawn or two: noted, then the next questions.": "Un pion ou deux : c'est noté, puis les questions suivantes.",
@@ -7030,7 +7030,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Better: half a pawn or more ahead.": "Mieux : un demi-pion d'avance ou plus.",
 "Start with material, then what lasts (pawns, space), then what can change fast (pieces, kings).": "Commencez par le matériel, puis ce qui dure (pions, espace), puis ce qui peut vite changer (pièces, rois).",
 "A pawn won in question 1 counts: Stockfish sees the capture.": "Un pion gagné à la question 1 compte : Stockfish voit la prise.",
-"The right answer: 100%. Within 0.15 of the ±0.5 line, the neighbouring answer: half.": "La bonne réponse : 100 %. À moins de 0,15 de la limite de ±0,5, la réponse voisine : la moitié.",
+"The right answer: 100%. Within 0.15 of the ±0.5 line, the neighbouring answer: half. A quarter of the position's score.": "La bonne réponse : 100 %. À moins de 0,15 de la limite de ±0,5, la réponse voisine : la moitié. Un quart du score de la position.",
 "Choose a plan": "Choisissez un plan",
 "Two decisions follow from the imbalances: whether to trade, and how to play.": "Deux décisions découlent des déséquilibres : échanger ou non, et comment jouer.",
 "Trades": "Échanges",
@@ -7040,7 +7040,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Dynamic or positional": "Dynamique ou positionnel",
 "Open / Attack: an edge that fades (better pieces, development lead, weak enemy king): use it now.": "Ouvrir / Attaquer : un avantage qui s'efface (meilleures pièces, avance de développement, roi adverse faible) : utilisez-le maintenant.",
 "Close / Improve: an edge that lasts (material, pawns, space): no hurry, improve first.": "Fermer / Améliorer : un avantage qui dure (matériel, pions, espace) : rien ne presse, améliorez d'abord.",
-"Each row counts half.": "Chaque ligne compte pour moitié.",
+"Half of the position's score: a quarter for each row.": "La moitié du score de la position : un quart par ligne.",
 "Right: full points.": "Juste : tous les points.",
 "One reason short of a side (yellow): half.": "À une raison près (jaune) : la moitié.",
 "Missed: nothing.": "Manqué : rien.",
@@ -7914,6 +7914,10 @@ function planqRowsHtml(q, ghost){
 }
 const PLANQ_AUTO_MS = 1800;   // after a right answer to question 1 or 2: the time to read its explanation, then the next question
 const planqAuto = q=>!q.done && q.checked && q.scores[PLANQ_STEPS[q.step]]===100;
+// The position's accuracy: questions 1 and 2 a quarter each, the plan half (a quarter for each of its two rows);
+// an urgent position that stops after question 1: that question alone
+const PLANQ_WEIGHTS = { urgent: 0.25, winning: 0.25, plan: 0.5 };
+const planqTotal = q=>Math.round(q.urgent.stop ? (q.scores.urgent || 0) : PLANQ_STEPS.reduce((t, s)=>t + PLANQ_WEIGHTS[s] * (q.scores[s] || 0), 0));
 function planqGo(q){ if(planq!==q || !q.checked || q.done) return; q.step++; q.checked = false; q.aspView = q.aspPiece = q.aspKing = null; render(); }
 function renderPlanq(){
   const app = document.getElementById('app');
@@ -7938,7 +7942,7 @@ function renderPlanq(){
   };
   const steps = q.urgent.stop ? 1 : 3, asked = PLANQ_STEPS.slice(0, steps);
   const dots = '';   // (no question tracker)
-  const total = q.done ? Math.round(asked.reduce((t, s)=>t + (q.scores[s] || 0), 0) / steps) : null;
+  const total = q.done ? planqTotal(q) : null;
   const last = q.step===steps - 1;
   const note = q.checked ? planqNote(q) : step==='urgent' ? 'Look at checks, captures and threats, for both sides.' : '';
   // the same layout before and after Check: the score's line (empty until the end), the question, four rows: nothing moves once checked
@@ -8006,7 +8010,7 @@ function renderPlanq(){
   on('homeBtn', ()=>{ helpVisible = false; if(replayMode){ replayMode = false; planq = null; screen = 'account'; return render(); } if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
   on('helpBtn', ()=>{ helpVisible = true; render(); });
   on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.tc = activeNow(); q.scores[step] = isPlan ? planqPlanScore(q) : ans.score(pick);
-    if(last){ q.done = true; planqRecord(q, Math.round(asked.reduce((t, s)=>t + (q.scores[s] || 0), 0) / steps)); }
+    if(last){ q.done = true; planqRecord(q, planqTotal(q)); }
     render(); });
   on('pqGo', ()=>planqGo(q));
   // Right answer to question 1 or 2: no Next button; once the explanation is in and read, the next question comes by itself
