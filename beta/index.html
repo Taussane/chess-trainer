@@ -2743,6 +2743,7 @@ function prefetchHome(){
   if(routineNext!=='imbalances' && routineNext!=='planq') ts.push(ctx(routineNext, true));   // (the Plan finder has no track)
   ts.push(ctx('imbalances', false));
   withPrep('low', ()=>ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0) prepareFor(exerciseOf(t), posAt(x, i)); }));
+  if(BETA_SITE){ loadMasterEvals(); setTimeout(planqPrefetch, 1500); }   // the Plan finder's first positions (beta)
 }
 // Moves exercise `a`, on the open track, on to its next position, fresh.
 function advance(a){
@@ -7789,13 +7790,33 @@ const planqEvalText = info=>info.mate!=null ? `${info.mate > 0 ? 'White' : 'Blac
 // positions, the one whose kind (urgency, or its first decided row and side) has come up least so far.
 const planqShown = {};
 const planqTopic = c=>c.urgent.stop ? 'urgent:' + c.urgent.kind : (r=>r.key + ':' + r.answer)(c.rows.find(r=>r.answer));
+// Candidates are prepared ahead, one at a time while the page is idle (each takes Stockfish 10's reading of
+// the position and the urgent check: tens of ms, more on a phone), so the next position is there at once.
+const PLANQ_CANDS = 10;
+const planqPre = { cands: [], busy: false };
+function planqPrefetch(){
+  if(planqPre.busy || !masterEvals || !Object.keys(masterEvals).length) return;
+  planqPre.busy = true;
+  const idle = f=>window.requestIdleCallback ? requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 60);
+  const step = ()=>{
+    const seen = planq ? planq.seen : planqCandidate.seen;
+    planqPre.cands = planqPre.cands.filter(c=>!(seen && seen.has(c.p.key)) && !(planq && planq.p.key===c.p.key));
+    if(planqPre.cands.length >= PLANQ_CANDS){ planqPre.busy = false; return; }
+    const c = planqCandidate(planqPre.cands);
+    if(!c){ planqPre.busy = false; return; }
+    planqPre.cands.push(c); idle(step);
+  };
+  idle(step);
+}
 function planqPick(){
-  const cands = [];
-  for(let i = 0; i < 25; i++){ const c = planqCandidate(cands); if(!c) break; cands.push(c); }
+  const seen = planq ? planq.seen : (planqCandidate.seen = planqCandidate.seen || new Set());
+  const cands = planqPre.cands.filter(c=>!seen.has(c.p.key) && !(planq && planq.p.key===c.p.key)).map(c=>({ ...c, seen }));
+  for(let i = cands.length; i < 4; i++){ const c = planqCandidate(cands); if(!c) break; cands.push(c); }   // (none ready yet: a few, at once)
   if(!cands.length) return null;
   const n = c=>planqShown[planqTopic(c)] || 0, best = Math.min(...cands.map(n));
   const pick = shuffled(cands.filter(c=>n(c)===best))[0];
   planqShown[planqTopic(pick)] = n(pick) + 1; pick.seen.add(pick.p.key);
+  planqPre.cands = planqPre.cands.filter(c=>c.p.key!==pick.p.key);
   return pick;
 }
 function planqCandidate(taken){
@@ -7909,7 +7930,7 @@ function renderPlanq(){
   // the same layout before and after Check: the score's line (empty until the end), the question, four rows: nothing moves once checked
   // the first line, as in the other exercises: the question, then the score in its place at the end (both
   // kept in the layout, the other one hidden, so the line keeps its height)
-  const scoreLine = `<div class="score pq-top">${q.done ? `<span class="score-num">${total}%</span><span class="score-label">Accuracy</span>${levelChip(q, true)}` : ''}${dots}</div>`;
+  const scoreLine = `<div class="score pq-top">${q.done ? `<span class="score-num" id="pqAcc">${q.countDone ? total : 0}%</span><span class="score-label">Accuracy</span>${levelChip(q, !!q.countDone)}` : ''}${dots}</div>`;
   const promptLine = `<div class="pq-top pq-ask"><p class="prompt">${planqPrompt(q)}</p>${dots}</div>`;
   const allPrompts = ['w', 'b'].map(c=>PLANQ_STEPS.map((x, i)=>`<div aria-hidden="true" class="pq-ghost-text"><div class="pq-top pq-ask"><p class="prompt">${planqPrompt({ ...q, p: { ...q.p, side: c }, step: i })}</p>${dots}</div></div>`).join('')).join('');   // (the longest decides the line's height: the rows start at the same place in every question)
   const top = `<div class="pq-reserve">${allPrompts}${q.done ? scoreLine : `<div aria-hidden="true" class="pq-ghost-text"><div class="score pq-top"><span class="score-num">100%</span></div></div>${promptLine}`}</div>`;
@@ -7922,7 +7943,7 @@ function renderPlanq(){
         ${top}
         ${prompt}
         ${body}
-        ${q.done ? `<div class="actions-row split">${lichessLink(p)}<button class="btn" id="pqNext">${routine || replayMode ? nextLabel() : 'Next position'}</button></div>`
+        ${q.done ? `<div class="actions-row split${q.countDone ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="pqNext">${routine || replayMode ? nextLabel() : 'Next position'}</button></div>`
           : `<div class="actions-row">${q.checked ? `<button class="btn" id="pqGo">${last ? 'See the review' : 'Next question'}</button>` : `<button class="btn" id="pqCheck" ${ready ? '' : 'disabled'}>Check</button>`}</div>`}`;
   // ghost: the same for every position (the plan question, the tallest), so the panel's height, and the
   // board's size, give nothing away
@@ -7940,6 +7961,28 @@ function renderPlanq(){
     ${stackedPanel(panel, [ghostQ, ghostR])}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(q.checked && (q.step===0 || isPlan)) wireAspectView(p, q);
+  planqPrefetch();   // the next positions, while this one is played
+  // the usual entrances: each question's instruction and its button fade and rise in; at the end the
+  // accuracy, then its count, then the average and the buttons
+  if(!q.done){
+    fadeOnce(q, 'ask' + q.step, reviewPart('.pq-reserve > .pq-ask'));
+    fadeOnce(q, 'note' + q.step + (q.checked ? 'c' : ''), reviewPart('.pq-note'));
+    fadeOnce(q, 'btn' + q.step + (q.checked ? 'c' : ''), reviewPart('.actions-row'));
+  } else {
+    fadeOnce(q, 'score', reviewPart('.score.pq-top'));
+    if(q.countDone){ fadeOnce(q, 'level', reviewPart('.level')); fadeOnce(q, 'end', reviewPart('.actions-row')); }
+    else if(!q.countStarted){
+      q.countStarted = true;
+      const key = p.key, here = ()=>screen==='planq' && planq===q;
+      const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(reduced){ q.countDone = true; render(); }
+      else setTimeout(()=>{ let t0 = null;
+        const tick = ts=>{ if(t0===null) t0 = ts; const f = Math.min(1, (ts - t0) / COUNT_MS), el = reviewPart('#pqAcc');
+          if(el && here()) el.textContent = Math.round(total * easeOut(f)) + '%';
+          if(f < 1) requestAnimationFrame(tick); else { q.countDone = true; q.justCounted = true; if(here()) render(); } };
+        requestAnimationFrame(tick); }, SLIDE_MS);
+    }
+  }
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ helpVisible = false; if(replayMode){ replayMode = false; planq = null; screen = 'account'; return render(); } if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
   on('helpBtn', ()=>{ helpVisible = true; render(); });
