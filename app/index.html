@@ -7904,9 +7904,7 @@ function renderPlanq(){
     return `<button class="pq-choice${cls}" data-v="${v}" ${q.checked ? 'disabled' : ''}><span>${label}</span>${tag ? `<small>${tag}</small>` : ''}</button>`;
   };
   const steps = q.urgent.stop ? 1 : 3, asked = PLANQ_STEPS.slice(0, steps);
-  // always three dashes (an urgent position stops after the first: the others stay grey), so their number gives nothing away
-  const dots = `<div class="pq-steps" aria-label="Question ${q.step + 1} of 3">${PLANQ_STEPS.map((s, i)=>{ const sc = q.scores[s];
-    return `<span class="pq-step${i===q.step ? ' cur' : ''}${sc!=null ? (sc===100 ? ' ok' : sc > 0 ? ' half' : ' ko') : ''}"></span>`; }).join('')}</div>`;
+  const dots = '';   // (no question tracker)
   const total = q.done ? Math.round(asked.reduce((t, s)=>t + (q.scores[s] || 0), 0) / steps) : null;
   const last = q.step===steps - 1;
   const note = q.checked ? planqNote(q) : step==='urgent' ? 'Look at checks, captures and threats, for both sides.' : '';
@@ -7954,6 +7952,7 @@ function renderPlanq(){
     if(q.checked) fadeOnce(q, 'note' + q.step, reviewPart('.pq-note'));   // questions 1 and 2: the explanation, as the answer shows
     fadeOnce(q, 'btn' + q.step + (q.checked ? 'c' : ''), reviewPart('.actions-row'), q.checked ? SLIDE_MS + 550 : 0);   // after Check: Next question once the explanation is in
   } else {
+    if(!isPlan) fadeOnce(q, 'note' + q.step, reviewPart('.pq-note'));   // an urgent position, ended after question 1: its explanation, as in the other questions
     fadeOnce(q, 'score', reviewPart('#pqAcc')); fadeOnce(q, 'scoreLabel', reviewPart('.score.pq-top .score-label'));   // (not the tracker)
     if(q.countDone){ fadeOnce(q, 'level', reviewPart('.level')); fadeOnce(q, 'end', reviewPart('.actions-row')); }
     else if(!q.countStarted){
