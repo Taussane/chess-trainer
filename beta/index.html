@@ -7914,7 +7914,7 @@ function planqRowsHtml(q, ghost){
     return `<div class="pq-sides">${btn(1)}${btn(0)}${btn(-1)}</div><p class="pq-text pq-why-line">${text}</p>`;
   }).join('')}</div>`;
 }
-const PLANQ_AUTO_MS = 1300;   // after a right answer to question 1 or 2: the time to read its explanation, then the next question
+const PLANQ_AUTO_MS = 1800;   // after a right answer to question 1 or 2: the time to read its explanation, then the next question
 const planqAuto = q=>!q.done && q.checked && q.scores[PLANQ_STEPS[q.step]]===100;
 function planqGo(q){ if(planq!==q || !q.checked || q.done) return; q.step++; q.checked = false; q.aspView = q.aspPiece = q.aspKing = null; render(); }
 function renderPlanq(){
