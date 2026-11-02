@@ -7981,7 +7981,8 @@ function renderPlanq(){
   if(!q.done){
     fadeOnce(q, 'ask' + q.step, reviewPart('.pq-reserve > .pq-ask .prompt'));   // (the question, not the tracker)
     fadeOnce(q, 'grid' + q.step, reviewPart('.pq-grid'));   // its answers along with it (and question 1's reminder: checks, captures, threats); after Check, nothing replays
-    fadeOnce(q, 'btn' + q.step + (q.checked ? 'c' : ''), reviewPart('.actions-row'));
+    if(q.checked) fadeOnce(q, 'note' + q.step, reviewPart('.pq-note'));   // questions 1 and 2: the explanation, as the answer shows
+    fadeOnce(q, 'btn' + q.step + (q.checked ? 'c' : ''), reviewPart('.actions-row'), q.checked ? SLIDE_MS + 250 : 0);   // after Check: Next question once the explanation is in
   } else {
     fadeOnce(q, 'score', reviewPart('#pqAcc')); fadeOnce(q, 'scoreLabel', reviewPart('.score.pq-top .score-label'));   // (not the tracker)
     if(q.countDone){ fadeOnce(q, 'level', reviewPart('.level')); fadeOnce(q, 'end', reviewPart('.actions-row')); }
