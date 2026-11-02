@@ -5,6 +5,7 @@
 # (/*IMBALANCE_SKIP_BETA*/), with the positions where every criterion is "="; the app leaves those positions out too (on top of IMBALANCE_SKIP).
 # And (/*IMBALANCE_SKIP_PICK*/, for choosing the 3 most decisive), the positions where Stockfish 10's own terms read the
 # decisive criteria otherwise (pickDisagrees, below), or that have fewer than 3 criteria graded (Imbalance reading asks for 3).
+# And the Plan finder's own master positions (/*PLANQ_POOL*/: the keys it may offer, all of them).
 # Needs playwright and the site built (python3 scripts/build-site.py). Usage: python3 scripts/imbalance-beta-skip.py
 import asyncio, json, pathlib, re, subprocess, sys, time
 from playwright.async_api import async_playwright
@@ -12,6 +13,19 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 APP = ROOT / 'app' / 'index.html'
 CJ = (ROOT / 'vendor' / 'chess.js' / 'chess.js').read_text()
 EVALS = json.loads((ROOT / 'master-evals.json').read_text())
+PLANQ_JS = r"""async ()=>{
+  loadMasterEvals();
+  for(let i=0; i<100 && !(masterEvals && Object.keys(masterEvals).length); i++) await new Promise(r=>setTimeout(r, 100));
+  const out = [];
+  for(const p of POOLS.analysis){
+    const info = planqInfo(p), vals = info && explorerVals(p.fen);
+    if(!vals || vals.special) continue;
+    const c = planqMake(p, info, vals, new Set());
+    if(c.urgent.pending || c.urgent.ambiguous || (!c.urgent.stop && !c.rows.some(r=>r.answer)) || !planqFits(p, c)) continue;
+    out.push(p.key);
+  }
+  return out;
+}"""
 JS = r"""()=>{
 // The check for choosing the 3 most decisive: Stockfish 10's own term for each criterion (parseAspects,
 // in pawns; Material left out, a plain count, and Activity while it's Development, King safety in an
@@ -40,6 +54,9 @@ async def main():
             await pg.goto('http://localhost:8799/beta/index.html'); await pg.wait_for_timeout(2000)
             assert await pg.evaluate('DEV_ON'), 'Development is off'
             rows = await pg.evaluate(JS)
+            # The Plan finder's own master positions (each exercise its own selection): Position evaluation's,
+            # those its checks accept (planqFits, and a question worth asking: urgent, or a plan row with an answer)
+            planq = await pg.evaluate(PLANQ_JS)
             await b.close()
     finally:
         server.terminate()
@@ -55,6 +72,8 @@ async def main():
     s = APP.read_text(encoding='utf-8')
     s = re.sub(r'/\*IMBALANCE_SKIP_BETA\*/.*?/\*END IMBALANCE_SKIP_BETA\*/', lambda m: '/*IMBALANCE_SKIP_BETA*/' + json.dumps(skip, ensure_ascii=False) + '/*END IMBALANCE_SKIP_BETA*/', s, flags=re.S)
     s = re.sub(r'/\*IMBALANCE_SKIP_PICK\*/.*?/\*END IMBALANCE_SKIP_PICK\*/', lambda m: '/*IMBALANCE_SKIP_PICK*/' + json.dumps(pick, ensure_ascii=False) + '/*END IMBALANCE_SKIP_PICK*/', s, flags=re.S)
+    s = re.sub(r'/\*PLANQ_POOL\*/.*?/\*END PLANQ_POOL\*/', lambda m: '/*PLANQ_POOL*/' + json.dumps(planq, ensure_ascii=False) + '/*END PLANQ_POOL*/', s, flags=re.S)
     APP.write_text(s, encoding='utf-8')
+    print('Plan finder:', len(planq), 'master positions')
     print(len(rows), 'positions,', len(skip), 'left out on both sites,', len(pick), 'more for choosing 3,', len(rows) - len(skip) - len(pick), 'kept')
 asyncio.run(main())
