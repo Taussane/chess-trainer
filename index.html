@@ -2645,7 +2645,7 @@ function waitText(a, r, short){
   if(source!=='masters' && myWorkPending()) return short ? 'Finding positions…' : 'Finding positions in your games…';
   return none ? 'No positions yet' : 'All played today';
 }
-const canOpen = (a, r)=>progressLoaded && (a==='planq' || upcomingFor(ctx(a, r))[1] >= 0);   // never before your results are known (the Plan finder picks its own master positions)
+const canOpen = (a, r)=>progressLoaded && (a==='planq' ? planqPool().length > 0 : upcomingFor(ctx(a, r))[1] >= 0);   // never before your results are known (the Plan finder picks its own master positions)
 // Points curPos/side at the open exercise's own position.
 function syncPos(){
   if(!ACTIVITIES.includes(screen)) return;
@@ -4329,7 +4329,7 @@ function sideGo(where){
 }
 document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('.faq-link')){ screen = 'faq'; render(); } });   // the FAQ, from the links (beta)
 function siteLinks(){
-  return `${BETA ? `<button class="link-plain faq-link">FAQ</button> · ` : ''}${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a> · <a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a>`;
+  return `${BETA ? `<button class="link-plain faq-link">FAQ</button> · ` : ''}${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
 }
 function renderSide(){
   if(!DESK) return;
@@ -4450,7 +4450,7 @@ function runQuietChecks(){
 }
 const IMBALANCE_FAR = 25;   // 2 squares of the bar, in winning chances
 // One of your positions in exercise `a`: Imbalance reading takes Position evaluation's.
-function posIn(p, a){ return Array.isArray(p.acts) && p.acts.includes(a==='imbalances' ? 'analysis' : a); }
+function posIn(p, a){ return Array.isArray(p.acts) && p.acts.includes(a==='imbalances' || a==='planq' ? 'analysis' : a); }   // (Imbalance reading and the Plan finder: Position evaluation's positions)
 // Missed positions still in the app; positions played today wait for tomorrow.
 const missedOf = a=>missedList().filter(e=>e.a===a).map(e=>({ ...e, pos: findPosition(e.key, e.a) })).filter(e=>e.pos);
 const replayable = a=>missedOf(a).filter(e=>!isPlayed(e.key));
@@ -5771,7 +5771,7 @@ function lichessExportUrl(name){
   const perf = 'bullet,blitz,rapid,classical';
   return `https://lichess.org/api/games/user/${encodeURIComponent(name || 'USERNAME')}?max=${CORE_GAMES}&perfType=${perf}&evals=true&clocks=false&opening=false`;
 }
-function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTIVITIES.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); return c; }
+function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTIVITIES.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); c.planq = c.imbalances; return c; }   // (the Plan finder: Imbalance reading's positions)
 // Only a problem: "Couldn't check Lichess: …" (or why it couldn't check)
 function siteLine(site){
   const r = mySync[site], name = SITE_NAMES[site];
@@ -5803,7 +5803,7 @@ function positionsSection(){
       <section class="mg-card">
         <div class="mg-table-wrap"><table class="mg-table">
           <thead><tr><th></th>${cols.map(([label])=>`<th scope="col">${label}</th>`).join('')}</tr></thead>
-          <tbody>${row('Games', ([, games])=>games)}${ACTS.map(a=>row(`<span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}`, ([label, , c])=>a==='planq' && label!=='Masters' ? '·' : c[a])).join('')}</tbody>
+          <tbody>${row('Games', ([, games])=>games)}${ACTS.map(a=>row(`<span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}`, ([, , c])=>c[a])).join('')}</tbody>
         </table></div>
         ${status ? `<p class="mg-status">${status}</p>` : ''}
         ${myGames.length ? (myConfirmClear
@@ -7655,7 +7655,34 @@ const PLANQ_VOTES = { material:[1, -1], pawns:[1, -1], space:[-1, -1], activity:
 let planq = null;   // { p, info, vals, urgent: { kind, stop, san, looks }, phase, rows, step, picks, scores, checked, done, aspView, aspPiece, aspKing, seen }
 function planqInfo(p){
   const m = masterEvals && masterEvals[p.key];
-  return m ? toWhitePerspective({ cp: m[1], mate: m[2] }, p.fen) : null;
+  if(m) return toWhitePerspective({ cp: m[1], mate: m[2] }, p.fen);
+  // your games: the game's own evaluation (Lichess or the app's scan, White's side), else the app's engine
+  const g = p.gameId && myGames.find(x=>x.id===p.gameId), e = g && g.evals && p.ply > 0 ? g.evals[p.ply - 1] : null;
+  if(e && (e.cp!=null || e.mate!=null)) return { cp: e.cp, mate: e.mate };
+  const l = planqEngineLine(p);
+  return l ? toWhitePerspective({ cp: l.cp, mate: l.mate }, p.fen) : null;
+}
+// Your games' positions: the engine's best line, from a search asked at low priority (null until it's in)
+function planqEngineLine(p){
+  const en = fenEvalStore[p.fen];
+  if(en && en.status==='done') return en.data && en.data.lines && en.data.lines[0] || null;
+  if(!en) withPrep('low', ()=>fenEvalEntry(p.fen));
+  return null;
+}
+// Stockfish's best move: shipped with the master positions; for yours, the engine's (undefined while it's searching)
+function planqBest(p){
+  const m = masterEvals && masterEvals[p.fen.split(' ').slice(0, 4).join(' ')];
+  if(m) return [].concat(m[0])[0];
+  if(!p.gameId) return null;
+  const l = planqEngineLine(p);
+  return l ? l.uci : undefined;
+}
+// The positions the Plan finder draws from, as the home page's source says: the masters', yours (those Imbalance
+// reading takes: quiet enough), or both
+function planqPool(){
+  const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id));
+  const mine = source==='masters' ? [] : myPositions.filter(p=>!retired.has(p.gameId) && posIn(p, 'planq') && quietOwn(p)===true);
+  return source==='mine' ? mine : source==='both' ? POOLS.imbalances.concat(mine) : POOLS.imbalances;
 }
 // Question 1's answer for the side to move: { kind: 'win' | 'defend' | null, stop, san, looks }
 // - win: something can be won (Other threats + or more) and Stockfish's best move takes it (a poisoned pawn,
@@ -7669,7 +7696,8 @@ function planqUrgent(p, vals, info){
   const l = aspectLevel(vals.threats, 'threats') * sgn;
   if(l <= -2) return { ...out, kind: 'defend', stop: true };
   if(l <= 0) return out;
-  const m = masterEvals && masterEvals[p.fen.split(' ').slice(0, 4).join(' ')], best = m && [].concat(m[0])[0];
+  const best = planqBest(p);
+  if(best===undefined) return { ...out, pending: true };   // (your games: the engine's best move not in yet)
   const mk = aspectMarks(p.fen, 'threats'), targets = mk.circles.filter(x=>x.c===p.side).map(x=>x.sq).concat(mk.arrows.filter(a=>a.c===p.side).map(a=>a.to));
   const san = u=>{ try{ return new Chess(p.fen).move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q' }).san; }catch(e){ return u; } };
   if(!best) return out;
@@ -7814,12 +7842,13 @@ const planqTopic = c=>c.urgent.stop ? 'urgent:' + c.urgent.kind : (r=>r.key + ':
 const PLANQ_CANDS = 10;
 const planqPre = { cands: [], busy: false };
 function planqPrefetch(){
-  if(planqPre.busy || !masterEvals || !Object.keys(masterEvals).length) return;
+  if(planqPre.busy || !planqEvalsReady()) return;
   planqPre.busy = true;
   const idle = f=>window.requestIdleCallback ? requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 60);
   const step = ()=>{
     const seen = planq ? planq.seen : planqCandidate.seen;
-    planqPre.cands = planqPre.cands.filter(c=>!(seen && seen.has(c.p.key)) && !(planq && planq.p.key===c.p.key));
+    const inPool = new Set(planqPool().map(x=>x.key));
+    planqPre.cands = planqPre.cands.filter(c=>inPool.has(c.p.key) && !(seen && seen.has(c.p.key)) && !(planq && planq.p.key===c.p.key));
     if(planqPre.cands.length >= PLANQ_CANDS){ planqPre.busy = false; return; }
     const c = planqCandidate(planqPre.cands);
     if(!c){ planqPre.busy = false; return; }
@@ -7827,9 +7856,11 @@ function planqPrefetch(){
   };
   idle(step);
 }
+const planqEvalsReady = ()=>source==='mine' || !!(masterEvals && Object.keys(masterEvals).length);   // (your games carry their own evaluations)
 function planqPick(){
   const seen = planq ? planq.seen : (planqCandidate.seen = planqCandidate.seen || new Set());
-  const cands = planqPre.cands.filter(c=>!seen.has(c.p.key) && !(planq && planq.p.key===c.p.key)).map(c=>({ ...c, seen }));
+  const inPool = new Set(planqPool().map(x=>x.key));   // (the source may have changed since they were prepared)
+  const cands = planqPre.cands.filter(c=>inPool.has(c.p.key) && !seen.has(c.p.key) && !(planq && planq.p.key===c.p.key)).map(c=>({ ...c, seen }));
   for(let i = cands.length; i < 4; i++){ const c = planqCandidate(cands); if(!c) break; cands.push(c); }   // (none ready yet: a few, at once)
   if(!cands.length) return null;
   const n = c=>planqShown[planqTopic(c)] || 0, best = Math.min(...cands.map(n));
@@ -7839,14 +7870,15 @@ function planqPick(){
   return pick;
 }
 function planqCandidate(taken){
-  const pool = POOLS.imbalances, seen = planq ? planq.seen : (planqCandidate.seen = planqCandidate.seen || new Set());
+  const pool = planqPool(), seen = planq ? planq.seen : (planqCandidate.seen = planqCandidate.seen || new Set());
+  if(!pool.length) return null;
   for(let tries = 0; tries < 400; tries++){
     const p = pool[Math.floor(Math.random() * pool.length)];
     if(seen.has(p.key) || taken.some(c=>c.p.key===p.key)) continue;
     const info = planqInfo(p), vals = info && explorerVals(p.fen);
     if(!vals || vals.special) continue;
     const c = planqMake(p, info, vals, seen);
-    if(c.urgent.ambiguous || (!c.urgent.stop && !c.rows.some(r=>r.answer))) continue;
+    if(c.urgent.pending || c.urgent.ambiguous || (!c.urgent.stop && !c.rows.some(r=>r.answer))) continue;
     return c;
   }
   return null;
@@ -7943,7 +7975,7 @@ function renderPlanq(){
   const app = document.getElementById('app');
   loadMasterEvals();
   if(!planq){
-    planq = masterEvals && Object.keys(masterEvals).length ? planqPick() : null;
+    planq = planqEvalsReady() ? planqPick() : null;
     if(!planq){ app.innerHTML = `<div class="title-row"><button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button><h1>Plan finder</h1><span class="title-spacer"></span></div><p class="mg-status mg-loading">Loading positions…</p>`;
       document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; render(); };
       clearTimeout(renderPlanq.t); renderPlanq.t = setTimeout(()=>{ if(screen==='planq') render(); }, 400); return; }
@@ -8054,7 +8086,7 @@ function planqRecord(q, acc){
   if(q.test!=null){ q.rec = { test:true }; return; }   // test positions never count
   markPlayed(q.p.key);
   const before = levelNow('planq');
-  const r = { a:'planq', acc: Math.round(acc), ts: Date.now(), src:'masters', key: q.p.key, miss: before.level!=null && acc < before.level };
+  const r = { a:'planq', acc: Math.round(acc), ts: Date.now(), src: q.p.gameId ? 'mine' : 'masters', key: q.p.key, miss: before.level!=null && acc < before.level };
   { const ms = timeSpent(q); if(ms!=null) r.ms = ms; }   // (the time from question 1 shown to the last Check)
   results.push(r);
   stat('pos', { a:'planq', acc: r.acc, src: r.src, n1: routine ? 1 : 0, n2: 0 });
