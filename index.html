@@ -7991,7 +7991,7 @@ function renderPlanq(){
         const tick = ts=>{ if(t0===null) t0 = ts; const f = Math.min(1, (ts - t0) / COUNT_MS), el = reviewPart('#pqAcc');
           if(el && here()) el.textContent = Math.round(total * easeOut(f)) + '%';
           if(f < 1) requestAnimationFrame(tick); else { q.countDone = true; q.justCounted = true; if(here()) render(); } };
-        requestAnimationFrame(tick); }, SLIDE_MS);
+        requestAnimationFrame(tick); }, SLIDE_MS + 400);   // (once the explanations have faded in, and a pause, as Candidate moves waits for its re-order)
     }
   }
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
