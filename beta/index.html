@@ -2734,7 +2734,7 @@ function prefetchHome(){
   if(routineNext!=='imbalances' && routineNext!=='planq') ts.push(ctx(routineNext, true));   // (the Plan finder has no track)
   ts.push(ctx('imbalances', false));
   withPrep('low', ()=>ts.forEach(t=>{ const [x, i] = upcomingFor(t); if(i>=0) prepareFor(exerciseOf(t), posAt(x, i)); }));
-  if(BETA_SITE){ loadMasterEvals(); setTimeout(planqPrefetch, 1500); }   // the Plan finder's first positions (beta)
+  loadMasterEvals(); setTimeout(planqPrefetch, 1500);   // the Plan finder's first positions
 }
 // Moves exercise `a`, on the open track, on to its next position, fresh.
 function advance(a){
@@ -2749,7 +2749,7 @@ function advance(a){
 // find the candidate moves, choose between them — then round again. Each step is on that
 // exercise's own next position (doing them on one position would let Candidate moves' review
 // give away the Move selection answer).
-const ROUTINE = BETA_SITE ? ['imbalances', 'planq', 'candidates', 'final'] : ['imbalances', 'analysis', 'candidates', 'final'];   // (beta: the Plan finder)
+const ROUTINE = ['imbalances', 'planq', 'candidates', 'final'];   // (the Plan finder in Position evaluation's place: that one is a side exercise now)
 let routine = false;
 // "Next" button: in routine mode, on to the next exercise of the loop; otherwise this exercise's
 // next position.
@@ -2784,7 +2784,7 @@ try{ const v = localStorage.getItem('cst.routineNext'); if(ROUTINE.includes(v)) 
 function setRoutineNext(a){ routineNext = a; try{ localStorage.setItem('cst.routineNext', a); }catch(e){} }
 // The routine's next exercise from `a` on, skipping any with nothing left to play today.
 function routineFrom(a){
-  const i = ROUTINE.indexOf(a);
+  const i = Math.max(0, ROUTINE.indexOf(a));   // (an exercise no longer in the routine, Position evaluation: from the start)
   for(let n=0; n<ROUTINE.length; n++){ const x = ROUTINE[(i+n) % ROUTINE.length]; if(canOpen(x, true)) return x; }
   return a;
 }
@@ -4280,7 +4280,7 @@ function miniRowHtml(m, highlight, fadeIn){
 // close you were — and no opponent rating, since every position is scored on the same scale.
 // (beta: the Plan finder in Position evaluation's place in the routine, the averages and the profile;
 // Position evaluation stays, as a side exercise)
-const ACTS = BETA_SITE ? ['imbalances', 'planq', 'candidates', 'final'] : ['imbalances', 'analysis', 'candidates', 'final'];
+const ACTS = ['imbalances', 'planq', 'candidates', 'final'];
 const ALL_ACTS = ['imbalances', 'analysis', 'candidates', 'final', 'planq'];   // every kind of result kept (both sites share them)
 const zeroCounts = ()=>Object.fromEntries(ACTS.map(a=>[a, 0]));
 // The exercises' icons (line drawings in the text colour): a balance, a gauge, a light bulb, sorting best first.
@@ -4345,7 +4345,7 @@ function renderSide(){
     <div class="side-sec">Exercises</div>
     ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
-    ${BETA ? `<div class="side-sec">Explore</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}${(L=>item('analysis', ACT_GLYPHS.analysis, ACT_NAMES.analysis, progressLoaded && L.rated ? pct(L.level) : '', !canOpen('analysis', false)))(levelNow('analysis'))}` : ''}
+    ${`<div class="side-sec">Explore</div>${BETA ? item('explorer', SIDE_ICONS.explorer, 'Strategy explorer') : ''}${(L=>item('analysis', ACT_GLYPHS.analysis, ACT_NAMES.analysis, progressLoaded && L.rated ? pct(L.level) : '', !canOpen('analysis', false)))(levelNow('analysis'))}`}
     <div class="side-sec">You</div>
     ${item('account', '<img class="side-app-icon" src="icons/icon.svg" alt="" aria-hidden="true">', displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
@@ -4692,7 +4692,7 @@ const FAQ = [
     ['Are these answers always right?', "They're the books' principles applied to the position, not a calculated line: a plan is a direction, not the next move. Checked on master games, they hold when the imbalances agree: when nothing argues against a trade, masters tried to trade (took or offered) 56 to 67% of the time, against about 45% on average; and Stockfish finds forcing play good twice as often where the plan says \"attack\" as where it says \"improve\". When imbalances pull both ways, concrete reasons decide, and the answer is less certain."],
   ]],
   ['The other exercises', [
-    ['Position evaluation', "Who's better, and by how much: drag the bar to your answer. Each square you're off costs 25%. On the beta site it's a side exercise; the Plan finder takes its place in the routine."],
+    ['Position evaluation', "Who's better, and by how much: drag the bar to your answer. Each square you're off costs 25%. It's a side exercise now: the Plan finder takes its place in the routine."],
     ['Candidate moves', "Pick 1 to 3 strong moves. Several moves can be equally good: the point is to look before choosing. Each is compared with Stockfish's best; a Dubious or worse move scores zero, so when unsure, pick fewer."],
     ['Move selection', "Rank four moves, best first. One was played in the game; in your own games it's your move, always a mistake. First place counts 50%, second 30%, third 20%, each compared with the best move left."],
     ['What do Best, Good, Ok, Dubious, Mistake and Blunder mean?', "Best is Stockfish's top choice. The others say how much winning chance a move gives up compared with it, from a little (Good) to a lot (Blunder)."],
@@ -4935,12 +4935,12 @@ function renderHome(){
         return `<button class="seg-btn${k===source?' active':''}" role="radio" aria-checked="${k===source}" data-src="${k}" ${off ? 'disabled title="No positions from your games yet"' : ''}>${k==='mine' && LANG==='fr' ? '<span data-no-i18n>Miennes</span>' : v}</button>`; }).join('')}</div>
     </div>
     <div class="cards">
-      ${ACTS.concat(BETA ? ['analysis'] : []).map(a=>[a, ACT_GLYPHS[a], ACT_DESC[a]]).map(([a, glyph, desc])=>{
+      ${ACTS.concat(['analysis']).map(a=>[a, ACT_GLYPHS[a], ACT_DESC[a]]).map(([a, glyph, desc])=>{
         const L = levelNow(a), open = canOpen(a, false);
         if(!open) desc = waitText(a, false);
         return `<button class="card" data-go="${a}" ${open ? '' : 'disabled'}>
           <span class="card-glyph" aria-hidden="true">${glyph}</span>
-          <span><span class="card-title">${ACT_NAMES[a]}${BETA_SITE && a==='analysis' ? ' <span class="title-badge">Beta</span>' : ''}</span><span class="card-desc">${desc}</span></span>
+          <span><span class="card-title">${ACT_NAMES[a]}${a==='analysis' ? ' <span class="title-badge">Beta</span>' : ''}</span><span class="card-desc">${desc}</span></span>
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small></span>
         </button>`; }).join('')}
       ${BETA ? `<button class="card xp-entry" id="xpOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.explorer}</span>
@@ -5881,7 +5881,7 @@ function renderAnalysis(){
     ? evalBarHtml(barPct, done ? fmtBarScore(truth.info) : truth ? fmtGuess(barPct) : '…', s.guess, false)
     : evalBarHtml(s.guess, fmtGuess(s.guess), s.guess, true, !s.barMoved && hintsOn('analysis'));   // the handle pulses until the bar is first touched
   app.innerHTML = `
-    ${header(BETA_SITE && !routine && !replayMode && !testMode ? 'Position evaluation <span class="title-badge">Beta</span>' : 'Position evaluation')}
+    ${header(!routine && !replayMode && !testMode ? 'Position evaluation <span class="title-badge">Beta</span>' : 'Position evaluation')}
     ${posBar()}
     ${boardHtml(true, bar)}
     ${stackedPanel(`
@@ -7946,7 +7946,7 @@ function renderPlanq(){
   loadMasterEvals();
   if(!planq){
     planq = masterEvals && Object.keys(masterEvals).length ? planqPick() : null;
-    if(!planq){ app.innerHTML = `<div class="title-row"><button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button><h1>Plan finder <span class="title-badge">Beta</span></h1><span class="title-spacer"></span></div><p class="mg-status mg-loading">Loading positions…</p>`;
+    if(!planq){ app.innerHTML = `<div class="title-row"><button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button><h1>Plan finder</h1><span class="title-spacer"></span></div><p class="mg-status mg-loading">Loading positions…</p>`;
       document.getElementById('homeBtn').onclick = ()=>{ screen = 'home'; render(); };
       clearTimeout(renderPlanq.t); renderPlanq.t = setTimeout(()=>{ if(screen==='planq') render(); }, 400); return; }
   }
@@ -7983,7 +7983,7 @@ function renderPlanq(){
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
-      <h1>${routine ? `Routine <span class="title-badge">Plan finder</span>` : replayMode ? `Replay <span class="title-badge">Plan finder</span>` : q.test!=null ? `Test <span class="title-badge">Plan finder</span>` : `Plan finder <span class="title-badge">Beta</span>`}</h1>
+      <h1>${routine ? `Routine <span class="title-badge">Plan finder</span>` : replayMode ? `Replay <span class="title-badge">Plan finder</span>` : q.test!=null ? `Test <span class="title-badge">Plan finder</span>` : 'Plan finder'}</h1>
       <button class="icon-btn" id="helpBtn" aria-label="How this exercise works">?</button>
     </div>
     ${posBar()}
@@ -8089,7 +8089,7 @@ function renderScreen(){
   else if(screen==='support') renderSupport();
   else if(screen==='metrics') renderMetrics();
   else if(screen==='explorer' && BETA) renderExplorer();
-  else if(screen==='planq' && BETA) renderPlanq();
+  else if(screen==='planq') renderPlanq();
   else if(screen==='analysis') renderAnalysis();
   else if(screen==='imbalances') renderImbalances();
   else if(screen==='candidates') renderCandidates();
