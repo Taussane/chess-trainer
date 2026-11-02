@@ -7745,6 +7745,7 @@ function planqHurry(){
 }
 // Your games' positions: the engine's best line, from a search asked at low priority (null until it's in)
 function planqEngineLine(p){
+  if(planqFull.has(p.fen)) return planqFull.get(p.fen);   // (the confirming search, done)
   const en = fenEvalStore[p.fen];
   if(en && en.status==='done') return en.data && en.data.lines && en.data.lines[0] || null;   // (a full search done already: read)
   if(planqShort.has(p.fen)) return planqShort.get(p.fen);
@@ -7945,7 +7946,9 @@ function planqPrefetch(){
     if(planqPre.cands.length >= PLANQ_CANDS){ planqPre.busy = false; return; }
     const c = planqCandidate(planqPre.cands);
     if(!c){ planqPre.busy = false; return; }
-    planqPre.cands.push(c); idle(step);
+    planqPre.cands.push(c);
+    if(c.p.gameId) planqFullSearch(c.p, 'low');   // (yours: the confirming search, before it's shown)
+    idle(step);
   };
   idle(step);
 }
@@ -7955,12 +7958,46 @@ function planqPick(){
   const inPool = new Set(planqPool().map(x=>x.key));   // (the source may have changed since they were prepared)
   const cands = planqPre.cands.filter(c=>inPool.has(c.p.key) && !seen.has(c.p.key) && !(planq && planq.p.key===c.p.key)).map(c=>({ ...c, seen }));
   for(let i = cands.length; i < 4; i++){ const c = planqCandidate(cands); if(!c) break; cands.push(c); }   // (none ready yet: a few, at once)
-  if(!cands.length) return null;
+  // Your positions passed a quick check (a short search); before one is shown, the full search confirms it: its
+  // answers worked out again from it, and dropped if it no longer fits. Not in yet: asked at the front, the others first.
+  const sure = [];
+  for(const c of cands){
+    if(!c.p.gameId){ sure.push(c); continue; }
+    if(!planqFull.has(c.p.fen)){ planqFullSearch(c.p, 'low'); continue; }
+    const re = planqConfirm(c);
+    if(re) sure.push(re); else { planqPre.cands = planqPre.cands.filter(x=>x.p.key!==c.p.key); planqOwnKnown.set(c.p.key, false); ownStoreCheck(c.p, 'planqChk', false); }
+  }
+  if(!sure.length){ const c = cands.find(x=>x.p.gameId); if(c) planqFullSearch(c.p, 'front'); return null; }   // (rendered again once it's in: "Loading positions…" meanwhile)
+  cands.length = 0; cands.push(...sure);
   const n = c=>planqShown[planqTopic(c)] || 0, best = Math.min(...cands.map(n));
   const pick = shuffled(cands.filter(c=>n(c)===best))[0];
   planqShown[planqTopic(pick)] = n(pick) + 1; pick.seen.add(pick.p.key);
   planqPre.cands = planqPre.cands.filter(c=>c.p.key!==pick.p.key);
   return pick;
+}
+// The confirming search for one of your positions: 1.2 s (the finder's own length for the masters), its own job
+// (not the exercises' long searches); `how`: 'low' in the background, 'front' when you're waiting for it
+const planqFull = new Map(), planqFullAsked = new Map();   // FEN -> its best line (null: none); FEN -> the queued job
+function planqFullSearch(p, how){
+  if(planqFull.has(p.fen)) return;
+  const job = planqFullAsked.get(p.fen);
+  if(job){ if(how==='front' && job.low){ const i = sfQueue.indexOf(job); if(i > 0){ sfQueue.splice(i, 1); job.low = false; sfQueue.unshift(job); } } return; }
+  if(sfState==='error' || !sfWorker) return;
+  const j = { fen: p.fen, multipv: 1, movetime: 1200, resolve: r=>{ planqFull.set(p.fen, r && !r.failed && r.lines && r.lines[0] || null); planqFullAsked.delete(p.fen); if(screen==='planq' && !planq) render(); } };
+  planqFullAsked.set(p.fen, j);
+  withPrep(how, ()=>queueJob(j)); pumpEngineQueue();
+}
+// One of your positions again, from the confirming search (its best move and evaluation): null if it no longer fits
+function planqConfirm(c){
+  const p = c.p, l = planqFull.get(p.fen);
+  if(!l) return null;
+  const g = myGames.find(x=>x.id===p.gameId), e = g && g.evals && p.ply > 0 ? g.evals[p.ply - 1] : null;
+  if(e && l.uci && e.best!==l.uci){ e.best = l.uci; ownDirty.add(g); clearTimeout(ownDirtyT); ownDirtyT = setTimeout(()=>{ ownDirty.forEach(saveMyGame); ownDirty.clear(); }, 1500); }   // (the full search's best move from now on, kept)
+  const info = planqInfo(p), vals = info && explorerVals(p.fen);
+  if(!vals || vals.special) return null;
+  const re = planqMake(p, info, vals, c.seen);
+  if(re.urgent.pending || re.urgent.ambiguous || (!re.urgent.stop && !re.rows.some(r=>r.answer)) || !planqFits(p, re)) return null;
+  return re;
 }
 function planqCandidate(taken){
   const pool = planqPool(), seen = planq ? planq.seen : (planqCandidate.seen = planqCandidate.seen || new Set());
