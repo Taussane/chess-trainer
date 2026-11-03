@@ -6896,7 +6896,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Next question": "Question suivante",
 "See the review": "Voir la correction",
 "Look at checks, captures and threats, for both sides.": "Regardez les échecs, les prises et les menaces, des deux côtés.",
-"Nothing to win or to parry right now.": "Rien à gagner ni à parer pour l'instant.",
+"Nothing obvious to win or to parry.": "Rien d'évident à gagner ni à parer.",
 "Your answer": "Votre réponse",
 "Down material": "Matériel en moins",
 "Avoid trades, attack": "Évitez les échanges, attaquez",
@@ -8191,7 +8191,7 @@ function planqNote(q, step){
     if(u.kind==='win') return mate ? `${who} has a mate: it comes first.` : u.stop ? `${u.san} wins material: it comes first.` : `${u.san} wins material, but the general plan still holds.`;
     if(u.kind==='defend') return mate ? `${who} must stop a mate first.` : u.stop ? `${who} must deal with a threat first.`
       : `${u.sq ? `The ${planqPieceName(q.p.fen, u.sq)} on ${u.sq} is at risk` : `${who} has something at risk`}, but the general plan still holds.`;
-    return u.looks ? `Taking on ${u.looks.sq} looks free, but Stockfish prefers ${u.looks.best}.` : 'Nothing to win or to parry right now.'; }
+    return u.looks ? `Taking on ${u.looks.sq} looks free, but Stockfish prefers ${u.looks.best}.` : 'Nothing obvious to win or to parry.'; }
   if(step==='winning') return `Stockfish gives ${planqEvalText(q.info)}. Balanced sits within ±0.5.`;   // (a mate is urgent: it never gets here)
   return '';
 }
