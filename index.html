@@ -5032,7 +5032,7 @@ function renderHome(){
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small></span>
         </button>`; }).join('')}
       ${BETA ? `<button class="card xp-entry" id="xpOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.explorer}</span>
-          <span><span class="card-title">Strategy explorer <span class="title-badge">Beta</span></span><span class="card-desc">Play moves, watch the imbalances and plans shift.</span></span></button>` : ''}
+          <span><span class="card-title">Strategy explorer <span class="title-badge">Beta</span></span><span class="card-desc">Check imbalances and plans as you play.</span></span></button>` : ''}
     </div>
     <div class="home-donate"><button class="donate-badge" id="donateBtn"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button></div>
     ${engineErrorBanner()}
@@ -7084,6 +7084,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Plans": "Plans",
 "Plans for White": "Plans pour les Blancs",
 "Plans for Black": "Plans pour les Noirs",
+"Check imbalances and plans as you play.": "Vérifiez les déséquilibres et les plans en jouant.",
 "Score": "Score",
 "Score.": "Score.",
 "The idea.": "L'idée.",
