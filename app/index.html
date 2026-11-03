@@ -1941,7 +1941,7 @@ function pumpEngineQueue(){
   // 1.2 s at most, after each other one), so your exercises fill up while you play instead of only when the engine is idle.
   const pick = [j=>!!cur && j.fen===cur && !!j.movetime, j=>!!cur && j.fen===cur, j=>!!j.movetime, j=>!j.low, ()=>true];
   let at = -1;
-  for(const [i, f] of pick.entries()){ if(i===2 && bgQueue.length && !sfLastWasBg) break; at = sfQueue.findIndex(f); if(at >= 0) break; }
+  for(const [i, f] of pick.entries()){ if(i===2 && bgQueue.length && !sfLastWasBg) break; if(i===4 && (bgQueue.length || myBgRunning)) break; at = sfQueue.findIndex(f); if(at >= 0) break; }   // (what the home page prepared waits while your games are worked on: it may never be opened)
   const job = at >= 0 ? sfQueue.splice(at, 1)[0] : bgQueue.length ? bgQueue.shift() : null;
   if(job) sfLastWasBg = at < 0;
   if(!job) return;
@@ -5658,7 +5658,7 @@ async function myBackground(){
       myPosVersion++; refreshPools(true); onOwnPositionsChanged(); render();
     }
   } finally {
-    myBgRunning = false;
+    myBgRunning = false; pumpEngineQueue();
     if(onProfile()) render();
     if(retry) setTimeout(myBackground, 5000);   // the engine was briefly unavailable: try again
   }
