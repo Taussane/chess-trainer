@@ -1732,7 +1732,7 @@ let sfWatch = null;      // watchdog for the search in flight (see pumpEngineQue
 let sfQueue = [];        // {fen, searchmoves, resolve}: the exercises' own searches, always first
 let bgQueue = [];        // {fen, searchmoves, multipv, movetime, resolve}: background work (scanning
                          // your games), run only when no exercise search is waiting
-let sfBusy = false;
+let sfBusy = false, sfLastWasBg = false;
 let sfCurrentResolve = null;
 let sfCurrentLines = {}; // rank (1..N) -> {cp, mate, uci, d} for the search currently in flight
 let sfLinesByDepth = {}; // depth -> rank -> the same lines, per depth
@@ -1965,10 +1965,13 @@ function pumpEngineQueue(){
   const cur = typeof curPos!=='undefined' && curPos && ACTIVITIES.includes(screen) ? curPos.fen : null;
   // Order: the open position's quick searches (Imbalance reading's mate check), its other searches, any
   // quick search (0.4 s), the rest in turn, those prepared from the home page last, then background work.
+  // Your games' analysis takes turns with everything but the open position's own searches (one short search,
+  // 1.2 s at most, after each other one), so your exercises fill up while you play instead of only when the engine is idle.
   const pick = [j=>!!cur && j.fen===cur && !!j.movetime, j=>!!cur && j.fen===cur, j=>!!j.movetime, j=>!j.low, ()=>true];
   let at = -1;
-  for(const f of pick){ at = sfQueue.findIndex(f); if(at >= 0) break; }
+  for(const [i, f] of pick.entries()){ if(i===2 && bgQueue.length && !sfLastWasBg) break; at = sfQueue.findIndex(f); if(at >= 0) break; }
   const job = at >= 0 ? sfQueue.splice(at, 1)[0] : bgQueue.length ? bgQueue.shift() : null;
+  if(job) sfLastWasBg = at < 0;
   if(!job) return;
   if(!job.diagWrapped){ job.diagWrapped = true; const res = job.resolve, kind = job.kind || (job.bg ? 'games: analysis and checks' : job.movetime ? 'exercise: timed search' : job.low ? 'exercise: search prepared ahead' : 'exercise: full search'), t = ()=>performance.now();
     job.resolve = r=>{ diagJob('engine time > ' + kind, t() - job.diagStart); return res(r); }; }
@@ -5653,9 +5656,12 @@ async function myBackground(){
   let retry = false;
   try{
     while(sfState==='ready'){
-      const g1 = myGames.find(x=>(x.positions||[]).some(p=>p.pending && !myTried.has(job(p))));
+      // Move selection's checks first (Candidate moves has your mistakes already), then the checks of likely
+      // mistakes (they feed both), then a game not analysed yet (all four exercises)
+      const open = x=>x.pending && !myTried.has(job(x));
+      const g1 = myGames.find(x=>(x.positions||[]).some(p=>open(p) && p.prep==='final')) || myGames.find(x=>(x.positions||[]).some(open));
       if(g1){
-        const p = g1.positions.find(x=>x.pending && !myTried.has(job(x)));
+        const p = g1.positions.find(x=>open(x) && x.prep==='final') || g1.positions.find(open);
         myTried.add(job(p));
         let r = null;
         try{ r = p.prep==='final' ? await diagTimed('selection: check of the 4 moves', prepFinal(p)) : await diagTimed('candidates: mistake check', checkMistake(p)); }
