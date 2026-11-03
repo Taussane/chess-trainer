@@ -7079,8 +7079,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Lists": "Listes",
 "Plan.": "Plan.",
 "Plans": "Plans",
-"Plan for White": "Plan pour les Blancs",
-"Plan for Black": "Plan pour les Noirs",
+"Plans for White": "Plans pour les Blancs",
+"Plans for Black": "Plans pour les Noirs",
 "Score": "Score",
 "Score.": "Score.",
 "The idea.": "L'idée.",
@@ -7657,7 +7657,7 @@ function explorerNavHtml(x, depth, note){
 }
 const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
     <button class="seg-btn${x.mode==='imbalances' ? ' active' : ''}" data-mode="imbalances" role="radio" aria-checked="${x.mode==='imbalances'}">Imbalances</button>
-    <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plan for ${explorerPos().side==='b' ? 'Black' : 'White'}</button>
+    <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plans for ${explorerPos().side==='b' ? 'Black' : 'White'}</button>
   </div>`;
 // The six imbalances at once, from Stockfish's evaluation table (no search): shown while the short mate
 // check (aspectsEntry) runs, which only changes them when there is a mate.
