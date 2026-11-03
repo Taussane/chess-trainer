@@ -4485,6 +4485,7 @@ const ownStored = (p, field)=>p[field] && p[field].v===OWN_CHECK_V ? p[field].ok
 function quietOwn(p){
   if(quietChecked.has(p.key)) return quietChecked.get(p.key);
   { const k = ownStored(p, 'quietChk'); if(k!==undefined){ quietChecked.set(p.key, k); return k; } }   // (checked before: kept with the game)
+  if(p.gameId && !myReached.has(p.gameId)) return undefined;   // (your games are done one at a time, in turn: see myBackground)
   quietChecked.set(p.key, undefined);
   quietQueue.push(p);
   if(!quietTimer) quietTimer = setTimeout(runQuietChecks, 0);
@@ -4497,6 +4498,16 @@ function quietOf(p){
   const st = staticEval(p.fen);
   if(quiet && st!=null && e && (e.cp!=null || e.mate!=null)) quiet = Math.abs(cpToPct(st*100, null) - cpToPct(e.cp, e.mate)) < IMBALANCE_FAR;
   return quiet;
+}
+// One position's check at once (myBackground, in its game's turn)
+function quietNow(p){
+  { const k = quietOwn(p); if(k!==undefined) return k; }
+  const i = quietQueue.indexOf(p); if(i >= 0) quietQueue.splice(i, 1);
+  let q = true; const tq = performance.now();
+  try{ q = quietOf(p); }catch(e){}
+  diagJob('imbalances: quiet check', performance.now() - tq);
+  quietChecked.set(p.key, q); ownStoreCheck(p, 'quietChk', q);
+  return q;
 }
 function runQuietChecks(){
   quietTimer = null;
@@ -5652,44 +5663,77 @@ const job = x=>x.key + (x.prep ? '|' + x.prep : '');
 const prepStore = {};
 const myTried = new Set();   // likely mistakes already checked in this session: never checked twice
 const currentGame = id=>myGames.find(x=>x.id===id);   // games can be reloaded meanwhile: always write to the current copy
+// Your games one at a time, each one finished before the next: Lichess's analysed games first, then those the app
+// analyses itself (Lichess, then Chess.com). A game's turn: its scan if it has no analysis, the check of each likely
+// mistake (Candidate moves), Move selection's searches, Imbalance reading's check and the Plan finder's (with its
+// short search for the best move when the game doesn't have it). Positions come in game by game, in every exercise.
+const myReached = new Set(), myDone = new Set();
+const gameRank = g=>g.retired ? 3 : siteOf(g)==='chesscom' ? 2 : lichessEvals(g) ? 0 : 1;
+const tick = ()=>new Promise(r=>setTimeout(r, 0));
 async function myBackground(){
   if(myBgRunning || sfState!=='ready' || !myGamesLoaded || toPrepare.size) return;   // positions being found: it starts again after
   myBgRunning = true;
   let retry = false;
   try{
     while(sfState==='ready'){
-      // Move selection's checks first (Candidate moves has your mistakes already), then the checks of likely
-      // mistakes (they feed both), then a game not analysed yet (all four exercises)
-      const open = x=>x.pending && !myTried.has(job(x));
-      const g1 = myGames.find(x=>(x.positions||[]).some(p=>open(p) && p.prep==='final')) || myGames.find(x=>(x.positions||[]).some(open));
-      if(g1){
-        const p = g1.positions.find(x=>open(x) && x.prep==='final') || g1.positions.find(open);
-        myTried.add(job(p));
-        let r = null;
-        try{ r = p.prep==='final' ? await diagTimed('selection: check of the 4 moves', prepFinal(p)) : await diagTimed('candidates: mistake check', checkMistake(p)); }
-        catch(e){ r = 0; }   // a position that can't be checked is left out
-        if(r==null){ myTried.delete(job(p)); retry = true; break; }
-        const g = currentGame(g1.id); if(!g) continue;
-        if(p.prep==='final') (g.finalOk = g.finalOk || {})[p.ply] = r;
-        else (g.checks = g.checks || {})[p.ply] = r;
-        extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged(); continue;
-      }
-      const g2 = myGames.find(x=>x.status==='queued' && !myTried.has('scan:'+x.id));
-      if(!g2) break;
-      myTried.add('scan:'+g2.id);
-      let evals = null, failed = false;
-      try{ evals = await diagTimed('game scan (unanalysed game)', scanOwnGame(g2)); }
-      catch(e){ failed = true; }
-      if(!evals && !failed){ myTried.delete('scan:'+g2.id); retry = true; break; }
-      const g = currentGame(g2.id); if(!g) continue;
-      if(evals){ g.evals = evals; g.status = 'evaluated'; g.evalBy = 'scan'; } else g.status = 'failed';
-      extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged();
+      const g = myGames.map((x, i)=>[x, i]).sort((a, b)=>gameRank(a[0]) - gameRank(b[0]) || a[1] - b[1]).map(x=>x[0]).find(x=>!myDone.has(x.id));
+      if(!g) break;
+      const r = await myGameTurn(g);
+      if(r==='retry'){ retry = true; break; }
+      myDone.add(g.id);
+      if(myDone.size >= myGames.length) diagMark('all games done');
+      myPosVersion++; refreshPools(true); onOwnPositionsChanged(); render();
     }
   } finally {
     myBgRunning = false;
     if(onProfile()) render();
     if(retry) setTimeout(myBackground, 5000);   // the engine was briefly unavailable: try again
   }
+}
+async function myGameTurn(g0){
+  const id = g0.id, t0 = performance.now();
+  myReached.add(id);
+  let g = currentGame(id); if(!g) return 'gone';
+  // 1. no analysis: the app's quick scan
+  if(g.status==='queued' && !myTried.has('scan:'+id)){
+    myTried.add('scan:'+id);
+    let evals = null, failed = false;
+    try{ evals = await diagTimed('game scan (unanalysed game)', scanOwnGame(g)); }
+    catch(e){ failed = true; }
+    if(!evals && !failed){ myTried.delete('scan:'+id); return 'retry'; }
+    g = currentGame(id); if(!g) return 'gone';
+    if(evals){ g.evals = evals; g.status = 'evaluated'; g.evalBy = 'scan'; } else g.status = 'failed';
+    extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged();
+  }
+  // 2. its likely mistakes checked, then Move selection's searches
+  const open = x=>x.pending && !myTried.has(job(x));
+  for(;;){
+    g = currentGame(id); if(!g) return 'gone';
+    const p = (g.positions||[]).find(x=>open(x) && x.prep!=='final') || (g.positions||[]).find(open);
+    if(!p) break;
+    myTried.add(job(p));
+    let r = null;
+    try{ r = p.prep==='final' ? await diagTimed('selection: check of the 4 moves', prepFinal(p)) : await diagTimed('candidates: mistake check', checkMistake(p)); }
+    catch(e){ r = 0; }   // a position that can't be checked is left out
+    if(r==null){ myTried.delete(job(p)); return 'retry'; }
+    g = currentGame(id); if(!g) return 'gone';
+    if(p.prep==='final') (g.finalOk = g.finalOk || {})[p.ply] = r;
+    else (g.checks = g.checks || {})[p.ply] = r;
+    extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged();
+  }
+  // 3. Imbalance reading's and the Plan finder's checks (no engine, except the best move when the game hasn't it)
+  for(const p of myPositions.filter(x=>x.gameId===id && posIn(x, 'analysis'))){
+    quietNow(p);
+    if(planqOwnOk(p)===undefined && planqNeedsLine(p)){
+      const res = await bgEval(p.fen, { multipv: 1, movetime: 400 });
+      if(evalFailed(res)) return 'retry';
+      planqShortStore(p, res.lines[0] || null);
+      planqOwnOk(p);
+    }
+    await tick();   // (the page answers between positions)
+  }
+  diagJob('one game, all its checks', performance.now() - t0);
+  return 'ok';
 }
 // The check of one likely mistake: a quick search of the position (top 5, 1.2 s), and your move judged in
 // the same search as the top 5. Kept apart (prepStore): the exercises search the position in full themselves.
@@ -5867,7 +5911,7 @@ function positionsSection(){
   const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = Object.fromEntries(ACTS.map(a=>[a, POOLS[a].length]));
   // One counter: a game is done once it is read (Lichess's analysis or the app's quick scan) and
   // each of its likely mistakes has been checked by the engine.
-  const isDone = g=>g.status!=='queued' && !toPrepare.has(g) && !(g.positions||[]).some(p=>p.pending && !myTried.has(job(p)));
+  const isDone = g=>myDone.has(g.id);   // (every check of the game done: myBackground)
   const done = myGames.filter(isDone).length;
   const status = DIRECT_LICHESS && accountLoading() ? 'Loading your games…'
     : !myGames.length ? ''
@@ -7779,7 +7823,7 @@ const planqOwnKnown = new Map();
 function planqOwnOk(p){
   if(planqOwnKnown.has(p.key)) return planqOwnKnown.get(p.key);
   { const k = ownStored(p, 'planqChk'); if(k!==undefined){ planqOwnKnown.set(p.key, k); return k; } }   // (checked before: kept with the game)
-  { const g = myGames.find(x=>x.id===p.gameId); if(g && g.status==='queued') return undefined; }   // (a game the app still has to analyse: its scan brings the evaluations and best moves, no search of its own)
+  if(p.gameId && !myReached.has(p.gameId)) return undefined;   // (your games are done one at a time, in turn: see myBackground)
   const info = planqInfo(p), vals = info && explorerVals(p.fen, true);   // (a mate shows in the engine's evaluation; the confirming check before it's shown reads it in full)
   if(!info) return undefined;
   if(!vals || vals.special){ planqOwnKnown.set(p.key, false); ownStoreCheck(p, 'planqChk', false); return false; }
@@ -7792,6 +7836,7 @@ function planqOwnOk(p){
 // engine search waiting (never a flood of them: the page stays responsive); the profile redraws as counts come in
 let planqScanBusy = false, planqScanAgain = false;
 function planqOwnScan(){
+  return;   // (now done game by game, in myBackground)
   if(planqScanBusy){ planqScanAgain = true; return; }
   const todo = myPositions.filter(p=>p.gameId && posIn(p, 'planq') && !planqOwnKnown.has(p.key) && ownStored(p, 'planqChk')===undefined);
   if(!todo.length) return;
@@ -7810,7 +7855,7 @@ function planqOwnScan(){
 // The Plan finder open on your games with nothing ready: the engine's search for one unchecked position goes
 // to the front of the queue (otherwise they wait behind the games' background analysis)
 function planqHurry(){
-  const p = planqPool().find(x=>x.gameId && planqOwnKnown.get(x.key)===undefined && ownStored(x, 'planqChk')===undefined && !planqShortAsked.has(x.fen));
+  const p = planqPool().find(x=>x.gameId && myReached.has(x.gameId) && planqOwnKnown.get(x.key)===undefined && ownStored(x, 'planqChk')===undefined && !planqShortAsked.has(x.fen));
   if(p) withPrep('front', ()=>planqEngineLine(p));   // (its short search ahead of the rest)
 }
 // Your games' positions: the engine's best line, from a search asked at low priority (null until it's in)
@@ -7821,7 +7866,8 @@ function planqEngineLine(p){
   if(planqShort.has(p.fen)) return planqShort.get(p.fen);
   const asked = planqShortJobs.get(p.fen);
   if(asked){ if(prepFront){ const i = bgQueue.indexOf(asked); if(i >= 0){ bgQueue.splice(i, 1); asked.kind = 'plan: quick search (hurried)'; queueJob(asked); pumpEngineQueue(); } } return null; }   // (waiting: to the front when you're waiting for it)
-  if(!planqShortAsked.has(p.fen) && sfState!=='error' && sfWorker && (prepFront || planqShortJobs.size < 2)){   // a short search (0.4 s: enough for the best move): background work, two waiting at most (the games' analysis goes on in between)
+  if(!prepFront) return null;   // (in the background, the game's turn searches it: myBackground)
+  if(!planqShortAsked.has(p.fen) && sfState!=='error' && sfWorker){   // a short search (0.4 s: enough for the best move): background work, two waiting at most (the games' analysis goes on in between)
     planqShortAsked.add(p.fen);
     const tq = performance.now();
     const j = { fen: p.fen, multipv: 1, movetime: 400, kind: 'plan: quick search', resolve: r=>{
@@ -7839,7 +7885,19 @@ function planqEngineLine(p){
   }
   return null;
 }
-const planqShort = new Map(), planqShortAsked = new Set(), planqShortJobs = new Map();   // FEN -> the short search's best line (null: none)
+const planqShort = new Map(), planqShortAsked = new Set(), planqShortJobs = new Map();
+// Does this position of yours still need the engine's best move (the Plan finder's urgent check)?
+function planqNeedsLine(p){
+  if(planqFull.has(p.fen) || planqShort.has(p.fen)) return false;
+  const en = fenEvalStore[p.fen]; if(en && en.status==='done') return false;
+  const g = myGames.find(x=>x.id===p.gameId), e = g && g.evals && p.ply > 0 ? g.evals[p.ply - 1] : null;
+  return !(e && e.best);
+}
+function planqShortStore(p, l){
+  planqShort.set(p.fen, l);
+  if(l && l.uci){ const g = myGames.find(x=>x.id===p.gameId), e = g && g.evals && p.ply > 0 ? g.evals[p.ply - 1] : null;
+    if(e && !e.best){ e.best = l.uci; ownDirty.add(g); clearTimeout(ownDirtyT); ownDirtyT = setTimeout(()=>{ ownDirty.forEach(saveMyGame); ownDirty.clear(); }, 1500); } }
+}   // FEN -> the short search's best line (null: none)
 // Stockfish's best move: shipped with the master positions; for yours, the engine's (undefined while it's searching)
 function planqBest(p){
   const m = masterEvals && masterEvals[p.fen.split(' ').slice(0, 4).join(' ')];

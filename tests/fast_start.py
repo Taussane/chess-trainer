@@ -3,7 +3,8 @@
 #     Board analysis and Candidate moves positions (Lichess's analysis is trusted), Final choice
 #     waits for each mistake's top-5 search; games not analysed have no position yet (none appears
 #     and later goes); Final choice can't be opened yet and says why;
-#  2. the background checks the flagged mistakes before it quick-scans any other game;
+#  2. the background goes game by game, Lichess's analysed games first: their flagged mistakes are all checked
+#     before it quick-scans any other game;
 #  3. when every position was played today, the review's Next waits, and comes back by itself
 #     when a new position arrives.
 import asyncio, sys, pathlib
@@ -19,7 +20,7 @@ async def main():
         b, pg, errs = await T.page_with_app(p)
         # Engine work is held back until we release it, and every background call is logged.
         await pg.evaluate("""(()=>{ window.__log=[]; window.__hold=true; const real=bgEval;
-          bgEval = (fen,o)=>new Promise(res=>{ const go=()=>{ __log.push(o && o.multipv===1 ? 'scan' : 'check'); real(fen,o).then(res); };
+          bgEval = (fen,o)=>new Promise(res=>{ const go=()=>{ __log.push(o && o.movetime===400 ? 'plan' : o && o.multipv===1 ? 'scan' : 'check'); real(fen,o).then(res); };
             const wait=()=>{ if(__hold) setTimeout(wait,20); else go(); }; wait(); }); })()""")
         await pg.click('#accountBtn'); await pg.evaluate("(t=>{ importPgnText(t, false, 'TestPlayer'); render(); })", pathlib.Path(T.SAMPLE).read_text()); await pg.wait_for_timeout(300)
         st = await pg.evaluate("({games:myGames.length, analysed:myGames.filter(g=>g.evals).length, gamesWithBA:myGames.filter(g=>g.positions.some(p=>p.acts.includes('analysis'))).length, unanalysedWithPositions:myGames.filter(g=>!g.evals && g.positions.length).length, flagged:myGames.flatMap(g=>g.positions).filter(p=>p.pending).length, c:countsOf(myPositions)})")
@@ -43,7 +44,7 @@ async def main():
             await pg.wait_for_timeout(250)
         log = await pg.evaluate("__log")
         first_scan = log.index('scan') if 'scan' in log else len(log)
-        print('work order:', ''.join('C' if x=='check' else 's' for x in log)[:80], '…', len(log), 'searches')
+        print('work order:', ''.join('C' if x=='check' else 'p' if x=='plan' else 's' for x in log)[:80], '…', len(log), 'searches')
         if 'scan' in log and log[:first_scan].count('check') < st['flagged']: fails.append('a game was scanned before the flagged mistakes were checked')
         c = await pg.evaluate("countsOf(myPositions)"); print('finally:', c)
         tried = await pg.evaluate("[...myTried].filter(k=>!k.startsWith('scan:')).length")
