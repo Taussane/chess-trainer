@@ -1898,7 +1898,8 @@ function onEngineMessage(e){
       sfCurrentLines[rank] = {
         cp: mateM ? null : (cpM ? parseInt(cpM[1],10) : null),
         mate: mateM ? parseInt(mateM[1],10) : null,
-        uci: pvM ? pvM[1] : null, d
+        uci: pvM ? pvM[1] : null, d,
+        pv: (line.match(/ pv (.+)$/) || [])[1]?.split(' ') || null   // the whole line (the Plan finder's check of what can be won)
       };
       // each depth's lines kept apart too: a search stopped mid-depth leaves some ranks at the new depth and
       // the others at the one before, so a move can sit under two ranks and another be missing (see bestmove)
@@ -1918,7 +1919,7 @@ function onEngineMessage(e){
         const full = Object.keys(sfLinesByDepth).map(Number).sort((a,b)=>b-a).find(d=>Object.keys(sfLinesByDepth[d]).length >= n);
         if(full!=null) for(const l of Object.values(sfLinesByDepth[full])) if(byUci.size < n && !byUci.has(l.uci)) byUci.set(l.uci, l);
       }
-      collected = [...byUci.values()].map(({ cp, mate, uci })=>({ cp, mate, uci }));
+      collected = [...byUci.values()].map(({ cp, mate, uci, pv })=>({ cp, mate, uci, pv }));
       // MultiPV's own rank label is *supposed* to already be best-first, but under a
       // movetime-bounded search that's not guaranteed: different ranks can finish their last
       // deepening pass at slightly different moments, so whatever was last printed under
@@ -7955,6 +7956,44 @@ function planqUrgent(p, vals, info){
   if(planqForcing(p.fen, best)) return { ...out, ambiguous: true };
   const caps = new Chess(p.fen).moves({ verbose: true }).filter(x=>x.captured).map(x=>x.to), sq = targets.find(t=>caps.includes(t));
   return { ...out, looks: sq ? { sq, best: san(best) } : null };
+}
+// Stockfish's check of question 1, both sides (option 1: a filter): what the side to move wins along Stockfish's line,
+// and what the other side would win were it its turn (the same position, the other side to move). Material, in
+// pawns, counted where the line's forcing start ends (captures, checks, promotions; the first quiet move after
+// the first one); a mate counts as a win. A position whose answer the engine contradicts is left out.
+const PLANQ_VAL = { p:1, n:3, b:3, r:5, q:9, k:0 };
+function lineGain(fen, line){
+  if(!line) return 0;
+  if(line.mate!=null) return line.mate > 0 ? 99 : 0;
+  const pv = line.pv || (line.uci ? [line.uci] : []);
+  let g; try{ g = new Chess(fen); }catch(e){ return 0; }
+  const me = g.turn(), mat = ()=>{ let t = 0; g.board().forEach(r=>r.forEach(x=>{ if(x) t += (x.color===me ? 1 : -1) * PLANQ_VAL[x.type]; })); return t; };
+  const m0 = mat(); let at = m0;
+  for(let i = 0; i < Math.min(pv.length, 12); i++){
+    const u = pv[i]; let mv = null;
+    try{ mv = g.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q' }); }catch(e){}
+    if(!mv) break;
+    const forcing = !!(mv.captured || mv.promotion || g.in_check());
+    if(!forcing && i >= 1) break;   // (the material where the forcing start ends)
+    at = mat();
+    if(!forcing) break;   // (a quiet first move: nothing won at once)
+  }
+  return at - m0;
+}
+// The same position with the other side to move (null when the side to move is in check: no such position)
+function flipSide(fen){
+  try{ if(new Chess(fen).in_check()) return null; }catch(e){ return null; }
+  const z = fen.split(' '); z[1] = z[1]==='w' ? 'b' : 'w'; z[3] = '-';
+  const f = z.join(' ');
+  try{ const g = new Chess(); return g.load(f) ? f : null; }catch(e){ return null; }
+}
+// Our answer against the engine's: false when it contradicts it (win: we must win something; defend: they must
+// threaten something; quiet: neither)
+function planqEngineAgrees(u, usLine, themLine, fen){
+  const W = lineGain(fen, usLine) >= 1, f = flipSide(fen), T = f ? lineGain(f, themLine) >= 1 : false;
+  if(u.kind==='win') return W;
+  if(u.kind==='defend') return T || !f;
+  return !W && !T;
 }
 // A move that forces the play: a capture, a check, or a piece newly attacking a bigger enemy piece, or an undefended one
 function planqForcing(fen, uci){
