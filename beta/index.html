@@ -4473,7 +4473,7 @@ const quietQueue = [];
 let quietTimer = null, quietRendered = 0, quietFound = false;
 // A check's result kept with the position in your games (saved with them, on this device and your account): read at
 // once next time, never worked out again. `v`: the rules' version, so a change of rule redoes it.
-const OWN_CHECK_V = 1;
+const OWN_CHECK_V = 2;   // (2: a pawn at risk is "must defend" in the Plan finder)
 function ownStoreCheck(p, field, value){
   const g = myGames.find(x=>x.id===p.gameId), gp = g && (g.positions || []).find(x=>x.ply===p.ply);
   if(!gp) return;
@@ -7919,24 +7919,33 @@ function planqPool(){
 // Question 1's answer for the side to move: { kind: 'win' | 'defend' | null, stop, san, looks }
 // - win: something can be won (Other threats + or more) and Stockfish's best move takes it (a poisoned pawn,
 //   a trap or a better move: it doesn't, and the position counts as quiet, with a note: looks); a mate
-// - defend: the other side threatens a piece (++, 3 points or more) or mates; a pawn at risk isn't urgent
+// - defend: the other side threatens something (Other threats + or more for them), a mate included; a pawn or
+//   two at risk (+) is acknowledged, then the other questions follow
 // - stop: a mate, or something big (++) at stake: the position ends after question 1; a pawn or two (+):
 //   acknowledged, then the other questions follow
 function planqUrgent(p, vals, info){
-  const sgn = p.side==='w' ? 1 : -1, out = { kind: null, stop: false, san: null, looks: null };
+  const sgn = p.side==='w' ? 1 : -1, out = { kind: null, stop: false, san: null, looks: null }, me = p.side, them = other(me);
   if(info.mate!=null) return { ...out, kind: info.mate * sgn > 0 ? 'win' : 'defend', stop: true };
   const l = aspectLevel(vals.threats, 'threats') * sgn;
   if(l <= -2) return { ...out, kind: 'defend', stop: true };
-  if(l <= 0) return out;
+  // what each side threatens (Other threats' own count, each side apart: a pawn of yours at risk counts even
+  // when your own threats balance it in the criterion)
+  const mk = aspectMarks(p.fen, 'threats'), m = boardMap(p.fen), pts = threatsPointsFrom(p.fen, mk);
+  const targetsOf = c=>[...new Set(mk.circles.filter(x=>x.c===c).map(x=>x.sq).concat(mk.arrows.filter(a=>a.c===c && a.outline!=='r').map(a=>a.to)))].filter(t=>m[t] && m[t].c!==c);
+  const atRisk = pts[them] >= 1 ? targetsOf(them)[0] || null : null;   // (a pawn or two at risk: + for the other side)
+  const risk = { ...out, kind: 'defend', stop: false, sq: atRisk };
+  if(l <= 0 && !(pts[me] >= 1 && atRisk)) return atRisk ? risk : out;
   const best = planqBest(p);
   if(best===undefined) return { ...out, pending: true };   // (your games: the engine's best move not in yet)
-  const mk = aspectMarks(p.fen, 'threats'), targets = mk.circles.filter(x=>x.c===p.side).map(x=>x.sq).concat(mk.arrows.filter(a=>a.c===p.side).map(a=>a.to));
+  const targets = mk.circles.filter(x=>x.c===me).map(x=>x.sq).concat(mk.arrows.filter(a=>a.c===me).map(a=>a.to));
   const san = u=>{ try{ return new Chess(p.fen).move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q' }).san; }catch(e){ return u; } };
-  if(!best) return out;
-  if(targets.includes(best.slice(2, 4))) return { ...out, kind: 'win', stop: l >= 2, san: san(best) };
+  if(!best) return atRisk ? risk : out;
+  if(targets.includes(best.slice(2, 4))) return { ...out, kind: 'win', stop: l >= 2, san: san(best) };   // (threats both ways: Stockfish takes first, so winning it is the answer)
   // Stockfish plays something else. When that move is forcing itself (a capture, a check, or a new attack
   // on a bigger or undefended piece), "quiet" would be a doubtful answer: such positions are left out
-  // (ambiguous). Otherwise quiet, with a note only when something can really be taken now.
+  // (ambiguous). Otherwise quiet, with a note only when something can really be taken now; or, with
+  // something of yours at risk, defend.
+  if(atRisk) return risk;
   if(planqForcing(p.fen, best)) return { ...out, ambiguous: true };
   const caps = new Chess(p.fen).moves({ verbose: true }).filter(x=>x.captured).map(x=>x.to), sq = targets.find(t=>caps.includes(t));
   return { ...out, looks: sq ? { sq, best: san(best) } : null };
@@ -8197,11 +8206,13 @@ function planqRowScore(r, pick){
 }
 // the plan's score: the rows' average
 const planqPlanScore = q=>Math.round(q.rows.reduce((t, r)=>t + planqRowScore(r, +q.picks['row:' + r.key]), 0) / q.rows.length);
+const planqPieceName = (fen, sq)=>{ const x = boardMap(fen)[sq]; return x ? { p:'pawn', n:'knight', b:'bishop', r:'rook', q:'queen', k:'king' }[x.t] : 'piece'; };
 function planqNote(q, step){
   const who = q.p.side==='w' ? 'White' : 'Black';
   if(step==='urgent'){ const u = q.urgent, mate = q.info.mate!=null;
     if(u.kind==='win') return mate ? `${who} has a mate: it comes first.` : u.stop ? `${u.san} wins material: it comes first.` : `${u.san} wins material, but the general plan still holds.`;
-    if(u.kind==='defend') return mate ? `${who} must stop a mate first.` : `${who} must deal with a threat first.`;
+    if(u.kind==='defend') return mate ? `${who} must stop a mate first.` : u.stop ? `${who} must deal with a threat first.`
+      : `${u.sq ? `The ${planqPieceName(q.p.fen, u.sq)} on ${u.sq} is at risk` : `${who} has something at risk`}, but the general plan still holds.`;
     return u.looks ? `Taking on ${u.looks.sq} looks free, but Stockfish prefers ${u.looks.best}.` : 'Nothing to win or to parry right now.'; }
   if(step==='winning') return `Stockfish gives ${planqEvalText(q.info)}. Balanced sits within ±0.5.`;   // (a mate is urgent: it never gets here)
   return '';
