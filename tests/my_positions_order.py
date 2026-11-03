@@ -16,6 +16,7 @@ async def main():
         b, pg, errs = await T.page_with_app(p)
         await pg.evaluate("bgEval = ()=>new Promise(()=>{}); myName = 'TestPlayer'")
         await pg.evaluate("pgn => importPgnText(pgn)", pathlib.Path(T.SAMPLE).read_text())
+        await pg.evaluate("myGames.forEach(g=>myReached.add(g.id)); onOwnPositionsChanged()")   # (the engine held: every game's turn as if reached, so its positions count)
         # Every game a known date (newest = index 0), all mistakes already checked (so positions exist).
         await pg.evaluate("""(()=>{ const day = 864e5, now = Date.now();
           myGames.forEach((g, i)=>{ g.playedAt = now - (i+1)*day; g.verified = true; if(!g.evals) g.evals = g.sans.map(()=>({cp:0})); extractOwnPositions(g); });
@@ -55,7 +56,7 @@ async def main():
           const pos = keepMissed.positions.find(p=>p.acts.includes('analysis'));
           results.push({ a:'analysis', acc:10, ts: Date.now() - 9*864e5, key: pos.key, miss:true }); results.sort((x,y)=>x.ts-y.ts);
           const base = myGames[0];
-          for(let i=0; i<100; i++){ const g = JSON.parse(JSON.stringify(base)); g.id = 'new' + i; g.playedAt = Date.now() - i*1000; extractOwnPositions(g); myGames.push(g); }
+          for(let i=0; i<100; i++){ const g = JSON.parse(JSON.stringify(base)); g.id = 'new' + i; g.playedAt = Date.now() - i*1000; extractOwnPositions(g); myGames.push(g); myReached.add(g.id); }
           rotateMyGames();
           const k = myGames.find(g=>g.id===keepMissed.id);
           return { core: myGames.filter(g=>!g.retired).length, kept: !!k && k.retired, dropped: !myGames.some(g=>g.id===plain.id),
@@ -76,7 +77,7 @@ async def main():
         # Games kept for Replay: at most 100, the oldest go first.
         cap = await pg.evaluate("""(()=>{ const base = myGames[0], now = Date.now(), day = 864e5;
           myGames = []; results = [];
-          for(let i=0; i<230; i++){ const g = JSON.parse(JSON.stringify(base)); g.id = 'g' + i; g.playedAt = now - i*day; g.retired = false; extractOwnPositions(g); myGames.push(g); }
+          for(let i=0; i<230; i++){ const g = JSON.parse(JSON.stringify(base)); g.id = 'g' + i; g.playedAt = now - i*day; g.retired = false; extractOwnPositions(g); myGames.push(g); myReached.add(g.id); }
           // a missed position in each of the 130 oldest games
           for(let i=100; i<230; i++){ const p = myGames[i].positions.find(p=>p.acts.includes('analysis')); results.push({ a:'analysis', acc:10, ts: now - 30*day + i, key: p.key, miss:true }); }
           results.sort((x,y)=>x.ts-y.ts); onOwnPositionsChanged(); rotateMyGames();

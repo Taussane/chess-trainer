@@ -173,7 +173,7 @@ async def main():
           const lines = t.split('\\n');   // total ≈ +0.8 for this table's position
           engineAspectsBg = ()=>Promise.resolve(lines);
           const fen = 'r1bq1rk1/pp2bppp/2n1pn2/3p4/2PP4/2N1PN2/PP1B1PPP/R2QKB1R w KQ - 0 8';
-          myGames.push({ id:'qtest', evals:[{cp:80}, {cp:900}] });
+          myGames.push({ id:'qtest', evals:[{cp:80}, {cp:900}] }); myReached.add('qtest');   // (its turn: games are checked one at a time)
           const near = { key:'own:qtest:1', fen, gameId:'qtest', ply:1 }, far = { key:'own:qtest:2', fen, gameId:'qtest', ply:2 };
           quietOwn(near); quietOwn(far); await new Promise(r=>setTimeout(r, 400));
           const out = [quietOwn(near), quietOwn(far)]; myGames.pop(); return out; }""", TABLE)
