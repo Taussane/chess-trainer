@@ -260,6 +260,11 @@
   .sup-thanks{margin:4px 2px 0; text-align:center; color:var(--text-mute); font-size:0.88rem; line-height:1.5;}
   /* the home page's Donate badge, under the exercises: Ko-fi's button look, opening our Donate page */
   .home-donate{display:flex; justify-content:flex-start; margin:18px 0 4px;}
+  /* the phone's home page: a few pixels less between and inside the cards, so it fits a phone's screen without scrolling */
+  @media (max-width:1023.98px), (max-aspect-ratio:4/3){   /* (not the desktop layout) */
+    .wrap.home .cards{gap:8px;} .wrap.home .card{padding-block:10px;}
+    .wrap.home .routine{margin-bottom:12px;} .wrap.home .home-donate{margin-top:14px;}
+  }
   .donate-badge{display:inline-flex; align-items:center; gap:6px; padding:6px 14px 6px 10px; border:none; border-radius:999px; background:#C9A227; color:#fff; font:inherit; font-size:0.84rem; font-weight:700; cursor:pointer;}
   .donate-badge img{width:20px; height:auto;} .kofi-btn img{width:28px; height:auto;}
   .kofi-slot{display:flex; justify-content:center;}
