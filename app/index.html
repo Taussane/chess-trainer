@@ -4314,9 +4314,9 @@ function sideGo(where){
   if(where==='metrics') return loadMetrics();
   render();
 }
-document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('.faq-link')){ screen = 'faq'; render(); } });   // the FAQ, from the links (beta)
+document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('.faq-link')){ screen = 'faq'; render(); } });   // the FAQ, from the links
 function siteLinks(){
-  return `${BETA ? `<button class="link-plain faq-link">FAQ</button> · ` : ''}${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
+  return `<button class="link-plain faq-link">FAQ</button> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
 }
 function renderSide(){
   if(!DESK) return;
@@ -4709,7 +4709,7 @@ function accountSection(){
           ? `</div><div class="mg-confirm"><span>Delete your account, progress and games for good?</span><button class="btn small danger" id="pfDeleteYes">Delete</button><button class="btn small ghost" id="pfDeleteNo">Keep</button></div>`
           : `<button class="link-btn quiet pf-delete" id="pfDelete">Delete my account</button></div>`}`);
 }
-// ================= FAQ (beta: from the profile) =================
+// ================= FAQ (from the links at the bottom) =================
 // How the app works and the theory behind it: sections of questions, each opening its answer.
 const FAQ = [
   ['About the app', [
@@ -4719,7 +4719,7 @@ const FAQ = [
     ['Where do the ideas come from?', "From the classic books on strategy (Steinitz, Nimzowitsch, Capablanca, Kotov, Silman, Dvoretsky, Aagaard, Shereshevsky) and from Stockfish's former evaluation, which counts the same things in its own way."],
   ]],
   ['The thinking process', [
-    ['Is there an order to thinking about a position?', "Yes. The books agree on one, and each exercise trains one step of it:<ol><li><b>Is anything urgent?</b> Checks, captures and threats, for both sides (Plan finder, phase 1).</li><li><b>What's different between the two sides?</b> The imbalances (Imbalance reading).</li><li><b>Who's better?</b> The imbalances weighed together decide your attitude: the side with the edge plays to use it, the other defends (Plan finder, question 2; Position evaluation).</li><li><b>What's the plan?</b> Trade or keep pieces; open and attack, or keep it closed and improve (Plan finder, question 3).</li><li><b>Which moves?</b> Candidate moves that serve the plan, then the choice, checking each for a blunder (Candidate moves, Move selection).</li></ol>"],
+    ['Is there an order to thinking about a position?', "Yes. The books agree on one, and each exercise trains one step of it:<ol><li><b>Is anything urgent?</b> Checks, captures and threats, for both sides (Plan finder, phase 1).</li><li><b>What's different between the two sides?</b> The imbalances (Imbalance reading).</li><li><b>Who's better?</b> The imbalances weighed together decide your attitude: the side with the edge plays to use it, the other defends (Plan finder, phase 1).</li><li><b>What's the plan?</b> Trade or keep pieces; open and attack, or keep it closed and improve (Plan finder, phase 2).</li><li><b>Which moves?</b> Candidate moves that serve the plan, then the choice, checking each for a blunder (Candidate moves, Move selection).</li></ol>"],
     ['Why separate exercises, not one position from start to finish?', "Each step gets its own review right away. On a single position, the review of one step would give away the next, and a long chain makes each round slow. The daily routine runs the steps in order, each on its own position."],
     ["What about the opponent's plan?", "Checking the opponent's checks, captures and threats (step 1) is the first part of prophylaxis. The full question, \"what does my opponent want?\", may become an exercise of its own later."],
   ]],
@@ -4733,8 +4733,8 @@ const FAQ = [
   ]],
   ['Plan finder', [
     ['What does it ask?', "Two phases on a master position, in the order the books teach. First: is anything urgent, and who's better. Then the plan: trade or keep pieces, and open and attack or keep it closed and improve. Each of the four rows counts for a quarter of the score."],
-    ['When does a position stop after phase 1?', "When a piece or more, or a mate, is at stake: then the threat is the plan, and phase 1's two rows count half each. A pawn or two is noted, and the plan follows."],
-    ['How does the app know something can be won?', "Two checks: something can be won by the count of threats, and Stockfish's best move actually takes it. A pawn that looks free but that Stockfish doesn't take is poisoned, or there's better: the answer is \"quiet\", and the review says what Stockfish prefers."],
+    ['When does a position stop after phase 1?', "When a piece or more, or a mate, is at stake: then the threat is the plan, and phase 1's two rows count half each. A pawn or two, to win or at risk, is noted, and the plan follows."],
+    ['How does the app know something is urgent?', "Two checks must agree. The count of threats (Other threats, drawn on the board) says what each side could win. Stockfish then plays the position for the side to move, and again as if the other side were to move, to see what each would really win. Positions where they disagree are left out, so every answer can be shown on the board. A pawn that looks free but that Stockfish doesn't take is poisoned, or there's better: the answer is \"quiet\", and the review says what Stockfish prefers."],
     ['What counts as "balanced"?', "Stockfish within ±0.5 (half a pawn). Close to that line, the neighbouring answer gets half the points."],
     ['Why trades, and why dynamic or positional?', "They're the two decisions the imbalances lead to:<ul><li><b>Static edges</b> (material, better pawns) last, and grow as the board empties: trade pieces, keep it closed, improve, no hurry.</li><li><b>Dynamic edges</b> (better pieces, a development lead, a weak enemy king) fade: keep your pieces, open lines and attack before the opponent catches up.</li><li><b>Space</b> is the static edge that needs pieces on: the cramped side wants trades, the side with more room squeezes slowly.</li><li>In the endgame, <b>an active king</b> wants trades and goes after the pawns; a passive one comes into play first.</li></ul>"],
     ['How is the answer decided?', "Each imbalance votes for the side to play (+ counts 1, ++ counts 2). A row goes to a side when its votes add up to 2 or more; otherwise the answer is Either. One vote short gives half the points for that side."],
