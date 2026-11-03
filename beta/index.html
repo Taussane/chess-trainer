@@ -4416,10 +4416,10 @@ function diagSample(){
   { const now = Date.now(), gap = now - DIAG.lastTick; DIAG.lastTick = now; if(gap > 12000 && DIAG.pauses.length < 60) DIAG.pauses.push(`${diagT()}s: ${Math.round(gap / 1000)}s since the last tick (page slowed down or frozen)`); }
   if(typeof myGames==='undefined') return;
   const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), c = countsOf(myPositions.filter(p=>!retired.has(p.gameId)));
-  const row = { t: diagT(), games: myGames.length, queued: myGames.filter(g=>g.status==='queued').length, engineQueue: sfQueue.length + bgQueue.length,
+  const row = { t: diagT(), games: myGames.length, done: myDone.size, queued: myGames.filter(g=>g.status==='queued').length, engineQueue: sfQueue.length + bgQueue.length,
     imbalances: c.imbalances, planq: c.planq, candidates: c.candidates, final: c.final };
   const last = DIAG.samples[DIAG.samples.length - 1];
-  if(!last || ['games', 'queued', 'imbalances', 'planq', 'candidates', 'final'].some(k=>last[k]!==row[k])) DIAG.samples.push(row);   // (only changes kept)
+  if(!last || ['games', 'done', 'queued', 'imbalances', 'planq', 'candidates', 'final'].some(k=>last[k]!==row[k])) DIAG.samples.push(row);   // (only changes kept)
   if(DIAG.samples.length > 300) DIAG.samples.splice(1, 1);
   ['imbalances', 'planq', 'candidates', 'final'].forEach(a=>{ if(row[a] > 0) diagMark('first ' + a); });
   if(row.games && !row.queued && !myBgRunning) diagMark('games analysed');
@@ -4437,8 +4437,8 @@ function diagReport(){
   if(DIAG.waits.length) L.push('', 'Plan finder waits (ms): ' + DIAG.waits.join(', '));
   L.push('', 'Page hidden / visible: ' + (DIAG.away.length ? DIAG.away.join(', ') : 'always visible') + (document.hidden ? ' (hidden now)' : ''));
   if(DIAG.pauses.length) L.push('Page paused by the browser:', ...DIAG.pauses.map(x=>'  ' + x));
-  L.push('', 'Positions found (s: games, queued, engine queue | imbalances, plan, candidates, selection):');
-  DIAG.samples.forEach(r=>L.push(`  ${r.t}s: ${r.games}, ${r.queued}, ${r.engineQueue} | ${r.imbalances}, ${r.planq}, ${r.candidates}, ${r.final}`));
+  L.push('', 'Positions found (s: games, done, not analysed, engine queue | imbalances, plan, candidates, selection):');
+  DIAG.samples.forEach(r=>L.push(`  ${r.t}s: ${r.games}, ${r.done}, ${r.queued}, ${r.engineQueue} | ${r.imbalances}, ${r.planq}, ${r.candidates}, ${r.final}`));
   return L.join('\n');
 }
 function diagHtml(){ return `<pre class="diag-pre">${diagReport().replace(/</g, '&lt;')}</pre>`; }
@@ -5648,7 +5648,7 @@ const ownPositionsOf = g=>(g.positions||[]).filter(p=>Array.isArray(p.acts)).map
 const gameFinished = g=>myDone.has(g.id) || (g.status!=='queued' && !(g.positions||[]).some(p=>p.pending)
   && (g.positions||[]).every(p=>!Array.isArray(p.acts) || !p.acts.includes('analysis') || (ownStored(p, 'quietChk')!==undefined && ownStored(p, 'planqChk')!==undefined)));
 function onOwnPositionsChanged(){
-  myPositions = myGames.filter(gameFinished).flatMap(ownPositionsOf);   // (a game's positions come in once its turn is over: myBackground)
+  myPositions = myGames.filter(g=>myReached.has(g.id) || gameFinished(g)).flatMap(ownPositionsOf);   // (a game's positions come in from its turn on, each as it's validated: myBackground)
   myPosVersion++;
   statOwnGames();
   refreshPools(true);
@@ -5708,33 +5708,41 @@ async function myGameTurn(g0){
     if(evals){ g.evals = evals; g.status = 'evaluated'; g.evalBy = 'scan'; } else g.status = 'failed';
     extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged();
   }
-  // 2. its likely mistakes checked, then Move selection's searches
+  // then each kind of check in turn, cheapest first; every position counts as soon as it's validated
   const open = x=>x.pending && !myTried.has(job(x));
-  for(;;){
-    g = currentGame(id); if(!g) return 'gone';
-    const p = (g.positions||[]).find(x=>open(x) && x.prep!=='final') || (g.positions||[]).find(open);
-    if(!p) break;
-    myTried.add(job(p));
-    let r = null;
-    try{ r = p.prep==='final' ? await diagTimed('selection: check of the 4 moves', prepFinal(p)) : await diagTimed('candidates: mistake check', checkMistake(p)); }
-    catch(e){ r = 0; }   // a position that can't be checked is left out
-    if(r==null){ myTried.delete(job(p)); return 'retry'; }
-    g = currentGame(id); if(!g) return 'gone';
-    if(p.prep==='final') (g.finalOk = g.finalOk || {})[p.ply] = r;
-    else (g.checks = g.checks || {})[p.ply] = r;
-    extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged();
-  }
-  // 3. Imbalance reading's and the Plan finder's checks (no engine, except the best move when the game hasn't it)
-  for(const p of ownPositionsOf(currentGame(id) || { positions: [] }).filter(x=>posIn(x, 'analysis'))){
-    quietNow(p);
+  const runChecks = async kind=>{   // kind: 'check' (likely mistakes: Candidate moves) or 'final' (Move selection's searches)
+    for(;;){
+      g = currentGame(id); if(!g) return 'gone';
+      const p = (g.positions||[]).find(x=>open(x) && (kind==='final' ? x.prep==='final' : x.prep!=='final'));
+      if(!p) return 'ok';
+      myTried.add(job(p));
+      let r = null;
+      try{ r = p.prep==='final' ? await diagTimed('selection: check of the 4 moves', prepFinal(p)) : await diagTimed('candidates: mistake check', checkMistake(p)); }
+      catch(e){ r = 0; }   // a position that can't be checked is left out
+      if(r==null){ myTried.delete(job(p)); return 'retry'; }
+      g = currentGame(id); if(!g) return 'gone';
+      if(p.prep==='final') (g.finalOk = g.finalOk || {})[p.ply] = r;
+      else (g.checks = g.checks || {})[p.ply] = r;
+      extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged();
+    }
+  };
+  const quietOnes = ()=>ownPositionsOf(currentGame(id) || { positions: [] }).filter(x=>posIn(x, 'analysis'));
+  // 2. Imbalance reading (no engine)
+  for(const p of quietOnes()){ if(quietOwn(p)===undefined){ quietNow(p); onOwnPositionsChanged(); } await tick(); }
+  // 3. its likely mistakes checked (Candidate moves; Move selection's checks follow from them)
+  { const r = await runChecks('check'); if(r!=='ok') return r; }
+  // 4. the Plan finder (no engine, except a short search for the best move when the game hasn't it)
+  for(const p of quietOnes()){
     if(planqOwnOk(p)===undefined && planqNeedsLine(p)){
       const res = await bgEval(p.fen, { multipv: 1, movetime: 400 });
       if(evalFailed(res)) return 'retry';
       planqShortStore(p, res.lines[0] || null);
-      planqOwnOk(p);
     }
+    if(planqOwnOk(p)===true) onOwnPositionsChanged();
     await tick();   // (the page answers between positions)
   }
+  // 5. Move selection's searches (the longest)
+  { const r = await runChecks('final'); if(r!=='ok') return r; }
   diagJob('one game, all its checks', performance.now() - t0);
   return 'ok';
 }

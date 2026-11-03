@@ -1,6 +1,6 @@
 # How "My games" fills up after an upload, and what happens while it does:
-#  1. right after the upload (engine busy elsewhere): no position yet; a game's positions come in once
-#     its turn is over (all its checks, every exercise), game by game;
+#  1. right after the upload (engine busy elsewhere): only the game being worked on has positions, each
+#     as it's validated; the others wait for their turn, game by game;
 #  2. the background goes game by game, Lichess's analysed games first: their flagged mistakes are all checked
 #     before it quick-scans any other game;
 #  3. when every position was played today, the review's Next waits, and comes back by itself
@@ -25,7 +25,8 @@ async def main():
         print('right after upload:', st)
         if not st['gamesWithBA'] or st['gamesWithBA'] > st['analysed'] or st['unanalysedWithPositions']: fails.append(f"positions should come only from analysed games: {st}")
         if not st['flagged']: fails.append('no likely mistakes flagged from Lichess evaluations')
-        if any(st['c'].values()): fails.append(f"a game's positions should only come in once its turn is over: {st['c']}")
+        early = await pg.evaluate("[...new Set(myPositions.map(p=>p.gameId))].filter(id=>!myReached.has(id)).length")
+        if early: fails.append(f"positions from {early} games not reached yet: games are done one at a time")
         # Release the engine: all checks must come before the first quick scan.
         await pg.evaluate("__hold=false")
         # the first finished game: its positions in, the exercises open
