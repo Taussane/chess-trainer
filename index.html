@@ -5641,9 +5641,12 @@ function divideGame(fens){
 }
 
 // --- Background work: scan the games Lichess hasn't analysed ---
+const ownPositionsOf = g=>(g.positions||[]).filter(p=>Array.isArray(p.acts)).map(p=>({ ...p, last: p.last ? { squares:p.last } : null }));
+// A game whose checks are all done: in this visit (myBackground), or kept with it from before (no engine needed to show it)
+const gameFinished = g=>myDone.has(g.id) || (g.status!=='queued' && !(g.positions||[]).some(p=>p.pending)
+  && (g.positions||[]).every(p=>!Array.isArray(p.acts) || !p.acts.includes('analysis') || (ownStored(p, 'quietChk')!==undefined && ownStored(p, 'planqChk')!==undefined)));
 function onOwnPositionsChanged(){
-  myPositions = myGames.flatMap(g=>(g.positions||[]).filter(p=>Array.isArray(p.acts)))
-    .map(p=>({ ...p, last: p.last ? { squares:p.last } : null }));
+  myPositions = myGames.filter(gameFinished).flatMap(ownPositionsOf);   // (a game's positions come in once its turn is over: myBackground)
   myPosVersion++;
   statOwnGames();
   refreshPools(true);
@@ -5720,7 +5723,7 @@ async function myGameTurn(g0){
     extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged();
   }
   // 3. Imbalance reading's and the Plan finder's checks (no engine, except the best move when the game hasn't it)
-  for(const p of myPositions.filter(x=>x.gameId===id && posIn(x, 'analysis'))){
+  for(const p of ownPositionsOf(currentGame(id) || { positions: [] }).filter(x=>posIn(x, 'analysis'))){
     quietNow(p);
     if(planqOwnOk(p)===undefined && planqNeedsLine(p)){
       const res = await bgEval(p.fen, { multipv: 1, movetime: 400 });

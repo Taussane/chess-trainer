@@ -1,8 +1,6 @@
 # How "My games" fills up after an upload, and what happens while it does:
-#  1. right after the upload (engine busy elsewhere): games Lichess analysed already have their
-#     Board analysis and Candidate moves positions (Lichess's analysis is trusted), Final choice
-#     waits for each mistake's top-5 search; games not analysed have no position yet (none appears
-#     and later goes); Final choice can't be opened yet and says why;
+#  1. right after the upload (engine busy elsewhere): no position yet; a game's positions come in once
+#     its turn is over (all its checks, every exercise), game by game;
 #  2. the background goes game by game, Lichess's analysed games first: their flagged mistakes are all checked
 #     before it quick-scans any other game;
 #  3. when every position was played today, the review's Next waits, and comes back by itself
@@ -27,17 +25,17 @@ async def main():
         print('right after upload:', st)
         if not st['gamesWithBA'] or st['gamesWithBA'] > st['analysed'] or st['unanalysedWithPositions']: fails.append(f"positions should come only from analysed games: {st}")
         if not st['flagged']: fails.append('no likely mistakes flagged from Lichess evaluations')
-        if not st['c']['candidates']: fails.append("Lichess's mistakes should be in Candidate moves at once")
-        if st['c']['final']: fails.append('Final choice used before its search')
-        await pg.click('#homeBtn'); await pg.click('[data-src="mine"]'); await pg.wait_for_timeout(100)
-        cards = await pg.evaluate("[...document.querySelectorAll('.card')].map(c=>c.dataset.go+':'+(c.disabled?'off':'on')+':'+c.querySelector('.card-desc').innerText)")
-        print('home:', cards)
-        on = lambda a: any(c.startswith(a + ':on') for c in cards)
-        if not (on('imbalances') and on('planq') and on('candidates')): fails.append(f'Imbalance reading, the Plan finder and Candidate moves should open at once: {cards}')
-        if ':off:Finding positions' not in cards[3]: fails.append(f'Move selection should wait: {cards}')
-        await pg.screenshot(path=str(T.SHOTS/'fast_1_home_waiting.png'))
+        if any(st['c'].values()): fails.append(f"a game's positions should only come in once its turn is over: {st['c']}")
         # Release the engine: all checks must come before the first quick scan.
         await pg.evaluate("__hold=false")
+        # the first finished game: its positions in, the exercises open
+        for _ in range(80):
+            if await pg.evaluate("myDone.size > 0 && myPositions.length > 0"): break
+            await pg.wait_for_timeout(100)
+        await pg.click('#homeBtn'); await pg.click('[data-src="mine"]'); await pg.wait_for_timeout(100)
+        cards = await pg.evaluate("[...document.querySelectorAll('.card')].map(c=>c.dataset.go+':'+(c.disabled?'off':'on')+':'+c.querySelector('.card-desc').innerText)")
+        print('home after the first game:', cards, await pg.evaluate("countsOf(myPositions)"))
+        await pg.screenshot(path=str(T.SHOTS/'fast_1_home_waiting.png'))
         for _ in range(120):
             done = await pg.evaluate("!myWorkPending() && !myBgRunning")
             if done: break
@@ -61,8 +59,10 @@ async def main():
         if n != [True, 'All played today']: fails.append(f'Next should wait: {n}')
         await pg.screenshot(path=str(T.SHOTS/'fast_2_next_waiting.png'))
         # A new game arrives: Next comes back by itself.
-        await pg.evaluate("""(()=>{ const g = JSON.parse(JSON.stringify(myGames[0])); g.id='newgame1'; g.checks={}; g.status='evaluated'; extractOwnPositions(g); myGames.push(g); onOwnPositionsChanged(); })()""")
-        await pg.wait_for_timeout(300)
+        await pg.evaluate("""(()=>{ const g = JSON.parse(JSON.stringify(myGames[0])); g.id='newgame1'; g.checks={}; g.status='evaluated'; extractOwnPositions(g); myGames.push(g); onOwnPositionsChanged(); myBackground(); })()""")
+        for _ in range(100):   # (its turn: its checks, then its positions)
+            if not await pg.evaluate("document.getElementById('nextPos').disabled"): break
+            await pg.wait_for_timeout(100)
         n = await pg.evaluate("[document.getElementById('nextPos').disabled, document.getElementById('nextPos').innerText]")
         print('after a new game:', n)
         if n[0]: fails.append(f'Next did not come back: {n}')
