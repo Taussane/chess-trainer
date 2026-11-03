@@ -4372,12 +4372,15 @@ function progressReady(){ if(!progressLoaded){ progressLoaded = true; progressJu
 // ---- Timing log (the owner's, in the profile): how long the page takes to get your games' positions ready ----
 // Milestones from the page's start, the background work's searches (count, average, longest), the Plan finder's
 // waits, and every 5 s the positions found per exercise. Kept on this device for the session; "Copy" gives the report.
-const DIAG = { start: new Date().toISOString(), t0: Date.now(), marks: {}, jobs: {}, waits: [], samples: [] };
+const DIAG = { start: new Date().toISOString(), t0: Date.now(), marks: {}, jobs: {}, waits: [], samples: [], away: [], pauses: [], lastTick: Date.now() };
+// The page out of sight (another tab or app, the screen off): browsers slow down or freeze a hidden page, its engine included
+document.addEventListener('visibilitychange', ()=>{ if(DIAG.away.length < 60) DIAG.away.push((document.hidden ? 'hidden at ' : 'visible at ') + diagT() + 's'); });
 const diagT = ()=>Math.round((Date.now() - DIAG.t0) / 100) / 10;   // seconds since the page started
 function diagMark(k){ if(DIAG.marks[k]==null) DIAG.marks[k] = diagT(); }
 function diagJob(kind, ms){ const j = DIAG.jobs[kind] = DIAG.jobs[kind] || { n: 0, ms: 0, max: 0 }; j.n++; j.ms += ms; j.max = Math.max(j.max, Math.round(ms)); }
 const diagTimed = (kind, promise)=>{ const t = performance.now(); return promise.then(r=>{ diagJob(kind, performance.now() - t); return r; }); };
 function diagSample(){
+  { const now = Date.now(), gap = now - DIAG.lastTick; DIAG.lastTick = now; if(gap > 12000 && DIAG.pauses.length < 60) DIAG.pauses.push(`${diagT()}s: ${Math.round(gap / 1000)}s since the last tick (page slowed down or frozen)`); }
   if(typeof myGames==='undefined') return;
   const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), c = countsOf(myPositions.filter(p=>!retired.has(p.gameId)));
   const row = { t: diagT(), games: myGames.length, queued: myGames.filter(g=>g.status==='queued').length, engineQueue: sfQueue.length + bgQueue.length,
@@ -4399,6 +4402,8 @@ function diagReport(){
   L.push('', 'Searches (count, average ms, longest ms):');
   Object.entries(DIAG.jobs).forEach(([k, j])=>L.push(`  ${k}: ${j.n}, ${Math.round(j.ms / j.n)}, ${j.max}`));
   if(DIAG.waits.length) L.push('', 'Plan finder waits (ms): ' + DIAG.waits.join(', '));
+  L.push('', 'Page hidden / visible: ' + (DIAG.away.length ? DIAG.away.join(', ') : 'always visible') + (document.hidden ? ' (hidden now)' : ''));
+  if(DIAG.pauses.length) L.push('Page paused by the browser:', ...DIAG.pauses.map(x=>'  ' + x));
   L.push('', 'Positions found (s: games, queued, engine queue | imbalances, plan, candidates, selection):');
   DIAG.samples.forEach(r=>L.push(`  ${r.t}s: ${r.games}, ${r.queued}, ${r.engineQueue} | ${r.imbalances}, ${r.planq}, ${r.candidates}, ${r.final}`));
   return L.join('\n');
