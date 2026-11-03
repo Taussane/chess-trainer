@@ -147,6 +147,11 @@
     background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 14px;
   }
   .card:hover{border-color:var(--accent);}
+  /* the Strategy explorer's entry: a tool, not an exercise: inverted (gold background, dark text) */
+  .card.xp-entry{background:var(--accent); border-color:var(--accent); color:var(--on-accent);}
+  .card.xp-entry:hover{filter:brightness(1.06);}
+  .card.xp-entry .card-glyph, .card.xp-entry .card-desc{color:var(--on-accent);} .card.xp-entry .card-desc{opacity:.8;}
+  .card.xp-entry .title-badge{color:var(--on-accent); border-color:var(--on-accent);}
   .card-glyph{font-size:1.9rem; line-height:1; width:36px; text-align:center; color:var(--accent);}
   .act-icon{width:1em; height:1em; vertical-align:-0.15em;}
   .card-title{display:block; font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
