@@ -148,6 +148,11 @@
   .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
   /* both modes alike: the same heading, row spacing and size (a word on row n sits at the same height in both) */
   .wrap[data-scr=explorer] .aspects.plan{margin:0; padding-top:6px;}
+  .xp-plan .asp-grid{grid-template-rows:auto auto auto auto; row-gap:6px;}
+  .xp-plan .asp-badge.xp-ans{min-width:4.4em; font-weight:600; font-size:0.8rem; letter-spacing:0; padding:2px 6px;}
+  .xp-plan .asp-badge.xp-hot{border-color:var(--accent); color:var(--accent);} .xp-plan .asp-badge.xp-unclear{color:var(--text-mute);}
+  .xp-plan .asp-item.xp-pick{cursor:pointer; border-radius:6px; padding:0 4px; margin:0 -4px;} .xp-plan .asp-item.xp-pick .asp-name{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
+  .xp-plan-note{margin:2px 0 0; font-size:0.82rem; line-height:1.3; color:var(--text-mute); min-height:2.6em;}
   .wrap[data-scr=explorer] .aspects.plan .asp-head{margin-bottom:8.2px;}   /* (the plans on the review grid's lines: the 1st level with Material…) */
   .wrap[data-scr=explorer] .plan-rows{row-gap:11.45px;}   /* (29.45 px from line to line, as the grid) */
   .wrap[data-scr=explorer] .plan-row{height:24px; align-items:center; padding:0 6px; margin:-3px -6px;}   /* (as the grid's items: 24 px, 3 px into the gaps) */
@@ -7685,6 +7690,77 @@ function explorerAlignPlans(app){
     const a = centre(want), b = centre(el); if(a!=null && b!=null) row.style.transform = `translateY(${(a - b).toFixed(1)}px)`;
   }
 }
+// Plans, as the Plan finder reads them, for the side at the bottom of the board (as if it were its turn): phase 1
+// (anything urgent, with Stockfish's check of both sides; who's better) and the plan (trades, type of play), each
+// answer on the imbalance grid's lines, its reason in the line below; tap a row for its reason and marks.
+const xpThreat = new Map();   // FEN -> { us, them } Stockfish's lines (0.5 s each) for question 1's check
+function explorerThreatLines(fenX){
+  let t = xpThreat.get(fenX);
+  if(!t){
+    t = { us: undefined, them: undefined }; xpThreat.set(fenX, t);
+    const ask = (f, k)=>{ if(!f){ t[k] = null; return; } withPrep('front', ()=>queueJob({ fen: f, multipv: 1, movetime: 500, kind: 'explorer: threats', resolve: r=>{ t[k] = r && !r.failed && r.lines && r.lines[0] || null; if(screen==='explorer') render(); } })); };
+    ask(fenX, 'us'); ask(flipSide(fenX), 'them'); pumpEngineQueue();
+  }
+  return t;
+}
+function explorerPlan(p, mine, info){
+  const fenX = p.side===mine ? p.fen : flipSide(p.fen);   // (its turn, or as if it were)
+  const pX = { ...p, fen: fenX || p.fen, side: mine }, vals = explorerVals(pX.fen);
+  if(!vals || vals.special || !info) return null;
+  const t = fenX ? explorerThreatLines(fenX) : { us: null, them: null };
+  pX.best = t.us===undefined ? undefined : t.us ? t.us.uci : null;
+  const q = planqMake(pX, info, vals, new Set());
+  q.pending = !fenX ? false : t.us===undefined || t.them===undefined || !!q.urgent.pending;
+  q.noTurn = !fenX;   // (the other side is in check: no such question)
+  q.agrees = q.pending || q.noTurn ? true : !q.urgent.ambiguous && planqEngineAgrees(q.urgent, t.us, t.them, fenX);
+  return q;
+}
+function explorerPlanHtml(q, x, hidden){
+  const who = q ? (q.p.side==='w' ? 'White' : 'Black') : 'White';
+  const reasons = q && planqReasons(q.rows, q.phase);
+  const badge = (text, cls)=>`<span class="asp-badge xp-ans ${cls || 'eq'}">${text}</span>`;
+  const cell = (key, name, body, col, row)=>`<div class="asp-item${q && !hidden ? ' xp-pick' : ''}${x && x.pqRow===key ? ' sel' : ''}" data-pq="${key}" style="grid-column:${col}; grid-row:${row}"${q && !hidden ? ' role="button" tabindex="0"' : ''}><span class="asp-name">${name}</span>${body}</div>`;
+  let urgent = badge('…'), better = badge('…'), trades = badge('…'), play = badge('…'), note = '&nbsp;';
+  if(q){
+    const u = q.urgent, unclear = !q.pending && !q.noTurn && !q.agrees;
+    urgent = q.noTurn ? badge('—') : q.pending ? badge('…') : unclear ? badge('?', 'eq xp-unclear') : badge(u.kind==='win' ? 'Win' : u.kind==='defend' ? 'Defend' : 'Quiet', u.kind ? 'eq xp-hot' : 'eq');
+    const w = planqWinner(q.info), me = q.p.side;
+    better = badge(w==='=' ? 'Equal' : w==='w' ? 'White' : 'Black', w==='=' ? 'eq' : w);
+    const row = k=>q.rows.find(r=>r.key===k), ans = r=>r.answer ? PLANQ_ROWS.find(y=>y.key===r.key).short[r.answer] : 'Either';
+    trades = badge(ans(row('pieces'))); play = badge(ans(row('approach')));
+    const view = x && x.pqRow;
+    const why = r=>{ const v = planqWhy(r, reasons[r.key]); return v.inline ? v.text.replace(/\{(\d)\}/g, (_, i)=>{ const n = planqName(v.keys[+i]); return +i===0 && v.text.startsWith('{0}') ? n[0].toUpperCase() + n.slice(1) : n; }) : v.text; };
+    note = view==='better' ? planqNote(q, 'winning')
+      : view==='pieces' || view==='approach' ? why(row(view))
+      : q.noTurn ? `${me==='w' ? 'Black' : 'White'} must answer the check first.`
+      : q.pending ? 'Stockfish is checking threats, for both sides…'
+      : unclear ? 'Unclear: Stockfish sees tactics here that the threats count doesn\'t show.'
+      : planqNote(q, 'urgent');
+  }
+  return `<div class="aspects xp-plan"${hidden ? ' style="visibility:hidden"' : ' id="aspects"'}>
+      <div class="asp-grid">
+        <div class="asp-head" style="grid-column:1; grid-row:1">First, for ${who}</div>
+        ${cell('urgent', 'Urgent', urgent, 1, 2)}${cell('better', 'Who\'s better', better, 1, 3)}
+        <div class="asp-head" style="grid-column:2; grid-row:1">Plan</div>
+        ${cell('pieces', 'Trades', trades, 2, 2)}${cell('approach', 'Play', play, 2, 3)}
+        <p class="xp-plan-note" style="grid-column:1 / -1; grid-row:4">${note}</p>
+      </div>
+    </div>`;
+}
+// the marks a plan row draws: the threats for question 1, the reason's criterion for the plan's rows
+function explorerPlanMarks(q, row){
+  if(!q || !row) return null;
+  if(row==='urgent') return 'threats';
+  if(row==='pieces' || row==='approach'){ const r = q.rows.find(y=>y.key===row), v = planqWhy(r, planqReasons(q.rows, q.phase)[r.key]); const k = v.keys[0]; return k && k.key && hasMarks(q.p.fen, k.key) ? k.key : null; }
+  return null;
+}
+// Imbalances: the decisive ones (the review's full points: every ++, and the + ones when they fit among the 3)
+function decisiveKeys(vals){
+  if(!vals) return [];
+  const xs = ASPECTS.filter(x=>!isOff(vals, x)), lv = x=>Math.abs(aspectLevel(vals[x.key], x.key));
+  const big = xs.filter(x=>lv(x)===2), small = xs.filter(x=>lv(x)===1);
+  return big.concat(small.length <= Math.max(0, ASP_PICK_MAX - big.length) ? small : []).map(x=>x.key);
+}
 function renderExplorer(){
   explorerInit();
   const app = document.getElementById('app'), x = explorer, p = explorerPos(), fen = p.fen;
@@ -7703,9 +7779,11 @@ function renderExplorer(){
   const best = line && line.uci;
   const depth = g.game_over() ? '' : depthBtnHtml(ev, fen);   // the engine's depth (tap: what it means)
   const planInfo = info || x.lastInfo;
+  const pq = x.mode==='plans' ? explorerPlan(p, mine, planInfo) : null;
+  if(x.mode==='plans'){ x.aspView = explorerPlanMarks(pq, x.pqRow); x.aspSide = null; }
   const body = x.mode==='imbalances'
     ? aspectsGridHtml(vals, null, ASPECTS.length, !vals, x.aspView, vals && fen)
-    : vals && planInfo ? planHtml(planFor({ ...p, side: mine }, vals, planInfo), x.aspView, false, false, fen) : planHtml(null, null, false, true);
+    : explorerPlanHtml(pq, x, false);
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
@@ -7715,7 +7793,8 @@ function renderExplorer(){
     ${boardHtml(false).replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct, x.flip))}
     ${stackedPanel(`${explorerModesHtml(x)}${body}${explorerNavHtml(x, depth, depthNoteHtml(x, ev, fen))}`,
       [`${explorerModesHtml(x)}${aspectsGridHtml(null, null, 0, true)}${explorerNavHtml(x)}`,
-       `${explorerModesHtml(x)}${planHtml(null, null, false, true)}${explorerNavHtml(x)}`])}`;
+       `${explorerModesHtml(x)}${explorerPlanHtml(null, null, true)}${explorerNavHtml(x)}`])}`;
+  if(x.mode==='imbalances') decisiveKeys(vals).forEach(k=>{ const b = app.querySelector(`#aspects .asp-item[data-asp="${k}"] .asp-badge`); if(b) b.classList.add('ok'); });   // (ringed as in the review: the decisive ones)
   (x.changed || []).forEach(k=>{ const b = app.querySelector(`#aspects .asp-item[data-asp="${k}"] .asp-badge`); if(b) b.classList.add('xp-turn'); }); x.changed = [];
   // every imbalance can be picked, even with nothing to draw in this position: the one picked stays as you play on
   app.querySelectorAll('#aspects .asp-item:not(.off):not(.pickable)').forEach(el=>{ el.classList.add('pickable'); el.setAttribute('role', 'radio'); el.setAttribute('aria-checked', String(x.aspView===el.dataset.asp)); el.tabIndex = 0; });
@@ -7738,13 +7817,14 @@ function renderExplorer(){
   if(best) drawArrows(top, [{ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }], 'xb_');
   wireDepthBtn(x);
   xpBarEase(pct);
-  if(x.mode==='plans') explorerAlignPlans(app);
+  app.querySelectorAll('#aspects .xp-pick').forEach(el=>{ const go = ()=>{ x.pqRow = x.pqRow===el.dataset.pq ? null : el.dataset.pq; x.aspPiece = x.aspKing = null; render(); };
+    el.onclick = go; el.onkeydown = e=>{ if(e.key==='Enter' || e.key===' '){ go(); e.preventDefault(); } }; });
   const db = app.querySelector('.layer:not(.ghost) .depth-btn'); if(db) app.style.setProperty('--xp-btn-h', db.offsetHeight + 'px');
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ screen = 'home'; render(); });
   on('xpBack', ()=>explorerGo(x.at - 1)); on('xpFwd', ()=>explorerGo(x.at + 1));
   on('xpFlip', ()=>{ x.flip = !x.flip; render(); });
-  app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; render(); });
+  app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; x.pqRow = null; render(); });
 }
 // ================= Plan finder (beta prototype) =================
 // Plan finder (beta): three questions on a master position, in the order the books teach.
@@ -7899,6 +7979,7 @@ function planqShortStore(p, l){
 }   // FEN -> the short search's best line (null: none)
 // Stockfish's best move: shipped with the master positions; for yours, the engine's (undefined while it's searching)
 function planqBest(p){
+  if('best' in p) return p.best;   // (the explorer: its own search)
   const m = masterEvals && masterEvals[p.fen.split(' ').slice(0, 4).join(' ')];
   if(m) return [].concat(m[0])[0];
   if(!p.gameId) return null;
