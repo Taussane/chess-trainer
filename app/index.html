@@ -7627,7 +7627,7 @@ function explorerNavHtml(x, depth, note){
 }
 const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
     <button class="seg-btn${x.mode==='imbalances' ? ' active' : ''}" data-mode="imbalances" role="radio" aria-checked="${x.mode==='imbalances'}">Imbalances</button>
-    <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plan for ${x.flip ? 'Black' : 'White'}</button>
+    <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plan for ${explorerPos().side==='b' ? 'Black' : 'White'}</button>
   </div>`;
 // The six imbalances at once, from Stockfish's evaluation table (no search): shown while the short mate
 // check (aspectsEntry) runs, which only changes them when there is a mate.
@@ -7690,7 +7690,7 @@ function explorerAlignPlans(app){
     const a = centre(want), b = centre(el); if(a!=null && b!=null) row.style.transform = `translateY(${(a - b).toFixed(1)}px)`;
   }
 }
-// Plans, as the Plan finder reads them, for the side at the bottom of the board: its two rows (trades, type of
+// Plans, as the Plan finder reads them, for the side to play: its two rows (trades, type of
 // play), each answer with its reason under it; the criterion's words can be tapped for its marks.
 function explorerPlan(p, mine, info){
   const pX = { ...p, side: mine }, vals = explorerVals(p.fen);
@@ -7739,7 +7739,7 @@ function renderExplorer(){
   const best = line && line.uci;
   const depth = g.game_over() ? '' : depthBtnHtml(ev, fen);   // the engine's depth (tap: what it means)
   const planInfo = info || x.lastInfo;
-  const pq = x.mode==='plans' ? explorerPlan(p, mine, planInfo) : null;
+  const pq = x.mode==='plans' ? explorerPlan(p, p.side, planInfo) : null;   // (the side to play's plan)
   const body = x.mode==='imbalances'
     ? aspectsGridHtml(vals, null, ASPECTS.length, !vals, x.aspView, vals && fen)
     : explorerPlanHtml(pq, x, false);
