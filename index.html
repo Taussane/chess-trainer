@@ -5578,7 +5578,11 @@ const posSig = g=>[OWN_SIG, g.me, g.sans.length, g.evals ? g.evals.length : 0, g
   JSON.stringify(g.checks || {}), JSON.stringify(g.finalOk || {})].join('|');
 const positionsUpToDate = g=>Array.isArray(g.positions) && g.posSig===posSig(g);
 function extractOwnPositions(g){
+  // the checks kept with each position (Imbalance reading's, the Plan finder's: ownStoreCheck) stay with it when the
+  // game's positions are found again (a mistake checked, Move selection's searches in): same half-move, same position
+  const old = new Map((g.positions || []).map(p=>[p.ply + '|' + p.fen, p]));
   extractOwnPositions0(g); g.posSig = posSig(g);
+  for(const p of g.positions || []){ const o = old.get(p.ply + '|' + p.fen); if(o) for(const f of ['quietChk', 'planqChk']) if(o[f]) p[f] = o[f]; }
 }
 function extractOwnPositions0(g){
   // A game gives positions only once it is analysed (Lichess's analysis, or the app's scan): every
@@ -5975,7 +5979,7 @@ function positionsSection(){
   const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = Object.fromEntries(ACTS.map(a=>[a, POOLS[a].length]));
   // One counter: a game is done once it is read (Lichess's analysis or the app's quick scan) and
   // each of its likely mistakes has been checked by the engine.
-  const isDone = g=>myDone.has(g.id);   // (every check of the game done: myBackground)
+  const isDone = g=>myDone.has(g.id) || gameFinished(g);   // (every check of the game done: in this visit, or kept from before)
   const done = myGames.filter(isDone).length;
   const status = DIRECT_LICHESS && accountLoading() ? 'Loading your games…'
     : !myGames.length ? ''
