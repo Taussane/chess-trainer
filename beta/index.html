@@ -3931,7 +3931,16 @@ function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circle
 const sqName = s=>FILES[s & 7] + ((s >> 3) + 1), sqIdx = n=>FILES.indexOf(n[0]) + 8*(+n[1] - 1);
 const colName = c=>c===0 ? 'w' : 'b';
 const bbSquares = b=>SFEval.squares(b).map(sqName);
-function aspectMarks(fen, key, opts){   // opts.only: King safety for one side only ('w' or 'b': its king tapped)
+// The marks, worked out once per position and view (each redraw, as the engine deepens, reads them again: King safety's
+// and Other threats' take tens of milliseconds on a phone); a copy each time, the callers may add to it
+const MARKS_MEMO = new Map();
+function aspectMarks(fen, key, opts){
+  const st = aspectsStore[fen], k = fen + '|' + key + '|' + (opts ? JSON.stringify(opts) : '') + '|' + (st ? st.status : '') + '|' + (DEV_HIST.has(fen) ? 1 : 0);
+  let r = MARKS_MEMO.get(k);
+  if(!r){ r = aspectMarks0(fen, key, opts); MARKS_MEMO.set(k, r); if(MARKS_MEMO.size > 400) MARKS_MEMO.delete(MARKS_MEMO.keys().next().value); }
+  return structuredClone(r);
+}
+function aspectMarks0(fen, key, opts){   // opts.only: King safety for one side only ('w' or 'b': its king tapped)
   const m = boardMap(fen), A = attackMaps(m), out = { circles:[], tints:[], nums:[], arrows:[], labels:[], zones:[], boxes:[] };
   const pieces = c=>Object.keys(m).filter(sq=>m[sq].c===c);
   if(key==='material'){
@@ -3986,9 +3995,8 @@ function aspectMarks(fen, key, opts){   // opts.only: King safety for one side o
   if(key==='space'){
     // spacePoints: in the area, each side's pawns and the free squares behind them ringed in its colour;
     // arrows from the enemy pawns taking squares away; on each king, its side's total (the rings).
-    // nothing to show when the pawns mirror each other exactly (Space then equal by construction)
-    const mirrored = (()=>{ const w = pawnsOf(m, 'w'), b = new Set(pawnsOf(m, 'b')); return w.length===b.size && w.every(q=>b.has(q[0] + (9 - +q[1]))); })();
-    if(spaceCounts(fen) && !mirrored){
+    // (shown when level too: each side's area and what it counts, equal totals)
+    if(spaceCounts(fen)){
       const sp = spacePoints(fen);
       // the centre that matters (c to f files), each side's half dashed: its 3rd and 4th ranks
       for(const c of ['w','b']) out.zones.push({ a: c==='w' ? 'c3' : 'c6', b: c==='w' ? 'f4' : 'f5', c });
@@ -4226,8 +4234,7 @@ function drawMarks(svg, marks){
   svg.innerHTML = `<defs>${defs}${shadow}</defs>${tints}<g opacity=".8">${zones}</g>${boxes}<g opacity=".8">${circles}</g>${labels}${arrows}${nums}`;   // areas, rings, labels, arrows, then the score badges on top
   // Corner numbers fit their text too, kept to the square's right edge.
   svg.querySelectorAll('rect.mk-num').forEach(rc=>{
-    const tx = rc.nextElementSibling; let tw = 0;
-    try{ tw = tx.getComputedTextLength(); }catch(e){}
+    const tx = rc.nextElementSibling, tw = markTextWidth(tx);
     if(!tw) return;
     const w = Math.max(16, tw + 8), x = rc.dataset.cx!=null ? Math.max(1, Math.min(480 - w - 1, +rc.dataset.cx - w/2)) : +rc.dataset.right - w;
     rc.setAttribute('x', x); rc.setAttribute('width', w); tx.setAttribute('x', x + w/2);
@@ -4236,12 +4243,22 @@ function drawMarks(svg, marks){
   });
   // Badges fit their text (4 units each side) and stay centred on their square (only kept inside the board).
   svg.querySelectorAll('rect.mk-label').forEach(rc=>{
-    const tx = rc.nextElementSibling; let tw = 0;
-    try{ tw = tx.getComputedTextLength(); }catch(e){}
+    const tx = rc.nextElementSibling, tw = markTextWidth(tx);
     if(!tw) return;
     const cx = +rc.dataset.cx, w = tw + 8, x = Math.max(1, Math.min(480 - w - 1, cx - w/2));
     rc.setAttribute('x', x); rc.setAttribute('width', w); tx.setAttribute('x', x + w/2);
   });
+}
+// A mark's text width, measured once per text and style (measuring makes the browser lay the page out: on every redraw,
+// with King safety's labels, it was most of the time spent)
+const MARK_TW = new Map();
+try{ document.fonts.addEventListener('loadingdone', ()=>MARK_TW.clear()); }catch(e){}   // (a font come in: measured again)
+function markTextWidth(tx){
+  const k = tx.textContent + '|' + (tx.getAttribute('class') || '') + '|' + (tx.getAttribute('font-size') || '') + '|' + (tx.getAttribute('font-weight') || '');
+  if(MARK_TW.has(k)) return MARK_TW.get(k);
+  let tw = 0; try{ tw = tx.getComputedTextLength(); }catch(e){}
+  if(tw) MARK_TW.set(k, tw);
+  return tw;
 }
 // A panel whose height never changes within an exercise: `inner` is what's shown, `ghosts` are
 // invisible stand-ins for the exercise's other states (no ids, not focusable), stacked in the

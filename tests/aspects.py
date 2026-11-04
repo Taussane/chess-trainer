@@ -296,8 +296,9 @@ async def main():
         # Stockfish 10, none leaning against Stockfish's better side, 7 half-moves apart in a game; no castling right lost
         # with king and rook still on their first squares
         n = await pg.evaluate("""(()=>{ const P = POOLS.imbalances, few = P.filter(p=>{ const v = explorerVals(p.fen, true); return !v || ASPECTS.filter(x=>!isOff(v, x) && aspectLevel(v[x.key], x.key)).length < 3; }).length;
-          const dis = P.filter(p=>gradesDisagree(p.fen, explorerVals(p.fen, true))).length, close = P.filter((p, i)=>P.some((q, j)=>j!==i && q.game===p.game && Math.abs(q.ply - p.ply) < 7)).length;
-          return [P.length, few, dis, close, POOLS.analysis.some(p=>hiddenCastlingLoss(p.fen)) || P.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss), POOLS.planq.length]; })()""")
+          const fresh = fen=>adaptAspects(parseAspects(sfTableLines(fen), fen), fen);   // (the reading alone: a mate check met earlier in the test can change King safety)
+          const disP = P.filter(p=>gradesDisagree(p.fen, fresh(p.fen))), dis = disP.length; const disInfo = disP.map(p=>[p.key, aspectsStore[p.fen] && aspectsStore[p.fen].status, JSON.stringify(explorerVals(p.fen, true).mate || null), ASPECTS.map(x=>x.key + ':' + fresh(p.fen)[x.key]).join(' ')]), close = P.filter((p, i)=>P.some((q, j)=>j!==i && q.game===p.game && Math.abs(q.ply - p.ply) < 7)).length;
+          return [P.length, few, dis, close, POOLS.analysis.some(p=>hiddenCastlingLoss(p.fen)) || P.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss), POOLS.planq.length, disInfo]; })()""")
         print('pools:', n)
         if n[0] < 1000 or n[1] or n[2] or n[3] or n[4] or n[5] != [True, False, False] or n[6] < 1000: fails.append(f'Imbalance reading pool: {n}')
         await b.close()
