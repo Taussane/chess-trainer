@@ -4513,8 +4513,9 @@ let quietTimer = null, quietRendered = 0, quietFound = false;
 // once next time, never worked out again. `v`: the rules' version, so a change of rule redoes it.
 // each check's own version (a change of its rule redoes it alone): Imbalance reading's (4: a position whose grades lean
 // against Stockfish's better side left out); the Plan finder's (2: a pawn at risk is "must defend"; 3: Stockfish's check of
-// question 1; 4: the same lean rule as Imbalance reading); both 5: Pawns graded + from 2 points, ++ from 4
-const OWN_CHECK_V = { quietChk: 5, planqChk: 5 };
+// question 1; 4: the same lean rule as Imbalance reading); both 5: Pawns graded + from 2 points, ++ from 4; Imbalance
+// reading's 6: 3 criteria graded at least, and none read otherwise by Stockfish 10 (as the master positions)
+const OWN_CHECK_V = { quietChk: 6, planqChk: 5 };
 function ownStoreCheck(p, field, value){
   const g = myGames.find(x=>x.id===p.gameId), gp = g && (g.positions || []).find(x=>x.ply===p.ply);
   if(!gp) return;
@@ -4539,6 +4540,9 @@ function quietOf(p){
   const st = staticEval(p.fen);
   if(quiet && st!=null && e && (e.cp!=null || e.mate!=null)) quiet = Math.abs(cpToPct(st*100, null) - cpToPct(e.cp, e.mate)) < IMBALANCE_FAR;
   if(quiet && a && e && imbalanceLeanWrong(a, e.mate!=null ? 1e5 * Math.sign(e.mate) : e.cp)) quiet = false;
+  // as the master positions (IMBALANCE_SKIP_PICK): 3 criteria graded at least (Imbalance reading asks for 3), and the
+  // decisive ones not read otherwise by Stockfish 10's own terms
+  if(quiet && a && (ASPECTS.filter(x=>!isOff(a, x) && aspectLevel(a[x.key], x.key)).length < ASP_PICK_MAX || gradesDisagree(p.fen, a))) quiet = false;
   return quiet;
 }
 // One position's check at once (myBackground, in its game's turn)
