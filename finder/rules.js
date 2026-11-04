@@ -1,7 +1,7 @@
 // Position finder rules — every threshold the finder uses, and nothing else.
 // Mirrors the "Position finder rules" doc. Change a rule here (and in the doc), bump VERSION.
 module.exports = {
-  VERSION: '2026-10-27.1',
+  VERSION: '2026-11-04.1',
 
   // The app's own engine (Stockfish 19 lite in the page), 1.2 s per search, as for a player's own games:
   // one calibration for both (2026-10-22: 1.2 s matches depth 18 as well as 2 s does; safety margins below).
@@ -49,6 +49,7 @@ module.exports = {
     // flip too easily between two searches).
     worstMinDrop: 13,
     maxRandomAccuracy: 57,         // average accuracy of all 24 orders must be at most this
+    noRepeatBad: true,             // never two moves with the same bad grade (Dubious, Mistake, Blunder): two blunders can't be ranked
     spacingPlies: 2,               // 2 half-moves between kept positions from the same game
     weights: [0.5, 0.3, 0.2],      // the app's scoring rule (best remaining move, Dubious cap)
   },

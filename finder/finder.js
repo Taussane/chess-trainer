@@ -126,6 +126,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
       const worst = Math.max(...four.map(l=>b4 - winPct(l.cp, l.mate)));
       if(worst < R.FINAL.worstMinDrop){ tally(stats.final, 'rejected: moves too close (worst loses under '+R.FINAL.worstMinDrop+')'); return null; }
       const rnd = randomAccuracy(cp);
+      if(R.FINAL.noRepeatBad && BAD.some(g=>g4.filter(x=>x===g).length > 1)){ tally(stats.final, 'rejected: two moves with the same bad grade'); return null; }
       if(rnd > R.FINAL.maxRandomAccuracy){ tally(stats.final, 'rejected: random order scores > '+R.FINAL.maxRandomAccuracy+'%'); return null; }
       return { final:{ moves: picks.map(l=>l.uci) }, metrics:{ randomAccuracy: Math.round(rnd), grades: g4, gameMoveGrade: gradeOf(cDrop(gmLine)) } };
     }
