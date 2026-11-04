@@ -235,12 +235,12 @@ async def main():
           return [Math.round(imbalanceScore(v, { space:1 }, 7)), Math.round(imbalanceScore(v, { material:1 }, 7)), spaceCounts('r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'), spaceCounts(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen)]; })()""")
         print('space left out:', so)
         if so != [0, 33, True, False]: fails.append(f'space left out: {so}')
-        # the scoring, on made-up levels (raw values: Material ++ from 1.5, Pawns + from 2 and ++ from 4, the others ++ from 3)
+        # the scoring, on made-up levels (raw values: Material ++ from 1.5, Pawns + from 2 and ++ from 4, Space + from 2, the others ++ from 3)
         sc = await pg.evaluate("""(()=>{ const V = o=>Object.defineProperty({ material:0, pawns:0, space:0, activity:0, king:0, threats:0, ...o }, 'off', { value:[] }), S = (v, g)=>Math.round(imbalanceScore(V(v), g, 7));
           return [S({ material:2, pawns:4, king:3 }, { material:1, pawns:1, king:1 }),      // three ++, all found: 100
-                  S({ material:2, pawns:2, space:1, king:-1 }, { material:1, pawns:1, space:1 }),   // one ++ and two +: 100
-                  S({ material:2, pawns:2, space:1, king:-1 }, { pawns:1, space:1, king:-1 }),     // the ++ skipped for a third +: 83
-                  S({ material:2, pawns:4, king:3, space:1 }, { material:1, pawns:1, space:1 }),   // three ++, a + picked: 83
+                  S({ material:2, pawns:2, space:2, king:-1 }, { material:1, pawns:1, space:1 }),   // one ++ and two +: 100
+                  S({ material:2, pawns:2, space:2, king:-1 }, { pawns:1, space:1, king:-1 }),     // the ++ skipped for a third +: 83
+                  S({ material:2, pawns:4, king:3, space:2 }, { material:1, pawns:1, space:1 }),   // three ++, a + picked: 83
                   S({ material:2, pawns:2 }, { material:-1, threats:1, pawns:1 }),                 // wrong side, balanced, right: 33
                   imbalanceScore(V({ material:2 }), { material:1 }, 6)]; })()""")
         if sc != [100, 100, 83, 83, 33, 0]: fails.append(f'scoring: {sc}')
