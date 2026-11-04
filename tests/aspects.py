@@ -294,7 +294,7 @@ async def main():
             if marks[k]['a'] != a or marks[k]['c'] != c: fails.append(f'{k} threats: {marks[k]}')
         # the pool: Position evaluation's positions less the tactical ones and those unfit for choosing 3; neither has a castling right
         # lost with king and rook still on their first squares
-        n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, POOLS.analysis.filter(p=>IMBALANCE_SKIP.includes(p.key) || IMBALANCE_SKIP_BETA.includes(p.key) || IMBALANCE_SKIP_PICK.includes(p.key)).length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key) || IMBALANCE_SKIP_BETA.includes(p.key) || IMBALANCE_SKIP_PICK.includes(p.key)), POOLS.analysis.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss)]")
+        n = await pg.evaluate("[POOLS.imbalances.length, POOLS.analysis.length, POOLS.analysis.filter(p=>IMBALANCE_SKIP.includes(p.key) || IMBALANCE_SKIP_BETA.includes(p.key) || IMBALANCE_SKIP_PICK.includes(p.key) || IMBALANCE_SKIP_LEAN.includes(p.key)).length, POOLS.imbalances.some(p=>IMBALANCE_SKIP.includes(p.key) || IMBALANCE_SKIP_BETA.includes(p.key) || IMBALANCE_SKIP_PICK.includes(p.key)), POOLS.analysis.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss)]")
         print('pools:', n)
         if n[0] != n[1] - n[2] or n[3] or n[2] < 5 or n[4] or n[5] != [True, False, False]: fails.append(f'Imbalance reading pool: {n}')
         await b.close()
