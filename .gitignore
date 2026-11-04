@@ -7,3 +7,8 @@ finder/.cache/
 .wrangler/
 masters-work/
 masters-searches.jsonl
+
+# stray screenshots and scratch output at the root
+/*.png
+/pqlean.json
+/lean.json

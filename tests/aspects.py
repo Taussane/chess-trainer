@@ -159,7 +159,7 @@ async def main():
         # the plan, from made-up imbalances (White to play)
         plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side, eg)=>planFor({ fen:(eg ? '4k3/8/8/8/8/8/8/4K3 ' : '3qk3/8/8/8/8/8/8/3QK3 ')+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.plan);
           const Q = (vals, side)=>planFor({ fen:'4k2r/8/8/8/8/8/P7/R3K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);
-          return { passed: Q({ pawns:1 }, 'w'), blockade: Q({ pawns:1 }, 'b'),
+          return { passed: Q({ pawns:2 }, 'w'), blockade: Q({ pawns:2 }, 'b'),   // (Pawns: + from 2 points)
                    ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:6 }, 200), kingEg: P({ king:-1 }, 0, 'w', true), cramped: P({ space:-4 }, -30),
                    blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400), conflict: P({ material:1.5, space:4 }, 150) }; })()""")
         print('plans:', plans)
@@ -235,13 +235,13 @@ async def main():
           return [Math.round(imbalanceScore(v, { space:1 }, 7)), Math.round(imbalanceScore(v, { material:1 }, 7)), spaceCounts('r1bq1rk1/pp2npbp/3p1np1/2pPp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 9'), spaceCounts(TEST_POSITIONS.find(p=>p.title==='Activity marks').fen)]; })()""")
         print('space left out:', so)
         if so != [0, 33, True, False]: fails.append(f'space left out: {so}')
-        # the scoring, on made-up levels (raw values: Material ++ from 1.5, the others ++ from 3)
+        # the scoring, on made-up levels (raw values: Material ++ from 1.5, Pawns + from 2 and ++ from 4, the others ++ from 3)
         sc = await pg.evaluate("""(()=>{ const V = o=>Object.defineProperty({ material:0, pawns:0, space:0, activity:0, king:0, threats:0, ...o }, 'off', { value:[] }), S = (v, g)=>Math.round(imbalanceScore(V(v), g, 7));
-          return [S({ material:2, pawns:3, king:3 }, { material:1, pawns:1, king:1 }),      // three ++, all found: 100
-                  S({ material:2, pawns:1, space:1, king:-1 }, { material:1, pawns:1, space:1 }),   // one ++ and two +: 100
-                  S({ material:2, pawns:1, space:1, king:-1 }, { pawns:1, space:1, king:-1 }),     // the ++ skipped for a third +: 83
-                  S({ material:2, pawns:3, king:3, space:1 }, { material:1, pawns:1, space:1 }),   // three ++, a + picked: 83
-                  S({ material:2, pawns:1 }, { material:-1, threats:1, pawns:1 }),                 // wrong side, balanced, right: 33
+          return [S({ material:2, pawns:4, king:3 }, { material:1, pawns:1, king:1 }),      // three ++, all found: 100
+                  S({ material:2, pawns:2, space:1, king:-1 }, { material:1, pawns:1, space:1 }),   // one ++ and two +: 100
+                  S({ material:2, pawns:2, space:1, king:-1 }, { pawns:1, space:1, king:-1 }),     // the ++ skipped for a third +: 83
+                  S({ material:2, pawns:4, king:3, space:1 }, { material:1, pawns:1, space:1 }),   // three ++, a + picked: 83
+                  S({ material:2, pawns:2 }, { material:-1, threats:1, pawns:1 }),                 // wrong side, balanced, right: 33
                   imbalanceScore(V({ material:2 }), { material:1 }, 6)]; })()""")
         if sc != [100, 100, 83, 83, 33, 0]: fails.append(f'scoring: {sc}')
         # an ending Stockfish rates on its own (all-zero table): only Material (in points: the queen's 9), the rest left out
