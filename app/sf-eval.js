@@ -320,7 +320,7 @@ function evaluate(fen, opts){
   for(let s=0; s<64; s++){ const p = P.board[s]; if(p) values = add2(values, mul2([VALUE_MG[p.t], VALUE_EG[p.t]], p.c===WHITE ? 1 : -1)); }
   T.pieceSquares = sub2(sub2(psqScore, values), T.kingSquares);
   const lazy = Math.trunc((score[0] + score[1]) / 2);
-  if(Math.abs(lazy) > LazyThreshold){ out.special = 'lazy'; out.lazy = lazy; return out; }
+  if(!(opts && opts.noLazy) && Math.abs(lazy) > LazyThreshold){ out.special = 'lazy'; out.lazy = lazy; return out; }   // (opts.noLazy: the details anyway, as the app reads them)
 
   const attackedBy = [Array(7).fill(0n), Array(7).fill(0n)], attackedBy2 = [0n, 0n];
   const mobilityArea = [0n, 0n], mobility = [ZERO, ZERO], kingRing = [0n, 0n];
@@ -578,8 +578,8 @@ function evaluate(fen, opts){
 }
 
 // The trace as Stockfish prints it (pawns, two decimals), for comparison with the engine.
-function traceRows(fen){
-  const r = evaluate(fen), T = r.trace;
+function traceRows(fen, opts){
+  const r = evaluate(fen, opts), T = r.trace;
   // two decimals as C++ prints them (exact halves round to even)
   const f = v=>{ const a = Math.abs(v) * 100; let q = Math.floor(a / PawnValueEg); const rem = a - q * PawnValueEg;
     if(rem * 2 > PawnValueEg || (rem * 2===PawnValueEg && q % 2)) q++;

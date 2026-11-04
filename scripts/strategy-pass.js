@@ -3,13 +3,15 @@
 // positions 7 half-moves apart within a game. A half-move that fails is followed by the next one, so a rejected
 // position leaves room for its neighbours.
 //  - every candidate: not in check, 4+ legal moves, the last move not a capture, material within 3 pawns, a reading
-//    from Stockfish 10 (not a special ending), 3 criteria graded at least, none read otherwise by Stockfish 10's own
-//    terms (gradesDisagree), no hidden castling loss;
+//    from Stockfish 10 (not a special ending), no hidden castling loss; for Imbalance reading also 3 criteria graded at
+//    least and none read otherwise by Stockfish 10's own terms (gradesDisagree);
 //  - then the app's engine (Stockfish 19 lite in the page, 1.2 s, top 3: kept in master-evals.json for the reviews):
 //    Imbalance reading: no mate, under 5 pawns, the search within 2 squares of the bar of Stockfish 10's static
-//    evaluation, the grades not leaning against Stockfish's better side (0.5 or more), not all level against 1.0
+//    evaluation, the grades not leaning against Stockfish's better side (0.5 or more), no decisive criterion ranked last by
+//    Stockfish's scaled terms (decisiveDisagree), not all level against 1.0
 //    or more; the Plan finder: its own rules (planqFits, question 1 not ambiguous, a decided row or a stop after
-//    phase 1), and Stockfish's check of question 1 for both sides (1 s each: planqEngineAgrees).
+//    phase 1), and Stockfish's check of question 1 for both sides (1 s each: planqEngineAgrees). A position that ends after
+//    phase 1 (a piece or more, or a mate, at stake) gives way to one of the next 2 half-moves whose plan questions follow.
 // Results are kept in OUT as it goes (a run that stops carries on). At the end: writes the two lists into
 // app/index.html (/*POOLS*/: "imbalances" and "planq") and the new evaluations into master-evals.json.
 // Usage: node scripts/strategy-pass.js   (about 1.5 hours with SHARD=0/2 and 1/2 side by side), then python3 scripts/build-site.py,
@@ -45,8 +47,11 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
       const res = { imb: [], plan: [], evals: {}, tried: 0, searched: 0 };
       const div = divideGame(fens), from = div.mid >= 0 ? div.mid : div.end; if (from < 0) return res;
       const to = div.end >= 0 ? div.end + 3 : hist.length - 1;
-      let lastImb = -99, lastPlan = -99;
+      let lastImb = -99, lastPlan = -99, stop = null;   // stop: a Plan finder position that ends after phase 1, kept only if the
+      // next STOP_LOOK half-moves have no position whose plan questions follow (usually the one after the defence)
+      const STOP_LOOK = 2, commitStop = ()=>{ if (stop != null) { res.plan.push(stop); lastPlan = stop; stop = null; } };
       for (let ply = Math.max(1, from); ply <= Math.min(to, hist.length - 1); ply++) {
+        if (stop != null && ply > stop + STOP_LOOK) commitStop();
         const imbOk = ply - lastImb >= SPACING, planOk = ply - lastPlan >= SPACING;
         if (!imbOk && !planOk) continue;
         const fen = fens[ply], moveNo = +fen.split(' ')[5]; if (moveNo < 5 || moveNo > 40) continue;
@@ -55,8 +60,9 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
         if (Math.abs(materialDiff(g)) > 3) continue;
         let vals; try { vals = explorerVals(fen, true); } catch (e) { continue; }
         if (!vals || vals.special || hiddenCastlingLoss(fen) || staticEval(fen) == null) continue;
-        if (ASPECTS.filter(x => !isOff(vals, x) && aspectLevel(vals[x.key], x.key)).length < 3) continue;
-        if (gradesDisagree(fen, vals)) continue;
+        // Imbalance reading's own: 3 criteria graded at least, none read otherwise by Stockfish 10 (the Plan finder checks its own)
+        const imbCand = imbOk && ASPECTS.filter(x => !isOff(vals, x) && aspectLevel(vals[x.key], x.key, vals)).length >= 3 && !gradesDisagree(fen, vals);
+        if (!imbCand && !planOk) continue;
         res.tried++;
         const key = fen.split(' ').slice(0, 4).join(' ');
         let usLine = null;
@@ -68,9 +74,9 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
         }
         const m = masterEvals[key], info = toWhitePerspective({ cp: m[1], mate: m[2] }, fen), cpW = info.mate != null ? null : info.cp;
         // Imbalance reading
-        if (imbOk && info.mate == null && Math.abs(cpW) < 500 && Math.abs(wp(staticEval(fen) * 100) - wp(cpW)) < 25) {
+        if (imbCand && info.mate == null && Math.abs(cpW) < 500 && Math.abs(wp(staticEval(fen) * 100) - wp(cpW)) < 25) {
           const lean = ASPECTS.reduce((t, x) => t + (isOff(vals, x) ? 0 : aspectLevel(vals[x.key], x.key)), 0);
-          if (!imbalanceLeanWrong(vals, cpW) && !(lean === 0 && Math.abs(cpW) >= 100)) { res.imb.push(ply); lastImb = ply; }
+          if (!imbalanceLeanWrong(vals, cpW) && !(lean === 0 && Math.abs(cpW) >= 100) && !decisiveDisagree(fen, vals)) { res.imb.push(ply); lastImb = ply; }
         }
         // the Plan finder
         if (planOk) {
@@ -79,10 +85,14 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
           if (!q.urgent.pending && !q.urgent.ambiguous && (q.urgent.stop || q.rows.some(r => r.answer)) && planqFits(pos, q)) {
             if (!usLine || !usLine.pv) { const r = await run(fen, 1, CHECK_MS); res.searched++; usLine = r && !r.failed && r.lines && r.lines[0] || null; }
             const f = flipSide(fen), them = f ? await run(f, 1, CHECK_MS) : null; if (f) res.searched++;
-            if (usLine && planqEngineAgrees(q.urgent, usLine, them && !them.failed && them.lines && them.lines[0], fen)) { res.plan.push(ply); lastPlan = ply; }
+            if (usLine && planqEngineAgrees(q.urgent, usLine, them && !them.failed && them.lines && them.lines[0], fen)) {
+              if (!q.urgent.stop) { stop = null; res.plan.push(ply); lastPlan = ply; }   // (a stop just before it gives way)
+              else if (stop == null) stop = ply;
+            }
           }
         }
       }
+      commitStop();
       return res;
     }, [gid, SPACING, MS, CHECK_MS]);
     done++;

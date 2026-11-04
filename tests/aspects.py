@@ -160,7 +160,7 @@ async def main():
         plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side, eg)=>planFor({ fen:(eg ? '4k3/8/8/8/8/8/8/4K3 ' : '3qk3/8/8/8/8/8/8/3QK3 ')+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.plan);
           const Q = (vals, side)=>planFor({ fen:'4k2r/8/8/8/8/8/P7/R3K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);
           return { passed: Q({ pawns:2 }, 'w'), blockade: Q({ pawns:2 }, 'b'),   // (Pawns: + from 2 points)
-                   ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:6 }, 200), kingEg: P({ king:-1 }, 0, 'w', true), cramped: P({ space:-4 }, -30),
+                   ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:6 }, 200), kingEg: P({ king:-2 }, 0, 'w', true), cramped: P({ space:-4 }, -30),
                    blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400), conflict: P({ material:1.5, space:4 }, 150) }; })()""")
         print('plans:', plans)
         if plans['ahead'][0] != 'Trade pieces' or plans['behind'][0] != 'Avoid trades, attack' \
@@ -238,8 +238,8 @@ async def main():
         # the scoring, on made-up levels (raw values: Material ++ from 1.5, Pawns + from 2 and ++ from 4, Space + from 2, the others ++ from 3)
         sc = await pg.evaluate("""(()=>{ const V = o=>Object.defineProperty({ material:0, pawns:0, space:0, activity:0, king:0, threats:0, ...o }, 'off', { value:[] }), S = (v, g)=>Math.round(imbalanceScore(V(v), g, 7));
           return [S({ material:2, pawns:4, king:3 }, { material:1, pawns:1, king:1 }),      // three ++, all found: 100
-                  S({ material:2, pawns:2, space:2, king:-1 }, { material:1, pawns:1, space:1 }),   // one ++ and two +: 100
-                  S({ material:2, pawns:2, space:2, king:-1 }, { pawns:1, space:1, king:-1 }),     // the ++ skipped for a third +: 83
+                  S({ material:2, pawns:2, space:2, king:-2 }, { material:1, pawns:1, space:1 }),   // one ++ and two +: 100
+                  S({ material:2, pawns:2, space:2, king:-2 }, { pawns:1, space:1, king:-1 }),     // the ++ skipped for a third +: 83
                   S({ material:2, pawns:4, king:3, space:2 }, { material:1, pawns:1, space:1 }),   // three ++, a + picked: 83
                   S({ material:2, pawns:2 }, { material:-1, threats:1, pawns:1 }),                 // wrong side, balanced, right: 33
                   imbalanceScore(V({ material:2 }), { material:1 }, 6)]; })()""")
