@@ -28,9 +28,7 @@ candidates = [key(e) for e in pools['candidates'] if (e.get('metrics', {}).get('
 JS = r"""async (min)=>{
   const out = {};
   for(const p of POOLS.imbalances){
-    const e = aspectsEntry(p.fen);
-    for(let i=0; i<200 && e.status!=='done'; i++) await new Promise(r=>setTimeout(r, 20));
-    const d = e.data; if(!d) continue;
+    const d = explorerVals(p.fen, true); if(!d || d.special) continue;   // (the reading alone: the pool has no mate, scripts/strategy-pass.js)
     const ls = ASPECTS.filter(x=>!d.off.includes(x.key)).map(x=>aspectLevel(d[x.key], x.key)).filter(l=>l);
     if(ls.length < min) continue;
     const w = ls.filter(l=>l>0).length, b = ls.length - w;
