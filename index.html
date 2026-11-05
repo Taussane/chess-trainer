@@ -179,6 +179,13 @@
   .xp-steps{justify-self:end; display:flex; gap:10px;}
   .xp-nav > #xpFlip{justify-self:start;}
   .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
+  .xp-sides{flex:none; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px;}
+  .xp-sides-lbl{font-size:.78rem; color:var(--text-mute); margin-right:2px;}
+  .xp-side{display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 11px; border-radius:14px; border:1px solid var(--border); background:transparent; color:var(--text-mute); font:inherit; font-size:.82rem; cursor:pointer;}
+  .xp-side.on{background:var(--panel); color:var(--text); border-color:var(--text-mute);}
+  .xp-dot{width:10px; height:10px; border-radius:50%; border:1px solid var(--text-mute);} .xp-side.w .xp-dot{background:#f2f2f2;} .xp-side.b .xp-dot{background:#1b1b1b;}
+  .xp-side:not(.on) .xp-dot{opacity:.35;}
+  html.desk2 .wrap[data-scr=explorer] > #app > .xp-sides{grid-row:2; margin:6px 0 10px;}
   /* both modes alike: the same heading, row spacing and size (a word on row n sits at the same height in both) */
   .xp-plan-row{display:flex; justify-content:space-between; align-items:center; font-size:0.88rem;}
   .xp-plan .asp-badge.xp-ans{min-width:7.5em; font-weight:600; font-size:0.8rem; letter-spacing:0; padding:2px 6px;}
@@ -3612,20 +3619,22 @@ function wireAspectView(p, s){
   const actTap = s.aspView==='activity' && !devActive(p.fen);   // (Activity only; not Development)
   if(!actTap) s.aspPiece = null;
   const kingView = s.aspView==='king' && !isEndgame(p.fen);   // King safety (not King activity): its own one-side view
+  const tapNums = mk=>{ if(!s.noKingTap) return kingNumsTap(mk, p.fen); if(!mk || !mk.nums) return mk;   // (no king tap: no dotted line on the kings' totals)
+    const m = boardMap(p.fen); return { ...mk, nums: mk.nums.map(n=>m[n.sq] && m[n.sq].t==='k' ? { ...n, tap: false } : n) }; };
   const draw = ()=>{ if(s.aspView) drawMarks(svg, (s.aspPiece && activityDetail(p.fen, s.aspPiece))
-    || kingNumsTap(kingView ? aspectMarks(p.fen, s.aspView, s.aspKing ? { only: s.aspKing } : null) : marksForSide(aspectMarks(p.fen, s.aspView), s.aspKing), p.fen)); };
+    || tapNums(kingView ? aspectMarks(p.fen, s.aspView, s.aspKing ? { only: s.aspKing } : null) : marksForSide(aspectMarks(p.fen, s.aspView), s.aspKing))); };
   draw();
   // Activity: tap a piece to see which squares it counts (again, or elsewhere, to go back).
   // A king: only its side; again, or elsewhere, both.
   if(board){
-    const kingTap = !!s.aspView;
+    const kingTap = !!s.aspView && !s.noKingTap;   // (the explorer: its White / Black buttons instead, a tap there plays moves)
     board.classList.toggle('asp-tappable', actTap || kingTap);
     board.onclick = !(actTap || kingTap) ? null : e=>{
       const el = e.target.closest && e.target.closest('.sq'); if(!el) return;
       const sq = el.dataset.sq, pc = boardMap(p.fen)[sq];
       if(kingTap && pc && pc.t==='k'){ s.aspKing = s.aspKing!==pc.c ? pc.c : null; s.aspPiece = null; }
       else if(actTap){ s.aspPiece = s.aspPiece!==sq && activityDetail(p.fen, sq) ? sq : null; s.aspKing = null; }
-      else s.aspKing = null;
+      else if(!s.noKingTap) s.aspKing = null;
       draw();
     };
   }
@@ -7138,6 +7147,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Plans": "Plans",
 "Plans for White": "Plans pour les Blancs",
 "Plans for Black": "Plans pour les Noirs",
+"Marks": "Marques",
 "Strategy explorer": "Explorateur stratégique",
 "Explore": "Explorer",
 "Exercises": "Exercices",
@@ -7614,7 +7624,7 @@ const EXPLORER_START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 const EXPLORER_MS = 1500;   // the engine's look at each position (its best move, its evaluation)
 let explorer = null;        // { fens, sans, moves, at, flip, mode: 'imbalances' | 'evaluation', view, arrow, sel }
 function explorerInit(){
-  if(!explorer) explorer = { fens:[EXPLORER_START], sans:[], moves:[], at:0, flip:false, mode:'imbalances', sel:null, aspView:null, aspPiece:null, aspKing:null, depthNote:false, lastPct:null };
+  if(!explorer) explorer = { fens:[EXPLORER_START], sans:[], moves:[], at:0, flip:false, mode:'imbalances', sel:null, aspView:null, aspPiece:null, aspKing:null, show:{ w:true, b:true }, noKingTap:true, depthNote:false, lastPct:null };
 }
 function explorerPos(){
   const fen = explorer.fens[explorer.at], m = explorer.moves[explorer.at - 1];
@@ -7717,6 +7727,9 @@ function explorerNavHtml(x, depth, note){
       <span class="xp-steps"><button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
     </div>`;
 }
+// Above the panel: White's and Black's marks, each shown or hidden (when a criterion's marks are on the board)
+const explorerSidesHtml = x=>{ const on = c=>!x.show || x.show[c], vis = x.aspView ? '' : ' style="visibility:hidden"';
+  return `<div class="xp-sides"${vis}><span class="xp-sides-lbl">Marks</span>${['w', 'b'].map(c=>`<button class="xp-side ${c}${on(c) ? ' on' : ''}" data-c="${c}" aria-pressed="${on(c)}"${x.aspView ? '' : ' tabindex="-1"'}><span class="xp-dot" aria-hidden="true"></span>${c==='w' ? 'White' : 'Black'}</button>`).join('')}</div>`; };
 const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
     <button class="seg-btn${x.mode==='imbalances' ? ' active' : ''}" data-mode="imbalances" role="radio" aria-checked="${x.mode==='imbalances'}">Imbalances</button>
     <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plans for ${explorerPos().side==='b' ? 'Black' : 'White'}</button>
@@ -7827,6 +7840,7 @@ function renderExplorer(){
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
     ${boardHtml(false).replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct, x.flip))}
+    ${explorerSidesHtml(x)}
     ${stackedPanel(`${explorerModesHtml(x)}${body}${explorerNavHtml(x, depth, depthNoteHtml(x, ev, fen))}`,
       [`${explorerModesHtml(x)}${aspectsGridHtml(null, null, 0, true)}${explorerNavHtml(x)}`,
        `${explorerModesHtml(x)}${explorerPlanHtml(null, null, true)}${explorerNavHtml(x)}`])}`;
@@ -7847,7 +7861,12 @@ function renderExplorer(){
   } });
   if(promoPending) showPromotionPicker(g, mv=>{ promoPending = null; explorerPlay(mv); });
   // the imbalance (or plan) tapped: its marks, as in the reviews; the best move above them, on its own layer
+  x.show = x.show || { w:true, b:true }; x.noKingTap = true;
+  x.aspKing = x.show.w && !x.show.b ? 'w' : !x.show.w && x.show.b ? 'b' : null;   // (the marks of one side only: the buttons above the panel)
   if(vals) wireAspectView(p, x); else document.getElementById('arrows').innerHTML = '';
+  app.querySelectorAll('.xp-side[data-c]').forEach(b=>b.onclick = ()=>{ const c = b.dataset.c, o = c==='w' ? 'b' : 'w';
+    x.show[c] = !x.show[c]; if(!x.show[c] && !x.show[o]) x.show[o] = true;   // (never both off: the other comes back)
+    render(); });
   const outer = document.querySelector('.board-outer'), top = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   top.setAttribute('class', 'arrows'); top.setAttribute('viewBox', '0 0 480 480'); outer.appendChild(top);
   if(best) drawArrows(top, [{ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }], 'xb_');
