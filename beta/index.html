@@ -175,7 +175,7 @@
   .xp-depth .depth-btn{position:static; margin:0; height:var(--xp-btn-h, 33px); min-width:var(--xp-btn-h, 36px);}
   .xp-nav .depth-note{top:auto; bottom:calc(100% + 6px);}   /* (opens upwards, over the grid) */
   .xp-nav .icon-btn svg{width:14px; height:14px; display:block;}
-  .panel-stack > .layer > .actions-row.xp-nav{padding-top:16px;}   /* (a little room under the grid / the plans) */
+  .panel-stack > .layer > .actions-row.xp-nav{padding-top:16px;}   /* (room under the grid / the plans: as in the reviews) */
   .xp-nav .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:auto; min-width:var(--xp-btn-h, 36px); height:var(--xp-btn-h, 33px); padding:5px 10px; border-radius:8px; font-size:1rem;}   /* (Analyze's height, as in the reviews) */
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
   .xp-steps{justify-self:end; display:flex; gap:10px;}
@@ -196,7 +196,8 @@
   /* both modes alike: the same heading, row spacing and size (a word on row n sits at the same height in both) */
   .xp-plan-row{display:flex; justify-content:space-between; align-items:center; font-size:0.88rem;}
   .xp-plan .asp-badge.xp-ans{min-width:7.5em; font-weight:600; font-size:0.8rem; letter-spacing:0; padding:2px 6px;}
-  .xp-plan-row{height:24px;} .xp-plan-note{margin:1px 0 5px; font-size:0.8rem; line-height:1.2; color:var(--text-mute); height:2.4em; overflow:hidden;} .xp-plan-note:last-child{margin-bottom:0;}
+  .xp-plan-row{height:22px;} .xp-plan-note{margin:0 0 1px; font-size:0.78rem; line-height:1.15; color:var(--text-mute); height:2.3em; overflow:hidden;} .xp-plan-note:last-child{margin-bottom:0;}   /* (as tall as the Imbalances tab) */
+  .xp-plan .asp-badge.xp-ans{padding-block:1px;}
   /* the evaluation, across the top of the board */
   .xp-hbar-line{padding:3px 0;}
   .xp-hbar{position:relative; width:100%; height:100%; border-radius:4px; overflow:hidden; background:var(--black-fill); border:1px solid var(--border);}
