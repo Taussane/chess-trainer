@@ -292,7 +292,7 @@
   .actions-row.split > .btn.lichess-open{flex:0 1 auto;}
   .btn.icon-only{flex:none !important; width:var(--pn-btn, 41px); padding:0 !important; justify-content:center; gap:0;}   /* (the review's Lichess, explorer and share buttons: square, icons only) */
   .btn.icon-only .li-logo{width:19px; height:19px;} .btn.icon-only .act-icon, .btn.icon-only .share-icon{width:22px; height:22px; flex:none;}   /* (the explorer's and share's thinner drawings a little bigger, to look the Lichess logo's size) */
-  .share-icon{color:var(--accent);}
+  .btn.icon-only .act-icon, .btn.icon-only .share-icon, .btn.icon-only .li-logo{color:var(--text);}   /* (the three icons white, like the text) */
   .flash-note{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:50; padding:9px 16px; border-radius:10px; background:var(--panel-2); border:1px solid var(--border); color:var(--text); font-size:.9rem; box-shadow:0 6px 24px rgba(0,0,0,.35); animation:flashNote 2.2s ease forwards; pointer-events:none;}
   @keyframes flashNote{0%{opacity:0; transform:translate(-50%, 6px);} 10%,80%{opacity:1; transform:translate(-50%, 0);} 100%{opacity:0;}}
   .ac-site .cc-logo{width:15px; height:17px;}
