@@ -148,8 +148,10 @@
   .panel-stack > .layer > .actions-row.xp-nav{padding-top:16px;}   /* (a little room under the grid / the plans) */
   .xp-nav .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:auto; min-width:36px; height:var(--xp-btn-h, 33px); padding:5px 8px; border-radius:8px; font-size:1rem;}   /* (the depth button's size) */
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
-  .xp-steps{justify-self:end; display:flex; gap:10px;}
-  .xp-nav > #xpFlip{justify-self:start;}
+  .xp-steps{justify-self:start; display:flex; gap:10px;}
+  .xp-right{justify-self:end; display:flex; gap:10px;}
+  .xp-nav .icon-btn.xp-li{gap:6px; font-size:.85rem; font-weight:500; color:var(--text); text-decoration:none; padding:5px 10px;}
+  .xp-nav .xp-li .li-logo{width:15px; height:15px; flex:none;}
   .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
   .xp-sides{flex:none; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px;}
   .wrap.ex .xp-sides + .panel{margin-top:6px;}   /* (the buttons just above the panel) */
@@ -299,6 +301,8 @@
   .ac-site .li-logo{width:15px; height:15px;}
   .lichess-open .li-logo{width:17px; height:17px; flex:none;}
   .lichess-open{display:inline-flex; align-items:center; gap:7px;}
+  .lichess-open .act-icon{width:17px; height:17px; flex:none; color:var(--accent);}
+  .actions-row.split > .btn.lichess-open{flex:0 1 auto;}
   .ac-site .cc-logo{width:15px; height:17px;}
   .chart-avg{margin-left:auto; color:var(--text-mute);}
   .chart-avg{color:var(--text); font-weight:700; font-size:0.95rem; font-variant-numeric:tabular-nums; line-height:1;}
@@ -3045,10 +3049,42 @@ function lichessUrl(p){
   if(sans && p.ply!=null) return 'https://lichess.org/analysis/pgn/' + sans.map(s=>encodeURIComponent(s.replace(/[+#]/g,''))).join('_') + color + '#' + p.ply;
   return 'https://lichess.org/analysis/standard/' + p.fen.replace(/ /g,'_') + color;
 }
+// A review's buttons on the left: the position in the Strategy explorer (the game's moves around it), then on Lichess.
 function lichessLink(p){
   const url = lichessUrl(p);
-  return `<a class="btn secondary lichess-open" href="${url}" target="_blank" rel="noopener">${LICHESS_LOGO} Open in Lichess</a>`;
+  return `<button class="btn secondary lichess-open xp-open" data-xp-open>${SIDE_ICONS.explorer} Explore</button><a class="btn secondary lichess-open" href="${url}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a>`;
 }
+// The position in the Strategy explorer: the whole game when its moves are known (at this position, from the side to
+// play), else the position alone. ret: where its back arrow goes (this screen), and the explorer as it was before.
+function exploreFrom(p, back){
+  const prev = explorer && explorer.ret ? explorer.ret.saved : explorer;
+  explorer = null; explorerInit();
+  const x = explorer, key = f=>f.split(' ').slice(0, 4).join(' '), sans = gameSans(p);
+  let ok = false;
+  if(sans && Number.isInteger(p.ply) && p.ply <= sans.length){
+    const g = new Chess(), fens = [g.fen()], moves = [], played = [];
+    for(const san of sans){
+      const m = g.move(san); if(!m) break;
+      const rank = m.color==='w' ? '1' : '8';
+      moves.push({ from:m.from, to:m.to, rook: /k/.test(m.flags) ? ['h' + rank, 'f' + rank] : /q/.test(m.flags) ? ['a' + rank, 'd' + rank] : null });
+      played.push(m.san); fens.push(g.fen());
+      DEV_HIST.set(g.fen(), devTouched(moves, moves.length));
+    }
+    if(fens[p.ply] && key(fens[p.ply])===key(p.fen)){ Object.assign(x, { fens, sans: played, moves, at: p.ply }); ok = true; }
+  }
+  if(!ok) x.fens = [p.fen];
+  x.flip = p.fen.split(' ')[1]==='b';
+  x.ret = { screen, saved: prev, back };
+  helpVisible = false; selSquare = null; promoPending = null;
+  screen = 'explorer'; render();
+}
+// Leaving an explorer opened from a review (or the Metrics): back there, the explorer as it was before.
+function exploreReturn(){
+  const r = explorer && explorer.ret; if(!r) return false;
+  explorer = r.saved; screen = r.screen; if(r.back) r.back();
+  render(); return true;
+}
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-xp-open]'); if(b){ try{ exploreFrom(pos()); }catch(err){} } });
 // Vertical bar beside the board, full board height, oriented like the board: White's share at
 // the bottom when White is at the bottom, at the top when the board is flipped. `pct` = White's
 // winning chances; `text` is the score written inside the bar, at the winning side's end (like
@@ -4312,7 +4348,7 @@ function stackedPanel(inner, ghosts, extra){
   return `<div class="panel"><div class="panel-stack"><div class="layer">${inner}</div>${
     ghosts.map(g=>`<div class="layer ghost" aria-hidden="true" inert>${g}</div>`).join('')}</div></div>${extra||''}`;
 }
-const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary lichess-open"><svg class="li-logo" viewBox="0 0 50 50"></svg> Open in Lichess</span><span class="btn">Next position</span></div>`;
+const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary lichess-open"><svg class="act-icon" viewBox="0 0 24 24"></svg> Explore</span><span class="btn secondary lichess-open"><svg class="li-logo" viewBox="0 0 50 50"></svg> Analyze</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
   `<p class="prompt">Drag the evaluation bar to where you think it sits.</p><div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planHtml(null, null, false, true)}${GHOST_ACTIONS}`,
@@ -4424,6 +4460,7 @@ function leaveExercise(){
   testMode = false; replayMode = false; selSquare = null; promoPending = null;
 }
 function sideGo(where){
+  if(screen==='explorer' && explorer && explorer.ret){ const r = explorer.ret; explorer = r.saved; screen = r.screen; }   // (an explorer opened from a review: left as from the review, the sidebar's own explorer back)
   if(where==='routine'){ leaveExercise(); return startRoutine(); }
   if(ACTIVITIES.includes(where) || where==='planq'){ if(!canOpen(where, false)) return; leaveExercise(); routine = false; return openActivity(where); }
   leaveExercise();
@@ -6749,6 +6786,7 @@ function reviewOpened(){
 // entries back off; the phone's back button goes up one level.
 function pageDepth(){
   if(screen==='home') return 0;
+  if(screen==='explorer' && explorer && explorer.ret){ const s0 = screen, x0 = explorer; screen = x0.ret.screen; explorer = x0.ret.saved; try{ return pageDepth() + 1; } finally { screen = s0; explorer = x0; } }
   let d = ['settings', 'metrics', 'tests'].includes(screen) ? 2
         : screen==='support' ? (supportFrom==='home' ? 1 : 2)
         : ACTIVITIES.includes(screen) ? (testMode ? 3 : replayMode ? 2 : 1) : 1;
@@ -6912,6 +6950,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Next": "Suivante",
 "Finish": "Terminer",
 "Open in Lichess": "Voir sur Lichess",
+"Analyze": "Analyser",
 "Test": "Test",
 "Replay": "Revoir",
 "Routine": "Routine",
@@ -7675,8 +7714,8 @@ function renderMetrics(){
   app.querySelectorAll('[data-days]').forEach(b=>b.onclick = ()=>{ metricsDays = +b.dataset.days; loadMetrics(); });
   // a reported position: on the explorer's board (from there), or dismissed (every report of it goes)
   app.querySelectorAll('[data-rep-xp]').forEach(b=>b.onclick = ()=>{
-    const r = d.reports[+b.dataset.repXp]; explorer = null; explorerInit();
-    Object.assign(explorer, { fens:[r.fen], flip: r.fen.split(' ')[1]==='b' }); screen = 'explorer'; render();
+    const r = d.reports[+b.dataset.repXp];
+    exploreFrom({ fen: r.fen, ply: r.ply, game: /^g\d+$/.test(r.game || '') ? r.game : null });
   });
   app.querySelectorAll('[data-rep-del]').forEach(b=>b.onclick = async ()=>{
     const r = d.reports[+b.dataset.repDel]; b.disabled = true;
@@ -7790,12 +7829,19 @@ addEventListener('keydown', e=>{
 // The panel, built like the reviews: the evaluation and the engine's depth on top, then the six imbalances
 // (Static and Dynamic, as in Imbalance reading's review) or the plans of the side at the bottom of the board
 // (as in Position evaluation's review; flip the board for the other side's). Its height never changes.
+// The moves on the left, the engine's depth in the middle, the board's sides and Lichess on the right.
 function explorerNavHtml(x, depth, note){
   return `<div class="actions-row xp-nav">
-      <button class="icon-btn" id="xpFlip" aria-label="Switch sides"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <span class="xp-depth">${depth || ''}</span>${note || ''}
       <span class="xp-steps"><button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
+      <span class="xp-depth">${depth || ''}</span>${note || ''}
+      <span class="xp-right"><button class="icon-btn" id="xpFlip" aria-label="Switch sides"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><a class="icon-btn xp-li" href="${explorerLichessUrl(x)}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a></span>
     </div>`;
+}
+// Lichess's analysis board: the moves played from the start (at this one, from the side at the bottom), or the position alone
+function explorerLichessUrl(x){
+  const color = '?color=' + (x.flip ? 'black' : 'white');
+  if(x.fens[0]===EXPLORER_START && x.sans.length) return 'https://lichess.org/analysis/pgn/' + x.sans.map(s=>encodeURIComponent(s.replace(/[+#]/g,''))).join('_') + color + '#' + x.at;
+  return 'https://lichess.org/analysis/standard/' + x.fens[x.at].replace(/ /g,'_') + color;
 }
 const explorerSidesHtml = x=>sidesHtml(x, !!x.aspView);
 const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
@@ -7941,7 +7987,7 @@ function renderExplorer(){
   app.querySelectorAll('.panel .layer:not(.ghost) .xp-plan .pq-reason[data-key]').forEach(b=>b.onclick = ()=>{ x.aspView = x.aspView===b.dataset.key ? null : b.dataset.key; x.aspPiece = x.aspKing = null; render(); });
   const db = app.querySelector('.layer:not(.ghost) .depth-btn'); if(db) app.style.setProperty('--xp-btn-h', db.offsetHeight + 'px');
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
-  on('homeBtn', ()=>{ screen = 'home'; render(); });
+  on('homeBtn', ()=>{ if(!exploreReturn()){ screen = 'home'; render(); } });
   on('xpBack', ()=>explorerGo(x.at - 1)); on('xpFwd', ()=>explorerGo(x.at + 1));
   on('xpFlip', ()=>{ x.flip = !x.flip; render(); });
   app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; render(); });
