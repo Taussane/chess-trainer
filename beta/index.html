@@ -170,10 +170,11 @@
   @container (max-width:306px){ .xp-nav > .btn.xp-li{font-size:0.78rem; padding-inline:4px;} }
   .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
   .xp-sides{flex:none; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px;}
-  .wrap.ex .xp-sides + .panel{margin-top:6px;}   /* (the buttons just above the panel) */
+  .wrap.ex .xp-sides:not(.sides-desk) + .panel{margin-top:6px;}   /* (the buttons just above the panel) */
   .wrap.ex > #app > .xp-sides.sides-desk{display:none;}   /* (Imbalance reading on a phone: the buttons on the name line instead) */
   .pl-line:has(> .xp-sides){overflow:visible; height:36px; align-items:flex-start; line-height:22px;}   /* (the name where it always is; the buttons 6 px under the board, 6 px above the line's end) */
   .pl-line > .xp-sides{margin:6px 0 0 auto; gap:6px;}
+  .board-col:has(> .pl-line > .xp-sides) > .pl-line:first-child{height:36px; align-items:flex-end;}   /* (as much room above the board as under it: the board where it sits in the other exercises) */
   .pl-line > .xp-sides .xp-side{height:24px; padding:0 9px; font-size:.78rem; font-weight:500;}
   .xp-side{display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 11px; border-radius:14px; border:1px solid var(--border); background:transparent; color:var(--text-mute); font:inherit; font-size:.82rem; cursor:pointer;}
   .xp-side.on{background:var(--panel); color:var(--text); border-color:var(--text-mute);}
@@ -679,6 +680,7 @@
   @media (min-width:1024px) and (min-aspect-ratio:4/3){
     html.desk2{--side-w:264px; --panel-w:380px;}
     html.desk2 .wrap.ex > #app > .xp-sides.sides-desk{display:flex;} html.desk2 .pl-line > .xp-sides{display:none;}   /* (Imbalance reading: above the panel) */
+    html.desk2 .pl-line:has(> .xp-sides), html.desk2 .board-col:has(> .pl-line > .xp-sides) > .pl-line:first-child{height:22px; align-items:center;}
     @media (max-width:1279.98px){   /* smaller desktops (a 1024x768 tablet held sideways): a narrower menu and panel, for the board */
       html.desk2{--side-w:228px; --panel-w:320px;}
       html.desk2 .wrap{padding-inline:20px !important;}
