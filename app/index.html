@@ -375,7 +375,8 @@
   .board{container-type:inline-size;}
   /* The board's light: a soft glow in the centre, the edges a little darker (over every board, under the arrows) */
   .board{position:relative; isolation:isolate;}
-  .board .sq .pc{position:relative; z-index:4;}   /* the pieces above the light: it shades the squares only */
+  .board .sq .pc{position:relative; z-index:4;}
+  .board .sq .pc.pc-taken{position:absolute; inset:0; z-index:3;}   /* (a taken piece, shown while the opening move comes) */   /* the pieces above the light: it shades the squares only */
   .board::after{content:''; position:absolute; inset:0; pointer-events:none; z-index:3; mix-blend-mode:soft-light;
     background:radial-gradient(75% 75% at 50% 45%, rgba(255,255,255,.75), rgba(255,255,255,0) 55%, rgba(0,0,0,.85) 100%);}
   .sq{position:relative; display:flex;align-items:center;justify-content:center; font-size:10cqw; line-height:1; user-select:none;}
@@ -7540,8 +7541,8 @@ function explorerSound(capture){
 // Pieces slide to their square (a move, or one step back or forward): one animation across redraws, which
 // finds the piece on its new square each frame and shifts it back along its path, less and less.
 const xpSlide = { paths:[], t0:0, raf:0 }, XP_SLIDE_MS = 150;
-function explorerSlide(paths, delay = 0){   // delay (ms): the piece waits on its first square first
-  xpSlide.paths = paths; xpSlide.t0 = performance.now() + delay;
+function explorerSlide(paths, delay = 0, cap = null){   // delay (ms): the piece waits on its first square first; cap {sq, piece}: a taken piece, shown until it's taken
+  xpSlide.paths = paths; xpSlide.t0 = performance.now() + delay; xpSlide.cap = cap;
   if(xpSlide.raf) return;
   const step = ()=>{
     const t = Math.max(0, Math.min(1, (performance.now() - xpSlide.t0) / XP_SLIDE_MS)), k = 1 - easeOut(t);
@@ -7551,6 +7552,8 @@ function explorerSlide(paths, delay = 0){   // delay (ms): the piece waits on it
       el.style.transform = k ? `translate(${(col(from) - col(to)) * k * 100}%, ${(row(from) - row(to)) * k * 100}%)` : '';
       el.style.zIndex = k ? 6 : '';
     }
+    const c = xpSlide.cap, csq = c && document.querySelector(`#board .sq[data-sq="${c.sq}"]`);
+    if(csq){ let g = csq.querySelector('.pc-taken'); if(t < 1 && !g){ g = document.createElement('span'); g.className = `pc pc-taken pc-${c.piece===c.piece.toUpperCase() ? 'w' : 'b'}${c.piece.toUpperCase()}`; g.textContent = PIECES[c.piece]; csq.appendChild(g); } if(t >= 1 && g) g.remove(); }
     xpSlide.raf = t < 1 ? requestAnimationFrame(step) : 0;
   };
   xpSlide.raf = requestAnimationFrame(step);
@@ -7570,9 +7573,19 @@ function introMove(lm){
   const paths = [[from, to]];
   if(pc && pc.type==='k' && Math.abs(FILES.indexOf(from[0]) - FILES.indexOf(to[0]))===2){ const r = to[1], ks = to[0]==='g'; paths.push([(ks ? 'h' : 'a') + r, (ks ? 'f' : 'd') + r]); }
   const cap = lastMoveCaptured(p), key = introKey;
-  explorerSlide(paths, INTRO_DELAY); setTimeout(()=>{ if(introKey===key) explorerSound(cap); }, INTRO_DELAY);   // (a short wait first: the position seen, then the move)
+  explorerSlide(paths, INTRO_DELAY, lastMoveCapture(p)); setTimeout(()=>{ if(introKey===key) explorerSound(cap); }, INTRO_DELAY);   // (a short wait first: the position seen, then the move)
 }
-// Whether the move that led to a position took a piece: from its game's moves (or the shared link's word)
+// The piece the move that led to a position took ({sq, piece}, or null): from its game's moves, played again (or
+// the shared link's word)
+function lastMoveCapture(p){
+  if(p.lastCapPiece) return { sq: p.lastCapSq, piece: p.lastCapPiece };
+  const sans = gameSans(p); if(!(sans && p.ply > 0 && /x/.test(sans[p.ply - 1] || ''))) return null;
+  try{
+    const g = new Chess(); for(let i = 0; i < p.ply - 1; i++) if(!g.move(sans[i])) return null;
+    const m = g.move(sans[p.ply - 1]); if(!m || !m.captured) return null;
+    return { sq: /e/.test(m.flags) ? m.to[0] + m.from[1] : m.to, piece: m.color==='w' ? m.captured : m.captured.toUpperCase() };
+  }catch(e){ return null; }
+}
 function lastMoveCaptured(p){
   if(p.lastCap!=null) return !!p.lastCap;
   const sans = gameSans(p);
@@ -8454,7 +8467,7 @@ const textUnB64 = t=>decodeURIComponent(escape(atob(t.replace(/-/g, '+').replace
 function shareCode(a, p){
   if(p.game && Number.isInteger(p.ply) && GAME_MOVES[p.game]) return `${a}.${p.game}.${p.ply}`;
   const tmp = document.createElement('div'); tmp.innerHTML = posSource(p);
-  return a + '.' + textB64(JSON.stringify({ f: p.fen, u: p.hist && p.hist.uci, l: p.last && p.last.squares, c: lastMoveCaptured(p) ? 1 : 0, t: p.title || '', s: tmp.textContent }));
+  return a + '.' + textB64(JSON.stringify({ f: p.fen, u: p.hist && p.hist.uci, l: p.last && p.last.squares, c: lastMoveCaptured(p) ? 1 : 0, k: (lastMoveCapture(p) || {}).piece, q: (lastMoveCapture(p) || {}).sq, t: p.title || '', s: tmp.textContent }));
 }
 // A master game's position at a half-move, as the pools have it (the same object when a pool holds it)
 function masterPosAt(game, ply){
@@ -8476,7 +8489,7 @@ function sharedPos(code){
   const fen = g.fen(), mv = o.u && g.move({ from:o.u.slice(0, 2), to:o.u.slice(2, 4), promotion:o.u[4] });
   if(a==='final' && !mv) return null;   // (Move selection needs the move played)
   return { a, p: { key: 'shared:' + fen.split(' ').slice(0, 4).join(' '), fen, side: fen.split(' ')[1], moveNo: +fen.split(' ')[5], title: String(o.t || '').slice(0, 80), year: '',
-    shareSrc: String(o.s || '').slice(0, 120), lastCap: !!o.c, last: Array.isArray(o.l) && o.l.length===2 ? { squares: o.l.map(String) } : null,
+    shareSrc: String(o.s || '').slice(0, 120), lastCap: !!o.c, lastCapPiece: /^[pnbrqkPNBRQK]$/.test(o.k || '') ? o.k : null, lastCapSq: /^[a-h][1-8]$/.test(o.q || '') ? o.q : null, last: Array.isArray(o.l) && o.l.length===2 ? { squares: o.l.map(String) } : null,
     hist: mv ? { uci: o.u, san: mv.san, from: mv.from, to: mv.to } : null } };
 }
 async function sharePosition(){
