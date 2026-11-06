@@ -166,8 +166,8 @@
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
   .xp-steps{justify-self:end; display:flex; gap:10px;}
   .xp-nav > .btn.xp-li{justify-self:start; padding-inline:12px; justify-content:center; white-space:nowrap; text-decoration:none;}   /* (the reviews' Analyze: the same size; the row's other buttons take its height) */
-  @media (max-width:400px){ .xp-nav > .btn.xp-li{font-size:0.84rem; padding-inline:6px;} }
-  @media (max-width:370px){ .xp-nav > .btn.xp-li{font-size:0.78rem; padding-inline:4px;} }
+  @container (max-width:352px){ .xp-nav > .btn.xp-li{font-size:0.84rem; padding-inline:6px;} }   /* (a narrow panel: a phone under 400 px, a small desktop) */
+  @container (max-width:306px){ .xp-nav > .btn.xp-li{font-size:0.78rem; padding-inline:4px;} }
   .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
   .xp-sides{flex:none; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px;}
   .wrap.ex .xp-sides + .panel{margin-top:6px;}   /* (the buttons just above the panel) */
@@ -527,6 +527,7 @@
   .asp-item{display:flex; justify-content:space-between; align-items:center; gap:4px; font-size:0.88rem; min-width:0;}
   .asp-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .asp-name:has(.asp-qual){overflow:visible; line-height:1.15; position:relative; top:-5px;}
+  .asp-name:has(.asp-qual){min-width:0;} .asp-name > .asp-main{display:block; overflow:hidden; text-overflow:ellipsis;}   /* (a long name with its note: cut like the others) */
   .asp-qual{display:block; height:0; font-size:0.68rem; line-height:1.2; color:var(--text-mute);}
   .asp-badge{flex:none; min-width:2.4em; text-align:center; padding:1px 4px; white-space:nowrap; border-radius:4px; font-size:0.9rem; font-weight:700; letter-spacing:0.04em; border:1px solid transparent;}
   .asp-badge.w{background:var(--white-fill); color:var(--black-fill);}
@@ -597,11 +598,11 @@
   .actions-row{display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap;}
   .actions-row.split{justify-content:space-between;}
   .actions-row.split > .btn{flex:1 1 0; justify-content:center; padding-inline:12px; white-space:nowrap;}
-  @media (max-width:400px){ .actions-row.split > .btn{font-size:0.84rem; padding-inline:6px;} .actions-row.split{gap:8px;} }
+  @container (max-width:352px){ .actions-row.split > .btn{font-size:0.84rem; padding-inline:6px;} .actions-row.split{gap:8px;} }   /* (the panel's width: a phone under 400 px, a small desktop) */
   .actions-row.split{flex-wrap:nowrap;}
   .actions-row.split > .btn{min-width:0;}
-  @media (max-width:360px){ .actions-row.split > .btn{white-space:normal; line-height:1.2;} }
-  @media (max-width:370px){ .actions-row.split > .btn{font-size:0.78rem; padding-inline:4px;} }
+  @container (max-width:296px){ .actions-row.split > .btn{white-space:normal; line-height:1.2;} }
+  @container (max-width:306px){ .actions-row.split > .btn{font-size:0.78rem; padding-inline:4px;} }
 
   /* Move rows in every list share one look: same height, rounded ends, a line under each row
      including the last. */
@@ -782,7 +783,7 @@
   .panel .panel-stack > .layer > :first-child{min-height:var(--pn-top); margin-bottom:var(--pn-gap); box-sizing:border-box;}
   .panel .panel-stack > .layer > .actions-row{margin-top:auto; padding-top:var(--pn-btn-gap);}
   .panel .panel-stack > .layer > .actions-row > .btn{height:var(--pn-btn); padding-block:0; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center;}
-  .panel .panel-stack > .layer > :first-child .prompt, .panel .panel-stack > .layer > .prompt:first-child{font-size:min(1rem, 4.1vw);}   /* (one line on narrow phones too) */
+  .panel .panel-stack > .layer > :first-child .prompt, .panel .panel-stack > .layer > .prompt:first-child{font-size:min(1rem, 4.9cqi);}   /* (one line in a narrow panel too) */
   /* the rows */
   .panel-stack .aspects .asp-grid{grid-template-rows:repeat(4, var(--pn-row)); row-gap:0; align-items:center;}
   .panel-stack .aspects .asp-grid > .asp-head{align-self:end; padding-bottom:6px;}
@@ -796,6 +797,9 @@
   .panel-stack .review-col > *{height:var(--pn-row); min-height:0; box-sizing:border-box;}
   .panel-stack .review-col > .col-toggle{align-self:center; height:auto;}
   .panel-stack .pq-grid{--pq-row:var(--pn-row);}
+  /* the imbalances' grade squares (Imbalance reading, the explorer): as big as the panel's width allows (--badge) */
+  .panel-stack{container-type:inline-size; --badge:clamp(23px, 7.8cqi, 28px);}
+  .panel-stack .asp-grid .asp-badge{width:var(--badge); height:var(--badge); min-width:0; padding:0; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; font-size:calc(var(--badge) * 0.6); line-height:1;}
   .panel-stack .seg.xp-modes{height:var(--pn-top); box-sizing:border-box;} .panel-stack .xp-modes .seg-btn{padding-block:0;}
   .panel-stack .xp-plan{display:grid; grid-template-rows:repeat(4, var(--pn-row)); align-items:center;}
   .panel-stack .xp-plan > *{margin:0; min-height:0;}
