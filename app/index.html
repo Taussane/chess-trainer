@@ -142,14 +142,14 @@
   .routine-row{display:flex; justify-content:space-between; align-items:center; font-size:0.86rem; color:var(--text-mute); padding:3px 0;}
   .actions-row.xp-nav{position:relative; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; justify-content:stretch;}
   .xp-depth{display:flex; align-items:center; justify-content:center;}
-  .xp-depth .depth-btn{position:static; margin:0;}
+  .xp-depth .depth-btn{position:static; margin:0; height:var(--xp-btn-h, 33px); min-width:var(--xp-btn-h, 36px);}
   .xp-nav .depth-note{top:auto; bottom:calc(100% + 6px);}   /* (opens upwards, over the grid) */
   .xp-nav .icon-btn svg{width:14px; height:14px; display:block;}
   .panel-stack > .layer > .actions-row.xp-nav{padding-top:16px;}   /* (a little room under the grid / the plans) */
-  .xp-nav .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:auto; min-width:36px; height:var(--xp-btn-h, 33px); padding:5px 8px; border-radius:8px; font-size:1rem;}   /* (the depth button's size) */
+  .xp-nav .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:auto; min-width:var(--xp-btn-h, 36px); height:var(--xp-btn-h, 33px); padding:5px 10px; border-radius:8px; font-size:1rem;}   /* (Analyze's height, as in the reviews) */
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
   .xp-steps{justify-self:end; display:flex; gap:10px;}
-  .xp-nav > .btn.xp-li{justify-self:start; height:var(--xp-btn-h, 33px); min-height:0; padding-block:0; padding-inline:12px; justify-content:center; white-space:nowrap; text-decoration:none;}   /* (the reviews' Analyze: the same width) */
+  .xp-nav > .btn.xp-li{justify-self:start; padding-inline:12px; justify-content:center; white-space:nowrap; text-decoration:none;}   /* (the reviews' Analyze: the same size; the row's other buttons take its height) */
   @media (max-width:400px){ .xp-nav > .btn.xp-li{font-size:0.84rem; padding-inline:6px;} }
   @media (max-width:370px){ .xp-nav > .btn.xp-li{font-size:0.78rem; padding-inline:4px;} }
   .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
@@ -7985,7 +7985,7 @@ function renderExplorer(){
   wireDepthBtn(x);
   xpBarEase(pct);
   app.querySelectorAll('.panel .layer:not(.ghost) .xp-plan .pq-reason[data-key]').forEach(b=>b.onclick = ()=>{ x.aspView = x.aspView===b.dataset.key ? null : b.dataset.key; x.aspPiece = x.aspKing = null; render(); });
-  const db = app.querySelector('.layer:not(.ghost) .depth-btn'); if(db) app.style.setProperty('--xp-btn-h', db.offsetHeight + 'px');
+  const li = app.querySelector('.layer:not(.ghost) .xp-li'); if(li && li.offsetHeight) app.style.setProperty('--xp-btn-h', li.offsetHeight + 'px');   // (the review buttons' height for the whole row)
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ if(!exploreReturn()){ screen = 'home'; render(); } });
   on('xpBack', ()=>explorerGo(x.at - 1)); on('xpFwd', ()=>explorerGo(x.at + 1));
