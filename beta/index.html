@@ -788,7 +788,8 @@
   .panel .panel-stack > .layer > .actions-row > .btn{height:var(--pn-btn); padding-block:0; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center;}
   .panel .panel-stack > .layer > :first-child .prompt, .panel .panel-stack > .layer > .prompt:first-child{font-size:min(1rem, 4.9cqi);}   /* (one line in a narrow panel too) */
   /* the rows */
-  .panel-stack .aspects .asp-grid{grid-template-rows:repeat(4, var(--pn-row)); row-gap:0; align-items:center;}
+  .panel-stack .aspects .asp-grid{grid-template-rows:repeat(4, var(--pn-row)); row-gap:0; align-items:center; column-gap:22px;}   /* (Imbalance reading as the explorer: the columns, the grades where the explorer's are) */
+  @container (max-width:335px){ .panel-stack .aspects .asp-grid{column-gap:12px;} }   /* (a narrow panel: more room for the names, everywhere alike) */
   .panel-stack .aspects .asp-grid > .asp-head{align-self:end; padding-bottom:6px;}
   .panel-stack .aspects.plan{display:grid; grid-template-rows:var(--pn-row) auto;}
   .panel-stack .aspects.plan > .asp-head{align-self:end; margin:0; padding-bottom:6px;}
