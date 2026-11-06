@@ -8014,17 +8014,9 @@ function renderExplorer(){
   // a grade that changed pulses once (x.flash: since when; redraws while it runs carry it on where it is)
   const now = performance.now(); x.flash = x.flash || {};
   (x.changed || []).forEach(k=>{ x.flash['asp:' + k] = now; }); x.changed = [];
-  // the plans the same way: an answer that changed (after a move, or once the evaluation is in), read from White's side
-  // (Keep pieces for White is Trade pieces for Black: the same reading, no pulse as the turn passes)
-  const planBadges = [...app.querySelectorAll('.layer:not(.ghost) .xp-plan .xp-ans')];
-  if(x.mode==='plans' && pq){
-    const sg = pq.p.side==='w' ? 1 : -1, ans = PLANQ_ROWS.map(R=>{ const r = pq.rows.find(y=>y.key===R.key); return r ? r.answer * sg : null; });
-    if(x.planAns) ans.forEach((a, i)=>{ if(a!=null && x.planAns[i]!=null && x.planAns[i]!==a) x.flash['plan:' + i] = now; });
-    x.planAns = ans;
-  }
   for(const [k, t] of Object.entries(x.flash)){
     const el = now - t; if(el >= 450){ delete x.flash[k]; continue; }
-    const b = k.startsWith('plan:') ? planBadges[+k.slice(5)] : app.querySelector(`#aspects .asp-item[data-asp="${k.slice(4)}"] .asp-badge`);
+    const b = app.querySelector(`#aspects .asp-item[data-asp="${k.slice(4)}"] .asp-badge`);
     if(b){ b.classList.add('xp-turn'); b.style.animationDelay = -el + 'ms'; }
   }
   // every imbalance can be picked, even with nothing to draw in this position: the one picked stays as you play on
@@ -8057,7 +8049,7 @@ function renderExplorer(){
   on('homeBtn', ()=>{ if(!exploreReturn()){ screen = 'home'; render(); } });
   on('xpBack', ()=>explorerGo(x.at - 1)); on('xpFwd', ()=>explorerGo(x.at + 1));
   on('xpFlip', ()=>{ x.flip = !x.flip; render(); });
-  app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; x.planAns = null; x.flash = {}; render(); });
+  app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; x.flash = {}; render(); });
 }
 // ================= Plan finder =================
 // Two phases on a position, in the order the books teach (each of the four rows a quarter of the score).
