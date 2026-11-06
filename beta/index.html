@@ -6172,7 +6172,7 @@ function renderCandidates(){
     const uci = mv.from+mv.to+(mv.promotion||'');
     const dup = s.picks.findIndex(m=>m.uci===uci);
     if(dup>=0){ s.picks.splice(dup,1); return; }
-    if(s.picks.length<3) s.picks.push({ id:'c_'+uci, san:mv.san, from:mv.from, to:mv.to, uci, slot:freeSlot() });
+    if(s.picks.length<3){ s.picks.push({ id:'c_'+uci, san:mv.san, from:mv.from, to:mv.to, uci, slot:freeSlot() }); explorerSound(!!mv.captured || /x/.test(mv.san || '')); }   // (the explorer's move / capture sound)
   };
   renderBoard(document.getElementById('board'), bs, p.last, {
     selectedSq: selSquare, destSquares,
