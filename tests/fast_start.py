@@ -51,11 +51,12 @@ async def main():
         print('distinct mistakes checked:', tried, '| check searches:', checks)
         if checks > 2*tried: fails.append(f'a likely mistake was checked more than once ({checks} searches for {tried})')
         if not c['final']: fails.append('no Final choice positions after the searches')
-        # Waiting at the review: everything but one Move selection position already played today.
-        await pg.evaluate("(()=>{ const t=ctx('final',false); ensureTrack(t); const pool=poolOf(t); const cur=posAt(t, firstAvailable(t, seqBy[t])); pool.forEach(p=>{ if(p.key!==cur.key) markPlayed(p.key); }); })()")
-        await pg.evaluate("openActivity('final')"); await pg.wait_for_timeout(300)
-        await pg.wait_for_function("!!document.getElementById('check')", timeout=30000)
-        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
+        # Waiting at the review: everything but one Imbalance reading position already played today.
+        await pg.evaluate("(()=>{ const t=ctx('imbalances',false); ensureTrack(t); const pool=poolOf(t); const cur=posAt(t, firstAvailable(t, seqBy[t])); pool.forEach(p=>{ if(p.key!==cur.key) markPlayed(p.key); }); })()")
+        await pg.evaluate("openActivity('imbalances')"); await pg.wait_for_timeout(300)
+        await pg.evaluate("(()=>{ const s=st('imbalances'); s.asp={material:1,pawns:-1,space:1}; s.aspTouched=true; render(); })()")
+        await pg.evaluate(UNGATE); await pg.click('#check')
+        await pg.wait_for_function("(document.getElementById('nextPos')||{}).innerText", timeout=15000); await pg.wait_for_timeout(500)
         n = await pg.evaluate("[document.getElementById('nextPos').disabled, document.getElementById('nextPos').innerText]")
         print('next after the last one:', n)
         if n != [True, 'All played today']: fails.append(f'Next should wait: {n}')

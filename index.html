@@ -745,6 +745,7 @@
   .panel{--pn-top:27px; --pn-gap:8px; --pn-row:34px; --pn-btn-gap:var(--pn-gap); --pn-btn:41px;}   /* (the gap above the buttons: the one under the top line) */
   .panel .panel-stack > .layer > *{margin-top:0; margin-bottom:0;}
   .panel .panel-stack > .layer > :first-child{min-height:var(--pn-top); margin-bottom:var(--pn-gap); box-sizing:border-box;}
+  .panel .panel-stack > .layer > .score:first-child{height:var(--pn-top);}   /* (the accuracy line: exactly the question's height, nothing moves at Check) */
   .panel .panel-stack > .layer > .actions-row{margin-top:auto; padding-top:var(--pn-btn-gap);}
   .panel .panel-stack > .layer > .actions-row > .btn{height:var(--pn-btn); padding-block:0; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center;}
   .panel .panel-stack > .layer > :first-child .prompt, .panel .panel-stack > .layer > .prompt:first-child{font-size:min(1rem, 4.9cqi);}   /* (one line in a narrow panel too) */
