@@ -3130,7 +3130,6 @@ function exploreFrom(p, back){
   if(!ok) x.fens = [p.fen];
   x.flip = p.fen.split(' ')[1]==='b';
   x.ret = { screen, saved: prev, back };
-  try{ if(p.game || p.gameId) x.source = posSource(p); }catch(e){}   // (shown above the board, as in the exercises)
   helpVisible = false; selSquare = null; promoPending = null;
   screen = 'explorer'; render();
 }
@@ -7305,7 +7304,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Plans for Black": "Plans pour les Noirs",
 "Strategy explorer": "Explorateur stratégique",
 "Explore": "Explorer",
-"Free play": "Jeu libre",
 "Exercises": "Exercices",
 "You": "Vous",
 "Check imbalances and plans as you play.": "Vérifiez les déséquilibres et les plans en jouant.",
@@ -8018,7 +8016,7 @@ function renderExplorer(){
       <h1>Strategy explorer</h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
-    <div class="posbar"><div class="pos-title">${x.source || 'Free play'}<br>${toPlay(p)}</div></div>
+    <div class="posbar" aria-hidden="true" style="visibility:hidden"><div class="pos-title">&nbsp;<br>&nbsp;</div></div>   <!-- (the exercises' two lines' room, empty: the board where it sits in them) -->
     ${sidesInNameLine(boardHtml(false).replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct, x.flip)), explorerSidesHtml(x))}
     ${explorerSidesHtml(x).replace('class="xp-sides"', 'class="xp-sides sides-desk"')}
     ${stackedPanel(`${explorerModesHtml(x)}${body}${explorerNavHtml(x, depth, depthNoteHtml(x, ev, fen))}`,
