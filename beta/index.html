@@ -3017,9 +3017,8 @@ function helpModal(app, h, a){
   const close = ()=>{ helpVisible = false; reportOpen = null; render(); };
   if(can && reportOpen){
     const html = reportOpen==='confirm' ? `<h3>Report this position</h3>
-        <p>Reporting tells the developer that something here looks wrong or doubtful: a grade, the answer, a plan or the engine's moves.</p>
-        <p>The position is then checked by hand, and fixed or taken out of the exercise. Your score isn't changed.</p>
-        <p class="eval-note">Only the position and where it comes from are sent: never your name or your account.</p>
+        <p>Report this position if something here seems wrong, doubtful or misleading.</p>
+        <p>It will be reviewed to see what can be improved.</p>
         <div class="modal-actions"><button class="btn secondary" id="reportCancel">Cancel</button><button class="btn" id="reportOk">Report</button></div>`
       : reportOpen==='sending' ? `<h3>Report this position</h3><p>Sending…</p>`
       : reportOpen==='sent' ? `<h3>Thanks!</h3><p>The position has been reported: it will be checked.</p><div class="modal-actions"><button class="btn" id="reportDone">Close</button></div>`
@@ -6928,9 +6927,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Got it": "Compris",
 "Report this position": "Signaler cette position",
 "Reported": "Signalée",
-"Reporting tells the developer that something here looks wrong or doubtful: a grade, the answer, a plan or the engine's moves.": "Signaler indique au développeur que quelque chose semble faux ou douteux ici : une note, la réponse, un plan ou les coups du moteur.",
-"The position is then checked by hand, and fixed or taken out of the exercise. Your score isn't changed.": "La position est alors vérifiée à la main, puis corrigée ou retirée de l'exercice. Votre score ne change pas.",
-"Only the position and where it comes from are sent: never your name or your account.": "Seuls la position et son origine sont envoyés : jamais votre nom ni votre compte.",
+"Report this position if something here seems wrong, doubtful or misleading.": "Signalez cette position si quelque chose vous semble faux, douteux ou trompeur.",
+"It will be reviewed to see what can be improved.": "Elle sera examinée pour voir ce qui peut être amélioré.",
 "Report": "Signaler",
 "Sending…": "Envoi…",
 "Thanks!": "Merci !",
