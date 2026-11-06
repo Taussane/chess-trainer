@@ -569,6 +569,7 @@
   .depth-btn{position:absolute; inset:0; margin:auto; width:fit-content; height:fit-content; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:36px; padding:5px 8px; border:1px solid var(--border); border-radius:8px; background:var(--panel-2); color:var(--text); font:inherit; line-height:1; cursor:pointer;}
   /* (centred by auto margins, not a transform: its fade-in animates transform) */
   .depth-btn b{font-size:1rem; font-weight:700; color:var(--text-mute);}
+  .depth-btn.off{border-style:dashed; background:transparent;} .depth-btn.off b{font-size:.85rem; font-weight:600; opacity:.7;}   /* (the explorer's engine off) */
   .depth-note{position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:5; margin:0; padding:8px 10px; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 18px var(--shadow); font-size:0.8rem; line-height:1.4; color:var(--text-mute); text-align:center;}   /* over the review, nothing moves */
   .score-num{font-family:var(--font-display); font-size:1.7rem; line-height:1; font-variant-numeric:tabular-nums;}
   .score-label{color:var(--text-mute); font-size:0.86rem;}
@@ -7304,6 +7305,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Plans for Black": "Plans pour les Noirs",
 "Strategy explorer": "Explorateur stratégique",
 "Explore": "Explorer",
+"Off": "Arrêt",
 "Exercises": "Exercices",
 "You": "Vous",
 "Check imbalances and plans as you play.": "Vérifiez les déséquilibres et les plans en jouant.",
@@ -7951,14 +7953,25 @@ function xpBarEase(target){
   };
   xpBar.raf = requestAnimationFrame(step);
 }
-function explorerHbarHtml(info, pct, flip){   // flip (playing Black): White's share from the right
+function explorerHbarHtml(info, pct, flip, off){   // flip (playing Black): White's share from the right; off: the engine off (no bar, its room kept)
   const num = info ? (info.mate!=null ? '#' + Math.abs(info.mate) : fmtBarScore(info)) : '…', whiteAhead = pct >= 50;
   const from = xpBar.shown ?? pct;   // where it stands now; it eases to pct (xpBarEase), across redraws
-  return `<div class="pl-line xp-hbar-line"><div class="xp-hbar${flip ? ' flip' : ''}" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" id="xpBarW" style="width:${from}%"></div>
+  return `<div class="pl-line xp-hbar-line"><div class="xp-hbar${flip ? ' flip' : ''}"${off ? ' style="visibility:hidden"' : ''} role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" id="xpBarW" style="width:${from}%"></div>
       <span class="xp-hbar-num ${whiteAhead ? 'w' : 'b'}">${num}</span></div></div>`;
 }
 // Plans, as the Plan finder reads them, for the side to play: its two rows (trades, type of
 // play), each answer with its reason under it; the criterion's words can be tapped for its marks.
+// The explorer's engine on or off (remembered on this device). Off: its search stops (what it found is kept), and
+// nothing more is searched until it's back on.
+function explorerEngine(onNow){
+  const x = explorer; x.engineOn = onNow;
+  try{ localStorage.setItem('cst.xpEngine', onNow ? 'on' : 'off'); }catch(e){}
+  if(!onNow){
+    for(let i = sfQueue.length - 1; i >= 0; i--) if(sfQueue[i].explorer){ const j = sfQueue.splice(i, 1)[0]; j.resolve(EXPLORER_DROPPED); }
+    const c = sfCurrentJob; if(c && c.explorer && !c.preempted){ c.preempted = true; stopForWait(c); }
+  }
+  render();
+}
 function explorerPlan(p, mine, info){
   const pX = { ...p, side: mine }, vals = explorerVals(p.fen);
   if(!vals || vals.special || !info) return null;
@@ -7992,20 +8005,23 @@ function renderExplorer(){
   explorerInit();
   const app = document.getElementById('app'), x = explorer, p = explorerPos(), fen = p.fen;
   side = p.side;
-  const ev = explorerEval(fen), failed = evalFailed(ev);
+  // the engine on or off (the depth button): off, no search, no bar, no best move (the plans read without the evaluation)
+  if(x.engineOn==null){ x.engineOn = true; try{ x.engineOn = localStorage.getItem('cst.xpEngine')!=='off'; }catch(e){} }
+  const ev = x.engineOn ? explorerEval(fen) : null, failed = evalFailed(ev);
   // the position on screen first: its searches move to the front of the queue, and the explorer's search
   // of a position you've left stops (what it found is kept)
   const mineFirst = sfQueue.filter(j=>j.fen===fen); if(mineFirst.length){ for(const j of mineFirst) sfQueue.splice(sfQueue.indexOf(j), 1); sfQueue.unshift(...mineFirst); }
   const c = sfCurrentJob; if(c && c.explorer && c.fen!==fen && !c.preempted){ c.preempted = true; stopForWait(c); }
   const vals = explorerShownVals(x, fen, explorerVals(fen));
-  const done = ev && !failed && ev.lines.length ? ev.lines[0] : null, live = !ev ? explorerLive[fen] : null;
+  const done = ev && !failed && ev.lines.length ? ev.lines[0] : null, live = !ev && x.engineOn ? explorerLive[fen] : null;
   const line = done || live, info = line ? toWhitePerspective(line, fen) : null;
   if(info){ x.lastPct = cpToPct(info.cp, info.mate); x.lastInfo = info; }   // (the bar stays where it was until the next position's first reading)
   const pct = x.lastPct ?? 50;
   const g = new Chess(fen), mine = x.flip ? 'b' : 'w';
   const best = line && line.uci;
-  const depth = g.game_over() ? '' : depthBtnHtml(ev, fen);   // the engine's depth (tap: what it means)
-  const planInfo = info || x.lastInfo;
+  const depth = g.game_over() ? '' : x.engineOn ? depthBtnHtml(ev, fen).replace('<button class="depth-btn"', '<button class="depth-btn" aria-pressed="true"')
+    : `<button class="depth-btn off" id="depthBtn" aria-pressed="false" aria-label="Engine off"><b>Off</b></button>`;   // the engine's depth; tap: on / off
+  const planInfo = x.engineOn ? info || x.lastInfo : { cp:0 };
   const pq = x.mode==='plans' ? explorerPlan(p, p.side, planInfo) : null;   // (the side to play's plan)
   const body = x.mode==='imbalances'
     ? aspectsGridHtml(vals, null, ASPECTS.length, !vals, x.aspView, vals && fen)
@@ -8017,9 +8033,9 @@ function renderExplorer(){
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
     <div class="posbar" aria-hidden="true" style="visibility:hidden"><div class="pos-title">&nbsp;<br>&nbsp;</div></div>   <!-- (the exercises' two lines' room, empty: the board where it sits in them) -->
-    ${sidesInNameLine(boardHtml(false).replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct, x.flip)), explorerSidesHtml(x))}
+    ${sidesInNameLine(boardHtml(false).replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct, x.flip, !x.engineOn)), explorerSidesHtml(x))}
     ${explorerSidesHtml(x).replace('class="xp-sides"', 'class="xp-sides sides-desk"')}
-    ${stackedPanel(`${explorerModesHtml(x)}${body}${explorerNavHtml(x, depth, depthNoteHtml(x, ev, fen))}`,
+    ${stackedPanel(`${explorerModesHtml(x)}${body}${explorerNavHtml(x, depth)}`,
       [`${explorerModesHtml(x)}${aspectsGridHtml(null, null, 0, true)}${explorerNavHtml(x)}`,
        `${explorerModesHtml(x)}${explorerPlanHtml(null, null, true)}${explorerNavHtml(x)}`])}`;
   if(x.mode==='imbalances') decisiveKeys(vals).forEach(k=>{ const b = app.querySelector(`#aspects .asp-item[data-asp="${k}"] .asp-badge`); if(b) b.classList.add('ok'); });   // (ringed as in the review: the decisive ones)
@@ -8043,14 +8059,14 @@ function renderExplorer(){
   x.aspKing = sidesShown(x);   // (one side's marks, or none: the buttons above the panel)
   if(vals) wireAspectView(p, x); else document.getElementById('arrows').innerHTML = '';
   wireSides(x);
+  const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   const outer = document.querySelector('.board-outer'), top = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   top.setAttribute('class', 'arrows'); top.setAttribute('viewBox', '0 0 480 480'); outer.appendChild(top);
-  if(best) drawArrows(top, [{ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }], 'xb_');
-  wireDepthBtn(x);
+  if(best && x.engineOn) drawArrows(top, [{ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }], 'xb_');
+  on('depthBtn', ()=>explorerEngine(!x.engineOn));
   xpBarEase(pct);
   app.querySelectorAll('.panel .layer:not(.ghost) .xp-plan .pq-reason[data-key]').forEach(b=>b.onclick = ()=>{ x.aspView = x.aspView===b.dataset.key ? null : b.dataset.key; x.aspPiece = x.aspKing = null; render(); });
   const li = app.querySelector('.layer:not(.ghost) .xp-li'); if(li && li.offsetHeight) app.style.setProperty('--xp-btn-h', li.offsetHeight + 'px');   // (the review buttons' height for the whole row)
-  const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ if(!exploreReturn()){ screen = 'home'; render(); } });
   on('xpBack', ()=>explorerGo(x.at - 1)); on('xpFwd', ()=>explorerGo(x.at + 1));
   on('xpFlip', ()=>{ x.flip = !x.flip; render(); });
