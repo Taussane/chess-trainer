@@ -176,8 +176,8 @@
   .panel-stack > .layer > .actions-row.xp-nav{padding-top:16px;}   /* (a little room under the grid / the plans) */
   .xp-nav .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:auto; min-width:36px; height:var(--xp-btn-h, 33px); padding:5px 8px; border-radius:8px; font-size:1rem;}   /* (the depth button's size) */
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
-  .xp-steps{justify-self:start; display:flex; gap:10px;}
-  .xp-right{justify-self:end; display:flex; gap:10px;}
+  .xp-steps{justify-self:end; display:flex; gap:10px;}
+  .xp-left{justify-self:start; display:flex; gap:10px;}
   .xp-nav .icon-btn.xp-li{gap:6px; font-size:.85rem; font-weight:500; color:var(--text); text-decoration:none; padding:5px 10px;}
   .xp-nav .xp-li .li-logo{width:15px; height:15px; flex:none;}
   .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
@@ -3077,10 +3077,10 @@ function lichessUrl(p){
   if(sans && p.ply!=null) return 'https://lichess.org/analysis/pgn/' + sans.map(s=>encodeURIComponent(s.replace(/[+#]/g,''))).join('_') + color + '#' + p.ply;
   return 'https://lichess.org/analysis/standard/' + p.fen.replace(/ /g,'_') + color;
 }
-// A review's buttons on the left: the position in the Strategy explorer (the game's moves around it), then on Lichess.
+// A review's buttons on the left: the position on Lichess, then in the Strategy explorer (the game's moves around it).
 function lichessLink(p){
   const url = lichessUrl(p);
-  return `<button class="btn secondary lichess-open xp-open" data-xp-open>${SIDE_ICONS.explorer} Explore</button><a class="btn secondary lichess-open" href="${url}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a>`;
+  return `<a class="btn secondary lichess-open" href="${url}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a><button class="btn secondary lichess-open xp-open" data-xp-open>${SIDE_ICONS.explorer} Explore</button>`;
 }
 // The position in the Strategy explorer: the whole game when its moves are known (at this position, from the side to
 // play), else the position alone. ret: where its back arrow goes (this screen), and the explorer as it was before.
@@ -4376,7 +4376,7 @@ function stackedPanel(inner, ghosts, extra){
   return `<div class="panel"><div class="panel-stack"><div class="layer">${inner}</div>${
     ghosts.map(g=>`<div class="layer ghost" aria-hidden="true" inert>${g}</div>`).join('')}</div></div>${extra||''}`;
 }
-const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary lichess-open"><svg class="act-icon" viewBox="0 0 24 24"></svg> Explore</span><span class="btn secondary lichess-open"><svg class="li-logo" viewBox="0 0 50 50"></svg> Analyze</span><span class="btn">Next position</span></div>`;
+const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary lichess-open"><svg class="li-logo" viewBox="0 0 50 50"></svg> Analyze</span><span class="btn secondary lichess-open"><svg class="act-icon" viewBox="0 0 24 24"></svg> Explore</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
   `<p class="prompt">Drag the evaluation bar to where you think it sits.</p><div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planHtml(null, null, false, true)}${GHOST_ACTIONS}`,
@@ -7860,9 +7860,9 @@ addEventListener('keydown', e=>{
 // The moves on the left, the engine's depth in the middle, the board's sides and Lichess on the right.
 function explorerNavHtml(x, depth, note){
   return `<div class="actions-row xp-nav">
+      <span class="xp-left"><button class="icon-btn" id="xpFlip" aria-label="Switch sides"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><a class="icon-btn xp-li" href="${explorerLichessUrl(x)}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a></span>      <span class="xp-depth">${depth || ''}</span>${note || ''}
       <span class="xp-steps"><button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
-      <span class="xp-depth">${depth || ''}</span>${note || ''}
-      <span class="xp-right"><button class="icon-btn" id="xpFlip" aria-label="Switch sides"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><a class="icon-btn xp-li" href="${explorerLichessUrl(x)}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a></span>
+
     </div>`;
 }
 // Lichess's analysis board: the moves played from the start (at this one, from the side at the bottom), or the position alone
