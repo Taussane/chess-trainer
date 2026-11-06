@@ -648,6 +648,7 @@
   .mx-rep > div:first-child{flex:1 1 240px; min-width:0;}
   .mx-rep small{color:var(--text-mute);}
   .mx-rep-acts{display:flex; gap:12px; flex-shrink:0;}
+  .build-id{opacity:.6; font-variant-numeric:tabular-nums;}
   .modal-actions.split{justify-content:space-between; align-items:center;}
   .modal-actions .report-done{font-size:0.85rem; color:var(--text-mute);}
   /* ===== The desktop layout (html.desk2, set by the app): screens 1024 px wide or more and at least 4:3
@@ -4471,8 +4472,9 @@ function sideGo(where){
   render();
 }
 document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('.faq-link')){ screen = 'faq'; render(); } });   // the FAQ, from the links
+const BUILD = /*BUILD*/'';   // the website's version (set by scripts/build-site.py: a short fingerprint of the app), shown after the links
 function siteLinks(){
-  return `<button class="link-plain faq-link">FAQ</button> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
+  return `<button class="link-plain faq-link">FAQ</button> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>${BUILD ? ` · <span class="build-id">v${BUILD}</span>` : ''}`;
 }
 function renderSide(){
   if(!DESK) return;
