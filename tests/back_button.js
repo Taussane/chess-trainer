@@ -28,9 +28,9 @@ const cj = require('fs').readFileSync(path.join(__dirname, '../vendor/chess.js/c
   out.push('imbalances with scale (' + await where() + '): back -> ' + await back() + ', back -> ' + await back());
   await p.goto('http://localhost:8793/'); await p.waitForTimeout(1500);
   // 4. exercise, back, profile, back
-  await p.evaluate(() => openActivity('analysis')); await p.waitForTimeout(300);
+  await p.evaluate(() => openActivity('final')); await p.waitForTimeout(300);
   const a = await back(); await p.click('#accountBtn'); await p.waitForTimeout(300);
-  out.push('analysis: back -> ' + a + '; profile: back -> ' + await back() + ', back -> ' + await back());
+  out.push('final: back -> ' + a + '; profile: back -> ' + await back() + ', back -> ' + await back());
   // 5. reload inside settings
   await p.goto('http://localhost:8793/'); await p.waitForTimeout(1500);
   await p.click('#accountBtn'); await p.waitForTimeout(300); await p.click('#settingsBtn'); await p.waitForTimeout(300);
@@ -40,7 +40,7 @@ const cj = require('fs').readFileSync(path.join(__dirname, '../vendor/chess.js/c
   const want = ['home > profile > settings: back -> account, back -> home, back -> LEFT THE SITE',
     'arrows back to home (home), then back -> LEFT THE SITE',
     'imbalances with scale (imbalances+scale): back -> imbalances, back -> home',
-    'analysis: back -> home; profile: back -> home, back -> LEFT THE SITE',
+    'final: back -> home; profile: back -> home, back -> LEFT THE SITE',
     'reload in settings (home): back -> LEFT THE SITE'];
   const bad = want.filter((w, i) => out[i] !== w).map((w, i) => 'FAIL got: ' + out[want.indexOf(w)] + ' | want: ' + w);
   console.log(bad.length ? bad.join('\n') : 'ok'); process.exit(bad.length ? 1 : 0);

@@ -51,15 +51,6 @@ setInterval(hook, 5);
   const next = async () => { await p.evaluate(() => document.getElementById('nextPos').click()); await p.waitForTimeout(50); };
 
   {
-    // Position evaluation: answer after 1 s, then after 5 s
-    await open('analysis');
-    for (const think of [1000, 5000]) {
-      await mark(`analysis question (${await p.evaluate(()=>__tag(curPos.fen))}), answering after ${think} ms`); await p.waitForTimeout(think);
-      await p.evaluate(() => { const s = st('analysis'); s.barMoved = true; render(); document.getElementById('check').click(); });
-      const ms = await waitReady(() => !!fenEval(pos().fen)); await mark(`analysis review ready after ${ms} ms`); expect(`Position evaluation review after ${think} ms`, ms, think > 3000 ? 300 : 3300);
-      await p.waitForTimeout(1500); await dump(); await next();
-    }
-    await home();
     // Imbalance reading: a long search is probably running for something prepared
     await open('imbalances');
     for (const think of [300, 3000]) {

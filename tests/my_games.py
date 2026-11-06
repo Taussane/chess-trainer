@@ -68,13 +68,13 @@ async def main():
         if any(t and not (_re.match(r'Analysing your games: \d+ of 10 done', t) ) for t in seen): fails.append(f'unexpected status line: {set(seen)}')
         if nums != sorted(nums): fails.append(f'the counter went backwards: {nums}')
         if seen[-1] != '': fails.append('no status line once all games are analysed: ' + seen[-1])
-        if any(not (ba_keys[i] <= ba_keys[i+1]) for i in range(len(ba_keys)-1)): fails.append('a Board analysis position was removed during analysis')
-        for a in ('analysis','candidates','final'):
+        if any(not (ba_keys[i] <= ba_keys[i+1]) for i in range(len(ba_keys)-1)): fails.append('a quiet position was removed during analysis')
+        for a in ('candidates','final'):
             xs = [c[a] for c in counts_seen]
             if xs != sorted(xs): fails.append(f'{a} positions went down during analysis: {xs}')
         counts = await pg.evaluate("countsOf(myPositions)"); print('my positions:', counts)
         if st['queued'] or st['pending']: fails.append(f'background not finished: {st}')
-        if counts['analysis'] < 5: fails.append(f'too few Board analysis positions: {counts}')
+        if len(ba_keys[-1]) < 5: fails.append(f'too few quiet positions: {len(ba_keys[-1])}')
         if counts['candidates'] + counts['final'] < 3: fails.append(f'too few mistake positions: {counts}')
         mine_only = await pg.evaluate("myPositions.every(p=>!p.acts.includes('analysis') ? p.side===myGames.find(g=>g.id===p.gameId).me : true) && myPositions.filter(p=>p.acts.includes('final')).every(p=>p.acts.includes('candidates'))")
         if not mine_only: fails.append('a mistake position is not the player to move, or in Move selection without Candidate moves')
@@ -86,9 +86,9 @@ async def main():
         await pg.click('#homeBtn'); await pg.wait_for_timeout(200)
         await pg.click('[data-src="mine"]'); await pg.wait_for_timeout(200)
         await pg.screenshot(path=str(SHOTS/'mg_3_home.png'))
-        for act in ['analysis','candidates','final']:
+        for act in ['candidates','final']:
             if counts[act] == 0: continue
-            await pg.evaluate(f"openActivity('{act}')"); await pg.wait_for_timeout(1500)   # (Position evaluation: no card on the live site)
+            await pg.evaluate(f"openActivity('{act}')"); await pg.wait_for_timeout(1500)
             t = await pg.evaluate("pos().key+' | '+pos().title+' | '+pos().year")
             print(act, '→', t)
             if not t.startswith('own:'): fails.append(f'{act} did not open one of your positions: {t}')

@@ -55,7 +55,7 @@ async def open_app(p, results=None, games=None, meta=None, local=None, fake_engi
     return b, pg, errs
 
 def rows(n, t0=1700000000000):
-    return [{'a':'analysis', 'acc':70, 'ts':t0 + i*1000, 'src':'masters'} for i in range(n)]
+    return [{'a':'final', 'acc':70, 'ts':t0 + i*1000, 'src':'masters'} for i in range(n)]
 
 async def main():
     fails = []; allerrs = []
@@ -74,11 +74,11 @@ async def main():
         # 2. Check, then home before the evaluation is in; reopen.
         b, pg, errs = await open_app(p); allerrs += errs
         await pg.evaluate("""(()=>{ const real = engineEval; engineEval = (f,s)=>new Promise(res=>setTimeout(()=>real(f,s).then(res), 1500)); fenEvalStore = {}; poolEvalStore = {}; })()""")
-        await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(200)
+        await pg.evaluate("openActivity('final')"); await pg.wait_for_timeout(200)
         k = await pg.evaluate("pos().key")
-        await pg.evaluate("(()=>{ st('analysis').guess = 70; render(); })()")
+        await pg.evaluate("(()=>{ render(); })()")
         await pg.evaluate(UNGATE); await pg.click('#check'); await pg.click('#homeBtn'); await pg.wait_for_timeout(2000)
-        await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(2500)
+        await pg.evaluate("openActivity('final')"); await pg.wait_for_timeout(2500)
         n = await pg.evaluate(f"[pos().key, results.length, isPlayed({k!r})]"); print('2. reopened on', n[0]==k, 'results', n[1], 'played', n[2])
         if n != [k, 1, True]: fails.append(f'unrecorded review: {n}')
         await b.close()
@@ -126,11 +126,11 @@ async def main():
         # 6. Missed positions come from the results: a miss on another device shows here, and a
         # list saved before (here X) gives way once X has a newer result.
         k0 = 'r2qkb1r/2pp1ppp/p1n1p1b1/1p6/1PPP4/P3P1P1/3N1P1P/R1BQKB1R w KQkq -'
-        res = rows(6) + [{'a':'analysis', 'acc':40, 'ts':1700000100000, 'src':'masters', 'key':k0, 'miss':True}]
-        b, pg, errs = await open_app(p, results=res, local={'cst.replay.v1': json.dumps([{'key':'X','a':'analysis','ts':1}, {'key':k0,'a':'analysis','ts':1}])}); allerrs += errs
+        res = rows(6) + [{'a':'final', 'acc':40, 'ts':1700000100000, 'src':'masters', 'key':k0, 'miss':True}]
+        b, pg, errs = await open_app(p, results=res, local={'cst.replay.v1': json.dumps([{'key':'X','a':'final','ts':1}, {'key':k0,'a':'final','ts':1}])}); allerrs += errs
         n = await pg.evaluate("missedList().map(x=>x.key)"); print('6. missed:', [x[:12] for x in n])
         if sorted(n) != sorted(['X', k0]): fails.append(f'missed list: {n}')
-        await pg.evaluate(f"results.push({{a:'analysis', acc:90, ts:Date.now(), key:{k0!r}, miss:false}})")
+        await pg.evaluate(f"results.push({{a:'final', acc:90, ts:Date.now(), key:{k0!r}, miss:false}})")
         n = await pg.evaluate("missedList().map(x=>x.key)")
         if n != ['X']: fails.append(f'a position played well stayed missed: {n}')
         await b.close()
@@ -154,7 +154,7 @@ async def main():
         # 8. The engine never answers: after the watchdog, the error shows.
         b, pg, errs = await open_app(p, fake_engine=False); allerrs += errs
         await pg.evaluate("""(()=>{ sfState='ready'; sfBusy=false; sfQueue=[]; bgQueue=[]; sfWorker = { postMessage(){} }; fenEvalStore = {}; render(); })()""")
-        await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(200)
+        await pg.evaluate("openActivity('final')"); await pg.wait_for_timeout(200)
         await pg.wait_for_timeout(20800)   # the search cap (10 s ahead of the review), then 5 s to stop, then 5 s to give up
         txt = await pg.inner_text('#app'); print('8.', 'stopped working' in txt)
         if 'stopped working' not in txt: fails.append('no error after the engine stopped answering')

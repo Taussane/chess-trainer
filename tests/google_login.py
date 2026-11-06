@@ -74,8 +74,8 @@ async def main():
             if n != [True, 0, '']: fails.append(f'Lichess account mixed with the Google one: {n}')
             # 4. P2 (Lichess "Other") plays one; P1 (Google) adds that Lichess login: one account with both.
             # Two results on the Lichess account: one fine, one missed (for Replay), as the app saves them.
-            await P2.evaluate("""(()=>{ const k = POOLS.analysis.map(p=>p.key), now = Date.now();
-              [{ a:'analysis', acc:80, ts:now-2000, src:'masters', key:k[0], miss:false }, { a:'analysis', acc:5, ts:now-1000, src:'masters', key:k[1], miss:true }]
+            await P2.evaluate("""(()=>{ const k = POOLS.final.map(p=>p.key), now = Date.now();
+              [{ a:'final', acc:80, ts:now-2000, src:'masters', key:k[0], miss:false }, { a:'final', acc:5, ts:now-1000, src:'masters', key:k[1], miss:true }]
                 .forEach(r=>{ results.push(r); resultsDb.add(r); }); })()"""); await P2.wait_for_timeout(1200)
             m = await P2.evaluate("missedList().length"); print("4. P2 missed before linking:", m, await P2.evaluate("results.map(r=>[r.a, r.acc, r.miss, (r.key||'').slice(0,20)])"))
             if m != 1: fails.append(f'test setup: P2 should have one missed position, has {m}')

@@ -72,8 +72,8 @@ async def stand_in(pg):
 
 async def play_one(pg):
     await pg.evaluate("screen='home'; render()")
-    await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(300)
-    await pg.evaluate("(()=>{ st('analysis').guess = 60; render(); })()")
+    await pg.evaluate("openActivity('final')"); await pg.wait_for_timeout(300)
+    await pg.evaluate("render()")
     await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
 
 async def login(pg):

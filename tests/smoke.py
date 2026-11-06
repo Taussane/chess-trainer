@@ -26,9 +26,9 @@ async def main():
         await pg.evaluate("(()=>{"+FAKE+"})()")
         sizes = await pg.evaluate("Object.fromEntries(Object.entries(POOLS).map(([k,v])=>[k,v.length]))")
         print('pools', sizes)
-        assert all(sizes.get(k,0) > 0 for k in ('analysis','candidates','final')), 'empty pool'
-        for act in ['analysis','candidates','final']:
-            await pg.evaluate(f"openActivity('{act}')"); await pg.wait_for_timeout(1500)   # (Position evaluation: no card on the live site)
+        assert all(sizes.get(k,0) > 0 for k in ('imbalances','planq','candidates','final')), 'empty pool'
+        for act in ['candidates','final']:
+            await pg.evaluate(f"openActivity('{act}')"); await pg.wait_for_timeout(1500)
             for i in range(3):
                 title = await pg.evaluate("document.querySelector('.pos-title').innerText.replace(/\\n/g,' · ')")
                 if act == 'candidates':

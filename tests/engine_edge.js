@@ -14,7 +14,7 @@ async function page(b) {
   await p.goto('http://localhost:8794/'); await p.waitForFunction(() => sfState === 'ready', null, { timeout: 30000 }); await p.waitForTimeout(500);
   return p;
 }
-const answer = (p, a) => p.evaluate(a => { const s = st(a), q = pos(); s.barMoved = true; s.swapped = true;
+const answer = (p, a) => p.evaluate(a => { const s = st(a), q = pos(); s.swapped = true;
   if (a === 'imbalances') ASPECTS.forEach(x => { s.asp[x.key] = 1; });
   if (a === 'candidates') { const u = new Chess(q.fen).moves({ verbose: true })[0]; s.picks = [{ uci: u.from + u.to + (u.promotion || ''), from: u.from, to: u.to, san: u.san, slot: 0 }]; }
   render(); const c = document.getElementById('check'); if (!c) throw new Error('no Check button on ' + a); c.disabled = false; c.click(); }, a);
@@ -24,7 +24,7 @@ const reviewDone = (p, ms) => p.waitForFunction(() => !!document.getElementById(
   await new Promise(r => setTimeout(r, 800));
   const b = await chromium.launch();
   // 1. Leave a review before its evaluation is in, come back: it completes and is recorded once
-  for (const a of ['analysis', 'candidates', 'final']) {
+  for (const a of ['candidates', 'final']) {
     const p = await page(b);
     await open(p, a); await p.waitForFunction(() => !!document.getElementById('check'), null, { timeout: 30000 });
     const n0 = await p.evaluate(() => results.length);
@@ -39,7 +39,7 @@ const reviewDone = (p, ms) => p.waitForFunction(() => !!document.getElementById(
     await p.close();
   }
   // 2. The engine stops working in the middle of a review: "Engine unavailable", never stuck
-  for (const a of ['analysis', 'candidates', 'final', 'imbalances']) {
+  for (const a of ['candidates', 'final', 'imbalances']) {
     const p = await page(b);
     await open(p, a); await p.waitForFunction(() => !!document.getElementById('check'), null, { timeout: 30000 });
     if (a !== 'final') await p.evaluate(() => { fenEvalStore = {}; poolEvalStore = {}; aspectsStore = {}; });   // nothing prepared
@@ -55,11 +55,11 @@ const reviewDone = (p, ms) => p.waitForFunction(() => !!document.getElementById(
   // 3. A hung engine (no answer): the watchdog gives up instead of waiting forever
   {
     const p = await page(b);
-    await open(p, 'analysis'); await p.waitForFunction(() => !!document.getElementById('check'), null, { timeout: 30000 });
-    await p.evaluate(() => { fenEvalStore = {}; try { sfWorker.postMessage('stop'); } catch (e) {} });
+    await open(p, 'candidates'); await p.waitForFunction(() => !!document.getElementById('check'), null, { timeout: 30000 });
+    await p.evaluate(() => { fenEvalStore = {}; poolEvalStore = {}; try { sfWorker.postMessage('stop'); } catch (e) {} });
     await p.waitForTimeout(300);
     await p.evaluate(() => { const post = sfWorker.postMessage.bind(sfWorker); sfWorker.postMessage = m => { if (/^go |^stop/.test(m)) return; post(m); }; sfWorker.onmessage = () => {}; });
-    await answer(p, 'analysis');
+    await answer(p, 'candidates');
     const t0 = Date.now();
     const gave = await p.waitForFunction(() => sfState === 'error', null, { timeout: 30000 }).then(() => true, () => false);
     ok('hung engine: gives up within 8 s', gave && Date.now() - t0 < 8000, `after ${Math.round((Date.now() - t0) / 1000)} s`);
@@ -68,9 +68,9 @@ const reviewDone = (p, ms) => p.waitForFunction(() => !!document.getElementById(
   // 4. Rapid switching between exercises, then each one still works
   {
     const p = await page(b);
-    for (let i = 0; i < 12; i++) { await open(p, ['analysis', 'candidates', 'final', 'imbalances'][i % 4]); await p.waitForTimeout(60); }
+    for (let i = 0; i < 12; i++) { await open(p, ['candidates', 'final', 'imbalances'][i % 3]); await p.waitForTimeout(60); }
     const q = await p.evaluate(() => sfQueue.length);
-    for (const a of ['final', 'candidates', 'analysis']) {
+    for (const a of ['final', 'candidates', 'imbalances']) {
       await open(p, a);
       const shown = await p.waitForFunction(() => !!document.getElementById('check'), null, { timeout: 15000 }).then(() => true, () => false);
       await answer(p, a); const done = await reviewDone(p, 15000);

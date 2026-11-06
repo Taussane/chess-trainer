@@ -134,40 +134,7 @@ async def main():
         r1 = await tapped('activity'); r2 = await tapped(other_k); r3 = await tapped(other_k)
         print('tap:', r1, r2, r3, other_k)
         if r1['sel'] != 'activity' or r1['nums'] < 1 or r2['sel'] != other_k or r3['sel'] != '' or r3['marks'] != 0: fails.append(f'tapping: {r1} {r2} {r3}')
-        # 7. Position evaluation: the bar alone, the tactics reminder beside Check; its review shows the
-        #    engine's imbalances (no borders, not scored), tappable too.
         await pg.click('#homeBtn'); await pg.wait_for_timeout(200)
-        await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(300)
-        await pg.evaluate("""()=>{ const p = pos(); engineEval = fen=>new Promise(res=>setTimeout(()=>res({ lines:[{cp: p.side==='w' ? 250 : -250, mate:null, uci:null}], bestUci:null }), 20)); fenEvalStore = {}; render(); }""")
-        prompt = await pg.text_content('#anaPrompt'); note = await pg.query_selector('#anaCheckRow .asp-note')
-        if prompt != "Drag the bar to where you think it sits." or note: fails.append(f'evaluation question: {prompt} / {note}')
-        if await pg.query_selector('#aspInput'): fails.append('Position evaluation asks for no imbalances')
-        e1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
-        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=8000); await pg.wait_for_timeout(300)
-        e2 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
-        if e1 != e2: fails.append(f'Position evaluation panel height changed: {e1} -> {e2}')
-        r = await pg.evaluate("""(()=>{ const s = st('analysis'), p = pos(); return { acc: document.getElementById('revealAcc').textContent, want: evalAccuracyPct(s.guess, positionInfo(p, fenEval(p.fen)).pct),
-            head: document.querySelector('#aspects .asp-head').textContent, lines: [...document.querySelectorAll('#aspects .plan-row:not(.plan-blank)')].map(r=>r.textContent),
-            badges: document.querySelectorAll('#aspects .asp-badge').length, rec: results[results.length-1].a, who: p.side==='w' ? 'White' : 'Black' }; })()""")
-        print('evaluation review:', r)
-        if r['acc'] != f"{r['want']}%" or r['head'] != 'Possible plans for ' + r['who'] or not 1 <= len(r['lines']) <= 3 or r['badges'] or r['rec'] != 'analysis': fails.append(f'evaluation review: {r}')
-        row = await pg.query_selector('#aspects .plan-row.pickable')
-        if row:
-            k = await row.get_attribute('data-asp'); await row.click(); await pg.wait_for_timeout(100)
-            if await pg.evaluate("st('analysis').aspView") != k: fails.append('tapping a plan line should show its imbalance')
-            if await pg.evaluate("getComputedStyle(document.querySelector('#aspects .plan-row.sel .plan-sit')).textDecorationLine") != 'none': fails.append('the selected plan line should not be underlined')
-        # the plan, from made-up imbalances (White to play)
-        plans = await pg.evaluate("""(()=>{ const P = (vals, cp, side, eg)=>planFor({ fen:(eg ? '4k3/8/8/8/8/8/8/4K3 ' : '3qk3/8/8/8/8/8/8/3QK3 ')+(side||'w')+' - - 0 1', side: side||'w' }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp, mate:null }).lines.map(x=>x.plan);
-          const Q = (vals, side)=>planFor({ fen:'4k2r/8/8/8/8/8/P7/R3K3 '+side+' - - 0 1', side }, Object.assign({ material:0, pawns:0, space:0, activity:0, king:0, threats:0 }, vals), { cp:0, mate:null }).lines.map(x=>x.situation+': '+x.plan);
-          return { passed: Q({ pawns:2 }, 'w'), blockade: Q({ pawns:2 }, 'b'),   // (Pawns: + from 2 points)
-                   ahead: P({ material:1.5 }, 150), behind: P({ material:-1.5, activity:1 }, 0), king: P({ king:6 }, 200), kingEg: P({ king:-2 }, 0, 'w', true), cramped: P({ space:-4 }, -30),
-                   blackAhead: P({ material:-1.5 }, -150, 'b'), even: P({}, 10), lost: P({ activity:-0.4 }, -400), conflict: P({ material:1.5, space:4 }, 150) }; })()""")
-        print('plans:', plans)
-        if plans['ahead'][0] != 'Trade pieces' or plans['behind'][0] != 'Avoid trades, attack' \
-           or plans['king'][0] != 'Open lines to it' or plans['kingEg'] != ['Centralize it'] or plans['cramped'] != ['Trade to breathe'] \
-           or plans['blackAhead'][0] != 'Trade pieces' or plans['even'] != ['Find a pawn break'] \
-           or 'Simplify, stay safe' in plans['king'] or plans['conflict'] != ['Trade pieces'] \
-           or plans['lost'][0] != 'Complicate' or plans['passed'] != ['Passed pawn: Push it'] or plans['blockade'] != ['Enemy passed pawn: Blockade it']: fails.append(f'plans: {plans}')
         # Imbalance reading in your games: only positions whose evaluation is near the imbalances' total
         q = await pg.evaluate("""async t=>{
           const lines = t.split('\\n');   // total ≈ +0.8 for this table's position
@@ -298,7 +265,7 @@ async def main():
         n = await pg.evaluate("""(()=>{ const P = POOLS.imbalances, few = P.filter(p=>{ const v = explorerVals(p.fen, true); return !v || ASPECTS.filter(x=>!isOff(v, x) && aspectLevel(v[x.key], x.key)).length < 3; }).length;
           const fresh = fen=>adaptAspects(parseAspects(sfTableLines(fen), fen), fen);   // (the reading alone: a mate check met earlier in the test can change King safety)
           const disP = P.filter(p=>gradesDisagree(p.fen, fresh(p.fen))), dis = disP.length; const disInfo = disP.map(p=>[p.key, aspectsStore[p.fen] && aspectsStore[p.fen].status, JSON.stringify(explorerVals(p.fen, true).mate || null), ASPECTS.map(x=>x.key + ':' + fresh(p.fen)[x.key]).join(' ')]), close = P.filter((p, i)=>P.some((q, j)=>j!==i && q.game===p.game && Math.abs(q.ply - p.ply) < 7)).length;
-          return [P.length, few, dis, close, POOLS.analysis.some(p=>hiddenCastlingLoss(p.fen)) || P.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss), POOLS.planq.length, disInfo]; })()""")
+          return [P.length, few, dis, close, P.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss), POOLS.planq.length, disInfo]; })()""")
         print('pools:', n)
         if n[0] < 1000 or n[1] or n[2] or n[3] or n[4] or n[5] != [True, False, False] or n[6] < 1000: fails.append(f'Imbalance reading pool: {n}')
         await b.close()

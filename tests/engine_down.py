@@ -19,7 +19,7 @@ async def main():
         await pg.route('http*://**/*', lambda r: asyncio.ensure_future(route(r)))
         await pg.goto('https://site.test/')
         await pg.wait_for_function("sfState==='error'", timeout=60000)
-        for a in ['analysis', 'candidates']:
+        for a in ['final', 'candidates']:
             await pg.evaluate(f"screen='{a}'; render()"); await pg.wait_for_timeout(300)
             st = await pg.evaluate("[document.getElementById('check').disabled, !!document.querySelector('.panel .engine-error'), !!document.querySelector('.panel + .engine-error')]")
             print(a, st)

@@ -51,9 +51,10 @@ async def main():
         print('distinct mistakes checked:', tried, '| check searches:', checks)
         if checks > 2*tried: fails.append(f'a likely mistake was checked more than once ({checks} searches for {tried})')
         if not c['final']: fails.append('no Final choice positions after the searches')
-        # Waiting at the review: everything but one Board analysis position already played today.
-        await pg.evaluate("(()=>{ const t=ctx('analysis',false); ensureTrack(t); const pool=poolOf(t); const cur=posAt(t, firstAvailable(t, seqBy[t])); pool.forEach(p=>{ if(p.key!==cur.key) markPlayed(p.key); }); })()")
-        await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(300)
+        # Waiting at the review: everything but one Move selection position already played today.
+        await pg.evaluate("(()=>{ const t=ctx('final',false); ensureTrack(t); const pool=poolOf(t); const cur=posAt(t, firstAvailable(t, seqBy[t])); pool.forEach(p=>{ if(p.key!==cur.key) markPlayed(p.key); }); })()")
+        await pg.evaluate("openActivity('final')"); await pg.wait_for_timeout(300)
+        await pg.wait_for_function("!!document.getElementById('check')", timeout=30000)
         await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
         n = await pg.evaluate("[document.getElementById('nextPos').disabled, document.getElementById('nextPos').innerText]")
         print('next after the last one:', n)

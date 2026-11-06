@@ -14,16 +14,16 @@ async def main():
     async with async_playwright() as p:
         b, pg, errs = await T.page_with_app(p, beta=True)
         await pg.evaluate("fenEvalStore = {}; poolEvalStore = {}")   # forget searches the blocked real engine failed before the stand-in took over
-        # A history: 8 Board analysis positions at 80%, two days ago and today.
-        await pg.evaluate("""(()=>{ const t0=new Date(); t0.setHours(0,10,0,0); const now=Math.max(Date.now(), t0.getTime()); results = Array.from({length:8},(_,i)=>({a:'analysis', acc:80, ts: now - (i<4 ? 2*864e5 : 0) - (8-i)*6e4, src:'masters'})); saveLocal(); progressReady(); render(); })()""")
-        # Play a Board analysis position badly (guess far from the engine's value) -> joins the list.
-        await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(300)
-        k = await pg.evaluate("pos().key"); await pg.wait_for_function("!!fenEval(pos().fen)")
-        await pg.evaluate("(()=>{ const s=st('analysis'); const d=fenEval(pos().fen); s.guess = d && positionInfo(pos(), d).pct > 50 ? 2 : 98; render(); })()")
+        # A history: 8 Move selection positions at 80%, two days ago and today.
+        await pg.evaluate("""(()=>{ const t0=new Date(); t0.setHours(0,10,0,0); const now=Math.max(Date.now(), t0.getTime()); results = Array.from({length:8},(_,i)=>({a:'final', acc:80, ts: now - (i<4 ? 2*864e5 : 0) - (8-i)*6e4, src:'masters'})); saveLocal(); progressReady(); render(); })()""")
+        # Play a Move selection position badly (the moves worst first) -> joins the list.
+        await pg.evaluate("openActivity('final')"); await pg.wait_for_timeout(300)
+        k = await pg.evaluate("pos().key"); await pg.wait_for_function("(()=>{ const p=pos(), m=finalMoves(p); return Array.isArray(m) && !!poolEval(p.fen, m.map(x=>x.uci)); })()", timeout=30000)
+        await pg.evaluate("""(good=>{ const p=pos(), d=fenEval(p.fen), m=finalMoves(p), pe=poolEval(p.fen, m.map(x=>x.uci)); const lines=(pe && pe.lines || []).concat(d.lines||[]); const w=u=>{ const l=lines.find(l=>l.uci===u); return l ? winPercent(l.cp, l.mate) : 0; }; const s=st('final'); s.order = m.map(x=>x.id).sort((a,b)=>good ? w(b)-w(a) : w(a)-w(b)); s.swapped = true; render(); })(false)""")
         await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
         lst = await pg.evaluate("missedList().map(x=>x.a+':'+x.key)")
         print('after a bad play:', lst)
-        if f'analysis:{k}' not in lst: fails.append('a position below the average did not join the replay list')
+        if f'final:{k}' not in lst: fails.append('a position below the average did not join the replay list')
         await pg.click('#homeBtn'); await pg.click('#accountBtn')
         txt = await pg.inner_text('.pf-id'); print(txt.replace('\n', ' '))
         if '9 positions played since' not in txt: fails.append('profile header wrong: ' + txt)
@@ -31,7 +31,7 @@ async def main():
         if await pg.query_selector('#replayBtn'): fails.append('a position played today was offered for replay')
         rows = await pg.evaluate("[...document.querySelectorAll('.wk-table tbody tr')].map(r=>r.innerText.replace(/\\s+/g,' '))")
         print('week:', rows[:3])
-        if not rows[0].startswith('Today'): fails.append(f'today row: {rows[0]}')   # (Position evaluation, a side exercise now, isn't a column of the routine's week)
+        if not rows[0].startswith('Today'): fails.append(f'today row: {rows[0]}')
         await pg.screenshot(path=str(T.SHOTS/'profile.png'), full_page=True)
         # The chart's tip: stays open when the page redraws, and stays inside the chart at both ends.
         await pg.wait_for_timeout(300)   # the page's slide-in done (its box measured where it stays)
@@ -52,10 +52,11 @@ async def main():
         title = await pg.inner_text('h1')
         if not title.startswith('Replay'): fails.append(f'replay title: {title}')
         if await pg.evaluate("pos().key") != k: fails.append('replay opened another position')
-        await pg.evaluate("(()=>{ const s=st('analysis'); const d=fenEval(pos().fen); s.guess = positionInfo(pos(), d).pct; render(); })()")
-        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
+        await pg.wait_for_function("(()=>{ const p=pos(), m=finalMoves(p); return Array.isArray(m) && !!poolEval(p.fen, m.map(x=>x.uci)); })()", timeout=30000)
+        await pg.evaluate("""(good=>{ const p=pos(), d=fenEval(p.fen), m=finalMoves(p), pe=poolEval(p.fen, m.map(x=>x.uci)); const lines=(pe && pe.lines || []).concat(d.lines||[]); const w=u=>{ const l=lines.find(l=>l.uci===u); return l ? winPercent(l.cp, l.mate) : 0; }; const s=st('final'); s.order = m.map(x=>x.id).sort((a,b)=>good ? w(b)-w(a) : w(a)-w(b)); s.swapped = true; render(); })(true)""")
+        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_function("/%/.test((document.querySelector('.layer:not(.ghost) .score')||{}).textContent||'')", timeout=30000); await pg.wait_for_function("st('final').revDone", timeout=15000); await pg.wait_for_timeout(500)
         chip = await pg.inner_text('.layer:not(.ghost) .score')
-        print('replay review:', chip.replace('\n',' '))
+        print('replay review:', chip.replace('\n',' '), '| panel:', (await pg.inner_text('.layer:not(.ghost)')).replace('\n',' ')[:300], await pg.evaluate("[screen, replayMode, st('final').revDone, st('final').checked]"))
         if 'Average' not in chip: fails.append('replay review should show the average')
         if await pg.evaluate("missedList().length"): fails.append('position still on the list after a good replay')
         if await pg.evaluate("results.length") != n_before + 1: fails.append('a replay was not recorded in the results')

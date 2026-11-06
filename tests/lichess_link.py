@@ -19,7 +19,7 @@ async def main():
     fails = []
     async with async_playwright() as p:
         b, pg, errs = await T.page_with_app(p)
-        r = await pg.evaluate(f"(()=>{{ const f = {CHECK}; const out = {{}}; ['analysis','candidates','final'].forEach(a=>POOLS[a].forEach(x=>{{ const v = f(x); out[v] = (out[v]||0)+1; }})); return out; }})()")
+        r = await pg.evaluate(f"(()=>{{ const f = {CHECK}; const out = {{}}; ['imbalances','planq','candidates','final'].forEach(a=>POOLS[a].forEach(x=>{{ const v = f(x); out[v] = (out[v]||0)+1; }})); return out; }})()")
         print('masters:', r)
         if list(r) != ['ok']: fails.append(f'masters: {r}')
         await pg.click('#accountBtn'); await pg.evaluate("(t=>{ importPgnText(t, false, 'TestPlayer'); render(); })", pathlib.Path(T.SAMPLE).read_text()); await pg.wait_for_timeout(500)
@@ -30,9 +30,10 @@ async def main():
         if list(r) != ['ok']: fails.append(f'my games: {r}')
         t = await pg.evaluate("lichessUrl(TEST_POSITIONS[0])")
         if 'analysis/standard/' not in t: fails.append('a test position should open on its own: ' + t)
-        await pg.click('#homeBtn'); await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(300)
-        await pg.evaluate("fenEvalStore = {}; render()"); await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
-        href = await pg.get_attribute('a.btn.secondary', 'href'); print('review link:', href[:70] + '…' + href[-14:])
+        await pg.click('#homeBtn'); await pg.evaluate("openActivity('final')"); await pg.wait_for_timeout(300)
+        await pg.wait_for_function("!!document.getElementById('check')", timeout=30000)
+        await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(2500)
+        href = await pg.get_attribute('.layer:not(.ghost) a.btn.secondary', 'href'); print('review link:', href[:70] + '…' + href[-14:])
         if '/analysis/pgn/' not in href: fails.append('the review link is not the whole game')
         await b.close()
     errs = [e for e in errs if 'importScripts' not in e]
