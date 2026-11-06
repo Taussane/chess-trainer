@@ -136,7 +136,7 @@
   .xp-nav > .btn.xp-li{justify-self:start; padding-inline:12px; justify-content:center; white-space:nowrap; text-decoration:none;}   /* (the reviews' Analyze: the same size; the row's other buttons take its height) */
   @container (max-width:352px){ .xp-nav > .btn.xp-li{font-size:0.84rem; padding-inline:6px;} }   /* (a narrow panel: a phone under 400 px, a small desktop) */
   @container (max-width:306px){ .xp-nav > .btn.xp-li{font-size:0.78rem; padding-inline:4px;} }
-  .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
+  .wrap[data-scr=explorer] .xp-modes{flex:none;}
   .xp-sides{flex:none; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px;}
   .wrap.ex .xp-sides:not(.sides-desk) + .panel{margin-top:6px;}   /* (the buttons just above the panel) */
   .wrap.ex > #app > .xp-sides.sides-desk{display:none;}   /* (Imbalance reading on a phone: the buttons on the name line instead) */
@@ -166,7 +166,7 @@
   .xp-hbar.flip .xp-hbar-num.w{left:auto; right:6px;} .xp-hbar.flip .xp-hbar-num.b{right:auto; left:6px;}
   .asp-badge.xp-turn{animation:xpTurn .45s ease-out;}
   @keyframes xpTurn{from{box-shadow:0 0 0 2px var(--accent);} to{box-shadow:0 0 0 2px transparent;}}
-  .pq-grid{display:grid; grid-template-rows:repeat(4, var(--pq-row)); row-gap:0; margin:6px 0 1px; --pq-row:34px; --pq-btn:30px;}   /* (Move selection's rows: 34 px, touching; the buttons a little shorter, so they don't) */   /* four rows, the same height in every question */
+  .pq-grid{display:grid; grid-template-rows:repeat(4, var(--pq-row)); row-gap:0; --pq-row:34px; --pq-btn:30px;}   /* (Move selection's rows: 34 px, touching; the buttons a little shorter, so they don't) */   /* four rows, the same height in every question */
   .pq-grid > *{min-height:0; height:var(--pq-row); box-sizing:border-box;}
   .pq-grid > .pq-note{align-self:center;}   /* questions 1 and 2: the note centred in its row (the plan's explanations stay at the top) */
   .pq-grid > .pq-choice{height:var(--pq-btn); align-self:center; padding-block:0;} .pq-grid > .pq-sides{align-items:center;}
@@ -198,7 +198,7 @@
   .diag-pre{font-size:0.72rem; line-height:1.35; white-space:pre-wrap; margin:0; max-height:340px; overflow:auto; user-select:text;}
   .pf-resets{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px 12px; margin-top:10px;}
   .pq-reserve{display:grid;} .pq-reserve > *{grid-area:1 / 1;} .pq-ghost-text{visibility:hidden;}
-  .pq-top, .score.pq-top{margin-bottom:0;}   /* (the line above the rows: no more room under it than in Move selection) */ .pq-top .pq-steps{margin-left:auto; flex:none;}
+  .pq-top .pq-steps{margin-left:auto; flex:none;}
   .pq-ask{display:flex; align-items:baseline; gap:12px;} .pq-ask .prompt{margin:0;}
   .pq-why-line .pq-reason{display:inline; text-align:left; line-height:inherit;}
   .pq-reason{font:inherit; font-size:inherit; color:inherit; background:none; border:0; padding:0;}
@@ -446,13 +446,9 @@
   .hint{color:var(--text-mute); font-size:0.86rem; line-height:1.5; margin:10px 0 0;}
   .engine-error{color:var(--bad); margin-top:12px;}
   /* The imbalances: static and dynamic columns of name + badge */
-  .aspects{margin:12px 0 6px;}
   .asp-grid{display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(4, auto); column-gap:22px; row-gap:10px;}
   .asp-item.tap-row{cursor:pointer;}
-  .aspects:not(.plan){margin:6px 0 0;}
-  .aspects:not(.plan) .asp-grid{row-gap:6px;}
   /* In the review the score sits where the prompt was: pull the grid up so each imbalance stays put. */
-  .prompt + .aspects.asp-input{margin-top:16px;}   /* the review's score is 4 px taller than the prompt: the imbalances stay put */
   .asp-head{font-size:0.74rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.05em;}
   .aspects.asp-input{position:relative;}
   .asp-badge{line-height:1.35; transition:background-color .5s, color .5s, border-color .5s, box-shadow .5s;}
@@ -509,7 +505,7 @@
   @keyframes liftPulse{0%,100%{background:transparent; box-shadow:none; transform:none;} 29.4%{background:var(--panel-2); box-shadow:0 6px 18px var(--shadow); transform:translateY(-2px);}}
   @keyframes aspPulse{0%,100%{border-color:var(--border); box-shadow:none;} 29.4%{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}}   /* lights up in 0.5 s, fades out over 1.2 s */
   @media (prefers-reduced-motion: reduce){ .hinting .pulse-now, .hinting .pulse-now::before{animation-duration:1ms !important;} }
-  .score{display:flex; align-items:baseline; gap:8px; margin-bottom:12px; position:relative;}
+  .score{display:flex; align-items:baseline; gap:8px; position:relative;}
   .depth-btn{position:absolute; inset:0; margin:auto; width:fit-content; height:fit-content; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:36px; padding:5px 8px; border:1px solid var(--border); border-radius:8px; background:var(--panel-2); color:var(--text); font:inherit; line-height:1; cursor:pointer;}
   /* (centred by auto margins, not a transform: its fade-in animates transform) */
   .depth-btn b{font-size:1rem; font-weight:700; color:var(--text-mute);}
@@ -519,7 +515,6 @@
   .score-label{color:var(--text-mute); font-size:0.86rem;}
 
   .prompt{margin:0; font-size:1rem; line-height:1.45;}
-  .prompt.top{margin-bottom:10px;}
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
   .actions-row.pending{visibility:hidden;}
   .fade-in{animation:fadeIn .35s ease-out both;}
@@ -539,7 +534,7 @@
   .btn.secondary{background:transparent; border:1px solid var(--border); color:var(--text); font-weight:500;}
   @media (hover:hover){ .btn.secondary:not(:disabled):hover{border-color:var(--accent);} }   /* (like the exercise cards) */
   a.btn{display:inline-flex; align-items:center; text-decoration:none;}
-  .actions-row{display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap;}
+  .actions-row{display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;}
   .actions-row.split{justify-content:space-between;}
   .actions-row.split > .btn{flex:1 1 0; justify-content:center; padding-inline:12px; white-space:nowrap;}
   @container (max-width:352px){ .actions-row.split > .btn{font-size:0.84rem; padding-inline:6px;} .actions-row.split{gap:8px;} }   /* (the panel's width: a phone under 400 px, a small desktop) */
@@ -571,7 +566,7 @@
 
   .review-row{padding:3px 8px 3px 12px; margin:0 -8px; border-bottom:1px solid var(--border); border-left:3px solid transparent; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px 10px; border-radius:6px;}
 
-  .review-cols{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:4px;}
+  .review-cols{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   .review-col{min-width:0;}
   .col-toggle{display:flex; align-items:center; gap:7px; width:100%; background:transparent; border:none;
     color:var(--text-mute); font:inherit; font-size:0.82rem; font-weight:600; letter-spacing:0.02em; padding:2px 2px 4px; cursor:pointer; text-align:left;}
@@ -3077,9 +3072,6 @@ const ASPECTS = [
   { key:'king',     name:'King safety', levels:[2, 3], levelsEg:[1, 2], points:true },   // points (kingPoints): 2 is +, 3 or more ++ (a single point, 1, is =); King activity (levelsEg): 1 is +, 2 or more ++
   { key:'threats',  name:'Other threats', levels:[2, 3], points:true },   // points (threatsPoints): what can be won, in pawns: 2 is +, 3 or more ++ (a single pawn, 1, is =)
 ];
-// Each aspect as signs, from its value in pawns and its own levels (above): "=", then + and ++ for White,
-// − and −− for Black.
-const ASPECT_MAX = 2;
 // An imbalance's name in this position: King activity (no queens) in place of King safety; Space (few
 // pieces) when left out.
 const aspNameText = (x, fen)=>!fen ? x.name : x.key==='king' && isEndgame(fen) ? 'King activity (no queens)' : x.key==='activity' && devActive(fen) ? 'Development (minors to move)' : x.key==='space' && !spaceCounts(fen) ? 'Space (few pieces)' : x.name;
@@ -3089,14 +3081,10 @@ const curFen = ()=>{ try{ const p = pos(); return p && p.fen; }catch(e){ return 
 // Stockfish 10's piece values [middlegame, endgame], and its game-phase limits (non-pawn material).
 const SF_VALUES = { p:[136,208], n:[782,865], b:[830,918], r:[1289,1378], q:[2529,2687] };
 const SF_PAWN_EG = 208, SF_MG_LIMIT = 15258, SF_EG_LIMIT = 3915;
-// Pawn islands (ours, not Stockfish's): each island beyond the first costs this [middlegame, endgame],
-// in Stockfish's units (an isolated pawn costs [5, 15], a doubled one [11, 56]).
-const PAWN_ISLAND = [5, 15];
 // Backward pawns as players define them (ours; Stockfish also counts a pawn blocked by an enemy pawn, and
 // one with a neighbour level with the square in front): its neighbours on the next files all ahead of
 // it (none to protect it as it advances), and the square in front attacked by an enemy pawn (it can't
-// advance safely; a pawn blocked in front isn't backward). Each costs Stockfish's backward penalty.
-const SF_BACKWARD = [9, 24];
+// advance safely; a pawn blocked in front isn't backward).
 function backwardPawns(fen){
   const m = boardMap(fen), out = [];
   for(const c of ['w','b']){
@@ -3289,16 +3277,6 @@ function pawnPoints(fen){
 }
 // Stockfish 10's bonus for a hanging piece [middlegame, endgame] (a pawn that can be won counts the same: pawnsWon).
 const SF_HANGING = [62, 34];
-// A side's pawn islands: groups of pawns on adjacent files, from the a-file, each a list of squares.
-function pawnIslands(fen, c){
-  const files = Array.from({ length: 8 }, ()=>[]);
-  const rows = fen.split(' ')[0].split('/');
-  rows.forEach((row, i)=>{ let f = 0; for(const ch of row){ if(/\d/.test(ch)){ f += +ch; continue; }
-    if(ch===(c==='w' ? 'P' : 'p')) files[f].push('abcdefgh'[f] + (8 - i)); f++; } });
-  const out = []; let cur = null;
-  for(const sqs of files){ if(sqs.length){ if(!cur) out.push(cur = []); cur.push(...sqs); } else cur = null; }
-  return out;
-}
 // Each side's material in the usual points (pawn 1, knight and bishop 3, rook 5, queen 9).
 const POINTS = { p:1, n:3, b:3, r:5, q:9 };
 function materialPoints(fen){
@@ -3764,7 +3742,6 @@ document.addEventListener('pointerdown', e=>{
 // Simplified from Stockfish 10's own definitions. One rule for every aspect: a white mark favours
 // White, a black one Black. Returns {circles:[{sq,c}], tints:[{sq,c,strong}], nums:[{sq,n,c}],
 // arrows:[{from,to,c}]}, c = 'w' | 'b'.
-const VAL = { p:1, n:3, b:3, r:5, q:9, k:0 };
 // What an exchange on t started by the piece on a wins for its side (in pawns; captures on t only,
 // each side using its cheapest piece first, free to stop when it pays). Played out on a copy of the
 // board, so a piece behind another on the same line (a queen behind a bishop) joins in once the one
@@ -3875,7 +3852,6 @@ const aspectOffIn = (fen, key)=>key==='space' && !spaceCounts(fen);   // a crite
 function hasMarks(fen, key){ const m = aspectMarks(fen, key); return !!(m.circles.length || m.tints.length || m.nums.some(n=>!/^Total /.test(n.n)) || m.arrows.length || m.labels.length || (m.zones.length && key!=='king') || m.boxes.length); }   // (the king's zone or rings alone: nothing to show)
 // From the port's square numbers (a1 = 0) and colours (0 White, 1 Black) to the marks' names.
 const sqName = s=>FILES[s & 7] + ((s >> 3) + 1), sqIdx = n=>FILES.indexOf(n[0]) + 8*(+n[1] - 1);
-const colName = c=>c===0 ? 'w' : 'b';
 const bbSquares = b=>SFEval.squares(b).map(sqName);
 // The marks, worked out once per position and view (each redraw, as the engine deepens, reads them again: King safety's
 // and Other threats' take tens of milliseconds on a phone); a copy each time, the callers may add to it
@@ -4240,12 +4216,6 @@ function boardHtml(){
   const b = `<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>`;
   return `<div class="stage"><div class="board-col">${playerLine('top')}${b}${playerLine('bottom')}</div></div>`;
 }
-// The position's own evaluation, White's perspective, from whichever single evaluation the
-// exercise reads — so the bar always agrees with the Best row.
-function positionInfo(p, evalData){
-  const info = toWhitePerspective(evalData ? evalData.lines[0] : null, p.fen);
-  return info ? { info, pct: cpToPct(info.cp, info.mate), label: fmtSigned(info) } : null;
-}
 // Move selection review row: grade as plain coloured text, like the Candidate moves lists.
 function reviewRowHtml(m){
   const label = m.outcome ? m.outcome.label : m.na ? '—' : '…';
@@ -4363,7 +4333,6 @@ function renderSide(){
   const lang = nav.querySelector('#sideLang'); if(lang) lang.onclick = ()=>{ settings.lang = LANG==='fr' ? 'en' : 'fr'; setLanguage(); saveSettings(); settingsRebuild = true; supportRebuild = true; render(); };
   const inst = nav.querySelector('#sideInstall'); if(inst) inst.onclick = installApp;
 }
-const GEAR_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.85 1.85M16.65 16.65l1.85 1.85M5.5 18.5l1.85-1.85M16.65 7.35l1.85-1.85" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 const BACK_ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ACT_SHORT = { imbalances:'Imbalances', analysis:'Evaluation', candidates:'Candidates', final:'Selection', planq:'Plan' };   // where space is short (profile)
 const LEVEL_K = 0.15, DAILY_GOAL = 3;
@@ -6600,15 +6569,6 @@ const SET_DEFAULT = { coords:false, boardHue:0, boardSat:100, boardLum:0, lastHu
 const SET_VERSION = 2;   // 2: hues in OKLCH (earlier saved hues, in HSL, are dropped)
 const setClean = x=>x && x.v===SET_VERSION ? x : { ...(x || {}), lastHue:null, arrows:{}, v:SET_VERSION };
 let settings = (()=>{ try{ return { ...SET_DEFAULT, ...setClean(JSON.parse(localStorage.getItem(SETTINGS_LS) || 'null')) }; }catch(e){ return { ...SET_DEFAULT }; } })();
-function hexHsl(hex){
-  const n = parseInt(hex.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
-  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
-  if(!d) return [0, 0, Math.round(l * 100)];
-  const s = d / (1 - Math.abs(2 * l - 1));
-  const h = mx===r ? ((g - b) / d) % 6 : mx===g ? (b - r) / d + 2 : (r - g) / d + 4;
-  return [Math.round((h * 60 + 360) % 360), Math.round(s * 100), Math.round(l * 100)];
-}
-const hslCss = (h, s, l, a)=>`hsl(${Math.round(((h % 360) + 360) % 360)} ${s}% ${l}%${a!=null ? ` / ${a}` : ''})`;
 // Hues are turned in OKLCH (perceptual lightness and colourfulness kept): a pale light square keeps the
 // same visible tint, and an arrow the same brightness, whatever the hue.
 function hexOklch(hex){
@@ -7577,9 +7537,9 @@ addEventListener('keydown', e=>{
 // (Static and Dynamic, as in Imbalance reading's review) or the plans of the side at the bottom of the board
 // (flip the board for the other side's). Its height never changes.
 // The moves on the left, the engine's depth in the middle, the board's sides and Lichess on the right.
-function explorerNavHtml(x, depth, note){
+function explorerNavHtml(x, depth){
   return `<div class="actions-row xp-nav">
-      <a class="btn secondary lichess-open xp-li" href="${explorerLichessUrl(x)}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a>      <span class="xp-depth">${depth || ''}<button class="icon-btn" id="xpFlip" aria-label="Switch sides"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>${note || ''}
+      <a class="btn secondary lichess-open xp-li" href="${explorerLichessUrl(x)}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a>      <span class="xp-depth">${depth || ''}<button class="icon-btn" id="xpFlip" aria-label="Switch sides"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
       <span class="xp-steps"><button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
 
     </div>`;
