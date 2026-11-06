@@ -3021,7 +3021,7 @@ function helpModal(app, h, a){
         <p>It will be reviewed to see what can be improved.</p>
         <div class="modal-actions"><button class="btn secondary" id="reportCancel">Cancel</button><button class="btn" id="reportOk">Report</button></div>`
       : reportOpen==='sending' ? `<h3>Report this position</h3><p>Sending…</p>`
-      : reportOpen==='sent' ? `<h3>Thanks!</h3><p>The position has been reported: it will be checked.</p><div class="modal-actions"><button class="btn" id="reportDone">Close</button></div>`
+      : reportOpen==='sent' ? `<h3>Thanks!</h3><p>The position has been reported and will be checked.</p><div class="modal-actions"><button class="btn" id="reportDone">Close</button></div>`
       : `<h3>Report this position</h3><p>Couldn't send the report. Check your connection and try again.</p><div class="modal-actions"><button class="btn secondary" id="reportCancel">Cancel</button><button class="btn" id="reportOk">Try again</button></div>`;
     div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box" role="dialog" aria-label="Report this position">${html}</div></div>`;
     app.appendChild(div);
@@ -6932,7 +6932,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Report": "Signaler",
 "Sending…": "Envoi…",
 "Thanks!": "Merci !",
-"The position has been reported: it will be checked.": "La position a été signalée : elle sera vérifiée.",
+"The position has been reported and will be checked.": "La position a été signalée et sera vérifiée.",
 "Couldn't send the report. Check your connection and try again.": "Impossible d'envoyer le signalement. Vérifiez votre connexion et réessayez.",
 "Try again": "Réessayer",
 "Cancel": "Annuler",
