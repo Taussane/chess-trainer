@@ -7589,7 +7589,7 @@ function explorerSlide(paths, delay = 0, cap = null){   // delay (ms): the piece
 // A new position in an exercise: the move that led to it played again, once (the piece slides in, and the castled
 // rook with it, with the move or capture sound). Not the explorer's (its moves have their own), not on a redraw.
 let introKey = null;
-const INTRO_DELAY = 250;
+const INTRO_DELAY = 500;
 function introMove(lm){
   if(!(ACTIVITIES.includes(screen) || screen==='planq')) return;
   let p = null; try{ p = pos(); }catch(e){}
