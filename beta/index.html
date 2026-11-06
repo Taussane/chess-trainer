@@ -2888,7 +2888,8 @@ function pickFinalUcis(p, disc){
   const repeatsBad = l=>BAD_GRADES.includes(gradeOf(l)) && have().includes(gradeOf(l));
   while(picks.length<4){
     const left = lines.filter(l=>!picks.some(m=>m.uci===l.uci));
-    const rest = left.some(l=>!repeatsBad(l)) ? left.filter(l=>!repeatsBad(l)) : left;
+    // never two moves of one bad grade (Dubious, Mistake, Blunder): three moves to rank rather than that
+    const rest = left.some(l=>!repeatsBad(l)) ? left.filter(l=>!repeatsBad(l)) : picks.length < 3 ? left : [];
     if(!rest.length) break;
     const count = g=>have().filter(x=>x===g).length;
     rest.sort((a,b)=>count(gradeOf(a)) - count(gradeOf(b)));   // stable: best first on ties
@@ -4753,7 +4754,7 @@ const FAQ = [
     ['Which ones does the app use, and how are they counted?', "Six, each a count of points you can see on the board (tap one in the review to draw it):<ul><li><b>Material:</b> pawn 1, knight 3, bishop 3, rook 5, queen 9; the bishop pair +½.</li><li><b>Pawns:</b> passed pawns (more as they advance), connected pawns on the 5th rank or beyond; −1 for each isolated, doubled or backward pawn.</li><li><b>Space:</b> pawns and safe squares behind them in the centre (files c to f, ranks 3 to 6).</li><li><b>Activity:</b> safe squares each piece reaches, plus outposts, rooks on open files or deep in enemy territory, minus pins.</li><li><b>King safety:</b> pawns sheltering the king, minus enemy pieces aiming at its zone or able to give check; a forced mate is ++.</li><li><b>Other threats:</b> what can be won right now, and threats for the next move.</li></ul>"],
     ['Why do some names change?', "Each phase has its own idea, so three criteria switch:<ul><li><b>Development</b> replaces Activity while a knight or bishop has never moved and few pieces have been traded: each piece that has moved counts +1.</li><li><b>King activity</b> replaces King safety once the queens are off: a central, active king counts.</li><li><b>Space</b> stops counting once many pieces are traded, as in Stockfish.</li></ul>"],
     ['How do I answer?', "Choose the 3 imbalances that decide the position, and say who has the edge: White or Black. No sizes to guess; the review shows them. Each choice counts for a third: full points if it's among the 3 biggest edges on the right side, half for a smaller edge on the right side, nothing for a balanced one or the wrong side."],
-    ['What do =, + and ++ mean in the review?', "The size of the difference between the two sides, white for White, black for Black. You don't grade sizes, but the review shows them: the ++ ones are the big edges, the ones to find first. Each criterion has its own thresholds, set so that in master games about 40% are \"=\", 40% \"+\" and 20% \"++\"."],
+    ['What do =, + and ++ mean in the review?', "The size of the difference between the two sides, white for White, black for Black. You don't grade sizes, but the review shows them: the ++ ones are the big edges, the ones to find first. Each criterion has its own thresholds: across the master positions, about half are \"=\", a third \"+\" and one in six \"++\"."],
     ["Why don't the grades simply add up?", "They describe the position, they don't weigh it. One big imbalance can outweigh several small ones, and a tactic beats them all. Positions where the engine sees one side clearly better while the grades lean the other way are left out, and so are those with fewer than 3 imbalances, or where Stockfish 10's own terms read the decisive ones otherwise."],
   ]],
   ['Plan finder', [
@@ -7202,6 +7203,16 @@ const I18N_FR_RE = [
   [/^(.+) ›$/, (m, a)=>tr(a) + ' ›'],
   [/^(\d+) of 4$/, '$1 sur 4'],
   [/^Check (\d)\/(\d)$/, 'Vérifier $1/$2'], [/^Next (\d)\/(\d)$/, 'Suivante $1/$2'],
+  // the Plan finder's urgent notes (planqNote)
+  [/^(White|Black) has a mate: it comes first\.$/, (m, c)=>`Les ${c==='White' ? 'Blancs' : 'Noirs'} ont un mat : il passe avant tout.`],
+  [/^(\S+) wins material: it comes first\.$/, '$1 gagne du matériel : cela passe avant tout.'],
+  [/^(\S+) wins material, but the general plan still holds\.$/, '$1 gagne du matériel, mais le plan général tient toujours.'],
+  [/^(White|Black) must stop a mate first\.$/, (m, c)=>`Les ${c==='White' ? 'Blancs' : 'Noirs'} doivent d'abord parer un mat.`],
+  [/^(White|Black) must deal with a threat first\.$/, (m, c)=>`Les ${c==='White' ? 'Blancs' : 'Noirs'} doivent d'abord parer une menace.`],
+  [/^The (pawn|knight|bishop|rook|queen|king|piece) on ([a-h][1-8]) is at risk, but the general plan still holds\.$/, (m, p, sq)=>{ const n = { pawn:['Le pion', ''], knight:['Le cavalier', ''], bishop:['Le fou', ''], rook:['La tour', 'e'], queen:['La dame', 'e'], king:['Le roi', ''], piece:['La pièce', 'e'] }[p]; return `${n[0]} en ${sq} est menacé${n[1]}, mais le plan général tient toujours.`; }],
+  [/^(White|Black) has something at risk, but the general plan still holds\.$/, (m, c)=>`Les ${c==='White' ? 'Blancs' : 'Noirs'} ont quelque chose de menacé, mais le plan général tient toujours.`],
+  [/^Taking on ([a-h][1-8]) looks free, but Stockfish prefers (\S+)\.$/, 'Prendre en $1 semble gratuit, mais Stockfish préfère $2.'],
+  [/^Stockfish gives (.+)\. Balanced sits within ±0\.5\.$/, (m, e)=>`Stockfish donne ${e.replace(/^(White|Black) mates in (\d+)$/, (x, c, n)=>`mat en ${n} pour les ${c==='White' ? 'Blancs' : 'Noirs'}`).replace(/(\d)\.(\d)/, '$1,$2')}. L'équilibre, c'est entre −0,5 et +0,5.`],
   [/^(White|Black) can win$/, (m, c)=>`Les ${c==='White' ? 'Blancs' : 'Noirs'} gagnent`],   // (short: three to a row)
   [/^(White|Black) must defend$/, (m, c)=>`Les ${c==='White' ? 'Blancs' : 'Noirs'} défendent`],
   [/^Anything urgent for (White|Black)\? Who's better\?$/, (m, c)=>`Urgence pour les ${c==='White' ? 'Blancs' : 'Noirs'} ? Qui est mieux ?`],
