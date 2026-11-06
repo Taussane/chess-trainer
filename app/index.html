@@ -149,9 +149,9 @@
   .xp-nav .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:auto; min-width:36px; height:var(--xp-btn-h, 33px); padding:5px 8px; border-radius:8px; font-size:1rem;}   /* (the depth button's size) */
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
   .xp-steps{justify-self:end; display:flex; gap:10px;}
-  .xp-left{justify-self:start; display:flex; gap:10px;}
-  .xp-nav .icon-btn.xp-li{gap:6px; font-size:.85rem; font-weight:500; color:var(--text); text-decoration:none; padding:5px 10px;}
-  .xp-nav .xp-li .li-logo{width:15px; height:15px; flex:none;}
+  .xp-nav > .btn.xp-li{justify-self:start; height:var(--xp-btn-h, 33px); min-height:0; padding-block:0; padding-inline:12px; justify-content:center; white-space:nowrap; text-decoration:none;}   /* (the reviews' Analyze: the same width) */
+  @media (max-width:400px){ .xp-nav > .btn.xp-li{font-size:0.84rem; padding-inline:6px;} }
+  @media (max-width:370px){ .xp-nav > .btn.xp-li{font-size:0.78rem; padding-inline:4px;} }
   .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
   .xp-sides{flex:none; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px;}
   .wrap.ex .xp-sides + .panel{margin-top:6px;}   /* (the buttons just above the panel) */
@@ -7832,8 +7832,8 @@ addEventListener('keydown', e=>{
 // The moves on the left, the engine's depth in the middle, the board's sides and Lichess on the right.
 function explorerNavHtml(x, depth, note){
   return `<div class="actions-row xp-nav">
-      <span class="xp-left"><button class="icon-btn" id="xpFlip" aria-label="Switch sides"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><a class="icon-btn xp-li" href="${explorerLichessUrl(x)}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a></span>      <span class="xp-depth">${depth || ''}</span>${note || ''}
-      <span class="xp-steps"><button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
+      <a class="btn secondary lichess-open xp-li" href="${explorerLichessUrl(x)}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a>      <span class="xp-depth">${depth || ''}</span>${note || ''}
+      <span class="xp-steps"><button class="icon-btn" id="xpFlip" aria-label="Switch sides"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
 
     </div>`;
 }
