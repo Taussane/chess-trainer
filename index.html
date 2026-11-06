@@ -8039,7 +8039,6 @@ function renderExplorer(){
     ${stackedPanel(`${explorerModesHtml(x)}${body}${explorerNavHtml(x, depth)}`,
       [`${explorerModesHtml(x)}${aspectsGridHtml(null, null, 0, true)}${explorerNavHtml(x)}`,
        `${explorerModesHtml(x)}${explorerPlanHtml(null, null, true)}${explorerNavHtml(x)}`])}`;
-  if(x.mode==='imbalances') decisiveKeys(vals).forEach(k=>{ const b = app.querySelector(`#aspects .asp-item[data-asp="${k}"] .asp-badge`); if(b) b.classList.add('ok'); });   // (ringed as in the review: the decisive ones)
   (x.changed || []).forEach(k=>{ const b = app.querySelector(`#aspects .asp-item[data-asp="${k}"] .asp-badge`); if(b) b.classList.add('xp-turn'); }); x.changed = [];
   // every imbalance can be picked, even with nothing to draw in this position: the one picked stays as you play on
   app.querySelectorAll('#aspects .asp-item:not(.off):not(.pickable)').forEach(el=>{ el.classList.add('pickable'); el.setAttribute('role', 'radio'); el.setAttribute('aria-checked', String(x.aspView===el.dataset.asp)); el.tabIndex = 0; });
