@@ -2202,6 +2202,7 @@ function renderBoard(container, boardOverride, lastOverride, opts){
       container.appendChild(div);
     }
   }
+  if(container.id==='board' && !settingsPreview) introMove(lm);
 }
 
 
@@ -7544,15 +7545,36 @@ function explorerSlide(paths){
   if(xpSlide.raf) return;
   const step = ()=>{
     const t = Math.min(1, (performance.now() - xpSlide.t0) / XP_SLIDE_MS), k = 1 - easeOut(t);
-    const flip = explorer && explorer.flip, col = sq=>{ const f = FILES.indexOf(sq[0]); return flip ? 7 - f : f; }, row = sq=>flip ? +sq[1] - 1 : 8 - +sq[1];
+    const flip = boardFlipped(), col = sq=>{ const f = FILES.indexOf(sq[0]); return flip ? 7 - f : f; }, row = sq=>flip ? +sq[1] - 1 : 8 - +sq[1];
     for(const [from, to] of xpSlide.paths){
       const el = document.querySelector(`#board .sq[data-sq="${to}"] .pc`); if(!el) continue;
       el.style.transform = k ? `translate(${(col(from) - col(to)) * k * 100}%, ${(row(from) - row(to)) * k * 100}%)` : '';
       el.style.zIndex = k ? 6 : '';
     }
-    xpSlide.raf = t < 1 && screen==='explorer' ? requestAnimationFrame(step) : 0;
+    xpSlide.raf = t < 1 ? requestAnimationFrame(step) : 0;
   };
   xpSlide.raf = requestAnimationFrame(step);
+}
+// A new position in an exercise: the move that led to it played again, once (the piece slides in, and the castled
+// rook with it, with the move or capture sound). Not the explorer's (its moves have their own), not on a redraw.
+let introKey = null;
+function introMove(lm){
+  if(!(ACTIVITIES.includes(screen) || screen==='planq')) return;
+  let p = null; try{ p = pos(); }catch(e){}
+  const sq = lm && (lm.squares || (lm.from && [lm.from, lm.to]));
+  if(!p || !sq || sq.length!==2) return;
+  const id = screen + '|' + p.key; if(id===introKey) return;
+  introKey = id;
+  const [from, to] = sq, pc = (()=>{ try{ return new Chess(p.fen).get(to); }catch(e){ return null; } })();
+  const paths = [[from, to]];
+  if(pc && pc.type==='k' && Math.abs(FILES.indexOf(from[0]) - FILES.indexOf(to[0]))===2){ const r = to[1], ks = to[0]==='g'; paths.push([(ks ? 'h' : 'a') + r, (ks ? 'f' : 'd') + r]); }
+  explorerSlide(paths); explorerSound(lastMoveCaptured(p));
+}
+// Whether the move that led to a position took a piece: from its game's moves (or the shared link's word)
+function lastMoveCaptured(p){
+  if(p.lastCap!=null) return !!p.lastCap;
+  const sans = gameSans(p);
+  return !!(sans && p.ply > 0 && /x/.test(sans[p.ply - 1] || ''));
 }
 function explorerTurn(){ const x = explorer; if(x.shown){ x.from = x.shown; x.revealFen = x.fens[x.at]; x.revealAt = performance.now(); } }
 addEventListener('keydown', e=>{
@@ -8430,7 +8452,7 @@ const textUnB64 = t=>decodeURIComponent(escape(atob(t.replace(/-/g, '+').replace
 function shareCode(a, p){
   if(p.game && Number.isInteger(p.ply) && GAME_MOVES[p.game]) return `${a}.${p.game}.${p.ply}`;
   const tmp = document.createElement('div'); tmp.innerHTML = posSource(p);
-  return a + '.' + textB64(JSON.stringify({ f: p.fen, u: p.hist && p.hist.uci, l: p.last && p.last.squares, t: p.title || '', s: tmp.textContent }));
+  return a + '.' + textB64(JSON.stringify({ f: p.fen, u: p.hist && p.hist.uci, l: p.last && p.last.squares, c: lastMoveCaptured(p) ? 1 : 0, t: p.title || '', s: tmp.textContent }));
 }
 // A master game's position at a half-move, as the pools have it (the same object when a pool holds it)
 function masterPosAt(game, ply){
@@ -8452,7 +8474,7 @@ function sharedPos(code){
   const fen = g.fen(), mv = o.u && g.move({ from:o.u.slice(0, 2), to:o.u.slice(2, 4), promotion:o.u[4] });
   if(a==='final' && !mv) return null;   // (Move selection needs the move played)
   return { a, p: { key: 'shared:' + fen.split(' ').slice(0, 4).join(' '), fen, side: fen.split(' ')[1], moveNo: +fen.split(' ')[5], title: String(o.t || '').slice(0, 80), year: '',
-    shareSrc: String(o.s || '').slice(0, 120), last: Array.isArray(o.l) && o.l.length===2 ? { squares: o.l.map(String) } : null,
+    shareSrc: String(o.s || '').slice(0, 120), lastCap: !!o.c, last: Array.isArray(o.l) && o.l.length===2 ? { squares: o.l.map(String) } : null,
     hist: mv ? { uci: o.u, san: mv.san, from: mv.from, to: mv.to } : null } };
 }
 async function sharePosition(){
