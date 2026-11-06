@@ -3100,6 +3100,7 @@ function exploreFrom(p, back){
   if(!ok) x.fens = [p.fen];
   x.flip = p.fen.split(' ')[1]==='b';
   x.ret = { screen, saved: prev, back };
+  try{ if(p.game || p.gameId) x.source = posSource(p); }catch(e){}   // (shown above the board, as in the exercises)
   helpVisible = false; selSquare = null; promoPending = null;
   screen = 'explorer'; render();
 }
@@ -3711,12 +3712,13 @@ const IMB_SHOW = { w:true, b:true };   // Imbalance reading's review: the sides 
 const sidesShown = s=>{ const sh = s.show || { w:true, b:true }; return sh.w && sh.b ? null : sh.w ? 'w' : sh.b ? 'b' : 'none'; };
 const sidesHtml = (s, visible)=>{ const sh = s.show || { w:true, b:true };
   return `<div class="xp-sides"${visible ? '' : ' style="visibility:hidden"'}>${['w', 'b'].map(c=>`<button class="xp-side ${c}${sh[c] ? ' on' : ''}" data-c="${c}" aria-pressed="${sh[c]}"${visible ? '' : ' tabindex="-1"'}><span class="xp-dot" aria-hidden="true"></span>${c==='w' ? 'White' : 'Black'}</button>`).join('')}</div>`; };
-// On a phone, Imbalance reading's White / Black buttons go on the bottom player's line, at its right (no row of their
+// On a phone, Imbalance reading's (and the explorer's) White / Black buttons go on the bottom player's line, at its right (no row of their
 // own); on a desktop they stay above the panel (.sides-desk)
 function sidesInNameLine(board, sides){
   const i = board.lastIndexOf('<div class="pl-line'); if(i < 0) return board;
   const j = board.indexOf('</div>', i); if(j < 0) return board;
-  return board.slice(0, j) + sides + board.slice(j);
+  const open = board.slice(i, board.indexOf('>', i) + 1);   // (a line without names is aria-hidden: not once it holds the buttons)
+  return board.slice(0, i) + open.replace(' aria-hidden="true"', '') + board.slice(i + open.length, j) + sides + board.slice(j);
 }
 function wireSides(s){ document.querySelectorAll('.xp-sides .xp-side[data-c]').forEach(b=>b.onclick = ()=>{ s.show = s.show || { w:true, b:true }; s.show[b.dataset.c] = !s.show[b.dataset.c]; render(); }); }
 function wireAspectView(p, s){
@@ -7273,6 +7275,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Plans for Black": "Plans pour les Noirs",
 "Strategy explorer": "Explorateur stratégique",
 "Explore": "Explorer",
+"Free play": "Jeu libre",
 "Exercises": "Exercices",
 "You": "Vous",
 "Check imbalances and plans as you play.": "Vérifiez les déséquilibres et les plans en jouant.",
@@ -7985,8 +7988,9 @@ function renderExplorer(){
       <h1>Strategy explorer</h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
-    ${boardHtml(false).replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct, x.flip))}
-    ${explorerSidesHtml(x)}
+    <div class="posbar"><div class="pos-title">${x.source || 'Free play'}<br>${toPlay(p)}</div></div>
+    ${sidesInNameLine(boardHtml(false).replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct, x.flip)), explorerSidesHtml(x))}
+    ${explorerSidesHtml(x).replace('class="xp-sides"', 'class="xp-sides sides-desk"')}
     ${stackedPanel(`${explorerModesHtml(x)}${body}${explorerNavHtml(x, depth, depthNoteHtml(x, ev, fen))}`,
       [`${explorerModesHtml(x)}${aspectsGridHtml(null, null, 0, true)}${explorerNavHtml(x)}`,
        `${explorerModesHtml(x)}${explorerPlanHtml(null, null, true)}${explorerNavHtml(x)}`])}`;
