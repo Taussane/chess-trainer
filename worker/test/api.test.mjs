@@ -239,3 +239,26 @@ test('rate limits: too many requests from one address get 429', async () => {
   assert.equal(other.status, 200, 'another address is not affected');
   assert.equal((await call(env, 'GET', '/api/health', { token: null })).status, 200, 'health is never limited');
 });
+
+test('reported positions: anonymous, from this site only, once per device; the owner sees and dismisses them', async () => {
+  const env = makeEnv();
+  const fen = 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3';
+  const rep = (b, origin = ORIGIN) => call(env, 'POST', '/api/report', { token: null, body: b, origin });
+  const r = { did: 'dev00001', a: 'imbalances', key: 'k1', fen, src: 'masters', game: 'g12', ply: 30, label: 'Masters · 1990', acc: 40 };
+  assert.equal((await rep(r, 'https://evil.example')).status, 403);
+  assert.equal((await rep({ ...r, fen: 'nonsense' })).status, 400);
+  assert.equal((await rep({ ...r, a: 'other' })).status, 400);
+  assert.equal((await rep(r)).status, 200);
+  assert.equal((await rep(r)).status, 200, 'again: no second row');
+  assert.equal((await rep({ ...r, did: 'dev00002' })).status, 200);
+  assert.equal((await rep({ ...r, a: 'planq', key: 'k2' })).status, 200);
+  assert.equal(env.DB.raw.prepare('SELECT COUNT(*) n FROM reports').get().n, 3);
+  const m = await j(await call(env, 'GET', '/api/metrics?days=7'));
+  const k1 = m.body.reports.find(x => x.key === 'k1');
+  assert.deepEqual([k1.n, k1.devices, k1.fen, k1.game, k1.ply], [2, 2, fen, 'g12', 30]);
+  await call(env, 'GET', '/api/me', { token: 'tok-other' });
+  assert.equal((await call(env, 'DELETE', '/api/report?a=imbalances&key=k1', { token: 'tok-other' })).status, 403);
+  assert.equal((await call(env, 'DELETE', '/api/report?a=imbalances&key=k1')).status, 200);
+  const m2 = await j(await call(env, 'GET', '/api/metrics?days=7'));
+  assert.deepEqual(m2.body.reports.map(x => x.key), ['k2']);
+});

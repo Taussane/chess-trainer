@@ -29,6 +29,8 @@
 //                                       live games only (no daily, no variants), newest first
 //   POST   /api/ev  {did, sid, ctx, ev:[…]}  anonymous usage counts from this site (no sign-in; see events)
 //   GET    /api/metrics?days=           the usage dashboard's figures (the owner's account only)
+//   POST   /api/report {did, a, key, fen, …}  a position reported as doubtful (no sign-in; from this site only)
+//   DELETE /api/report?a=&key=          dismiss a reported position (the owner's account only)
 //   DELETE /api/session                 forget this sign-in here (log out)
 //   DELETE /api/account                 delete the account and everything in it
 
@@ -99,6 +101,7 @@ async function route(req, env) {
   if (path === '/api/health') return json({ ok: true, version: VERSION });
   await limit(req, env, 'RL_ALL');
   if (m === 'POST' && path === '/api/ev') return usageEvents(req, env);
+  if (m === 'POST' && path === '/api/report') return reportPosition(req, env);
   if (m === 'POST' && path === '/api/login/google') { await limit(req, env, 'RL_OUT'); return googleLogin(env, (await body(req)).idToken); }
   if (m === 'GET' && path.startsWith('/api/chesscom/')) await limit(req, env, 'RL_OUT');
   if (m === 'GET' && path === '/api/chesscom/player') {   // public data: no sign-in needed (also before logging in)
@@ -199,10 +202,15 @@ async function route(req, env) {
       return json({ ok: true });
     }
   }
-  if (m === 'GET' && path === '/api/metrics') {
+  if ((m === 'GET' && path === '/api/metrics') || (m === 'DELETE' && path === '/api/report')) {
     const owners = String(env.OWNERS || 'taussane').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
     const o = await DB.prepare(`SELECT 1 FROM connections WHERE account_id = ? AND site = 'lichess' AND site_user_id IN (${owners.map(() => '?').join(',')})`).bind(account, ...owners).first();
     if (!o) throw fail(403, 'not allowed');
+    if (m === 'DELETE') {   // dismissed: every report of that position in that exercise goes
+      await ensureReports(env);
+      const r = await DB.prepare('DELETE FROM reports WHERE a = ? AND key = ?').bind(String(url.searchParams.get('a') || ''), String(url.searchParams.get('key') || '')).run();
+      return json({ ok: true, n: r.meta ? r.meta.changes : undefined });
+    }
     return json(await metrics(env, Math.max(1, Math.min(400, Number(url.searchParams.get('days')) || 90))));
   }
   if (m === 'POST' && path === '/api/link/lichess') {
@@ -376,7 +384,7 @@ async function ccGames(user, since, max) {
 // masters or own game, in the routine or not), the own games found, the engine failing (n1: 1 couldn't
 // load, 2 stopped). Each carries a random device id
 // and visit id, never an account or a name. Kept 13 months.
-const EV_KINDS = ['open', 'pos', 'games', 'err'], EV_ACTS = ['imbalances', 'analysis', 'candidates', 'final'], KEEP_DAYS = 400;
+const EV_KINDS = ['open', 'pos', 'games', 'err'], EV_ACTS = ['imbalances', 'analysis', 'candidates', 'final', 'planq'], KEEP_DAYS = 400;
 let eventsReady = false;
 async function ensureEvents(env) {
   if (eventsReady) return;
@@ -407,6 +415,35 @@ async function usageEvents(req, env) {
   if (stmts.length) await env.DB.batch(stmts);
   return json({ ok: true, n: stmts.length });
 }
+// ---- Reported positions (anonymous) ----
+// A player taps "Report this position" in a review: the position (exercise, key, FEN, where it comes from)
+// and the device's random id, never an account or a name. The owner sees them in the metrics and dismisses them.
+let reportsReady = false;
+async function ensureReports(env) {
+  if (reportsReady) return;
+  await env.DB.batch([
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS reports (ts INTEGER NOT NULL, did TEXT NOT NULL, a TEXT NOT NULL, key TEXT NOT NULL, fen TEXT NOT NULL, src TEXT, game TEXT, ply INTEGER, label TEXT, acc INTEGER)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS reports_key ON reports(a, key)'),
+  ]);
+  reportsReady = true;
+}
+const FEN_RE = /^[1-8pnbrqkPNBRQK/]{15,71} [wb] [KQkq-]{1,4} (?:-|[a-h][36])(?: \d{1,3} \d{1,4})?$/;
+async function reportPosition(req, env) {
+  const allowed = String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (!allowed.includes(req.headers.get('Origin') || '')) throw fail(403, 'not from this site');
+  const b = await body(req), str = (x, n) => typeof x === 'string' && x.length <= n ? x : null;
+  if (!(typeof b.did === 'string' && /^[a-z0-9]{8,40}$/i.test(b.did)) || !EV_ACTS.includes(b.a) || !str(b.key, 120) || !(typeof b.fen === 'string' && FEN_RE.test(b.fen))) throw fail(400, 'bad report');
+  await ensureReports(env);
+  const now = Date.now();
+  const n = await env.DB.prepare('SELECT COUNT(*) n FROM reports WHERE did = ? AND ts >= ?').bind(b.did, now - DAY).first();
+  if (n.n >= 30) throw fail(429, 'too many reports today');
+  const dup = await env.DB.prepare('SELECT 1 FROM reports WHERE did = ? AND a = ? AND key = ?').bind(b.did, b.a, b.key).first();
+  if (!dup) await env.DB.prepare('INSERT INTO reports (ts, did, a, key, fen, src, game, ply, label, acc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(
+    now, b.did, b.a, b.key, b.fen, ['masters', 'mine'].includes(b.src) ? b.src : null, str(b.game, 40), Number.isInteger(b.ply) && b.ply >= 0 && b.ply < 1000 ? b.ply : null,
+    str(b.label, 160), Number.isFinite(b.acc) ? Math.max(0, Math.min(100, Math.round(b.acc))) : null).run();
+  return json({ ok: true });
+}
+
 // The dashboard's figures over the last `days` days: visits, devices, positions, exercises, sources,
 // logins, languages, own games; plus the accounts (all time).
 async function metrics(env, days) {
@@ -434,6 +471,8 @@ async function metrics(env, days) {
   const newAccounts = await all(`SELECT strftime('%Y-%m-%d', created_at / 1000, 'unixepoch') day, COUNT(*) n FROM accounts WHERE created_at >= ? GROUP BY day`, Date.now() - days * DAY);
   const accBy = Object.fromEntries(newAccounts.map(r => [r.day, r.n]));
   const byDay = Object.fromEntries(daily.map(r => [r.day, r]));
+  await ensureReports(env);   // all of them, not only the period's: they stay until dismissed
+  const reports = await all(`SELECT a, key, fen, src, game, ply, label, COUNT(*) n, COUNT(DISTINCT did) devices, MAX(ts) last, ROUND(AVG(acc)) acc FROM reports GROUP BY a, key ORDER BY last DESC LIMIT 200`);
   return {
     generated: Date.now(), days,
     daily: Array.from({ length: days }, (_, i) => day(days - 1 - i)).map(d => ({ day: d, devices: byDay[d] ? byDay[d].devices : 0, newDevices: newBy[d] || 0,
@@ -446,6 +485,7 @@ async function metrics(env, days) {
     errors: { visits: errors.visits || 0, load: errors.load || 0, stopped: errors.stopped || 0 },
     ownGames: { ...g, positionsPerGame: g.games ? Math.round(g.positions / g.games * 100) / 100 : 0 },
     accounts: { total: accounts.n || 0, recent: accounts.recent || 0, bySite, chesscom: cc.n || 0 },
+    reports,
   };
 }
 

@@ -668,7 +668,14 @@
   .modal-box p.eval-note{color:var(--text-mute);}
   .modal-box .help-list{font-size:0.88rem; line-height:1.5; margin:-6px 0 10px; padding-left:18px;}
   .modal-box .help-list li{margin:2px 0;}
-  .modal-actions{display:flex; justify-content:flex-end; margin-top:4px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:4px;}
+  .mx-rep{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:4px 10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:0.88rem;}
+  .mx-rep:last-child{border-bottom:none;}
+  .mx-rep > div:first-child{flex:1 1 240px; min-width:0;}
+  .mx-rep small{color:var(--text-mute);}
+  .mx-rep-acts{display:flex; gap:12px; flex-shrink:0;}
+  .modal-actions.split{justify-content:space-between; align-items:center;}
+  .modal-actions .report-done{font-size:0.85rem; color:var(--text-mute);}
   /* ===== The desktop layout (html.desk2, set by the app): screens 1024 px wide or more and at least 4:3
      (wider than tall by a third); every other screen gets the phone layout. Phones never see it:
      everything below needs such a screen. A sidebar to go anywhere; exercises with the board as big
@@ -2983,7 +2990,7 @@ function wireCommon(helpKey, checked){
     if(routine){ const s = st(screen); routine = false; setRoutineNext(s.checked ? routineAfter(screen) : screen); }
     screen='home'; selSquare=null; render();
   };
-  document.getElementById('helpBtn').onclick = ()=>{ helpVisible = true; render(); };
+  document.getElementById('helpBtn').onclick = ()=>{ helpVisible = true; reportOpen = null; render(); };
   const next = document.getElementById('nextPos');
   if(next){
     next.onclick = nextPosition;
@@ -2991,18 +2998,67 @@ function wireCommon(helpKey, checked){
     if(nextTarget()[1] < 0){ next.disabled = true; next.textContent = waitText(routine ? ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length] : screen, routine, true); }
   }
   if(helpVisible){
-    const sv = st(helpKey), h = helpBody(helpKey, checked, checked && sv && sv.aspView);
-    const div = document.createElement('div');
-    div.className = 'modal-backdrop';
-    div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box" role="dialog" aria-label="${h.title}">
-        <h3>${h.title}</h3>
-        ${h.html}
-        <div class="modal-actions"><button class="btn" id="closeHelp">Got it</button></div>
-      </div></div>`;
-    document.getElementById('app').appendChild(div);
-    div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')){ helpVisible=false; render(); } });
-    document.getElementById('closeHelp').onclick = ()=>{ helpVisible=false; render(); };
+    const sv = st(helpKey);
+    helpModal(document.getElementById('app'), helpBody(helpKey, checked, checked && sv && sv.aspView), checked ? screen : null);
   }
+}
+// ---- The help popup, and in a review: "Report this position" ----
+// A reported position goes to the server (POST /api/report: the position and where it comes from, the device's
+// random id, never the account); the owner sees it in the Metrics and dismisses it there. reportOpen: the second
+// popup ('confirm', then 'sent' or 'failed') in place of the help.
+let reportOpen = null;
+const reportedKeys = (()=>{ try{ return new Set(JSON.parse(localStorage.getItem('cst.reported') || '[]')); }catch(e){ return new Set(); } })();
+const reportId = (a, p)=>a + '|' + p.key;
+function helpModal(app, h, a){
+  let p = null; try{ p = pos(); }catch(e){}
+  const can = !!(a && p && p.fen && API_BASE && !testMode && !(a==='planq' && planq && planq.test!=null));
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  const close = ()=>{ helpVisible = false; reportOpen = null; render(); };
+  if(can && reportOpen){
+    const html = reportOpen==='confirm' ? `<h3>Report this position</h3>
+        <p>Reporting tells the developer that something here looks wrong or doubtful: a grade, the answer, a plan or the engine's moves.</p>
+        <p>The position is then checked by hand, and fixed or taken out of the exercise. Your score isn't changed.</p>
+        <p class="eval-note">Only the position and where it comes from are sent: never your name or your account.</p>
+        <div class="modal-actions"><button class="btn secondary" id="reportCancel">Cancel</button><button class="btn" id="reportOk">Report</button></div>`
+      : reportOpen==='sending' ? `<h3>Report this position</h3><p>Sending…</p>`
+      : reportOpen==='sent' ? `<h3>Thanks!</h3><p>The position has been reported: it will be checked.</p><div class="modal-actions"><button class="btn" id="reportDone">Close</button></div>`
+      : `<h3>Report this position</h3><p>Couldn't send the report. Check your connection and try again.</p><div class="modal-actions"><button class="btn secondary" id="reportCancel">Cancel</button><button class="btn" id="reportOk">Try again</button></div>`;
+    div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box" role="dialog" aria-label="Report this position">${html}</div></div>`;
+    app.appendChild(div);
+    div.addEventListener('click', e=>{ if(reportOpen!=='sending' && (e.target===div || e.target.classList.contains('modal-backdrop-inner'))) close(); });
+    const c = document.getElementById('reportCancel'); if(c) c.onclick = ()=>{ reportOpen = null; render(); };
+    const d = document.getElementById('reportDone'); if(d) d.onclick = close;
+    const ok = document.getElementById('reportOk'); if(ok) ok.onclick = ()=>sendReport(a, p);
+    return;
+  }
+  const done = can && reportedKeys.has(reportId(a, p));
+  const left = !can ? '' : done ? `<span class="report-done">Reported</span>` : `<button class="link-btn quiet" id="reportPos">Report this position</button>`;
+  div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box" role="dialog" aria-label="${h.title}">
+      <h3>${h.title}</h3>
+      ${h.html}
+      <div class="modal-actions${left ? ' split' : ''}">${left}<button class="btn" id="closeHelp">Got it</button></div>
+    </div></div>`;
+  app.appendChild(div);
+  div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')) close(); });
+  document.getElementById('closeHelp').onclick = close;
+  const r = document.getElementById('reportPos'); if(r) r.onclick = ()=>{ reportOpen = 'confirm'; render(); };
+}
+async function sendReport(a, p){
+  reportOpen = 'sending'; render();
+  const res = results.filter(r=>r.a===a && r.key===p.key).pop(), tmp = document.createElement('div');
+  tmp.innerHTML = posSource(p);
+  const label = [tmp.textContent, p.title, p.moveNo ? p.moveNo + (p.side==='w' ? '.' : '...') : ''].filter(Boolean).join(' · ').slice(0, 160);
+  const body = { did: statDid, a, key: String(p.key).slice(0, 120), fen: p.fen, src: p.gameId ? 'mine' : 'masters', game: p.game || p.gameId || null,
+    ply: Number.isInteger(p.ply) ? p.ply : null, label, acc: res ? res.acc : null };
+  try{
+    const r = await fetch(API_BASE + '/api/report', { method:'POST', headers:{ 'Content-Type':'text/plain' }, body: JSON.stringify(body) });
+    if(!r.ok) throw new Error(r.status);
+    reportedKeys.add(reportId(a, p));
+    try{ localStorage.setItem('cst.reported', JSON.stringify([...reportedKeys].slice(-500))); }catch(e){}
+    reportOpen = 'sent';
+  }catch(e){ reportOpen = 'failed'; }
+  if(helpVisible) render();
 }
 // The whole game on Lichess, opened at this position (#ply), from the side to play; test positions
 // (no game) open on their own.
@@ -6870,6 +6926,19 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Back to profile": "Retour au profil",
 "How this exercise works": "Comment fonctionne cet exercice",
 "Got it": "Compris",
+"Report this position": "Signaler cette position",
+"Reported": "Signalée",
+"Reporting tells the developer that something here looks wrong or doubtful: a grade, the answer, a plan or the engine's moves.": "Signaler indique au développeur que quelque chose semble faux ou douteux ici : une note, la réponse, un plan ou les coups du moteur.",
+"The position is then checked by hand, and fixed or taken out of the exercise. Your score isn't changed.": "La position est alors vérifiée à la main, puis corrigée ou retirée de l'exercice. Votre score ne change pas.",
+"Only the position and where it comes from are sent: never your name or your account.": "Seuls la position et son origine sont envoyés : jamais votre nom ni votre compte.",
+"Report": "Signaler",
+"Sending…": "Envoi…",
+"Thanks!": "Merci !",
+"The position has been reported: it will be checked.": "La position a été signalée : elle sera vérifiée.",
+"Couldn't send the report. Check your connection and try again.": "Impossible d'envoyer le signalement. Vérifiez votre connexion et réessayez.",
+"Try again": "Réessayer",
+"Cancel": "Annuler",
+"Close": "Fermer",
 "Check": "Vérifier",
 "Next position": "Position suivante",
 "Next": "Suivante",
@@ -7577,6 +7646,14 @@ function renderMetrics(){
         ${tile(d.active.day, 'active today')}${tile(d.active.week, 'active 7 days')}${tile(d.active.month, 'active 30 days')}
         ${tile(sum('newDevices'), 'new devices')}${tile(sum('visits'), 'visits')}${tile(sum('positions'), 'positions')}
       </div></section>
+      <div class="mx-grp mx-wide"><h2 class="pf-h">Reported positions (${(d.reports || []).length})</h2>
+      <section class="pf-card">${(d.reports || []).length ? `<div class="mx-reports">${d.reports.map((r, i)=>`<div class="mx-rep">
+          <div><b>${ACT_SHORT[r.a] || escHtml(r.a)}</b> · ${escHtml(r.label || r.key)}${r.ply!=null ? ` · ply ${r.ply}` : ''}<br>
+          <small>${r.n} report${r.n > 1 ? 's' : ''}${r.devices > 1 ? ` (${r.devices} devices)` : ''} · last ${new Date(r.last).toLocaleDateString(dateLoc(), { day:'numeric', month:'short' })}${r.acc!=null ? ` · score ${r.acc}%` : ''}</small></div>
+          <div class="mx-rep-acts"><a class="link-btn" href="https://lichess.org/analysis/${encodeURI(r.fen.replace(/ /g, '_'))}" target="_blank" rel="noopener">Lichess</a>
+          <button class="link-btn" data-rep-xp="${i}">Explorer</button><button class="link-btn quiet" data-rep-del="${i}">Dismiss</button></div></div>`).join('')}</div>`
+        : `<p class="mx-note">None: a player reports a position from a review's help (?).</p>`}</section>
+      </div>
       <div class="mx-grp mx-wide"><h2 class="pf-h">Every day</h2>
       <section class="pf-card">${metricsChart(d.daily, [['devices', 'var(--accent)', 'Active devices'], ['newDevices', 'var(--cyan-arrow)', 'New devices'], ['newAccounts', 'var(--pick1)', 'New accounts']])}</section>
       <section class="pf-card">${metricsChart(d.daily, [['positions', 'var(--accent)', 'Positions'], ['visits', 'var(--cyan-arrow)', 'Visits']])}</section>
@@ -7628,6 +7705,16 @@ function renderMetrics(){
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
   app.querySelectorAll('[data-days]').forEach(b=>b.onclick = ()=>{ metricsDays = +b.dataset.days; loadMetrics(); });
+  // a reported position: on the explorer's board (from there), or dismissed (every report of it goes)
+  app.querySelectorAll('[data-rep-xp]').forEach(b=>b.onclick = ()=>{
+    const r = d.reports[+b.dataset.repXp]; explorer = null; explorerInit();
+    Object.assign(explorer, { fens:[r.fen], flip: r.fen.split(' ')[1]==='b' }); screen = 'explorer'; render();
+  });
+  app.querySelectorAll('[data-rep-del]').forEach(b=>b.onclick = async ()=>{
+    const r = d.reports[+b.dataset.repDel]; b.disabled = true;
+    try{ await serverCall(signedIn(), 'DELETE', '/api/report?a=' + encodeURIComponent(r.a) + '&key=' + encodeURIComponent(r.key)); d.reports = d.reports.filter(x=>x!==r); render(); }
+    catch(e){ b.disabled = false; b.textContent = 'Failed: retry'; }
+  });
 }
 
 // ================= Strategy explorer =================
@@ -8514,7 +8601,7 @@ function renderPlanq(){
   }
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ helpVisible = false; if(replayMode){ replayMode = false; planq = null; screen = 'account'; return render(); } if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
-  on('helpBtn', ()=>{ helpVisible = true; render(); });
+  on('helpBtn', ()=>{ helpVisible = true; reportOpen = null; render(); });
   on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.tc = activeNow();
     if(isPlan) q.scores.plan = planqPlanScore(q); else ['urgent', 'winning'].forEach(k=>{ q.scores[k] = planqAnswer(q, k).score(q.picks[k]); });
     if(last){ q.done = true; planqRecord(q, planqTotal(q)); }
@@ -8538,15 +8625,7 @@ function renderPlanq(){
   { const grid = app.querySelector('.layer:not(.ghost) .pq-grid'), on = !q.checked && !(q.touched && q.touched[q.step]) && !q.test && hintsOn('planq');
     if(grid){ grid.classList.toggle('hinting', on); if(on) hintStart(); } }
   // help: the question's own (while answering, then its review); a criterion tapped on the board: that criterion's
-  if(helpVisible){
-    const h = helpBody('planq_' + step, q.checked, q.checked && q.aspView && ASP_HELP[q.aspView] ? q.aspView : null);
-    const div = document.createElement('div');
-    div.className = 'modal-backdrop';
-    div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box" role="dialog" aria-label="${h.title}"><h3>${h.title}</h3>${h.html}<div class="modal-actions"><button class="btn" id="closeHelp">Got it</button></div></div></div>`;
-    app.appendChild(div);
-    div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')){ helpVisible = false; render(); } });
-    document.getElementById('closeHelp').onclick = ()=>{ helpVisible = false; render(); };
-  }
+  if(helpVisible) helpModal(app, helpBody('planq_' + step, q.checked, q.checked && q.aspView && ASP_HELP[q.aspView] ? q.aspView : null), q.checked ? 'planq' : null);
 }
 // A finished position's result (beta: the Plan finder counts in the routine, the averages and the missed
 // list): kept like the other exercises' (recordResult)
