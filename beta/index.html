@@ -171,6 +171,10 @@
   .wrap[data-scr=explorer] .xp-modes{flex:none; margin:0;}
   .xp-sides{flex:none; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px;}
   .wrap.ex .xp-sides + .panel{margin-top:6px;}   /* (the buttons just above the panel) */
+  .wrap.ex > #app > .xp-sides.sides-desk{display:none;}   /* (Imbalance reading on a phone: the buttons on the name line instead) */
+  .pl-line:has(> .xp-sides){overflow:visible;}
+  .pl-line > .xp-sides{margin:0 0 0 auto; gap:6px;}
+  .pl-line > .xp-sides .xp-side{height:24px; padding:0 9px; font-size:.78rem; font-weight:500;}
   .xp-side{display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 11px; border-radius:14px; border:1px solid var(--border); background:transparent; color:var(--text-mute); font:inherit; font-size:.82rem; cursor:pointer;}
   .xp-side.on{background:var(--panel); color:var(--text); border-color:var(--text-mute);}
   .xp-dot{width:10px; height:10px; border-radius:50%; border:1px solid var(--text-mute);} .xp-side.w .xp-dot{background:#f2f2f2;} .xp-side.b .xp-dot{background:#1b1b1b;}
@@ -673,6 +677,7 @@
   .side, .home-foot{display:none;}
   @media (min-width:1024px) and (min-aspect-ratio:4/3){
     html.desk2{--side-w:264px; --panel-w:380px;}
+    html.desk2 .wrap.ex > #app > .xp-sides.sides-desk{display:flex;} html.desk2 .pl-line > .xp-sides{display:none;}   /* (Imbalance reading: above the panel) */
     @media (max-width:1279.98px){   /* smaller desktops (a 1024x768 tablet held sideways): a narrower menu and panel, for the board */
       html.desk2{--side-w:228px; --panel-w:320px;}
       html.desk2 .wrap{padding-inline:20px !important;}
@@ -3730,6 +3735,13 @@ const IMB_SHOW = { w:true, b:true };   // Imbalance reading's review: the sides 
 const sidesShown = s=>{ const sh = s.show || { w:true, b:true }; return sh.w && sh.b ? null : sh.w ? 'w' : sh.b ? 'b' : 'none'; };
 const sidesHtml = (s, visible)=>{ const sh = s.show || { w:true, b:true };
   return `<div class="xp-sides"${visible ? '' : ' style="visibility:hidden"'}>${['w', 'b'].map(c=>`<button class="xp-side ${c}${sh[c] ? ' on' : ''}" data-c="${c}" aria-pressed="${sh[c]}"${visible ? '' : ' tabindex="-1"'}><span class="xp-dot" aria-hidden="true"></span>${c==='w' ? 'White' : 'Black'}</button>`).join('')}</div>`; };
+// On a phone, Imbalance reading's White / Black buttons go on the bottom player's line, at its right (no row of their
+// own); on a desktop they stay above the panel (.sides-desk)
+function sidesInNameLine(board, sides){
+  const i = board.lastIndexOf('<div class="pl-line'); if(i < 0) return board;
+  const j = board.indexOf('</div>', i); if(j < 0) return board;
+  return board.slice(0, j) + sides + board.slice(j);
+}
 function wireSides(s){ document.querySelectorAll('.xp-sides .xp-side[data-c]').forEach(b=>b.onclick = ()=>{ s.show = s.show || { w:true, b:true }; s.show[b.dataset.c] = !s.show[b.dataset.c]; render(); }); }
 function wireAspectView(p, s){
   const svg = document.getElementById('arrows'), board = document.getElementById('board');
@@ -6256,8 +6268,8 @@ function renderImbalances(){
   app.innerHTML = `
     ${header('Imbalance reading')}
     ${posBar()}
-    ${boardHtml(false)}
-    ${sidesHtml(s, done && !!s.aspView)}
+    ${sidesInNameLine(boardHtml(false), sidesHtml(s, done && !!s.aspView))}
+    ${sidesHtml(s, done && !!s.aspView).replace('class="xp-sides"', 'class="xp-sides sides-desk"')}
     ${stackedPanel(`
       ${s.checked ? `
         <div class="score"><span class="score-num" id="revealAcc">${vals && s.aspShown!=null ? Math.round(imbalanceScore(vals, s.asp, s.aspShown))+'%' : '—'}</span><span class="score-label">${vals ? 'Accuracy' : failed ? 'Engine unavailable' : 'Evaluating…'}</span>${levelChip(s, done, s.justDone)}</div>
