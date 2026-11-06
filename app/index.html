@@ -769,6 +769,8 @@
   .panel-stack .pq-grid{--pq-row:var(--pn-row);}
   /* the imbalances' grade squares (Imbalance reading, the explorer): as big as the panel's width allows (--badge) */
   .panel-stack{container-type:inline-size; --badge:clamp(23px, 7.8cqi, 28px);}
+  .panel-stack .asp-head{font-size:0.8rem;}   /* (Static / Dynamic, Possible plans: the size of the explorer's tabs and the plans' answers) */
+  .panel-stack .xp-plan .asp-badge.xp-ans{height:var(--badge); padding-block:0; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center;}   /* (the plans' answers: as tall as the grade squares) */
   .panel-stack .asp-grid .asp-badge{width:var(--badge); height:var(--badge); min-width:0; padding:0; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; font-size:calc(var(--badge) * 0.6); line-height:1;}
   .panel-stack .seg.xp-modes{height:var(--pn-top); box-sizing:border-box;} .panel-stack .xp-modes .seg-btn{padding-block:0;}
   .panel-stack .xp-plan{display:grid; grid-template-rows:repeat(4, var(--pn-row)); align-items:center;}
