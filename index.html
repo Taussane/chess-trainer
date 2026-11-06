@@ -161,9 +161,7 @@
   .xp-nav .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:auto; min-width:var(--xp-btn-h, 36px); height:var(--xp-btn-h, 33px); padding:5px 10px; border-radius:8px; font-size:1rem;}   /* (Analyze's height, as in the reviews) */
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
   .xp-steps{justify-self:end; display:flex; gap:10px;}
-  .xp-nav > .btn.xp-li{justify-self:start; padding-inline:12px; justify-content:center; white-space:nowrap; text-decoration:none;}   /* (the reviews' Analyze: the same size; the row's other buttons take its height) */
-  @container (max-width:352px){ .xp-nav > .btn.xp-li{font-size:0.84rem; padding-inline:6px;} }   /* (a narrow panel: a phone under 400 px, a small desktop) */
-  @container (max-width:306px){ .xp-nav > .btn.xp-li{font-size:0.78rem; padding-inline:4px;} }
+  .xp-nav > .btn.xp-li{justify-self:start; text-decoration:none;}   /* (the reviews' Analyze: the same size; the row's other buttons take its height) */
   .wrap[data-scr=explorer] .xp-modes{flex:none;}
   .xp-sides{flex:none; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px;}
   .wrap.ex .xp-sides:not(.sides-desk) + .panel{margin-top:6px;}   /* (the buttons just above the panel) */
@@ -320,6 +318,11 @@
   .lichess-open{display:inline-flex; align-items:center; gap:7px;}
   .lichess-open .act-icon{width:17px; height:17px; flex:none; color:var(--accent);}
   .actions-row.split > .btn.lichess-open{flex:0 1 auto;}
+  .btn.icon-only{flex:none !important; width:var(--pn-btn, 41px); padding:0 !important; justify-content:center; gap:0;}   /* (the review's Lichess, explorer and share buttons: square, icons only) */
+  .btn.icon-only .li-logo{width:19px; height:19px;} .btn.icon-only .act-icon, .btn.icon-only .share-icon{width:22px; height:22px; flex:none;}   /* (the explorer's and share's thinner drawings a little bigger, to look the Lichess logo's size) */
+  .share-icon{color:var(--accent);}
+  .flash-note{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:50; padding:9px 16px; border-radius:10px; background:var(--panel-2); border:1px solid var(--border); color:var(--text); font-size:.9rem; box-shadow:0 6px 24px rgba(0,0,0,.35); animation:flashNote 2.2s ease forwards; pointer-events:none;}
+  @keyframes flashNote{0%{opacity:0; transform:translate(-50%, 6px);} 10%,80%{opacity:1; transform:translate(-50%, 0);} 100%{opacity:0;}}
   .ac-site .cc-logo{width:15px; height:17px;}
   .chart-avg{margin-left:auto; color:var(--text-mute);}
   .chart-avg{color:var(--text); font-weight:700; font-size:0.95rem; font-variant-numeric:tabular-nums; line-height:1;}
@@ -2438,6 +2441,7 @@ let testMode = false;
 // REPLAY: positions where you scored below your average, played again one after the other, each
 // in its own exercise (see missedList).
 let replayMode = false, replayQueue = [], replayIdx = 0;
+let sharedOpen = null;   // a position opened from a shared link: its exercise (played as a one-position replay; then on in that exercise)
 // Each source of positions (Masters, My games, Both) has its own tracks, so switching source and
 // back returns you to exactly where you were in each.
 const ctx = (a, r = routine) => testMode ? 't-' + a : replayMode ? 'x-' + a : (r ? 'r-' : '') + a + (source==='masters' ? '' : '@' + source);   // the open track for exercise `a`
@@ -2775,6 +2779,7 @@ function nextPosition(){
   if(replayMode){
     while(replayIdx + 1 < replayQueue.length && isPlayed(replayQueue[replayIdx+1].key)) replayIdx++;
     if(replayIdx + 1 < replayQueue.length){ replayIdx++; openReplayAt(replayIdx); }
+    else if(sharedOpen){ const a = sharedOpen; sharedOpen = null; replayMode = false; if(a==='planq'){ planq = null; screen = 'planq'; render(); } else openActivity(a); }   // (a shared position: on in its exercise)
     else { replayMode = false; screen = 'account'; render(); }
     return;
   }
@@ -2818,7 +2823,7 @@ function nextTarget(){
                  : [ctx(screen), firstAvailable(ctx(screen), seqBy[ctx(screen)]+1)];
 }
 function nextLabel(){
-  if(replayMode){ const n = replayLeft(); return n ? `Next (${n} left) ›` : 'Finish'; }
+  if(replayMode){ const n = replayLeft(); return n ? `Next (${n} left) ›` : sharedOpen ? 'Next position' : 'Finish'; }
   return routine ? ACT_NAMES[routineAfter(screen)] + ' ›' : 'Next position';
 }
 
@@ -2906,7 +2911,7 @@ function finalEval(p, moves){
 function header(title){
   return `<div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to exercises">${BACK_ARROW}</button>
-      <h1>${routine ? `Routine <span class="title-badge">${title}</span>` : testMode ? `Test <span class="title-badge">${title}</span>` : replayMode ? `Replay <span class="title-badge">${title}</span>` : title}</h1>
+      <h1>${routine ? `Routine <span class="title-badge">${title}</span>` : testMode ? `Test <span class="title-badge">${title}</span>` : replayMode ? `${sharedOpen ? 'Shared' : 'Replay'} <span class="title-badge">${title}</span>` : title}</h1>
       <button class="icon-btn" id="helpBtn" aria-label="How this exercise works">?</button>
     </div>`;
 }
@@ -2929,6 +2934,7 @@ function fmtGameDate(d){   // "1981-05-12" | "1981-05" | "1981"
   return new Date(y, m-1, dd || 1).toLocaleDateString(dateLoc(), dd ? { day:'numeric', month:'short', year:'numeric' } : { month:'short', year:'numeric' });
 }
 function posSource(p){
+  if(p.shareSrc!=null) return escHtml(p.shareSrc || 'Shared position');
   if(p.gameId){
     const g = currentGame(p.gameId), site = g ? siteOf(g) : 'lichess';
     const name = site==='chesscom' ? 'Chess.com' : 'Lichess';
@@ -2950,7 +2956,7 @@ function playerLine(where){
 function wireCommon(helpKey, checked){
   document.getElementById('homeBtn').onclick = ()=>{
     if(testMode){ testMode = false; screen = 'tests'; selSquare = null; promoPending = null; render(); return; }
-    if(replayMode){ replayMode = false; screen = 'account'; selSquare = null; promoPending = null; render(); return; }
+    if(replayMode){ replayMode = false; screen = sharedOpen ? 'home' : 'account'; sharedOpen = null; selSquare = null; promoPending = null; render(); return; }
     if(routine){ const s = st(screen); routine = false; setRoutineNext(s.checked ? routineAfter(screen) : screen); }
     screen='home'; selSquare=null; render();
   };
@@ -3039,10 +3045,11 @@ function lichessUrl(p){
   if(sans && p.ply!=null) return 'https://lichess.org/analysis/pgn/' + sans.map(s=>encodeURIComponent(s.replace(/[+#]/g,''))).join('_') + color + '#' + p.ply;
   return 'https://lichess.org/analysis/standard/' + p.fen.replace(/ /g,'_') + color;
 }
-// A review's buttons on the left: the position on Lichess, then in the Strategy explorer (the game's moves around it).
+// A review's buttons on the left, icons only: the position on Lichess, in the Strategy explorer (the game's moves around
+// it), and a link to it to share
 function lichessLink(p){
   const url = lichessUrl(p);
-  return `<a class="btn secondary lichess-open" href="${url}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a><button class="btn secondary lichess-open xp-open" data-xp-open>${SIDE_ICONS.explorer} Explore</button>`;
+  return `<a class="btn secondary lichess-open icon-only" href="${url}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn secondary lichess-open icon-only xp-open" data-xp-open aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><button class="btn secondary lichess-open icon-only" data-share aria-label="Share this position" title="Share this position">${SHARE_ICON}</button>`;
 }
 // The position in the Strategy explorer: the whole game when its moves are known (at this position, from the side to
 // play), else the position alone. ret: where its back arrow goes (this screen), and the explorer as it was before.
@@ -4219,7 +4226,7 @@ function stackedPanel(inner, ghosts, extra){
   return `<div class="panel"><div class="panel-stack"><div class="layer">${inner}</div>${
     ghosts.map(g=>`<div class="layer ghost" aria-hidden="true" inert>${g}</div>`).join('')}</div></div>${extra||''}`;
 }
-const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary lichess-open"><svg class="li-logo" viewBox="0 0 50 50"></svg> Analyze</span><span class="btn secondary lichess-open"><svg class="act-icon" viewBox="0 0 24 24"></svg> Explore</span><span class="btn">Next position</span></div>`;
+const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary lichess-open icon-only"></span><span class="btn secondary lichess-open icon-only"></span><span class="btn secondary lichess-open icon-only"></span><span class="btn">Next position</span></div>`;
 const GHOST_IMBALANCES = [
   `<p class="prompt">Gauge the 3 most decisive imbalances.</p>${aspectsInputHtml(null, true)}<div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, 0, true)}${GHOST_ACTIONS}`,
@@ -5908,6 +5915,7 @@ function clearMyGames(){
 
 // The profile's games: where they come from (accountSection, on the website) and the positions found in
 // them, next to the master games' figures.
+const SHARE_ICON = '<svg class="share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11"/><path d="M8 7.5l4-4 4 4"/><path d="M6 11H5.5A1.5 1.5 0 0 0 4 12.5v6A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5H18"/></svg>';
 const LICHESS_LOGO = '<svg class="li-logo" viewBox="0 0 50 50" aria-hidden="true"><path fill="currentColor" stroke="currentColor" stroke-linejoin="round" d="M38.956.5c-3.53.418-6.452.902-9.286 2.984C5.534 1.786-.692 18.533.68 29.364 3.493 50.214 31.918 55.785 41.329 41.7c-7.444 7.696-19.276 8.752-28.323 3.084S-.506 27.392 4.683 17.567C9.873 7.742 18.996 4.535 29.03 6.405c2.43-1.418 5.225-3.22 7.655-3.187l-1.694 4.86 12.752 21.37c-.439 5.654-5.459 6.112-5.459 6.112-.574-1.47-1.634-2.942-4.842-6.036-3.207-3.094-17.465-10.177-15.788-16.207-2.001 6.967 10.311 14.152 14.04 17.663 3.73 3.51 5.426 6.04 5.795 6.756 0 0 9.392-2.504 7.838-8.927L37.4 7.171z"/></svg>';   // lichess.org's logo (lila, AGPL-3.0+)
 const CHESSCOM_LOGO = '<svg class="cc-logo" aria-hidden="true" viewBox="2.75 -4.25 39.23 53.65"> <g transform="translate(7.136 -.188)"> <clipPath id="cc-a"> <path transform="matrix(1 0 0 -1 0 45)" d="M25.773 12.567c-7.338 5.595-6.523 10.45-6.616 12.447h4.474c.523.971.788 1.871.788 2.993l-5.072 3.341a7.011 7.011 0 0 1 2.912 5.691 7.029 7.029 0 0 1-4.393 6.517c-.814.33-6.56-18.542-6.56-18.542a41.217 41.217 0 0 1-.023-1.679c0-1.874 4.607-1.59 4.362-3.247-.368-2.476-.445-4.356-2.577-10.306-1.44-4.015-11.035 0-11.72-1.97C.87 6.44.616 4.901.616 3.245c0-.177.386-2.833 14.617-2.833 14.23 0 14.614 2.656 14.614 2.833 0 4.036-1.507 7.363-4.075 9.321" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-a)"> <path d="M -4.383 -3.56 L 34.847 -3.56 L 34.847 49.587 L -4.383 49.587 L -4.383 -3.56 Z" fill="#5D9948"/> </g> <clipPath id="cc-c"> <path transform="matrix(1 0 0 -1 0 45)" d="M14.974 10.057c.79 3.6 1.493 7.437 1.92 9.734.532 2.868-3.821 3.38-5.608 3.644-.082-2.448-.765-6.424-6.593-10.867-1.572-1.2-2.743-2.91-3.418-4.982C2.848 6.819 4.949 6.36 8.184 6.36c2.077 0 5.923-.25 6.79 3.696" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-c)"> <path d="M -3.725 16.565 L 21.938 16.565 L 21.938 43.643 L -3.725 43.643 L -3.725 16.565 Z" fill="#81B64C"/> </g> <clipPath id="cc-e"> <path transform="matrix(1 0 0 -1 0 45)" d="M18.03 25.014c.688 1.79.6 2.993.6 2.993l-2.873 3.341c3.054 1.304 4.893 3.755 4.893 6.61a7.013 7.013 0 0 1-2.766 5.59 7.027 7.027 0 0 1-9.679-6.508 7.014 7.014 0 0 1 2.912-5.692l-5.072-3.34c0-1.122.265-2.022.79-2.994H18.03Z" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-e)"> <path d="M 1.045 -4.066 L 25.65 -4.066 L 25.65 24.986 L 1.045 24.986 L 1.045 -4.066 Z" fill="#81B64C"/> </g> <clipPath id="cc-g"> <path transform="matrix(1 0 0 -1 0 45)" d="M14.828 42.633c4.053-.629-1.863-5.33-3.73-5.108-1.777.21-.069 5.7 3.73 5.108" fill-rule="evenodd"/> </clipPath> <g clip-path="url(#cc-g)"> <path d="M 5.393 -2.678 L 21.218 -2.678 L 21.218 12.482 L 5.393 12.482 L 5.393 -2.678 Z" fill="#B2E068"/> </g> </g> </svg>';   // Chess.com's pawn (trademark of Chess.com; from github.com/homarr-labs/dashboard-icons), to name the site
 const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
@@ -6977,6 +6985,14 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Plans for Black": "Plans pour les Noirs",
 "Strategy explorer": "Explorateur stratégique",
 "Explore": "Explorer",
+"Shared": "Partagée",
+"Link copied": "Lien copié",
+"Share this position": "Partager cette position",
+"Analyze on Lichess": "Analyser sur Lichess",
+"Opening the shared position…": "Ouverture de la position partagée…",
+"This shared position couldn't be opened.": "Cette position partagée n'a pas pu être ouverte.",
+"Shared position": "Position partagée",
+"Copy the link": "Copiez le lien",
 "Off": "Arrêt",
 "Exercises": "Exercices",
 "You": "Vous",
@@ -7579,7 +7595,7 @@ addEventListener('keydown', e=>{
 // The moves on the left, the engine's depth in the middle, the board's sides and Lichess on the right.
 function explorerNavHtml(x, depth){
   return `<div class="actions-row xp-nav">
-      <a class="btn secondary lichess-open xp-li" href="${explorerLichessUrl(x)}" target="_blank" rel="noopener">${LICHESS_LOGO} Analyze</a>      <span class="xp-depth">${depth || ''}<button class="icon-btn" id="xpFlip" aria-label="Switch sides"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
+      <a class="btn secondary lichess-open icon-only xp-li" href="${explorerLichessUrl(x)}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a>      <span class="xp-depth">${depth || ''}<button class="icon-btn" id="xpFlip" aria-label="Switch sides"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
       <span class="xp-steps"><button class="icon-btn" id="xpBack" aria-label="Previous move" ${x.at ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="xpFwd" aria-label="Next move" ${x.at < x.fens.length - 1 ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
 
     </div>`;
@@ -8346,7 +8362,7 @@ function renderPlanq(){
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
-      <h1>${routine ? `Routine <span class="title-badge">Plan finder</span>` : replayMode ? `Replay <span class="title-badge">Plan finder</span>` : q.test!=null ? `Test <span class="title-badge">Plan finder</span>` : 'Plan finder'}</h1>
+      <h1>${routine ? `Routine <span class="title-badge">Plan finder</span>` : replayMode ? `${sharedOpen ? 'Shared' : 'Replay'} <span class="title-badge">Plan finder</span>` : q.test!=null ? `Test <span class="title-badge">Plan finder</span>` : 'Plan finder'}</h1>
       <button class="icon-btn" id="helpBtn" aria-label="How this exercise works">?</button>
     </div>
     ${posBar()}
@@ -8380,7 +8396,7 @@ function renderPlanq(){
     }
   }
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
-  on('homeBtn', ()=>{ helpVisible = false; if(replayMode){ replayMode = false; planq = null; screen = 'account'; return render(); } if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
+  on('homeBtn', ()=>{ helpVisible = false; if(replayMode){ replayMode = false; planq = null; screen = sharedOpen ? 'home' : 'account'; sharedOpen = null; return render(); } if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
   on('helpBtn', ()=>{ helpVisible = true; reportOpen = null; render(); });
   on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.tc = activeNow();
     if(isPlan) q.scores.plan = planqPlanScore(q); else ['urgent', 'winning'].forEach(k=>{ q.scores[k] = planqAnswer(q, k).score(q.picks[k]); });
@@ -8428,9 +8444,66 @@ function planqReplay(e){
   loadMasterEvals();
   if(!masterEvals || !Object.keys(masterEvals).length){ setTimeout(()=>{ if(replayMode) planqReplay(e); }, 300); return; }
   const info = planqInfo(e.pos), vals = info && explorerVals(e.pos.fen);
-  if(!vals){ replayIdx++; if(replayIdx < replayQueue.length) return openReplayAt(replayIdx); replayMode = false; screen = 'account'; return render(); }
+  if(!info && sharedOpen && (e.tries = (e.tries || 0) + 1) < 100){ if(e.tries===1){ withPrep('front', ()=>planqEngineLine(e.pos)); flashNote('Opening the shared position…'); } setTimeout(()=>{ if(replayMode && sharedOpen) planqReplay(e); }, 300); return; }   // (a shared position: its evaluation from the engine, first)
+  if(!vals){ replayIdx++; if(replayIdx < replayQueue.length) return openReplayAt(replayIdx); replayMode = false; screen = sharedOpen ? 'home' : 'account'; sharedOpen = null; return render(); }
   planq = planqMake(e.pos, info, vals, planq ? planq.seen : new Set());
   screen = 'planq'; helpVisible = false; render();
+}
+// ================= Sharing a position =================
+// The review's share button: a link to this position in this exercise. A master position goes by its game and
+// half-move (?s=final.g12.45); any other (yours, a test) carries itself: its FEN, the move played, the last move, the
+// players and where it comes from (?s=final.<base64 JSON>). Following the link plays it as a one-position replay
+// (titled Shared), then goes on in that exercise.
+const textB64 = t=>btoa(unescape(encodeURIComponent(t))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const textUnB64 = t=>decodeURIComponent(escape(atob(t.replace(/-/g, '+').replace(/_/g, '/'))));
+function shareCode(a, p){
+  if(p.game && Number.isInteger(p.ply) && GAME_MOVES[p.game]) return `${a}.${p.game}.${p.ply}`;
+  const tmp = document.createElement('div'); tmp.innerHTML = posSource(p);
+  return a + '.' + textB64(JSON.stringify({ f: p.fen, u: p.hist && p.hist.uci, l: p.last && p.last.squares, t: p.title || '', s: tmp.textContent }));
+}
+// A master game's position at a half-move, as the pools have it (the same object when a pool holds it)
+function masterPosAt(game, ply){
+  for(const a of Object.keys(POOLS)){ const q = POOLS[a].find(x=>x.game===game && x.ply===ply); if(q) return q; }
+  const sans = (GAME_MOVES[game] || '').split(' ').filter(Boolean); if(!(ply >= 0 && ply < sans.length)) return null;
+  const { fens, moves } = replaySans(sans, ply + 1), fen = fens[ply], m = moves[ply], prev = moves[ply - 1], gi = GAME_INFO[game] || {};
+  if(!fen || !m) return null;
+  DEV_HIST.set(fen, devTouched(moves, ply));
+  return { key: fen.split(' ').slice(0, 4).join(' '), fen, side: fen.split(' ')[1], moveNo: +fen.split(' ')[5], title: gi.title || '', year: (gi.date || '').slice(0, 4),
+           last: prev ? { squares: [prev.from, prev.to] } : null, hist: { uci: m.from + m.to + (m.promotion || ''), san: m.san, from: m.from, to: m.to }, game, ply, added: gi.added || 0 };
+}
+function sharedPos(code){
+  const [a, x, y] = String(code || '').split('.');
+  if(!(ACTIVITIES.includes(a) || a==='planq')) return null;
+  if(/^g\d+$/.test(x || '') && /^\d+$/.test(y || '')) { const p = masterPosAt(x, +y); return p && { a, p }; }
+  let o; try{ o = JSON.parse(textUnB64(x || '')); }catch(e){ return null; }
+  let g; try{ g = new Chess(o.f); }catch(e){ return null; }
+  if(!o.f || !g || g.fen().split(' ').slice(0, 4).join(' ')!==String(o.f).split(' ').slice(0, 4).join(' ')) return null;
+  const fen = g.fen(), mv = o.u && g.move({ from:o.u.slice(0, 2), to:o.u.slice(2, 4), promotion:o.u[4] });
+  if(a==='final' && !mv) return null;   // (Move selection needs the move played)
+  return { a, p: { key: 'shared:' + fen.split(' ').slice(0, 4).join(' '), fen, side: fen.split(' ')[1], moveNo: +fen.split(' ')[5], title: String(o.t || '').slice(0, 80), year: '',
+    shareSrc: String(o.s || '').slice(0, 120), last: Array.isArray(o.l) && o.l.length===2 ? { squares: o.l.map(String) } : null,
+    hist: mv ? { uci: o.u, san: mv.san, from: mv.from, to: mv.to } : null } };
+}
+async function sharePosition(){
+  const a = screen, p = pos(); if(!p) return;
+  const url = location.origin + location.pathname + '?s=' + shareCode(a, p);
+  if(navigator.share){ try{ await navigator.share({ title: 'Chess Strategy', text: `A position to try in ${tr(ACT_NAMES[a])}`, url }); return; }catch(e){ if(e && e.name==='AbortError') return; } }
+  try{ await navigator.clipboard.writeText(url); flashNote('Link copied'); }catch(e){ window.prompt('Copy the link', url); }
+}
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-share]'); if(b) sharePosition(); });
+function flashNote(text){
+  document.querySelectorAll('.flash-note').forEach(n=>n.remove());
+  const n = document.createElement('div'); n.className = 'flash-note'; n.setAttribute('role', 'status'); n.textContent = tr(text);
+  document.body.appendChild(n); setTimeout(()=>n.remove(), 2300);
+}
+// Opened from a shared link (?s=…): the position in its exercise, once; the address bar cleaned
+function openSharedFromUrl(){
+  const q = new URLSearchParams(location.search); if(!q.has('s')) return;
+  const sh = sharedPos(q.get('s'));
+  q.delete('s'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+  if(!sh){ flashNote("This shared position couldn't be opened."); return; }
+  sharedOpen = sh.a; replayQueue = [{ a: sh.a, key: sh.p.key, pos: sh.p }]; replayMode = true; routine = false; testMode = false; replayIdx = 0;
+  openReplayAt(0);
 }
 function renderScreen(){
   syncPos();
@@ -8460,6 +8533,7 @@ initEngine();
   if(DIRECT_LICHESS){ await finishLichessLogin(); await finishGoogleLogin(); }   // back from lichess.org: signed in before anything loads
   initProgress();
   initMyGames();
+  openSharedFromUrl();
 })();
 </script>
 
