@@ -5,8 +5,6 @@
 import pathlib, sys
 root = pathlib.Path(__file__).resolve().parent.parent
 app = (root / 'app' / 'index.html').read_text(encoding='utf-8')
-import hashlib   # the version shown in the page (after its links): a short fingerprint of the app, to tell an old copy from the new one
-app = app.replace("/*BUILD*/''", "/*BUILD*/'" + hashlib.sha256(app.encode('utf-8')).hexdigest()[:6] + "'", 1)
 icon = "icons/icon.svg"   # the white king of the board, on the yellow accent (icons/: the app icons, the same)
 # What the page may load and call (Content-Security-Policy): its own files; the account server, Lichess
 # (logins, games), and the CDNs the engine falls back to; Ko-fi's cup image. Inline scripts and styles are
