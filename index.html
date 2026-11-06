@@ -7568,11 +7568,11 @@ function explorerSound(capture){
 // Pieces slide to their square (a move, or one step back or forward): one animation across redraws, which
 // finds the piece on its new square each frame and shifts it back along its path, less and less.
 const xpSlide = { paths:[], t0:0, raf:0 }, XP_SLIDE_MS = 150;
-function explorerSlide(paths){
-  xpSlide.paths = paths; xpSlide.t0 = performance.now();
+function explorerSlide(paths, delay = 0){   // delay (ms): the piece waits on its first square first
+  xpSlide.paths = paths; xpSlide.t0 = performance.now() + delay;
   if(xpSlide.raf) return;
   const step = ()=>{
-    const t = Math.min(1, (performance.now() - xpSlide.t0) / XP_SLIDE_MS), k = 1 - easeOut(t);
+    const t = Math.max(0, Math.min(1, (performance.now() - xpSlide.t0) / XP_SLIDE_MS)), k = 1 - easeOut(t);
     const flip = boardFlipped(), col = sq=>{ const f = FILES.indexOf(sq[0]); return flip ? 7 - f : f; }, row = sq=>flip ? +sq[1] - 1 : 8 - +sq[1];
     for(const [from, to] of xpSlide.paths){
       const el = document.querySelector(`#board .sq[data-sq="${to}"] .pc`); if(!el) continue;
@@ -7586,6 +7586,7 @@ function explorerSlide(paths){
 // A new position in an exercise: the move that led to it played again, once (the piece slides in, and the castled
 // rook with it, with the move or capture sound). Not the explorer's (its moves have their own), not on a redraw.
 let introKey = null;
+const INTRO_DELAY = 250;
 function introMove(lm){
   if(!(ACTIVITIES.includes(screen) || screen==='planq')) return;
   let p = null; try{ p = pos(); }catch(e){}
@@ -7596,7 +7597,8 @@ function introMove(lm){
   const [from, to] = sq, pc = (()=>{ try{ return new Chess(p.fen).get(to); }catch(e){ return null; } })();
   const paths = [[from, to]];
   if(pc && pc.type==='k' && Math.abs(FILES.indexOf(from[0]) - FILES.indexOf(to[0]))===2){ const r = to[1], ks = to[0]==='g'; paths.push([(ks ? 'h' : 'a') + r, (ks ? 'f' : 'd') + r]); }
-  explorerSlide(paths); explorerSound(lastMoveCaptured(p));
+  const cap = lastMoveCaptured(p), key = introKey;
+  explorerSlide(paths, INTRO_DELAY); setTimeout(()=>{ if(introKey===key) explorerSound(cap); }, INTRO_DELAY);   // (a short wait first: the position seen, then the move)
 }
 // Whether the move that led to a position took a piece: from its game's moves (or the shared link's word)
 function lastMoveCaptured(p){
