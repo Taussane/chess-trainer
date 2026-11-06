@@ -44,20 +44,7 @@
   .panel-stack{display:grid; flex:1 1 auto;}
   .panel-stack > .layer{grid-area:1/1; display:flex; flex-direction:column; min-width:0;}
   .panel-stack > .layer.ghost{visibility:hidden; pointer-events:none;}
-  .panel-stack > .layer > .actions-row{margin-top:auto; padding-top:5px;}
-  /* Every review: score, 12 px, the content, 16 px, the buttons. */
-  .panel-stack > .layer > .score + *{margin-top:0;}
-  .panel-stack > .layer > .score ~ *:not(.actions-row){margin-bottom:0;}
-  .panel-stack > .layer > .actions-row.split{padding-top:16px;}
-  .panel-stack > .layer > .pq-grid + .actions-row, .panel-stack > .layer > .pq-grid + .actions-row.split{padding-top:5px; margin-top:0;}   /* (the Plan finder: the same gap above Check and the review's buttons) */
-  /* Move lists end on their own line: half the space. */
-  .panel-stack > .layer > .review-cols + .actions-row.split, .panel-stack > .layer > .rev-list + .actions-row.split{padding-top:8px;}
-  .panel-stack > .layer > .score + .rev-list{margin-top:-6px;}       /* its rows' text sits lower in the row */
-  .panel-stack > .layer > .score + .review-cols{margin-top:-2px;}
-  /* Move selection's ranking screen is the tallest panel in the app: keep its instruction and
-     Check button tight under the moves so the board keeps more room on small phones. */
-  .hint.rank-hint{margin-top:4px;}
-  .panel-stack > .layer > .hint + .actions-row{padding-top:2px;}
+  /* (the layout inside: see "The bottom panel" at the end of the styles) */
 
   h1,h2{font-family:var(--font-display); font-weight:600; margin:0; text-wrap:balance;}
   h1{font-size:1.45rem;}
@@ -145,7 +132,6 @@
   .xp-depth .depth-btn{position:static; margin:0; height:var(--xp-btn-h, 33px); min-width:var(--xp-btn-h, 36px);}
   .xp-nav .depth-note{top:auto; bottom:calc(100% + 6px);}   /* (opens upwards, over the grid) */
   .xp-nav .icon-btn svg{width:14px; height:14px; display:block;}
-  .panel-stack > .layer > .actions-row.xp-nav{padding-top:16px;}   /* (room under the grid / the plans: as in the reviews) */
   .xp-nav .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:auto; min-width:var(--xp-btn-h, 36px); height:var(--xp-btn-h, 33px); padding:5px 10px; border-radius:8px; font-size:1rem;}   /* (Analyze's height, as in the reviews) */
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
   .xp-steps{justify-self:end; display:flex; gap:10px;}
@@ -166,8 +152,7 @@
   /* both modes alike: the same heading, row spacing and size (a word on row n sits at the same height in both) */
   .xp-plan-row{display:flex; justify-content:space-between; align-items:center; font-size:0.88rem;}
   .xp-plan .asp-badge.xp-ans{min-width:7.5em; font-weight:600; font-size:0.8rem; letter-spacing:0; padding:2px 6px;}
-  .xp-plan-row{height:22px;} .xp-plan-note{margin:0 0 1px; font-size:0.78rem; line-height:1.15; color:var(--text-mute); height:2.3em; overflow:hidden;} .xp-plan-note:last-child{margin-bottom:0;}   /* (as tall as the Imbalances tab) */
-  .xp-plan .asp-badge.xp-ans{padding-block:1px;}
+  .xp-plan-note{font-size:0.8rem; line-height:1.2; color:var(--text-mute); overflow:hidden;}
   /* the evaluation, across the top of the board */
   .xp-hbar-line{padding:3px 0;}
   .xp-hbar{position:relative; width:100%; height:100%; border-radius:4px; overflow:hidden; background:var(--black-fill); border:1px solid var(--border);}
@@ -752,6 +737,34 @@
     html.desk2 .wrap.home .card{min-height:84px; align-items:center;}
   }
   @media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important;} }
+
+  /* ---- The bottom panel: one layout everywhere (every exercise's question and review, the Plan finder, the explorer) ----
+     one line on top (the question, the accuracy, the explorer's tabs), --pn-gap, four rows of --pn-row (the imbalances
+     with their Static / Dynamic line, the moves, the plans, the Plan finder's answers), --pn-btn-gap, the buttons (--pn-btn).
+     Change a value here: every screen follows (and keeps one height from question to review: .panel-stack). */
+  .panel{--pn-top:27px; --pn-gap:8px; --pn-row:34px; --pn-btn-gap:16px; --pn-btn:41px;}
+  .panel .panel-stack > .layer > *{margin-top:0; margin-bottom:0;}
+  .panel .panel-stack > .layer > :first-child{min-height:var(--pn-top); margin-bottom:var(--pn-gap); box-sizing:border-box;}
+  .panel .panel-stack > .layer > .actions-row{margin-top:auto; padding-top:var(--pn-btn-gap);}
+  .panel .panel-stack > .layer > .actions-row > .btn{height:var(--pn-btn); padding-block:0; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center;}
+  .panel .panel-stack > .layer > :first-child .prompt, .panel .panel-stack > .layer > .prompt:first-child{font-size:min(1rem, 4.1vw);}   /* (one line on narrow phones too) */
+  /* the rows */
+  .panel-stack .aspects .asp-grid{grid-template-rows:repeat(4, var(--pn-row)); row-gap:0; align-items:center;}
+  .panel-stack .aspects .asp-grid > .asp-head{align-self:end; padding-bottom:6px;}
+  .panel-stack .aspects.plan{display:grid; grid-template-rows:var(--pn-row) auto;}
+  .panel-stack .aspects.plan > .asp-head{align-self:end; margin:0; padding-bottom:6px;}
+  .panel-stack .plan-rows{grid-auto-rows:var(--pn-row); row-gap:0;}
+  .panel-stack .plan-rows > .plan-row{align-content:center; margin-block:0; padding-block:0;}
+  .panel-stack .rate-row, .panel-stack .review-row.pick-row, .panel-stack .rev-list .review-row{height:var(--pn-row); min-height:0; box-sizing:border-box; padding-block:0;}
+  .panel-stack .review-cols{gap:0 12px;}
+  .panel-stack .review-col{display:grid; grid-template-rows:repeat(4, var(--pn-row));}
+  .panel-stack .review-col > *{height:var(--pn-row); min-height:0; box-sizing:border-box;}
+  .panel-stack .review-col > .col-toggle{align-self:center; height:auto;}
+  .panel-stack .pq-grid{--pq-row:var(--pn-row);}
+  .panel-stack .seg.xp-modes{height:var(--pn-top); box-sizing:border-box;} .panel-stack .xp-modes .seg-btn{padding-block:0;}
+  .panel-stack .xp-plan{display:grid; grid-template-rows:repeat(4, var(--pn-row)); align-items:center;}
+  .panel-stack .xp-plan > *{margin:0; min-height:0;}
+  .panel-stack .xp-plan > .xp-plan-note{max-height:var(--pn-row); align-self:start;}
 </style>
 
 <div class="wrap">
@@ -4351,7 +4364,7 @@ function stackedPanel(inner, ghosts, extra){
 }
 const GHOST_ACTIONS = `<div class="actions-row split"><span class="btn secondary lichess-open"><svg class="li-logo" viewBox="0 0 50 50"></svg> Analyze</span><span class="btn secondary lichess-open"><svg class="act-icon" viewBox="0 0 24 24"></svg> Explore</span><span class="btn">Next position</span></div>`;
 const GHOST_ANALYSIS = [
-  `<p class="prompt">Drag the evaluation bar to where you think it sits.</p><div class="actions-row"><span class="btn">Check</span></div>`,
+  `<p class="prompt">Drag the bar to where you think it sits.</p><div class="actions-row"><span class="btn">Check</span></div>`,
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${planHtml(null, null, false, true)}${GHOST_ACTIONS}`,
 ];
 const GHOST_IMBALANCES = [
@@ -4364,7 +4377,7 @@ function ghostCandidates(){
   const pick = `<div class="review-row pick-row"><div class="move-tag"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span></div><span class="del-btn">✕</span></div>`;
   return [
     `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="review-cols">${col}${col}</div>${GHOST_ACTIONS}`,
-    `<p class="prompt top">Add up to three moves, but avoid bad ones.</p><div>${pick.repeat(3)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
+    `<p class="prompt top">Add up to three moves; avoid bad ones.</p><div>${pick.repeat(3)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
   ];
 }
 function ghostFinal(){
@@ -6181,7 +6194,7 @@ function renderAnalysis(){
         ${aspVals ? planHtml(planFor(p, aspVals, truth.info), s.aspView, false, false, p.fen) : planHtml(null, null, false, true)}
         <div class="actions-row split${done ? '' : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`
       : `
-        <p class="prompt" id="anaPrompt">Drag the evaluation bar to where you think it sits.</p>
+        <p class="prompt" id="anaPrompt">Drag the bar to where you think it sits.</p>
         <div class="actions-row" id="anaCheckRow"><button class="btn" id="check" ${sfState==='error' || (!s.barMoved && hintsOn('analysis')) ? 'disabled' : ''}>Check</button></div>`}`, GHOST_ANALYSIS, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(s.checked){
@@ -6300,10 +6313,10 @@ window.addEventListener('pointerup', ()=>{ gaugeDragging = false; });
 // ================= Candidate moves =================
 function pickHint(count){
   const who = side==='w' ? 'White' : 'Black';
-  if(count===0) return `Suggest at least one strong move for ${who}.`;
-  if(count===1) return 'Add up to three moves, but avoid bad ones.';
+  if(count===0) return `Suggest a strong move for ${who}.`;
+  if(count===1) return 'Add up to three moves; avoid bad ones.';
   if(count===2) return 'Any last move worth considering?';
-  return 'Check when you\'re happy with your selection.';
+  return 'Check when you\'re happy with them.';
 }
 function renderCandidates(){
   const app = document.getElementById('app');
@@ -7012,18 +7025,18 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Finding positions in your games…": "Recherche de positions dans vos parties…",
 "No positions yet": "Pas encore de positions",
 "All played today": "Toutes jouées aujourd'hui",
-"Drag the evaluation bar to where you think it sits.": "Placez la barre d'évaluation là où vous pensez qu'elle se situe.",
+"Drag the bar to where you think it sits.": "Placez la barre là où vous l'estimez.",
 "Your evaluation": "Votre évaluation",
 "Static": "Statique",
 "Dynamic": "Dynamique",
 "Possible plans": "Plans possibles",
 "Possible plans for White": "Plans possibles pour les Blancs",
 "Possible plans for Black": "Plans possibles pour les Noirs",
-"Suggest at least one strong move for White.": "Proposez au moins un bon coup pour les Blancs.",
-"Suggest at least one strong move for Black.": "Proposez au moins un bon coup pour les Noirs.",
-"Add up to three moves, but avoid bad ones.": "Ajoutez jusqu'à trois coups, mais évitez les mauvais.",
+"Suggest a strong move for White.": "Proposez un bon coup pour les Blancs.",
+"Suggest a strong move for Black.": "Proposez un bon coup pour les Noirs.",
+"Add up to three moves; avoid bad ones.": "Jusqu'à trois coups ; évitez les mauvais.",
 "Any last move worth considering?": "Un dernier coup à envisager ?",
-"Check when you're happy with your selection.": "Vérifiez quand votre sélection vous convient.",
+"Check when you're happy with them.": "Vérifiez quand ils vous conviennent.",
 "Your moves": "Vos coups",
 "Top 3 moves": "3 meilleurs coups",
 "Order the moves, best first.": "Ordonnez les coups, le meilleur d'abord.",
@@ -7376,7 +7389,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Start averages, charts and missed positions again from now?": "Repartir de maintenant pour les moyennes, les graphiques et les positions manquées ?",
 "Start the timing again from now?": "Repartir de maintenant pour le chronométrage ?",
 "Reset": "Remettre à zéro",
-"Gauge the 3 most decisive imbalances.": "Évaluez les 3 déséquilibres les plus décisifs.",
+"Gauge the 3 most decisive imbalances.": "Évaluez les 3 déséquilibres décisifs.",
 "Choose the 3 imbalances that decide the position, and say who has the edge: White or Black. Tap ? to clear one.": "Choisissez les 3 déséquilibres qui décident de la position, et dites qui a l'avantage : Blancs ou Noirs. Touchez ? pour en retirer un.",
 "Strong players don't weigh everything: they spot what decides the position. Each imbalance is a count of points on the board; the review shows them all, with their size.": "Les forts joueurs ne pèsent pas tout : ils repèrent ce qui décide de la position. Chaque déséquilibre est un compte de points sur l'échiquier ; la correction les montre tous, avec leur taille.",
 "Look for the big edges first.": "Cherchez d'abord les gros avantages.",
@@ -7468,7 +7481,7 @@ const I18N_FR_RE = [
   [/^Check (\d)\/(\d)$/, 'Vérifier $1/$2'], [/^Next (\d)\/(\d)$/, 'Suivante $1/$2'],
   [/^(White|Black) can win$/, (m, c)=>`Les ${c==='White' ? 'Blancs' : 'Noirs'} gagnent`],   // (short: three to a row)
   [/^(White|Black) must defend$/, (m, c)=>`Les ${c==='White' ? 'Blancs' : 'Noirs'} défendent`],
-  [/^Anything urgent for (White|Black)\? Who's better\?$/, (m, c)=>`Une urgence pour les ${c==='White' ? 'Blancs' : 'Noirs'} ? Qui est mieux ?`],
+  [/^Anything urgent for (White|Black)\? Who's better\?$/, (m, c)=>`Urgence pour les ${c==='White' ? 'Blancs' : 'Noirs'} ? Qui est mieux ?`],
   [/^(\d) left$/, (m, n)=>`${n} restant${n==='1' ? '' : 's'}`],
   [/^(.+): who has the decisive edge\?$/, (m, a)=>tr(a) + " : qui a l'avantage décisif ?"],
   [/^Accuracy (\d+)% · Average (.+)$/, 'Précision $1 % · Moyenne $2'],

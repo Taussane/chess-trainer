@@ -140,7 +140,7 @@ async def main():
         await pg.evaluate("openActivity('analysis')"); await pg.wait_for_timeout(300)
         await pg.evaluate("""()=>{ const p = pos(); engineEval = fen=>new Promise(res=>setTimeout(()=>res({ lines:[{cp: p.side==='w' ? 250 : -250, mate:null, uci:null}], bestUci:null }), 20)); fenEvalStore = {}; render(); }""")
         prompt = await pg.text_content('#anaPrompt'); note = await pg.query_selector('#anaCheckRow .asp-note')
-        if prompt != "Drag the evaluation bar to where you think it sits." or note: fails.append(f'evaluation question: {prompt} / {note}')
+        if prompt != "Drag the bar to where you think it sits." or note: fails.append(f'evaluation question: {prompt} / {note}')
         if await pg.query_selector('#aspInput'): fails.append('Position evaluation asks for no imbalances')
         e1 = await pg.evaluate("document.querySelector('.panel').offsetHeight")
         await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_function("(st('analysis').animT ?? 0) >= 1", timeout=8000); await pg.wait_for_timeout(300)
