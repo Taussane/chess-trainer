@@ -142,8 +142,8 @@
   .xp-sides{flex:none; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px;}
   .wrap.ex .xp-sides + .panel{margin-top:6px;}   /* (the buttons just above the panel) */
   .wrap.ex > #app > .xp-sides.sides-desk{display:none;}   /* (Imbalance reading on a phone: the buttons on the name line instead) */
-  .pl-line:has(> .xp-sides){overflow:visible; height:32px; align-items:flex-end;}   /* (a little gap under the board, as above the panel) */
-  .pl-line > .xp-sides{margin:0 0 0 auto; gap:6px;}
+  .pl-line:has(> .xp-sides){overflow:visible; height:36px; align-items:flex-start; line-height:22px;}   /* (the name where it always is; the buttons 6 px under the board, 6 px above the line's end) */
+  .pl-line > .xp-sides{margin:6px 0 0 auto; gap:6px;}
   .pl-line > .xp-sides .xp-side{height:24px; padding:0 9px; font-size:.78rem; font-weight:500;}
   .xp-side{display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 11px; border-radius:14px; border:1px solid var(--border); background:transparent; color:var(--text-mute); font:inherit; font-size:.82rem; cursor:pointer;}
   .xp-side.on{background:var(--panel); color:var(--text); border-color:var(--text-mute);}
