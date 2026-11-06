@@ -772,7 +772,7 @@
      one line on top (the question, the accuracy, the explorer's tabs), --pn-gap, four rows of --pn-row (the imbalances
      with their Static / Dynamic line, the moves, the plans, the Plan finder's answers), --pn-btn-gap, the buttons (--pn-btn).
      Change a value here: every screen follows (and keeps one height from question to review: .panel-stack). */
-  .panel{--pn-top:27px; --pn-gap:8px; --pn-row:34px; --pn-btn-gap:16px; --pn-btn:41px;}
+  .panel{--pn-top:27px; --pn-gap:8px; --pn-row:34px; --pn-btn-gap:var(--pn-gap); --pn-btn:41px;}   /* (the gap above the buttons: the one under the top line) */
   .panel .panel-stack > .layer > *{margin-top:0; margin-bottom:0;}
   .panel .panel-stack > .layer > :first-child{min-height:var(--pn-top); margin-bottom:var(--pn-gap); box-sizing:border-box;}
   .panel .panel-stack > .layer > .actions-row{margin-top:auto; padding-top:var(--pn-btn-gap);}
