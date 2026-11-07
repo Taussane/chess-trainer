@@ -133,7 +133,8 @@
   .xp-nav .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:auto; min-width:var(--xp-btn-h, 36px); height:var(--xp-btn-h, 33px); padding:5px 10px; border-radius:8px; font-size:1rem;}   /* (Analyze's height, as in the reviews) */
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
   .xp-steps{justify-self:end; display:flex; gap:10px;}
-  .xp-nav > .btn.xp-li{justify-self:start; text-decoration:none; width:calc((100% - 5 * var(--split-gap, 10px)) / 6);}   /* (one of the reviews' three icon buttons: they share half the row, with three gaps) */   /* (the reviews' Analyze: the same size; the row's other buttons take its height) */
+  .xp-nav > .btn.xp-li{justify-self:start; text-decoration:none;}   /* (the row's other buttons take its height) */
+  .xp-nav > .btn.xp-li, .xp-nav .icon-btn, .xp-depth .depth-btn{width:calc((100cqi - 5 * var(--split-gap, 10px)) / 6); min-width:0; padding-inline:0; box-sizing:border-box; flex:none;}   /* (every button one of the reviews' three icon buttons: they share half the row, with three gaps) */
   .wrap[data-scr=explorer] .xp-modes{flex:none;}
   .xp-sides{flex:none; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px;}
   .wrap.ex .xp-sides:not(.sides-desk) + .panel{margin-top:6px;}   /* (the buttons just above the panel) */
