@@ -19,9 +19,10 @@ async def main():
         await pg.evaluate("myGames.forEach(g=>myReached.add(g.id)); onOwnPositionsChanged()")   # (the engine held: every game's turn as if reached, so its positions count)
         # Every game a known date (newest = index 0), all mistakes already checked (so positions exist).
         await pg.evaluate("""(()=>{ const day = 864e5, now = Date.now();
-          myGames.forEach((g, i)=>{ g.playedAt = now - (i+1)*day; g.verified = true; if(!g.evals) g.evals = g.sans.map(()=>({cp:0})); extractOwnPositions(g); });
+          myGames.forEach((g, i)=>{ g.playedAt = now - (i+1)*day; g.verified = true; if(!g.evals) g.evals = g.sans.map(()=>({cp:0}));
+            g.chk = { quietChk: Object.fromEntries(g.sans.map((_, k)=>[k, { v: OWN_CHECK_V.quietChk, ok: true }])) }; extractOwnPositions(g); });   // (every quiet position checked and accepted)
           onOwnPositionsChanged(); })()""")
-        info = await pg.evaluate("""(()=>{ const a = 'analysis', day = 864e5, now = Date.now();
+        info = await pg.evaluate("""(()=>{ const a = 'imbalances', day = 864e5, now = Date.now();
           const ps = mineCandidates(a).core; if(ps.length < 8) return { n: ps.length };
           // results: two got right (older and recent success), one missed 8 days ago, one missed 2 days ago
           const [ok1, ok2, miss8, miss2] = [ps[0], ps[1], ps[2], ps[3]];
@@ -42,7 +43,7 @@ async def main():
             if info['replay'] != [info['miss8']]: fails.append(f'replay should hold only the position missed 8 days ago: {info["replay"]}')
             if not info['newestFirst']: fails.append('never-played positions are not newest game first')
         # First picks over many draws.
-        st = await pg.evaluate("""(()=>{ const a = 'analysis', c = mineCandidates(a), n = 20000, first = {};
+        st = await pg.evaluate("""(()=>{ const a = 'imbalances', c = mineCandidates(a), n = 20000, first = {};
           for(let i=0; i<n; i++){ const k = drawMine(a)[0].key; first[k] = (first[k]||0) + 1; }
           const f = p=>(first[p.key]||0)/n;
           return { replay: c.replay.reduce((t,p)=>t+f(p),0), front: f(c.core[0]), last: f(c.core[c.core.length-1]), size: c.core.length }; })()""")
@@ -53,14 +54,14 @@ async def main():
         rot = await pg.evaluate("""(()=>{ progressLoaded = true;
           const oldest = myGames.slice().sort((x,y)=>gamePlayedAt(x)-gamePlayedAt(y));
           const keepMissed = oldest[0], plain = oldest[1];
-          const pos = keepMissed.positions.find(p=>p.acts.includes('analysis'));
-          results.push({ a:'analysis', acc:10, ts: Date.now() - 9*864e5, key: pos.key, miss:true }); results.sort((x,y)=>x.ts-y.ts);
+          const pos = keepMissed.positions.find(p=>p.acts.includes('imbalances'));
+          results.push({ a:'imbalances', acc:10, ts: Date.now() - 9*864e5, key: pos.key, miss:true }); results.sort((x,y)=>x.ts-y.ts);
           const base = myGames[0];
           for(let i=0; i<100; i++){ const g = JSON.parse(JSON.stringify(base)); g.id = 'new' + i; g.playedAt = Date.now() - i*1000; extractOwnPositions(g); myGames.push(g); myReached.add(g.id); }
           rotateMyGames();
           const k = myGames.find(g=>g.id===keepMissed.id);
           return { core: myGames.filter(g=>!g.retired).length, kept: !!k && k.retired, dropped: !myGames.some(g=>g.id===plain.id),
-                   replayHasIt: mineCandidates('analysis').replay.some(p=>p.key===pos.key), coreHasOld: mineCandidates('analysis').core.some(p=>p.gameId===keepMissed.id) }; })()""")
+                   replayHasIt: mineCandidates('imbalances').replay.some(p=>p.key===pos.key), coreHasOld: mineCandidates('imbalances').core.some(p=>p.gameId===keepMissed.id) }; })()""")
         print('rotation:', rot)
         if rot != {'core': 100, 'kept': True, 'dropped': True, 'replayHasIt': True, 'coreHasOld': False}: fails.append(f'rotation: {rot}')
         # Masters use the same line: positions added to the library later come first; one got right goes last.
@@ -79,11 +80,11 @@ async def main():
           myGames = []; results = [];
           for(let i=0; i<230; i++){ const g = JSON.parse(JSON.stringify(base)); g.id = 'g' + i; g.playedAt = now - i*day; g.retired = false; extractOwnPositions(g); myGames.push(g); myReached.add(g.id); }
           // a missed position in each of the 130 oldest games
-          for(let i=100; i<230; i++){ const p = myGames[i].positions.find(p=>p.acts.includes('analysis')); results.push({ a:'analysis', acc:10, ts: now - 30*day + i, key: p.key, miss:true }); }
+          for(let i=100; i<230; i++){ const p = myGames[i].positions.find(p=>p.acts.includes('imbalances')); results.push({ a:'imbalances', acc:10, ts: now - 30*day + i, key: p.key, miss:true }); }
           results.sort((x,y)=>x.ts-y.ts); onOwnPositionsChanged(); rotateMyGames();
           const kept = myGames.filter(g=>g.retired);
           return { core: myGames.filter(g=>!g.retired).length, replayGames: kept.length,
-                   oldestKept: Math.max(...kept.map(g=>+g.id.slice(1))), replayPositions: mineCandidates('analysis').replay.length }; })()""")
+                   oldestKept: Math.max(...kept.map(g=>+g.id.slice(1))), replayPositions: mineCandidates('imbalances').replay.length }; })()""")
         print('replay cap:', cap)
         if cap != {'core': 100, 'replayGames': 100, 'oldestKept': 199, 'replayPositions': 100}: fails.append(f'replay cap: {cap}')
         await b.close()

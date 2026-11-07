@@ -21,7 +21,7 @@ async def main():
           bgEval = (fen,o)=>new Promise(res=>{ const go=()=>{ __log.push(o && (o.movetime===400 || o.movetime===500) ? 'plan' : o && o.multipv===1 ? 'scan' : 'check'); real(fen,o).then(res); };
             const wait=()=>{ if(__hold) setTimeout(wait,20); else go(); }; wait(); }); })()""")
         await pg.click('#accountBtn'); await pg.evaluate("(t=>{ importPgnText(t, false, 'TestPlayer'); render(); })", pathlib.Path(T.SAMPLE).read_text()); await pg.wait_for_timeout(300)
-        st = await pg.evaluate("({games:myGames.length, analysed:myGames.filter(g=>g.evals).length, gamesWithBA:myGames.filter(g=>g.positions.some(p=>p.acts.includes('analysis'))).length, unanalysedWithPositions:myGames.filter(g=>!g.evals && g.positions.length).length, flagged:myGames.flatMap(g=>g.positions).filter(p=>p.pending).length, c:countsOf(myPositions)})")
+        st = await pg.evaluate("({games:myGames.length, analysed:myGames.filter(g=>g.evals).length, gamesWithBA:myGames.filter(g=>g.positions.some(p=>p.acts.includes('imbalances') || p.acts.includes('planq'))).length, unanalysedWithPositions:myGames.filter(g=>!g.evals && g.positions.length).length, flagged:myGames.flatMap(g=>g.positions).filter(p=>p.pending).length, c:countsOf(myPositions)})")
         print('right after upload:', st)
         if not st['gamesWithBA'] or st['gamesWithBA'] > st['analysed'] or st['unanalysedWithPositions']: fails.append(f"positions should come only from analysed games: {st}")
         if not st['flagged']: fails.append('no likely mistakes flagged from Lichess evaluations')

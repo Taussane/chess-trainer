@@ -4476,11 +4476,16 @@ let quietTimer = null, quietRendered = 0, quietFound = false;
 // reading's 6: 3 criteria graded at least, and none read otherwise by Stockfish 10 (as the master positions)
 const OWN_CHECK_V = { quietChk: 9, planqChk: 7 };   // (quietChk 9: decisiveDisagree too; quietChk 7, planqChk 6: Space graded + from 2 points; 8 and 7: Activity + from 7, King safety and Other threats + from 2, Development + from 2 pieces, King activity ++ from 2)
 function ownStoreCheck(p, field, value){
-  const g = myGames.find(x=>x.id===p.gameId), gp = g && (g.positions || []).find(x=>x.ply===p.ply);
-  if(!gp) return;
-  gp[field] = { v: OWN_CHECK_V[field], ok: value }; p[field] = gp[field];
-  ownDirty.add(g); clearTimeout(ownDirtyT); ownDirtyT = setTimeout(()=>{ ownDirty.forEach(saveMyGame); ownDirty.clear(); }, 1500);   // (saved in batches)
+  const g = myGames.find(x=>x.id===p.gameId); if(!g) return;
+  const c = { v: OWN_CHECK_V[field], ok: value };
+  ((g.chk = g.chk || {})[field] = g.chk[field] || {})[p.ply] = c;   // (with the game: the selection reads it, and it syncs)
+  const gp = (g.positions || []).find(x=>x.ply===p.ply); if(gp) gp[field] = c; p[field] = c;
+  // saved in batches; the game's positions then found again (a failed check: the next half-move's turn)
+  ownDirty.add(g); clearTimeout(ownDirtyT); ownDirtyT = setTimeout(()=>{ const gs = [...ownDirty]; ownDirty.clear(); gs.forEach(saveMyGame);
+    const stale = gs.filter(x=>myGames.includes(x) && !positionsUpToDate(x)); if(stale.length) reextractAll(stale); }, 1500);
 }
+// A check kept with a game for one half-move (true, false; undefined: not made, or by older rules)
+const ownChk = (g, field, ply)=>{ const c = g && g.chk && g.chk[field] && g.chk[field][ply]; return c && c.v===OWN_CHECK_V[field] ? c.ok : undefined; };
 const ownDirty = new Set(); let ownDirtyT = null;
 const ownStored = (p, field)=>p[field] && p[field].v===OWN_CHECK_V[field] ? p[field].ok : undefined;
 function quietOwn(p){
@@ -4536,7 +4541,7 @@ const imbalanceLeanWrong = (vals, cp)=>{ if(cp==null || Math.abs(cp) < 50) retur
   const lean = ASPECTS.reduce((t, x)=>t + (isOff(vals, x) ? 0 : aspectLevel(vals[x.key], x.key, vals)), 0);
   return lean!==0 && Math.sign(lean)!==Math.sign(cp); };   // 2 squares of the bar, in winning chances
 // One of your positions in exercise `a`: Imbalance reading and the Plan finder take the quiet ones.
-function posIn(p, a){ return Array.isArray(p.acts) && p.acts.includes(a==='imbalances' || a==='planq' ? 'analysis' : a); }   // (Imbalance reading and the Plan finder: the quiet positions, still tagged 'analysis' from Position evaluation's time)
+function posIn(p, a){ return Array.isArray(p.acts) && (p.acts.includes(a) || ((a==='imbalances' || a==='planq') && p.acts.includes('analysis'))); }   // (Imbalance reading and the Plan finder: each its own quiet positions; 'analysis': both, as saved before)
 // Missed positions still in the app; positions played today wait for tomorrow.
 const missedOf = a=>missedList().filter(e=>e.a===a).map(e=>({ ...e, pos: findPosition(e.key, e.a) })).filter(e=>e.pos);
 const replayable = a=>missedOf(a).filter(e=>!isPlayed(e.key));
@@ -5534,16 +5539,18 @@ function winForMover(e, turn){
 function lichessEvals(g){ return !!g.evals && (g.evalBy ? g.evalBy==='lichess' : siteOf(g)!=='chesscom'); }
 // What a game's positions depend on: when none of it changed, the positions found before are kept
 // (finding them takes time; at load, for a few hundred games, it would freeze the page).
-const OWN_SIG = JSON.stringify(OWN) + JSON.stringify(FINAL_RULE) + '|3';
+const OWN_SIG = JSON.stringify(OWN) + JSON.stringify(FINAL_RULE) + JSON.stringify(OWN_CHECK_V) + '|4';
 const posSig = g=>[OWN_SIG, g.me, g.sans.length, g.evals ? g.evals.length : 0, g.evalBy || '', g.site || '', g.verified ? 1 : 0,
-  JSON.stringify(g.checks || {}), JSON.stringify(g.finalOk || {})].join('|');
+  JSON.stringify(g.checks || {}), JSON.stringify(g.finalOk || {}), JSON.stringify(g.chk || {})].join('|');
 const positionsUpToDate = g=>Array.isArray(g.positions) && g.posSig===posSig(g);
 function extractOwnPositions(g){
-  // the checks kept with each position (Imbalance reading's, the Plan finder's: ownStoreCheck) stay with it when the
-  // game's positions are found again (a mistake checked, Move selection's searches in): same half-move, same position
-  const old = new Map((g.positions || []).map(p=>[p.ply + '|' + p.fen, p]));
+  const before = g.positions || [];
+  // Saved before the checks were kept with the game (g.chk): theirs move there (same half-move, same game). A game
+  // whose checks were all done then keeps showing its positions while its turn walks on (counts never drop).
+  for(const p of before) for(const f of ['quietChk', 'planqChk']) if(p[f] && ownChk(g, f, p.ply)===undefined && p[f].v===OWN_CHECK_V[f]) ((g.chk = g.chk || {})[f] = g.chk[f] || {})[p.ply] = p[f];
+  if(g.shown===undefined && before.length && g.status!=='queued' && !before.some(p=>p.pending)
+     && before.every(p=>!Array.isArray(p.acts) || !p.acts.includes('analysis') || (ownStored(p, 'quietChk')!==undefined && ownStored(p, 'planqChk')!==undefined))) g.shown = true;
   extractOwnPositions0(g); g.posSig = posSig(g);
-  for(const p of g.positions || []){ const o = old.get(p.ply + '|' + p.fen); if(o) for(const f of ['quietChk', 'planqChk']) if(o[f]) p[f] = o[f]; }
 }
 function extractOwnPositions0(g){
   // A game gives positions only once it is analysed (Lichess's analysis, or the app's scan): every
@@ -5617,13 +5624,24 @@ function extractOwnPositions0(g){
     if(div.mid>=0 && ply < div.mid + OWN.earlyBalancedPlies && ev && ev.mate==null && ev.cp!=null && Math.abs(ev.cp) < OWN.earlyBalancedCp) continue;
     ba.push(ply);
   }
-  // The quiet positions: the middlegame and endgame starts first (or up to 3 half-moves later), then
-  // positions 7 half-moves from those already kept, in move order.
-  const kept = [];
-  const take = ply=>{ if(kept.some(k=>Math.abs(k-ply) < OWN.spacingPlies)) return; kept.push(ply); };
-  for(const start of [div.mid, div.end]){ if(start<0) continue; const a = ba.find(p=>p>=start && p<=start+OWN.retryPlies); if(a!=null) take(a); }
-  ba.filter(p=>p<=baLast).forEach(take);
-  kept.sort((a,b)=>a-b).forEach(ply=>out.push(entry(ply, ['analysis'])));
+  // The quiet positions, as the master positions' (scripts/strategy-pass.js): each exercise its own, half-move after
+  // half-move, 7 apart; one its check turns down gives way to the next half-move. The walk stops at the first one not
+  // checked yet ("open": the game's turn checks it, then the walk goes on: myGameTurn).
+  // Those already accepted always stay (counts never drop, results keep their positions: also those chosen another way before).
+  const near = (kept, ply)=>kept.some(k=>Math.abs(k - ply) < OWN.spacingPlies);
+  const pick = field=>{ const kept = []; let next = null;
+    for(const ply of ba) if(ownChk(g, field, ply)===true && !near(kept, ply)) kept.push(ply);
+    for(const ply of ba){ if(near(kept, ply)) continue; const ok = ownChk(g, field, ply);
+      if(ok===true) kept.push(ply); else if(ok===undefined){ next = ply; break; } }
+    return { kept: kept.sort((x, y)=>x - y), next }; };
+  const sel = { imbalances: pick('quietChk'), planq: pick('planqChk') };
+  const plies = [...new Set([...sel.imbalances.kept, ...sel.planq.kept, sel.imbalances.next, sel.planq.next].filter(x=>x!=null))].sort((a,b)=>a-b);
+  for(const ply of plies){
+    const acts = ['imbalances', 'planq'].filter(a=>sel[a].kept.includes(ply) || sel[a].next===ply), open = acts.filter(a=>sel[a].next===ply);
+    const e = entry(ply, acts, open.length ? { open } : {});
+    for(const f of ['quietChk', 'planqChk']){ const c = g.chk && g.chk[f] && g.chk[f][ply]; if(c) e[f] = c; }
+    out.push(e);
+  }
   g.positions = out;
 }
 // Lichess's game phases (scalachess Divider, MIT licence: see THIRD_PARTY.md in the source), as in the position finder.
@@ -5660,10 +5678,10 @@ function divideGame(fens){
 // --- Background work: scan the games Lichess hasn't analysed ---
 const ownPositionsOf = g=>(g.positions||[]).filter(p=>Array.isArray(p.acts)).map(p=>({ ...p, last: p.last ? { squares:p.last } : null }));
 // A game whose checks are all done: in this visit (myBackground), or kept with it from before (no engine needed to show it)
-const gameFinished = g=>myDone.has(g.id) || (g.status!=='queued' && !(g.positions||[]).some(p=>p.pending)
-  && (g.positions||[]).every(p=>!Array.isArray(p.acts) || !p.acts.includes('analysis') || (ownStored(p, 'quietChk')!==undefined && ownStored(p, 'planqChk')!==undefined)));
+const gameFinished = g=>myDone.has(g.id) || (g.status!=='queued' && Array.isArray(g.positions)
+  && !g.positions.some(p=>p.pending || (p.open && p.open.length) || (Array.isArray(p.acts) && p.acts.includes('analysis'))));   // ('analysis': saved before; found again first)
 function onOwnPositionsChanged(){
-  myPositions = myGames.filter(g=>myReached.has(g.id) || gameFinished(g)).flatMap(ownPositionsOf);   // (a game's positions come in from its turn on, each as it's validated: myBackground)
+  myPositions = myGames.filter(g=>myReached.has(g.id) || gameFinished(g) || g.shown).flatMap(ownPositionsOf);   // (a game's positions come in from its turn on, each as it's validated: myBackground; g.shown: once all were in, they stay while new ones come)
   myPosVersion++;
   statOwnGames();
   refreshPools(true);
@@ -5741,24 +5759,41 @@ async function myGameTurn(g0){
       extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged();
     }
   };
-  const quietOnes = ()=>ownPositionsOf(currentGame(id) || { positions: [] }).filter(x=>posIn(x, 'analysis'));
+  // Imbalance reading's and the Plan finder's positions: each walk's next one checked, then the walk goes on
+  // (extractOwnPositions0) until the game has none left to check
+  const openFor = a=>{ const g1 = currentGame(id); return g1 ? ownPositionsOf(g1).find(x=>x.open && x.open.includes(a)) || null : null; };
+  const walkOn = (p, field, value)=>{ const g1 = currentGame(id); if(!g1) return;
+    if(value!==undefined && ownChk(g1, field, p.ply)===undefined) ownStoreCheck(p, field, value);   // (known before, e.g. this visit, but not kept yet)
+    extractOwnPositions(g1); onOwnPositionsChanged(); };
   // 2. Imbalance reading (no engine)
-  for(const p of quietOnes()){ if(quietOwn(p)===undefined){ quietNow(p); onOwnPositionsChanged(); } await tick(); }
+  for(let n = 0; n < 300; n++){
+    if(!currentGame(id)) return 'gone';
+    const p = openFor('imbalances'); if(!p) break;
+    walkOn(p, 'quietChk', quietNow(p)); await tick();
+  }
   // 3. its likely mistakes checked (Candidate moves; Move selection's checks follow from them)
   { const r = await runChecks('check'); if(r!=='ok') return r; }
-  // 4. the Plan finder (no engine, except a short search for the best move when the game hasn't it)
-  for(const p of quietOnes()){
+  // 4. the Plan finder (no engine, except a short search for the best move when the game hasn't it, and Stockfish's
+  // check of question 1)
+  const planqTries = new Map();
+  for(let n = 0; n < 300; n++){
+    if(!currentGame(id)) return 'gone';
+    const p = openFor('planq'); if(!p) break;
+    if(quietOwn(p)===undefined) quietNow(p);   // (its grades read as Imbalance reading's: planqFits)
     if(planqOwnOk(p)===undefined && planqNeedsLine(p)){
       const res = await bgEval(p.fen, { multipv: 1, movetime: 400 });
       if(evalFailed(res)) return 'retry';
       planqShortStore(p, res.lines[0] || null);
     }
     if(planqOwnOk(p)===undefined && planqEngineWanted.has(p.key)){ const r = await diagTimed('plan: Stockfish check, both sides', planqEngineCheck(p)); if(r!=='ok') return r; }
-    if(planqOwnOk(p)===true) onOwnPositionsChanged();
+    let ok = planqOwnOk(p);
+    if(ok===undefined){ const t = (planqTries.get(p.key) || 0) + 1; planqTries.set(p.key, t); if(t >= 3){ ok = false; planqOwnKnown.set(p.key, false); } }   // (still unknown: left out, the walk goes on)
+    walkOn(p, 'planqChk', ok);
     await tick();   // (the page answers between positions)
   }
   // 5. Move selection's searches (the longest)
   { const r = await runChecks('final'); if(r!=='ok') return r; }
+  { const g1 = currentGame(id); if(g1 && !g1.shown){ g1.shown = true; saveMyGame(g1); } }   // (its positions stay in from now on, whatever the next visit's turn finds)
   diagJob('one game, all its checks', performance.now() - t0);
   return 'ok';
 }
@@ -5896,7 +5931,7 @@ async function initMyGames(){
   onOwnPositionsChanged();
   if(onProfile()) render();   // these pages waited for the account
   myBackground();
-  setTimeout(()=>myPositions.forEach(p=>{ if(posIn(p, 'analysis')) quietOwn(p); }), 1500);   // Imbalance reading's checks, ahead of time
+  setTimeout(()=>myPositions.forEach(p=>{ if(posIn(p, 'imbalances')) quietOwn(p); }), 1500);   // Imbalance reading's checks, ahead of time
 }
 // Beta: your games removed everywhere, then the page loads again and brings them back from Lichess and
 // Chess.com as if for the first time (analysis, checks and the timing log all start over).
@@ -5930,7 +5965,7 @@ function lichessExportUrl(name){
   const perf = 'bullet,blitz,rapid,classical';
   return `https://lichess.org/api/games/user/${encodeURIComponent(name || 'USERNAME')}?max=${CORE_GAMES}&perfType=${perf}&evals=true&clocks=false&opening=false`;
 }
-function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTIVITIES.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); c.planq = list.filter(p=>(planqOwnKnown.has(p.key) ? planqOwnKnown.get(p.key) : ownStored(p, 'planqChk'))===true).length; return c; }   // (the Plan finder: those of Position evaluation's it accepts, as far as checked: myGameTurn)
+function countsOf(list){ const c = zeroCounts(); list.forEach(p=>ACTIVITIES.forEach(a=>{ if(posIn(p, a) && (a!=='imbalances' || quietOwn(p))) c[a]++; })); c.planq = list.filter(p=>posIn(p, 'planq') && (planqOwnKnown.has(p.key) ? planqOwnKnown.get(p.key) : ownStored(p, 'planqChk'))===true).length; return c; }   // (the Plan finder: those of Position evaluation's it accepts, as far as checked: myGameTurn)
 // Only a problem: "Couldn't check Lichess: …" (or why it couldn't check)
 function siteLine(site){
   const r = mySync[site], name = SITE_NAMES[site];
