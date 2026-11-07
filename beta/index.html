@@ -5963,7 +5963,7 @@ function siteLine(site){
   return r && r.error && !myFetching ? `Couldn't check ${name}: ${r.error}.` : '';
 }
 function positionsSection(){
-  const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = Object.fromEntries(ACTS.map(a=>[a, POOLS[a].length]));
+  const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id)), mine = countsOf(myPositions.filter(p=>!retired.has(p.gameId))), masters = Object.fromEntries(ACTS.map(a=>[a, a==='final' ? POOLS[a].filter(p=>!finalSkip.has(String(p.key).slice(0, 120))).length : POOLS[a].length]));   // (less Move selection's skipped ones)
   // One counter: a game is done once it is read (Lichess's analysis or the app's quick scan) and
   // each of its likely mistakes has been checked by the engine.
   const isDone = g=>myDone.has(g.id) || gameFinished(g);   // (every check of the game done: in this visit, or kept from before)
