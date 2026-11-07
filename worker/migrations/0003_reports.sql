@@ -10,8 +10,6 @@ CREATE TABLE IF NOT EXISTS reports (
   game TEXT,                           -- master game (g123) or own game id
   ply INTEGER,                         -- half-move in that game
   label TEXT,                          -- where it comes from, as the app shows it
-  acc INTEGER,                         -- the reporter's score on it
-  why TEXT                             -- 'three': the app itself found a Move selection position with only 3 moves to rank (GET /api/skips)
+  acc INTEGER                          -- the reporter's score on it
 );
 CREATE INDEX IF NOT EXISTS reports_key ON reports(a, key);
--- (why came later: the server adds it to an older table itself)

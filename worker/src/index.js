@@ -31,7 +31,6 @@
 //   GET    /api/metrics?days=           the usage dashboard's figures (the owner's account only)
 //   POST   /api/report {did, a, key, fen, …}  a position reported as doubtful (no sign-in; from this site only)
 //   DELETE /api/report?a=&key=          dismiss a reported position (the owner's account only)
-//   GET    /api/skips                   Move selection's positions the app found unfit (only 3 moves to rank): left out for everyone
 //   DELETE /api/session                 forget this sign-in here (log out)
 //   DELETE /api/account                 delete the account and everything in it
 
@@ -103,7 +102,6 @@ async function route(req, env) {
   await limit(req, env, 'RL_ALL');
   if (m === 'POST' && path === '/api/ev') return usageEvents(req, env);
   if (m === 'POST' && path === '/api/report') return reportPosition(req, env);
-  if (m === 'GET' && path === '/api/skips') return skips(env);
   if (m === 'POST' && path === '/api/login/google') { await limit(req, env, 'RL_OUT'); return googleLogin(env, (await body(req)).idToken); }
   if (m === 'GET' && path.startsWith('/api/chesscom/')) await limit(req, env, 'RL_OUT');
   if (m === 'GET' && path === '/api/chesscom/player') {   // public data: no sign-in needed (also before logging in)
@@ -424,10 +422,9 @@ let reportsReady = false;
 async function ensureReports(env) {
   if (reportsReady) return;
   await env.DB.batch([
-    env.DB.prepare('CREATE TABLE IF NOT EXISTS reports (ts INTEGER NOT NULL, did TEXT NOT NULL, a TEXT NOT NULL, key TEXT NOT NULL, fen TEXT NOT NULL, src TEXT, game TEXT, ply INTEGER, label TEXT, acc INTEGER, why TEXT)'),
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS reports (ts INTEGER NOT NULL, did TEXT NOT NULL, a TEXT NOT NULL, key TEXT NOT NULL, fen TEXT NOT NULL, src TEXT, game TEXT, ply INTEGER, label TEXT, acc INTEGER)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS reports_key ON reports(a, key)'),
   ]);
-  try { await env.DB.prepare('ALTER TABLE reports ADD COLUMN why TEXT').run(); } catch (e) { /* already there */ }
   reportsReady = true;
 }
 const FEN_RE = /^[1-8pnbrqkPNBRQK/]{15,71} [wb] [KQkq-]{1,4} (?:-|[a-h][36])(?: \d{1,3} \d{1,4})?$/;
@@ -440,20 +437,11 @@ async function reportPosition(req, env) {
   const now = Date.now();
   const n = await env.DB.prepare('SELECT COUNT(*) n FROM reports WHERE did = ? AND ts >= ?').bind(b.did, now - DAY).first();
   if (n.n >= 30) throw fail(429, 'too many reports today');
-  const why = b.why === 'three' && b.a === 'final' ? 'three' : null;   // (the app's own check: Move selection with only 3 moves to rank)
-  const dup = await env.DB.prepare('SELECT 1 FROM reports WHERE did = ? AND a = ? AND key = ? AND why IS ?').bind(b.did, b.a, b.key, why).first();
-  if (!dup) await env.DB.prepare('INSERT INTO reports (ts, did, a, key, fen, src, game, ply, label, acc, why) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(
+  const dup = await env.DB.prepare('SELECT 1 FROM reports WHERE did = ? AND a = ? AND key = ?').bind(b.did, b.a, b.key).first();
+  if (!dup) await env.DB.prepare('INSERT INTO reports (ts, did, a, key, fen, src, game, ply, label, acc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(
     now, b.did, b.a, b.key, b.fen, ['masters', 'mine'].includes(b.src) ? b.src : null, str(b.game, 40), Number.isInteger(b.ply) && b.ply >= 0 && b.ply < 1000 ? b.ply : null,
-    str(b.label, 160), Number.isFinite(b.acc) ? Math.max(0, Math.min(100, Math.round(b.acc))) : null, why).run();
+    str(b.label, 160), Number.isFinite(b.acc) ? Math.max(0, Math.min(100, Math.round(b.acc))) : null).run();
   return json({ ok: true });
-}
-
-// Move selection's master positions the app found unfit (only 3 moves to rank, never two of one bad grade): every
-// device leaves them out (the app caches the list). Public; only the app's own check adds to it.
-async function skips(env) {
-  await ensureReports(env);
-  const r = await env.DB.prepare("SELECT DISTINCT key FROM reports WHERE why = 'three' AND src = 'masters' LIMIT 2000").all();
-  return json({ final: (r.results || []).map(x => x.key) });
 }
 
 // The dashboard's figures over the last `days` days: visits, devices, positions, exercises, sources,
@@ -484,7 +472,7 @@ async function metrics(env, days) {
   const accBy = Object.fromEntries(newAccounts.map(r => [r.day, r.n]));
   const byDay = Object.fromEntries(daily.map(r => [r.day, r]));
   await ensureReports(env);   // all of them, not only the period's: they stay until dismissed
-  const reports = await all(`SELECT a, key, fen, src, game, ply, label, COUNT(*) n, COUNT(DISTINCT did) devices, MAX(ts) last, ROUND(AVG(acc)) acc, MAX(why) why FROM reports GROUP BY a, key ORDER BY last DESC LIMIT 300`);
+  const reports = await all(`SELECT a, key, fen, src, game, ply, label, COUNT(*) n, COUNT(DISTINCT did) devices, MAX(ts) last, ROUND(AVG(acc)) acc FROM reports GROUP BY a, key ORDER BY last DESC LIMIT 200`);
   return {
     generated: Date.now(), days,
     daily: Array.from({ length: days }, (_, i) => day(days - 1 - i)).map(d => ({ day: d, devices: byDay[d] ? byDay[d].devices : 0, newDevices: newBy[d] || 0,
