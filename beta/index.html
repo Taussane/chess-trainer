@@ -441,6 +441,7 @@
   .set-reset{align-self:center; margin:6px auto 0; display:block;}
   .set-page{padding-bottom:5px;}
   .sq.last::before{content:""; position:absolute; inset:0; background:var(--square-hl);}
+  #board.slide-wait .sq.last::before{content:none;}   /* (an exercise's opening move: highlighted once its piece sets off) */
   .sq.selected::before{content:""; position:absolute; inset:0; background:var(--square-hl);}
   .sq.check{background-image:radial-gradient(circle at center, rgba(255,40,40,1) 0%, rgba(230,0,0,.85) 28%, rgba(200,0,0,.35) 58%, rgba(170,0,0,0) 80%);}
   .sq.dest::after{content:""; position:absolute; width:33.3%; height:33.3%; border-radius:50%; background:var(--dest-dot); filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.6)); top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; pointer-events:none;}
@@ -7571,9 +7572,11 @@ function explorerSound(capture){
 const xpSlide = { paths:[], t0:0, raf:0 }, XP_SLIDE_MS = 150;
 function explorerSlide(paths, delay = 0, cap = null){   // delay (ms): the piece waits on its first square first; cap {sq, piece}: a taken piece, shown until it's taken
   xpSlide.paths = paths; xpSlide.t0 = performance.now() + delay; xpSlide.cap = cap;
+  if(delay > 0){ const bd = document.getElementById('board'); if(bd) bd.classList.add('slide-wait'); }   // (no highlight before the piece sets off: from this very frame)
   if(xpSlide.raf) return;
   const step = ()=>{
     const t = Math.max(0, Math.min(1, (performance.now() - xpSlide.t0) / XP_SLIDE_MS)), k = 1 - easeOut(t);
+    const bd = document.getElementById('board'); if(bd) bd.classList.toggle('slide-wait', performance.now() < xpSlide.t0);
     const flip = boardFlipped(), col = sq=>{ const f = FILES.indexOf(sq[0]); return flip ? 7 - f : f; }, row = sq=>flip ? +sq[1] - 1 : 8 - +sq[1];
     for(const [from, to] of xpSlide.paths){
       const el = document.querySelector(`#board .sq[data-sq="${to}"] .pc`); if(!el) continue;
