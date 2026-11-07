@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chess imbalances: learn to read a position · ChessStrategy.org</title>
+<meta name="description" content="What chess imbalances are (material, pawns, space, activity, king safety, threats), how to weigh them, and a free exercise to practise reading them on master games and your own games.">
+<link rel="canonical" href="https://chessstrategy.org/learn/chess-imbalances/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ChessStrategy.org">
+<meta property="og:title" content="Chess imbalances: learn to read a position">
+<meta property="og:description" content="What chess imbalances are (material, pawns, space, activity, king safety, threats), how to weigh them, and a free exercise to practise reading them on master games and your own games.">
+<meta property="og:url" content="https://chessstrategy.org/learn/chess-imbalances/">
+<meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#12161B">
+<link rel="icon" type="image/svg+xml" href="../../icons/icon.svg">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "Article", "headline": "Chess imbalances: learn to read a position", "description": "What chess imbalances are (material, pawns, space, activity, king safety, threats), how to weigh them, and a free exercise to practise reading them on master games and your own games.", "image": "https://chessstrategy.org/learn/img/imbalance-reading.webp", "url": "https://chessstrategy.org/learn/chess-imbalances/", "publisher": {"@type": "Organization", "name": "ChessStrategy.org", "url": "https://chessstrategy.org/"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Guides", "item": "https://chessstrategy.org/learn/"}, {"@type": "ListItem", "position": 2, "name": "Imbalance reading", "item": "https://chessstrategy.org/learn/chess-imbalances/"}]}]</script>
+<style>
+  :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2027; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); margin:0; font:16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header, main, footer{ max-width:760px; margin:0 auto; padding:0 16px; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding-top:16px; padding-bottom:8px; }
+  header a{ color:var(--text); text-decoration:none; } .brand{ display:flex; align-items:center; gap:10px; font-weight:600; }
+  .brand img{ width:28px; height:28px; border-radius:7px; } header nav a{ color:var(--mute); font-size:.95rem; }
+  h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
+  h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
+  .lead{ font-size:1.08rem; color:var(--text); } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
+  ul{ padding-left:22px; } li{ margin:4px 0; }
+  .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--line); }
+  figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
+  .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
+  .card{ display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-decoration:none; }
+  .card strong{ color:var(--text); display:block; margin-bottom:2px; } .card span{ color:var(--mute); font-size:.95rem; }
+  footer{ border-top:1px solid var(--line); margin-top:40px; padding-top:16px; padding-bottom:40px; color:var(--mute); font-size:.92rem; }
+  footer a{ color:var(--mute); }
+</style>
+<!-- Built by scripts/build-learn.py: edit the script, not this file. -->
+</head>
+<body>
+<header><a class="brand" href="../../"><img src="../../icons/icon.svg" alt="">ChessStrategy.org</a><nav><a href="../../learn/">Guides</a></nav></header>
+<main>
+<p class="mute">Guide · Imbalance reading</p>
+<h1>Chess imbalances: learn to read a position</h1>
+<p class="lead">Every position is a set of differences between the two sides: an extra pawn, a weak square, a safer king. Strong players don't weigh them all. They spot the few that decide the game, and they plan around those.</p>
+<p><a class="cta" href="../../?play=imbalances">Try Imbalance reading, free</a></p>
+<figure><img src="../img/imbalance-reading.webp" width="390" height="844" alt="Imbalance reading review on a 1929 World Championship position: Activity and Pawns to White, Space to Black, all three answers right" loading="lazy"><figcaption>Bogoljubow – Alekhine, World Championship match 1929, Black to play. Three answers, all right: White has the more active pieces and the better pawns, Black has more space.</figcaption></figure>
+<h2>What an imbalance is</h2>
+<p>An imbalance is any lasting or temporary difference between White's and Black's position. The idea was popularised by Jeremy Silman: instead of looking for a move straight away, first list what is different, then choose the plan that makes the most of your edges.</p>
+<p>The exercise uses six of them, each counted on the board the same way every time:</p>
+<ul>
+  <li><strong>Material</strong>: pawn 1, knight 3, bishop 3, rook 5, queen 9; the bishop pair adds half a pawn.</li>
+  <li><strong>Pawns</strong>: passed and connected pawns count more the further they've come; isolated, doubled and backward pawns count against.</li>
+  <li><strong>Space</strong>: pawns and safe squares behind them in the centre of the board (not counted once few pieces are left).</li>
+  <li><strong>Activity</strong>: the safe squares your knights, bishops, rooks and queen reach, plus outposts and open files. Early in the game, <strong>Development</strong> takes its place.</li>
+  <li><strong>King safety</strong>: pawns sheltering the king against enemy pieces aiming at it. Once queens are off, <strong>King activity</strong> takes its place: in the endgame the king becomes a fighter.</li>
+  <li><strong>Other threats</strong>: material you can win right now.</li>
+</ul>
+<p>Material, Pawns and Space are <em>static</em>: they last. Activity, King safety and threats are <em>dynamic</em>: they can disappear in a few moves, so they call for action.</p>
+
+<h2>How the exercise works</h2>
+<p>You get a position from a master game, or from one of your own games. Choose the <strong>3 imbalances that decide it</strong>, and for each one say who has the edge, White or Black.</p>
+<p>Then the review shows every imbalance with its real size. Each of your choices counts for a third of the score: one of the three biggest edges on the right side gets full points, a smaller edge on the right side gets half, a balanced one or the wrong side gets nothing. Tap any imbalance to see on the board how it was counted.</p>
+
+<h2>Tips</h2>
+<ul>
+  <li>Look for the big edges first, then the clearest small ones.</li>
+  <li>Don't choose an imbalance that's balanced: it scores nothing.</li>
+  <li>Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all.</li>
+</ul>
+
+<h2>Why it helps</h2>
+<p>Reading imbalances is the step before every plan. It tells you whether to trade pieces, where to attack, which pawn to target, and when to hurry. Done on hundreds of positions, it becomes a habit you bring to your own games. The <a href="../chess-plans/">Plan finder</a> takes the next step: from the imbalances to a plan.</p>
+<h2>Try it</h2>
+<p>Imbalance reading is one of four exercises on ChessStrategy.org, free and without ads. Positions come from master games, such as World Championship matches, and from your own Lichess and Chess.com games. Answers are checked with fixed counting rules and Stockfish, which runs in your browser.</p>
+<p><a class="cta" href="../../?play=imbalances">Play Imbalance reading</a></p>
+</main>
+<footer>
+  <p>Guides: <a href="../../learn/chess-imbalances/">Imbalance reading</a> · <a href="../../learn/chess-plans/">Plan finder</a> · <a href="../../learn/candidate-moves/">Candidate moves</a> · <a href="../../learn/move-selection/">Move selection</a></p>
+  <p><a href="../../">ChessStrategy.org</a>: free, open-source chess strategy training, no ads. · <a href="../../privacy.html">Privacy</a> · <a href="../../terms.html">Terms</a> · <a href="https://github.com/Taussane/chess-trainer">Source code</a></p>
+</footer>
+</body>
+</html>

@@ -4311,7 +4311,7 @@ function sideGo(where){
 }
 document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('.faq-link')){ screen = 'faq'; render(); } });   // the FAQ, from the links
 function siteLinks(){
-  return `<button class="link-plain faq-link">FAQ</button> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
+  return `${DIRECT_LICHESS ? '<a href="learn/" target="_blank" rel="noopener">Guides</a> · ' : ''}<button class="link-plain faq-link">FAQ</button> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
 }
 function renderSide(){
   if(!DESK) return;
@@ -8550,7 +8550,12 @@ function flashNote(text){
 }
 // Opened from a shared link (?s=…): the position in its exercise, once; the address bar cleaned
 function openSharedFromUrl(){
-  const q = new URLSearchParams(location.search); if(!q.has('s')) return;
+  const q = new URLSearchParams(location.search);
+  if(q.has('play')){   // from a guide (learn/…): that exercise, once it can open (your results known)
+    const a = q.get('play'); q.delete('play'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+    if(ACTIVITIES.includes(a) || a==='planq'){ let n = 0; const go = ()=>{ if(screen!=='home') return; if(canOpen(a, false)){ leaveExercise(); routine = false; openActivity(a); } else if(n++ < 80) setTimeout(go, 250); }; go(); }
+  }
+  if(!q.has('s')) return;
   const sh = sharedPos(q.get('s'));
   q.delete('s'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   if(!sh){ flashNote("This shared position couldn't be opened."); return; }

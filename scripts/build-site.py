@@ -22,6 +22,23 @@ CSP = '; '.join([
     "font-src 'self' data:",
     "object-src 'none'", "frame-src 'none'", "base-uri 'self'", "form-action 'self'",
 ])
+import json
+LD = json.dumps({ '@context': 'https://schema.org', '@type': 'WebApplication', 'name': 'ChessStrategy.org', 'url': 'https://chessstrategy.org/',
+  'description': 'Free chess strategy training: read imbalances, find plans, choose candidate moves and the best move, on master games and your own Lichess and Chess.com games.',
+  'applicationCategory': 'GameApplication', 'operatingSystem': 'Any (web browser)', 'isAccessibleForFree': True,
+  'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'EUR' } })
+# What the page says before the app starts (and to search engines that don't run it): replaced by the app's first screen.
+INTRO = ('<div id="app"><main class="intro-static" style="max-width:640px;margin:0 auto;padding:32px 16px;color:#EDE7DC;font:16px/1.6 system-ui,sans-serif">'
+  '<h1 style="font-family:Georgia,serif">Chess strategy training</h1>'
+  '<p>Free exercises that train what comes before the move: reading the position, choosing a plan, finding good moves and picking the best one. '
+  'On positions from master games, such as World Championship matches, and from your own Lichess and Chess.com games. Open source, no ads.</p>'
+  '<ul><li><a style="color:#C9A227" href="learn/chess-imbalances/">Imbalance reading</a>: the 3 imbalances that decide the position, and who has the edge.</li>'
+  '<li><a style="color:#C9A227" href="learn/chess-plans/">Plan finder</a>: what\'s urgent, who\'s better, whether to trade, whether to attack.</li>'
+  '<li><a style="color:#C9A227" href="learn/candidate-moves/">Candidate moves</a>: find up to 3 strong moves, graded by Stockfish.</li>'
+  '<li><a style="color:#C9A227" href="learn/move-selection/">Move selection</a>: rank four moves, best first.</li></ul>'
+  '<p><a style="color:#C9A227" href="learn/">All the guides</a></p></main></div>')
+assert app.count('<div id="app"></div>') == 1
+app = app.replace('<div id="app"></div>', INTRO)
 page = ('<!doctype html>\n<html lang="en" class="desk2">\n<head>\n<meta charset="utf-8">\n'
         f'<meta http-equiv="Content-Security-Policy" content="{CSP}">\n'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
@@ -35,6 +52,11 @@ page = ('<!doctype html>\n<html lang="en" class="desk2">\n<head>\n<meta charset=
         '<meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">\n'
         '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n'
         '<meta name="twitter:card" content="summary_large_image">\n'
+        # search engines: one address for the page (shared positions, ?s=…, and ?play=… are the same page), what it is (JSON-LD)
+        '<link rel="canonical" href="https://chessstrategy.org/">\n'
+        # the intro (INTRO) only where the app won't replace it: no flash of it while the app loads
+        "<style>html.js .intro-static{display:none}</style><script>document.documentElement.classList.add('js')</script>\n"
+        f'<script type="application/ld+json">{LD}</script>\n'
         f'<link rel="icon" type="image/svg+xml" href="{icon}">\n'
         '<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">\n'
         '<link rel="manifest" href="manifest.webmanifest">\n'
@@ -57,11 +79,13 @@ page = page.replace(CDN_CHESS, '<script src="vendor/chess.js/chess.js"></script>
 beta = (page.replace('<html lang="en" class="desk2">', '<html lang="en" class="desk2 beta">', 1)
             .replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<base href="../">\n<meta name="robots" content="noindex">\n', 1))
 assert beta.count('class="desk2 beta"') == 1 and '<base href' in beta
-outs = { root / 'index.html': page, root / 'beta' / 'index.html': beta }
+import importlib.util
+spec = importlib.util.spec_from_file_location('build_learn', root / 'scripts' / 'build-learn.py'); learn = importlib.util.module_from_spec(spec); spec.loader.exec_module(learn)
+outs = { root / 'index.html': page, root / 'beta' / 'index.html': beta, **learn.build() }
 if '--check' in sys.argv:
     ok = all(f.exists() and f.read_text(encoding='utf-8') == t for f, t in outs.items())
     print('index.html is up to date' if ok else 'index.html is out of date: run python3 scripts/build-site.py')
     sys.exit(0 if ok else 1)
 for f, t in outs.items():
     f.parent.mkdir(exist_ok=True); f.write_text(t, encoding='utf-8')
-print('index.html built,', len(page)//1024, 'KB (and beta/index.html)')
+print('index.html built,', len(page)//1024, 'KB (and beta/index.html, the guides, the sitemap)')

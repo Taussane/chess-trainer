@@ -16,6 +16,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://chessstrategy.org/">
+<style>html.js .intro-static{display:none}</style><script>document.documentElement.classList.add('js')</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "ChessStrategy.org", "url": "https://chessstrategy.org/", "description": "Free chess strategy training: read imbalances, find plans, choose candidate moves and the best move, on master games and your own Lichess and Chess.com games.", "applicationCategory": "GameApplication", "operatingSystem": "Any (web browser)", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}}</script>
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -775,7 +778,7 @@
 </style>
 
 <div class="wrap">
-  <div id="app"></div>
+  <div id="app"><main class="intro-static" style="max-width:640px;margin:0 auto;padding:32px 16px;color:#EDE7DC;font:16px/1.6 system-ui,sans-serif"><h1 style="font-family:Georgia,serif">Chess strategy training</h1><p>Free exercises that train what comes before the move: reading the position, choosing a plan, finding good moves and picking the best one. On positions from master games, such as World Championship matches, and from your own Lichess and Chess.com games. Open source, no ads.</p><ul><li><a style="color:#C9A227" href="learn/chess-imbalances/">Imbalance reading</a>: the 3 imbalances that decide the position, and who has the edge.</li><li><a style="color:#C9A227" href="learn/chess-plans/">Plan finder</a>: what's urgent, who's better, whether to trade, whether to attack.</li><li><a style="color:#C9A227" href="learn/candidate-moves/">Candidate moves</a>: find up to 3 strong moves, graded by Stockfish.</li><li><a style="color:#C9A227" href="learn/move-selection/">Move selection</a>: rank four moves, best first.</li></ul><p><a style="color:#C9A227" href="learn/">All the guides</a></p></main></div>
 </div>
 
 <script src="vendor/chess.js/chess.js"></script>
@@ -4341,7 +4344,7 @@ function sideGo(where){
 }
 document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('.faq-link')){ screen = 'faq'; render(); } });   // the FAQ, from the links
 function siteLinks(){
-  return `<button class="link-plain faq-link">FAQ</button> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
+  return `${DIRECT_LICHESS ? '<a href="learn/" target="_blank" rel="noopener">Guides</a> · ' : ''}<button class="link-plain faq-link">FAQ</button> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
 }
 function renderSide(){
   if(!DESK) return;
@@ -8580,7 +8583,12 @@ function flashNote(text){
 }
 // Opened from a shared link (?s=…): the position in its exercise, once; the address bar cleaned
 function openSharedFromUrl(){
-  const q = new URLSearchParams(location.search); if(!q.has('s')) return;
+  const q = new URLSearchParams(location.search);
+  if(q.has('play')){   // from a guide (learn/…): that exercise, once it can open (your results known)
+    const a = q.get('play'); q.delete('play'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+    if(ACTIVITIES.includes(a) || a==='planq'){ let n = 0; const go = ()=>{ if(screen!=='home') return; if(canOpen(a, false)){ leaveExercise(); routine = false; openActivity(a); } else if(n++ < 80) setTimeout(go, 250); }; go(); }
+  }
+  if(!q.has('s')) return;
   const sh = sharedPos(q.get('s'));
   q.delete('s'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   if(!sh){ flashNote("This shared position couldn't be opened."); return; }
