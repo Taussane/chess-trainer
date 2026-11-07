@@ -208,6 +208,7 @@ async function route(req, env) {
     if (!o) throw fail(403, 'not allowed');
     if (m === 'DELETE') {   // dismissed: every report of that position in that exercise goes
       await ensureReports(env);
+      await ensureEvents(env); await DB.prepare('DELETE FROM metrics_cache').run();   // (the dashboard shows it gone)
       const r = await DB.prepare('DELETE FROM reports WHERE a = ? AND key = ?').bind(String(url.searchParams.get('a') || ''), String(url.searchParams.get('key') || '')).run();
       return json({ ok: true, n: r.meta ? r.meta.changes : undefined });
     }
@@ -391,8 +392,13 @@ async function ensureEvents(env) {
   await env.DB.batch([
     env.DB.prepare('CREATE TABLE IF NOT EXISTS events (ts INTEGER NOT NULL, day TEXT NOT NULL, did TEXT NOT NULL, sid TEXT NOT NULL, k TEXT NOT NULL, a TEXT, acc INTEGER, src TEXT, auth TEXT, cc INTEGER, lang TEXT, app INTEGER, n1 INTEGER, n2 INTEGER)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS events_day ON events(day)'),
-    env.DB.prepare('CREATE INDEX IF NOT EXISTS events_did ON events(did)'),
+    env.DB.prepare('DROP INDEX IF EXISTS events_did'),   // (one write less per event: nothing needs it)
+    // each device's first day: the dashboard's new devices without going through every event kept
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS devices (did TEXT PRIMARY KEY, first TEXT NOT NULL) WITHOUT ROWID'),
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS metrics_cache (days INTEGER PRIMARY KEY, ts INTEGER NOT NULL, data TEXT NOT NULL)'),
   ]);
+  if (!(await env.DB.prepare('SELECT 1 FROM devices LIMIT 1').first()))   // (once: the devices seen before it existed)
+    await env.DB.prepare('INSERT OR IGNORE INTO devices (did, first) SELECT did, MIN(day) FROM events GROUP BY did').run();
   eventsReady = true;
 }
 async function usageEvents(req, env) {
@@ -411,6 +417,7 @@ async function usageEvents(req, env) {
       ts, new Date(ts).toISOString().slice(0, 10), b.did, b.sid, e.k, EV_ACTS.includes(e.a) ? e.a : null, int(e.acc, 0, 100),
       ['masters', 'mine'].includes(e.src) ? e.src : null, auth, c.cc ? 1 : 0, lang, c.app ? 1 : 0, int(e.n1, 0, 1e6), int(e.n2, 0, 1e6)));
   }
+  if (stmts.length) stmts.push(env.DB.prepare('INSERT OR IGNORE INTO devices (did, first) VALUES (?, ?)').bind(b.did, new Date(now).toISOString().slice(0, 10)));
   if (Math.random() < 0.01) stmts.push(env.DB.prepare('DELETE FROM events WHERE ts < ?').bind(now - KEEP_DAYS * DAY));   // now and then: the oldest go
   if (stmts.length) await env.DB.batch(stmts);
   return json({ ok: true, n: stmts.length });
@@ -446,21 +453,32 @@ async function reportPosition(req, env) {
 
 // The dashboard's figures over the last `days` days: visits, devices, positions, exercises, sources,
 // logins, languages, own games; plus the accounts (all time).
+// Each opening reads the period's events a few times over (D1 counts every row a query goes through): the figures
+// are kept 10 minutes (metrics_cache), and new devices come from their own small table.
 async function metrics(env, days) {
   await ensureEvents(env);
+  const cached = await env.DB.prepare('SELECT ts, data FROM metrics_cache WHERE days = ?').bind(days).first();
+  if (cached && Date.now() - cached.ts < 10 * 60000) return JSON.parse(cached.data);
+  const m = await metricsNow(env, days);
+  await env.DB.prepare('INSERT INTO metrics_cache (days, ts, data) VALUES (?, ?, ?) ON CONFLICT (days) DO UPDATE SET ts = excluded.ts, data = excluded.data').bind(days, m.generated, JSON.stringify(m)).run();
+  return m;
+}
+async function metricsNow(env, days) {
   const DB = env.DB, day = n => new Date(Date.now() - n * DAY).toISOString().slice(0, 10), since = day(days - 1);
   const all = async (sql, ...a) => (await DB.prepare(sql).bind(...a).all()).results;
   const one = async (sql, ...a) => await DB.prepare(sql).bind(...a).first();
   const daily = await all(`SELECT day, COUNT(DISTINCT did) devices, COUNT(DISTINCT sid) visits, SUM(k = 'pos') positions FROM events WHERE day >= ? GROUP BY day ORDER BY day`, since);
-  const fresh = await all(`SELECT first AS day, COUNT(*) n FROM (SELECT did, MIN(day) first FROM events GROUP BY did) WHERE first >= ? GROUP BY first`, since);
+  const fresh = await all(`SELECT first AS day, COUNT(*) n FROM devices WHERE first >= ? GROUP BY first`, since);
   const newBy = Object.fromEntries(fresh.map(r => [r.day, r.n]));
-  const active = async n => (await one('SELECT COUNT(DISTINCT did) n FROM events WHERE day >= ?', day(n - 1))).n;
   const acts = await all(`SELECT a, COUNT(*) n, ROUND(AVG(acc), 1) avg, SUM(acc < 50) low, SUM(acc >= 80) high, COUNT(DISTINCT did) devices FROM events WHERE k = 'pos' AND a IS NOT NULL AND day >= ? GROUP BY a ORDER BY n DESC`, since);
-  const src = await all(`SELECT src, COUNT(*) n FROM events WHERE k = 'pos' AND day >= ? GROUP BY src`, since);
-  const routine = await one(`SELECT SUM(n1 = 1) r, COUNT(*) n FROM events WHERE k = 'pos' AND day >= ?`, since);
+  const src = await all(`SELECT src, COUNT(*) n, SUM(n1 = 1) r FROM events WHERE k = 'pos' AND day >= ? GROUP BY src`, since);
+  const routine = src.reduce((o, x) => ({ r: o.r + (x.r || 0), n: o.n + x.n }), { r: 0, n: 0 });
   const visits = await one(`SELECT COUNT(*) visits, ROUND(AVG(p), 2) positions, ROUND(AVG(x), 2) exercises, SUM(p > 0) playing FROM (SELECT sid, SUM(k = 'pos') p, COUNT(DISTINCT a) x FROM events WHERE day >= ? GROUP BY sid)`, since);
-  // each device as last seen in the period (SQLite: the bare columns come from the row with MAX(ts))
-  const devs = await all(`SELECT did, auth, cc, lang, app, MAX(ts) ts FROM events WHERE day >= ? GROUP BY did`, since);
+  // each device as last seen (SQLite: the bare columns come from the row with MAX(ts)), over the period and at least
+  // 30 days: the active counts (day, week, month) come from it too
+  const seen = await all(`SELECT did, auth, cc, lang, app, MAX(ts) ts, MAX(day) last FROM events WHERE day >= ? GROUP BY did`, day(Math.max(days, 30) - 1));
+  const devs = seen.filter(d => d.last >= since);
+  const active = n => seen.filter(d => d.last >= day(n - 1)).length;
   const share = key => devs.reduce((o, d) => (o[d[key] ?? '?'] = (o[d[key] ?? '?'] || 0) + 1, o), {});
   const games = await all(`SELECT did, n1, n2, MAX(ts) ts FROM events WHERE k = 'games' AND day >= ? GROUP BY did`, since);
   const g = games.reduce((o, x) => ({ devices: o.devices + 1, games: o.games + (x.n1 || 0), positions: o.positions + (x.n2 || 0) }), { devices: 0, games: 0, positions: 0 });
@@ -477,7 +495,7 @@ async function metrics(env, days) {
     generated: Date.now(), days,
     daily: Array.from({ length: days }, (_, i) => day(days - 1 - i)).map(d => ({ day: d, devices: byDay[d] ? byDay[d].devices : 0, newDevices: newBy[d] || 0,
       visits: byDay[d] ? byDay[d].visits : 0, positions: byDay[d] ? byDay[d].positions : 0, newAccounts: accBy[d] || 0 })),
-    active: { day: await active(1), week: await active(7), month: await active(30), period: devs.length },
+    active: { day: active(1), week: active(7), month: active(30), period: devs.length },
     visits: { n: visits.visits || 0, playing: visits.playing || 0, positionsPerVisit: visits.positions || 0, exercisesPerVisit: visits.exercises || 0 },
     exercises: acts, sources: Object.fromEntries(src.map(r => [r.src || '?', r.n])),
     routine: { positions: routine.r || 0, of: routine.n || 0 },

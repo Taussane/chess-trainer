@@ -202,6 +202,19 @@ test('usage counts: anonymous events from this site only; the metrics for the ow
   assert.equal(m.body.visits.positionsPerVisit, 1.5);
   assert.equal(m.body.accounts.total, 2);
   assert.deepEqual(m.body.errors, { visits: 1, load: 1, stopped: 0 });
+  assert.deepEqual([m.body.active.week, m.body.active.month, m.body.active.period], [2, 2, 2]);
+  // devices: their first day kept apart (new devices without every event); a device seen before stays as it was
+  env.DB.raw.prepare("UPDATE devices SET first = '2020-01-01' WHERE did = 'dev00002'").run();
+  assert.equal((await ev({ did: 'dev00003', sid: 'vis00003', ev: [{ k: 'open' }] })).status, 200);
+  assert.deepEqual(env.DB.raw.prepare('SELECT did FROM devices ORDER BY did').all().map(r => r.did), ['dev00001', 'dev00002', 'dev00003']);
+  // the figures kept 10 minutes: the new device shows once they're worked out again
+  const again = await j(await call(env, 'GET', '/api/metrics?days=30'));
+  assert.equal(again.body.generated, m.body.generated, 'from the cache');
+  env.DB.raw.prepare('UPDATE metrics_cache SET ts = ts - 11 * 60000').run();
+  const later = await j(await call(env, 'GET', '/api/metrics?days=30'));
+  assert.equal(later.body.daily[29].newDevices, 2, 'dev00002 first seen earlier; dev00003 new');
+  assert.equal(later.body.active.day, 3);
+  assert.ok(!env.DB.raw.prepare("SELECT name FROM sqlite_master WHERE name = 'events_did'").get(), 'one index less on events');
 });
 
 test('limits: games from Lichess and Chess.com only, 300 per site; known settings documents only; results checked', async () => {

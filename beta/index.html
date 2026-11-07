@@ -5080,7 +5080,12 @@ let myGamesCol = null, myClearedDoc = null, myGamesLoaded = false, myImportNote 
 const MY_LS = 'cst.mygames.v1';
 function saveMyLocal(){ if(leaving) return; try{ localStorage.setItem(MY_LS, JSON.stringify(myGames)); }catch(e){} }
 function saveMyGame(g){ if(!myGames.includes(g)) return;   // removed meanwhile (e.g. Chess.com disconnected)
-  saveMyLocal(); if(myGamesCol) myGamesCol.doc(g.id).set(g).catch(()=>{}); }
+  saveMyLocal();
+  if(g.id===myTurnId){ myTurnDirty = true; return; }   // during its analysis turn: to the account once, at the end (myBackground)
+  if(myGamesCol) myGamesCol.doc(g.id).set(g).catch(()=>{}); }
+// The game whose analysis turn is running, and whether it changed meanwhile: each check is saved on this device at
+// once, the account gets the game once its turn ends (a few writes per game, not one per check).
+let myTurnId = null, myTurnDirty = false;
 
 // --- Reading PGN (the games Lichess and Chess.com send) ---
 function pgnHeaders(g){ const h = {}; g.replace(/^\[(\w+)\s+"([^"]*)"\]\s*$/mg, (_, k, v)=>{ h[k] = v; return ''; }); return h; }
@@ -5714,7 +5719,10 @@ async function myBackground(){
     while(sfState==='ready'){
       const g = myGames.map((x, i)=>[x, i]).sort((a, b)=>gameRank(a[0]) - gameRank(b[0]) || a[1] - b[1]).map(x=>x[0]).find(x=>!myDone.has(x.id));
       if(!g) break;
-      const r = await myGameTurn(g);
+      myTurnId = g.id; myTurnDirty = false;
+      let r;
+      try{ r = await myGameTurn(g); }
+      finally{ const g1 = currentGame(g.id); myTurnId = null; if(myTurnDirty && g1) saveMyGame(g1); myTurnDirty = false; }
       if(r==='retry'){ retry = true; break; }
       myDone.add(g.id);
       if(myDone.size >= myGames.length) diagMark('all games done');
