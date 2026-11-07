@@ -261,4 +261,13 @@ test('reported positions: anonymous, from this site only, once per device; the o
   assert.equal((await call(env, 'DELETE', '/api/report?a=imbalances&key=k1')).status, 200);
   const m2 = await j(await call(env, 'GET', '/api/metrics?days=7'));
   assert.deepEqual(m2.body.reports.map(x => x.key), ['k2']);
+  // The app's own check: Move selection positions with only 3 moves, left out for everyone
+  const three = { did: 'dev00003', a: 'final', key: 'k3', fen, src: 'masters', game: 'g654', ply: 49, why: 'three' };
+  assert.equal((await rep(three)).status, 200);
+  assert.equal((await rep({ ...three, a: 'final', key: 'k4', why: 'bogus' })).status, 200);
+  assert.equal((await rep({ ...three, key: 'k5', src: 'mine' })).status, 200);
+  const sk = await j(await call(env, 'GET', '/api/skips', { token: null }));
+  assert.deepEqual(sk.body.final, ['k3']);
+  const m3 = await j(await call(env, 'GET', '/api/metrics?days=7'));
+  assert.equal(m3.body.reports.find(x => x.key === 'k3').why, 'three');
 });

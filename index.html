@@ -2659,6 +2659,7 @@ function firstAvailable(t, i){
     const p = posAt(t, i);
     if(!p) return -1;
     const s = store[t][p.key];
+    if(skipFinal(t, p) && !hasProgress(s)) continue;   // Move selection with only 3 moves to rank: left out
     if(!isPlayed(p.key) || (hasProgress(s) && !s.checked)) return i;   // started but not finished: carry on
   }
   return -1;
@@ -2867,6 +2868,7 @@ function finalMoves(p){
   }
   const ucis = pickFinalUcis(p, src);
   if(!ucis.length) return FAILED;
+  if(ucis.length < 4) noteThree(p);
   const list = ucis.map(u=>({ id:u, uci:u, from:u.slice(0,2), to:u.slice(2,4), san:sanForUci(p.fen, u), historical: u===p.hist.uci }));
   // ...and, during onboarding (the first positions), never already in the right order (by the search the
   // moves were picked from): at least two moves out of place, so there's always something to do.
@@ -3014,6 +3016,28 @@ function helpModal(app, h, a){
   div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')) close(); });
   document.getElementById('closeHelp').onclick = close;
   const r = document.getElementById('reportPos'); if(r) r.onclick = ()=>{ reportOpen = 'confirm'; render(); };
+}
+// Move selection's master positions with only 3 moves to rank (no 4th without a second move of one bad
+// grade): left out from then on, here (cst.finalSkip) and, through the server's list, on every device.
+const finalSkip = (()=>{ try{ return new Set(JSON.parse(localStorage.getItem('cst.finalSkip') || '[]')); }catch(e){ return new Set(); } })();
+const skipFinal = (t, p)=>/^(r-)?final$/.test(t) && finalSkip.has(String(p.key).slice(0, 120));
+function saveFinalSkip(){ try{ localStorage.setItem('cst.finalSkip', JSON.stringify([...finalSkip].slice(-3000))); }catch(e){} }
+function noteThree(p){
+  const key = String(p.key).slice(0, 120);
+  if(p.gameId || !p.game || finalSkip.has(key)) return;   // your own games' positions already need 4 moves
+  finalSkip.add(key); saveFinalSkip();
+  const body = { did: statDid, a:'final', key, fen: p.fen, src:'masters', game: p.game,
+    ply: Number.isInteger(p.ply) ? p.ply : null, label: String(p.title || '').slice(0, 160), why:'three' };
+  try{ fetch(API_BASE + '/api/report', { method:'POST', headers:{ 'Content-Type':'text/plain' }, body: JSON.stringify(body) }).catch(()=>{}); }catch(e){}
+}
+function loadFinalSkips(){
+  try{
+    fetch(API_BASE + '/api/skips').then(r=>r.ok ? r.json() : null).then(d=>{
+      if(!d || !Array.isArray(d.final)) return;
+      const n = finalSkip.size; d.final.forEach(k=>typeof k==='string' && finalSkip.add(k));
+      if(finalSkip.size !== n) saveFinalSkip();
+    }).catch(()=>{});
+  }catch(e){}
 }
 async function sendReport(a, p){
   reportOpen = 'sending'; render();
@@ -7423,7 +7447,7 @@ function renderMetrics(){
       </div></section>
       <div class="mx-grp mx-wide"><h2 class="pf-h">Reported positions (${(d.reports || []).length})</h2>
       <section class="pf-card">${(d.reports || []).length ? `<div class="mx-reports">${d.reports.map((r, i)=>`<div class="mx-rep">
-          <div><b>${ACT_SHORT[r.a] || escHtml(r.a)}</b> · ${escHtml(r.label || r.key)}${r.ply!=null ? ` · ply ${r.ply}` : ''}<br>
+          <div><b>${ACT_SHORT[r.a] || escHtml(r.a)}</b>${r.why==='three' ? ' · <i>auto-skipped (3 moves)</i>' : ''} · ${escHtml(r.label || r.key)}${r.ply!=null ? ` · ply ${r.ply}` : ''}<br>
           <small>${r.n} report${r.n > 1 ? 's' : ''}${r.devices > 1 ? ` (${r.devices} devices)` : ''} · last ${new Date(r.last).toLocaleDateString(dateLoc(), { day:'numeric', month:'short' })}${r.acc!=null ? ` · score ${r.acc}%` : ''}</small></div>
           <div class="mx-rep-acts"><a class="link-btn" href="https://lichess.org/analysis/${encodeURI(r.fen.replace(/ /g, '_'))}" target="_blank" rel="noopener">Lichess</a>
           <button class="link-btn" data-rep-xp="${i}">Explorer</button><button class="link-btn quiet" data-rep-del="${i}">Dismiss</button></div></div>`).join('')}</div>`
@@ -8570,6 +8594,7 @@ initEngine();
   initProgress();
   initMyGames();
   openSharedFromUrl();
+  loadFinalSkips();
 })();
 </script>
 
