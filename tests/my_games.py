@@ -57,7 +57,7 @@ async def main():
         for _ in range(60):
             seen.append(await pg.evaluate("(document.querySelector('.mg-status')||{}).innerText || ''"))
             counts_seen.append(await pg.evaluate("countsOf(myPositions)"))
-            ba_keys.append(set(await pg.evaluate("myPositions.filter(p=>p.acts.includes('analysis')).map(p=>p.key)")))
+            ba_keys.append(set(await pg.evaluate("myPositions.filter(p=>(posIn(p, 'imbalances') && ownStored(p, 'quietChk')===true) || (posIn(p, 'planq') && ownStored(p, 'planqChk')===true)).map(p=>p.key)")))   # (the quiet positions counted: an open one may still be turned down)
             st = await pg.evaluate("({queued:myGames.filter(g=>g.status==='queued').length, pending:0, running:myBgRunning})")
             if not st['queued'] and not st['pending'] and not st['running']: break
             await pg.wait_for_timeout(500)
@@ -76,7 +76,7 @@ async def main():
         if st['queued'] or st['pending']: fails.append(f'background not finished: {st}')
         if len(ba_keys[-1]) < 5: fails.append(f'too few quiet positions: {len(ba_keys[-1])}')
         if counts['candidates'] + counts['final'] < 3: fails.append(f'too few mistake positions: {counts}')
-        mine_only = await pg.evaluate("myPositions.every(p=>!p.acts.includes('analysis') ? p.side===myGames.find(g=>g.id===p.gameId).me : true) && myPositions.filter(p=>p.acts.includes('final')).every(p=>p.acts.includes('candidates'))")
+        mine_only = await pg.evaluate("myPositions.every(p=>p.acts.includes('candidates') || p.acts.includes('final') ? p.side===myGames.find(g=>g.id===p.gameId).me : true) && myPositions.filter(p=>p.acts.includes('final')).every(p=>p.acts.includes('candidates'))")
         if not mine_only: fails.append('a mistake position is not the player to move, or in Move selection without Candidate moves')
         excl = await pg.evaluate("new Set(myPositions.map(p=>p.key)).size===myPositions.length")
         if not excl: fails.append('a position is used twice')
