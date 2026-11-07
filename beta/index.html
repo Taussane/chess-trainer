@@ -320,6 +320,8 @@
   .lichess-open{display:inline-flex; align-items:center; gap:7px;}
   .lichess-open .act-icon{width:17px; height:17px; flex:none; color:var(--accent);}
   .actions-row.split > .btn.lichess-open{flex:0 1 auto;}
+  .actions-row.split > .btn.icon-only{flex:1 1 0 !important; width:auto;}   /* (the review's icons share one half of the row...) */
+  .actions-row.split > .btn:not(.lichess-open){flex:0 0 calc(50% - var(--split-gap, 10px) / 2);}   /* (...the next button takes the other) */
   .btn.icon-only{flex:none !important; width:var(--pn-btn, 41px); padding:0 !important; justify-content:center; gap:0;}   /* (the review's Lichess, explorer and share buttons: square, icons only) */
   .btn.icon-only .li-logo{width:19px; height:19px;} .btn.icon-only .act-icon, .btn.icon-only .share-icon{width:22px; height:22px; flex:none;}   /* (the explorer's and share's thinner drawings a little bigger, to look the Lichess logo's size) */
   .btn.icon-only .act-icon, .btn.icon-only .share-icon, .btn.icon-only .li-logo{color:var(--text);}   /* (the three icons white, like the text) */
@@ -565,7 +567,7 @@
   .actions-row{display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;}
   .actions-row.split{justify-content:space-between;}
   .actions-row.split > .btn{flex:1 1 0; justify-content:center; padding-inline:12px; white-space:nowrap;}
-  @container (max-width:352px){ .actions-row.split > .btn{font-size:0.84rem; padding-inline:6px;} .actions-row.split{gap:8px;} }   /* (the panel's width: a phone under 400 px, a small desktop) */
+  @container (max-width:352px){ .actions-row.split > .btn{font-size:0.84rem; padding-inline:6px;} .actions-row.split{gap:8px; --split-gap:8px;} }   /* (the panel's width: a phone under 400 px, a small desktop) */
   .actions-row.split{flex-wrap:nowrap;}
   .actions-row.split > .btn{min-width:0;}
   @container (max-width:296px){ .actions-row.split > .btn{white-space:normal; line-height:1.2;} }
