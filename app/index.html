@@ -133,7 +133,7 @@
   .xp-nav .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:auto; min-width:var(--xp-btn-h, 36px); height:var(--xp-btn-h, 33px); padding:5px 10px; border-radius:8px; font-size:1rem;}   /* (Analyze's height, as in the reviews) */
   .xp-nav .icon-btn:disabled{opacity:.35; cursor:default;}
   .xp-steps{justify-self:end; display:flex; gap:10px;}
-  .xp-nav > .btn.xp-li{justify-self:start; text-decoration:none;}   /* (the reviews' Analyze: the same size; the row's other buttons take its height) */
+  .xp-nav > .btn.xp-li{justify-self:start; text-decoration:none; width:calc((100% - 5 * var(--split-gap, 10px)) / 6);}   /* (one of the reviews' three icon buttons: they share half the row, with three gaps) */   /* (the reviews' Analyze: the same size; the row's other buttons take its height) */
   .wrap[data-scr=explorer] .xp-modes{flex:none;}
   .xp-sides{flex:none; display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px;}
   .wrap.ex .xp-sides:not(.sides-desk) + .panel{margin-top:6px;}   /* (the buttons just above the panel) */
@@ -537,7 +537,7 @@
   .actions-row{display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;}
   .actions-row.split{justify-content:space-between;}
   .actions-row.split > .btn{flex:1 1 0; justify-content:center; padding-inline:12px; white-space:nowrap;}
-  @container (max-width:352px){ .actions-row.split > .btn{font-size:0.84rem; padding-inline:6px;} .actions-row.split{gap:8px; --split-gap:8px;} }   /* (the panel's width: a phone under 400 px, a small desktop) */
+  @container (max-width:352px){ .actions-row.split > .btn{font-size:0.84rem; padding-inline:6px;} .actions-row.split{gap:8px; --split-gap:8px;} .actions-row.xp-nav{--split-gap:8px;} }   /* (the panel's width: a phone under 400 px, a small desktop) */
   .actions-row.split{flex-wrap:nowrap;}
   .actions-row.split > .btn{min-width:0;}
   @container (max-width:296px){ .actions-row.split > .btn{white-space:normal; line-height:1.2;} }
