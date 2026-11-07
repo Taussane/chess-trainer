@@ -7,7 +7,8 @@
 //    of your picks with them, 3 s at most; none when the top 5 ran 3 s (or depth 20) and has all your picks;
 //  - Imbalance reading's quick mate check never waits behind a long search;
 //  - the next position is prepared from the review on, ahead of what the home page prepared.
-// Prints the engine log with -v.
+// Prints the engine log with -v. It times the real engine: run it on its own (another test or search running beside it
+// slows the engine and fails it).
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path'), { spawn } = require('child_process');
 const server = spawn('python3', ['-m', 'http.server', '8792'], { cwd: path.join(__dirname, '..'), stdio: 'ignore' });

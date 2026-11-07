@@ -20,6 +20,7 @@ const server = spawn('python3', ['-m', 'http.server', '8795'], { cwd: path.join(
     await p.waitForFunction(() => !!document.getElementById('check'), null, { timeout: 30000 });
     await p.evaluate(() => document.getElementById('helpBtn').click()); await p.waitForTimeout(200);
     await p.evaluate(() => { helpVisible = false; render(); });
+    await p.waitForFunction(() => !!document.getElementById('check'), null, { timeout: 30000 });   // (a redraw can briefly replace the question: Move selection's moves wait for their search)
     await p.evaluate(a => { const s = st(a), q = pos(); s.barMoved = true; s.swapped = true; if (a === 'imbalances') ASPECTS.forEach(x => { s.asp[x.key] = 1; });
       if (a === 'candidates') { const u = new Chess(q.fen).moves({ verbose: true })[0]; s.picks = [{ uci: u.from + u.to + (u.promotion || ''), from: u.from, to: u.to, san: u.san, slot: 0 }]; }
       render(); const c = document.getElementById('check'); c.disabled = false; c.click(); }, a);

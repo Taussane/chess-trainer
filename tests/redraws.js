@@ -15,7 +15,10 @@ const sample=async(label, ms, setup)=>{
     const key=(e,i)=>e.id?'#'+e.id:[...e.classList].filter(c=>!['fade-in','pulse-now','redrawing','pending','data-wait'].includes(c)).sort().join('.')+'@'+i;
     const snap=()=>{const out={};const counts={};document.querySelectorAll('#app *').forEach(e=>{if(e.closest('.ghost')||e.closest('svg'))return;const b=[...e.classList].filter(c=>!['fade-in','pulse-now'].includes(c)).sort().join('.');if(!e.id&&!b)return;const k=e.id?'#'+e.id:b+'@'+(counts[b]=(counts[b]||0)+1);const cs=getComputedStyle(e);if(cs.animationName==='none'&&!e.style.animation)return;const m=cs.transform.match(/,\s*(-?[\d.]+)\)$/);out[k]=[+cs.opacity,m?+m[1]:0]});return out};
     const iv=setInterval(()=>render(),120);const frames=[];const t0=performance.now();
-    await new Promise(res=>{const f=()=>{frames.push([performance.now()-t0,snap()]);if(performance.now()-t0<ms)requestAnimationFrame(f);else res()};f()});clearInterval(iv);
+    // each sample timed by the animations' own clock (the frame's), not when this code got to it: on a busy machine the
+    // sampling itself can run late, and a fast-starting fade would then look like a jump
+    const tl=()=>document.timeline.currentTime;const tl0=tl();
+    await new Promise(res=>{const f=()=>{frames.push([tl()-tl0,snap()]);if(performance.now()-t0<ms)requestAnimationFrame(f);else res()};f()});clearInterval(iv);
     const issues=[];const last={};
     for(const [t,s] of frames){for(const k in s){const [o,y]=s[k];if(k in last){const [o0,y0,t0]=last[k];if(t-t0<40){if(o0-o>0.25&&o0<0.99)issues.push(Math.round(t)+' '+k+' opacity '+o0.toFixed(2)+'→'+o.toFixed(2));if(o-o0>0.45)issues.push(Math.round(t)+' '+k+' jump '+o0.toFixed(2)+'→'+o.toFixed(2));}}last[k]=[o,y,t]}}
     return {frames:frames.length, animated:Object.keys(Object.assign({},...frames.map(f=>f[1]))).length, issues:issues.slice(0,8)};},[ms,setup]);
