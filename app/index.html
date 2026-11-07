@@ -5597,10 +5597,13 @@ function extractOwnPositions0(g){
   // The quiet positions, as the master positions' (scripts/strategy-pass.js): each exercise its own, half-move after
   // half-move, 7 apart; one its check turns down gives way to the next half-move. The walk stops at the first one not
   // checked yet ("open": the game's turn checks it, then the walk goes on: myGameTurn).
-  const pick = field=>{ const kept = []; let last = -99, next = null;
-    for(const ply of ba){ if(ply - last < OWN.spacingPlies) continue; const ok = ownChk(g, field, ply);
-      if(ok===true){ kept.push(ply); last = ply; } else if(ok===undefined){ next = ply; break; } }
-    return { kept, next }; };
+  // Those already accepted always stay (counts never drop, results keep their positions: also those chosen another way before).
+  const near = (kept, ply)=>kept.some(k=>Math.abs(k - ply) < OWN.spacingPlies);
+  const pick = field=>{ const kept = []; let next = null;
+    for(const ply of ba) if(ownChk(g, field, ply)===true && !near(kept, ply)) kept.push(ply);
+    for(const ply of ba){ if(near(kept, ply)) continue; const ok = ownChk(g, field, ply);
+      if(ok===true) kept.push(ply); else if(ok===undefined){ next = ply; break; } }
+    return { kept: kept.sort((x, y)=>x - y), next }; };
   const sel = { imbalances: pick('quietChk'), planq: pick('planqChk') };
   const plies = [...new Set([...sel.imbalances.kept, ...sel.planq.kept, sel.imbalances.next, sel.planq.next].filter(x=>x!=null))].sort((a,b)=>a-b);
   for(const ply of plies){
