@@ -26,12 +26,12 @@ GUIDES = [
   <li><strong>Space</strong>: pawns and the safe squares behind them in the centre.</li>
   <li><strong>Activity</strong>: the safe squares your pieces reach, outposts, open files. Early on, <strong>Development</strong> instead.</li>
   <li><strong>King safety</strong>: the pawn shelter against attacking pieces. Without queens, <strong>King activity</strong> instead.</li>
-  <li><strong>Other threats</strong>: material you can win right now.</li>
+  <li><strong>Other threats</strong>: material you can win right now, and threats for the next move, like a pawn push that attacks a piece.</li>
 </ul>
-<p>Material, Pawns and Space are <em>static</em>: they last. The others are <em>dynamic</em>: use them before they fade.</p>
+<p>Material, Pawns and Space are <em>static</em>: they tend to last. The others are <em>dynamic</em>: use them before they fade.</p>
 
 <h2>The exercise</h2>
-<p>Choose the 3 imbalances that decide the position, and who has the edge. The review shows each one's size: <strong>=</strong> balanced, <strong>+</strong> a small edge, <strong>++</strong> a big one. A choice among the 3 biggest edges, on the right side, scores full points; a smaller edge, half; a balanced one or the wrong side, nothing.</p>
+<p>Choose 3 of the imbalances that decide the position (there can be more than 3), and who has the edge. The review shows each one's size: <strong>=</strong> balanced; <strong>+</strong> or <strong>++</strong> a small or big edge for White, <strong>−</strong> or <strong>−−</strong> for Black. A choice among the 3 biggest edges, on the right side, scores full points; a smaller edge, half; a balanced one or the wrong side, nothing.</p>
 <p>Find the ++ first. One big imbalance can outweigh several small ones, and tactics beat them all.</p>
 """),
     fr=dict(slug='desequilibres-aux-echecs', name='Lecture des déséquilibres', sub='Apprendre à lire une position',
@@ -48,12 +48,12 @@ GUIDES = [
   <li><strong>Espace</strong> : les pions et les cases sûres derrière eux au centre.</li>
   <li><strong>Activité</strong> : les cases sûres qu'atteignent vos pièces, les avant-postes, les colonnes ouvertes. En début de partie, le <strong>Développement</strong> à la place.</li>
   <li><strong>Sécurité du roi</strong> : l'abri de pions face aux pièces qui attaquent. Sans les dames, l'<strong>Activité du roi</strong> à la place.</li>
-  <li><strong>Menaces</strong> : le matériel que vous pouvez gagner tout de suite.</li>
+  <li><strong>Menaces</strong> : le matériel que vous pouvez gagner tout de suite, et les menaces pour le coup suivant, comme une poussée de pion qui attaque une pièce.</li>
 </ul>
-<p>Matériel, Pions et Espace sont <em>statiques</em> : ils durent. Les autres sont <em>dynamiques</em> : servez-vous-en avant qu'ils ne s'effacent.</p>
+<p>Matériel, Pions et Espace sont <em>statiques</em> : ils ont tendance à durer. Les autres sont <em>dynamiques</em> : servez-vous-en avant qu'ils ne s'effacent.</p>
 
 <h2>L'exercice</h2>
-<p>Choisissez les 3 déséquilibres qui décident de la position, et qui a l'avantage. La correction montre la taille de chacun : <strong>=</strong> équilibré, <strong>+</strong> un petit avantage, <strong>++</strong> un gros. Un choix parmi les 3 plus gros avantages, du bon côté, rapporte tous les points ; un avantage plus petit, la moitié ; un déséquilibre équilibré ou du mauvais côté, rien.</p>
+<p>Choisissez 3 des déséquilibres qui décident de la position (il peut y en avoir plus de 3), et qui a l'avantage. La correction montre la taille de chacun : <strong>=</strong> équilibré ; <strong>+</strong> ou <strong>++</strong> un petit ou un gros avantage pour les Blancs, <strong>−</strong> ou <strong>−−</strong> pour les Noirs. Un choix parmi les 3 plus gros avantages, du bon côté, rapporte tous les points ; un avantage plus petit, la moitié ; un déséquilibre équilibré ou du mauvais côté, rien.</p>
 <p>Cherchez d'abord les ++. Un gros déséquilibre peut l'emporter sur plusieurs petits, et la tactique prime sur tout.</p>
 """)),
 
