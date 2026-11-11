@@ -6331,7 +6331,11 @@ function animateSort(s, mine, acc){
 // `kind` is rowIn (plain fade) or fadeIn (fade with a small rise).
 function timedFade(el, delay, elapsed, dur, kind, easing){
   if(!el || elapsed >= delay + dur) return;
+  const now = performance.now();
   el.style.animation = `${kind} ${dur}ms ${easing || 'ease-out'} ${delay - elapsed}ms both`;
+  // Pinned to now: a CSS animation starts at the first frame drawn after it's set, later when that frame is slow,
+  // and the next redraw (its delay worked out again from the clock) would then make it jump ahead.
+  try{ const an = el.getAnimations().find(x=>x.animationName===kind); if(an) an.startTime = now; }catch(e){}
   // Only this element's own animation ending counts — a child's animationend bubbles up too.
   const done = ev=>{ if(ev.target!==el) return; el.style.animation = ''; el.removeEventListener('animationend', done); };
   el.addEventListener('animationend', done);
