@@ -31,6 +31,8 @@
 //   GET    /api/metrics?days=           the usage dashboard's figures (the owner's account only)
 //   POST   /api/report {did, a, key, fen, …}  a position reported as doubtful (no sign-in; from this site only)
 //   DELETE /api/report?a=&key=          dismiss a reported position (the owner's account only)
+//   POST   /api/share {code}            a shared position's link made short -> {id} (no sign-in; from this site only)
+//   GET    /api/share/:id               the shared position behind a short link -> {code} (no sign-in)
 //   DELETE /api/session                 forget this sign-in here (log out)
 //   DELETE /api/account                 delete the account and everything in it
 
@@ -102,6 +104,8 @@ async function route(req, env) {
   await limit(req, env, 'RL_ALL');
   if (m === 'POST' && path === '/api/ev') return usageEvents(req, env);
   if (m === 'POST' && path === '/api/report') return reportPosition(req, env);
+  if (m === 'POST' && path === '/api/share') return makeShare(req, env);
+  if (m === 'GET' && path.startsWith('/api/share/')) return getShare(env, decodeURIComponent(path.slice('/api/share/'.length)));
   if (m === 'POST' && path === '/api/login/google') { await limit(req, env, 'RL_OUT'); return googleLogin(env, (await body(req)).idToken); }
   if (m === 'GET' && path.startsWith('/api/chesscom/')) await limit(req, env, 'RL_OUT');
   if (m === 'GET' && path === '/api/chesscom/player') {   // public data: no sign-in needed (also before logging in)
@@ -435,6 +439,42 @@ async function ensureReports(env) {
   reportsReady = true;
 }
 const FEN_RE = /^[1-8pnbrqkPNBRQK/]{15,71} [wb] [KQkq-]{1,4} (?:-|[a-h][36])(?: \d{1,3} \d{1,4})?$/;
+// Short links (?s=<id>): a shared position's code (the app's shareCode: exercise, then the position) kept under an
+// id made from its own hash, so the same position always gets the same link; a longer id if two ever collide.
+let sharesReady = false;
+async function ensureShares(env) {
+  if (sharesReady) return;
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, code TEXT NOT NULL, ts INTEGER NOT NULL) WITHOUT ROWID').run();
+  sharesReady = true;
+}
+const SHARE_CODE = /^(imbalances|planq|candidates|final)\.[A-Za-z0-9_.-]{4,1500}$/, SHARE_ID = /^[A-Za-z0-9]{7,12}$/;
+const B62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+async function shareId(code, n) {
+  const h = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code)));
+  let id = ''; for (let i = 0; i < n; i++) id += B62[h[i] % 62]; return id;
+}
+async function makeShare(req, env) {
+  const allowed = String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (!allowed.includes(req.headers.get('Origin') || '')) throw fail(403, 'not from this site');
+  const code = String((await body(req)).code || '');
+  if (!SHARE_CODE.test(code)) throw fail(400, 'not a shared position');
+  await ensureShares(env);
+  for (const n of [7, 9, 12]) {
+    const id = await shareId(code, n), row = await env.DB.prepare('SELECT code FROM shares WHERE id = ?').bind(id).first();
+    if (row && row.code !== code) continue;   // (taken by another position)
+    if (!row) await env.DB.prepare('INSERT OR IGNORE INTO shares (id, code, ts) VALUES (?, ?, ?)').bind(id, code, Date.now()).run();
+    return json({ id });
+  }
+  throw fail(500, 'no short link');
+}
+async function getShare(env, id) {
+  if (!SHARE_ID.test(id)) throw fail(404, 'no such link');
+  await ensureShares(env);
+  const row = await env.DB.prepare('SELECT code FROM shares WHERE id = ?').bind(id).first();
+  if (!row) throw fail(404, 'no such link');
+  const res = json({ code: row.code }); res.headers.set('Cache-Control', 'public, max-age=86400'); return res;
+}
+
 async function reportPosition(req, env) {
   const allowed = String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
   if (!allowed.includes(req.headers.get('Origin') || '')) throw fail(403, 'not from this site');

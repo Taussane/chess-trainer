@@ -275,3 +275,23 @@ test('reported positions: anonymous, from this site only, once per device; the o
   const m2 = await j(await call(env, 'GET', '/api/metrics?days=7'));
   assert.deepEqual(m2.body.reports.map(x => x.key), ['k2']);
 });
+
+test('short links: a shared position kept under an id from its hash, read back by anyone', async () => {
+  const env = await makeEnv();
+  const code = 'final.eyJtIjpbImU3ZTEiLCJmN2YzIl0sImYiOiI2azEvOC84LzgvOC84LzgvNksgYiAtIC0gMCAxIn0';
+  const mk = (c, origin = ORIGIN) => call(env, 'POST', '/api/share', { token: null, body: { code: c }, origin });
+  const a = await j(await mk(code));
+  assert.equal(a.status, 200); assert.match(a.body.id, /^[A-Za-z0-9]{7}$/);
+  assert.equal((await j(await mk(code))).body.id, a.body.id, 'the same position, the same link');
+  const g = await j(await call(env, 'GET', '/api/share/' + a.body.id, { token: null }));
+  assert.equal(g.status, 200); assert.equal(g.body.code, code);
+  assert.equal((await call(env, 'GET', '/api/share/zzzzzzz', { token: null })).status, 404);
+  assert.equal((await mk('hello')).status, 400, 'only shared positions');
+  assert.equal((await mk(code, 'https://evil.example')).status, 403, 'only from this site');
+  // two positions on one id: the second gets a longer one
+  const other = 'final.g654.49';
+  const id7 = (await j(await mk(other))).body.id;
+  env.DB.raw.prepare('UPDATE shares SET code = ? WHERE id = ?').run('final.g1.1', id7);
+  const longer = (await j(await mk(other))).body.id;
+  assert.equal(longer.length, 9); assert.equal((await j(await call(env, 'GET', '/api/share/' + longer, { token: null }))).body.code, other);
+});

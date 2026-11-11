@@ -6510,6 +6510,7 @@ function render(){
   render.settle = setTimeout(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>appEl.classList.remove('redrawing'))), 0);
   renderScreen();
   shownScreen = screen;
+  prefetchShort();   // (a share button shown: its short link asked for now)
   // pages slide: in from the right going deeper (home → a page, profile → settings), from the left coming back
   const sub = x=>x==='settings' || x==='support' || x==='metrics', settingsStep = (sub(from) && onProfile()) || (sub(screen) && ['account', 'progress', 'mygames'].includes(from));
   if(from && from!==screen && !isDesk() && (from==='home' || screen==='home' || settingsStep)){   // (not on desktop: the menu reaches any page)
@@ -8542,9 +8543,21 @@ function sharedPos(code){
     shareSrc: String(o.s || '').slice(0, 120), lastCap: !!o.c, lastCapPiece: /^[pnbrqkPNBRQK]$/.test(o.k || '') ? o.k : null, lastCapSq: /^[a-h][1-8]$/.test(o.q || '') ? o.q : null, last: Array.isArray(o.l) && o.l.length===2 ? { squares: o.l.map(String) } : null,
     hist: mv ? { uci: o.u, san: mv.san, from: mv.from, to: mv.to } : null, ...(fixed && fixed.length >= 2 ? { fixed } : {}) } };
 }
+// Short links: a position's code (other than a master game's, already short) kept by the server under a 7-letter
+// id (POST /api/share). Asked for as soon as the share button shows, so a tap can share at once (a browser only
+// lets a page share straight after the tap); until it's there, or offline, the long link.
+const shortIds = new Map();
+function prefetchShort(){
+  const p = document.querySelector('[data-share]') && pos(); if(!p) return;
+  const code = shareCode(screen, p);
+  if(/^[a-z]+\.g\d+\.\d+$/.test(code) || shortIds.has(code)) return;
+  shortIds.set(code, null);
+  try{ fetch(API_BASE + '/api/share', { method:'POST', headers:{ 'Content-Type':'text/plain' }, body: JSON.stringify({ code }) })
+    .then(r=>r.ok ? r.json() : null).then(d=>{ if(d && /^[A-Za-z0-9]{7,12}$/.test(d.id)) shortIds.set(code, d.id); else shortIds.delete(code); }).catch(()=>shortIds.delete(code)); }catch(e){ shortIds.delete(code); }
+}
 async function sharePosition(){
   const a = screen, p = pos(); if(!p) return;
-  const url = location.origin + location.pathname + '?s=' + shareCode(a, p);
+  const code = shareCode(a, p), url = location.origin + location.pathname + '?s=' + (shortIds.get(code) || code);
   if(navigator.share){ try{ await navigator.share({ title: 'Chess Strategy', text: `A position to try in ${tr(ACT_NAMES[a])}`, url }); return; }catch(e){ if(e && e.name==='AbortError') return; } }
   try{ await navigator.clipboard.writeText(url); flashNote('Link copied'); }catch(e){ window.prompt('Copy the link', url); }
 }
@@ -8562,8 +8575,17 @@ function openSharedFromUrl(){
     if(ACTIVITIES.includes(a) || a==='planq'){ let n = 0; const go = ()=>{ if(screen!=='home') return; if(canOpen(a, false)){ leaveExercise(); routine = false; openActivity(a); } else if(n++ < 80) setTimeout(go, 250); }; go(); }
   }
   if(!q.has('s')) return;
-  const sh = sharedPos(q.get('s'));
+  const code = q.get('s');
   q.delete('s'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+  if(/^[A-Za-z0-9]{7,12}$/.test(code)){   // a short link: its position from the server
+    fetch(API_BASE + '/api/share/' + code).then(r=>r.ok ? r.json() : null).then(d=>{ if(d && d.code){ shortIds.set(d.code, code); openShared(d.code); } else flashNote("This shared position couldn't be opened."); })
+      .catch(()=>flashNote("This shared position couldn't be opened (offline?)."));
+    return;
+  }
+  openShared(code);
+}
+function openShared(code){
+  const sh = sharedPos(code);
   if(!sh){ flashNote("This shared position couldn't be opened."); return; }
   sharedOpen = sh.a; replayQueue = [{ a: sh.a, key: sh.p.key, pos: sh.p }]; replayMode = true; routine = false; testMode = false; replayIdx = 0;
   openReplayAt(0);
