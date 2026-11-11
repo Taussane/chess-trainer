@@ -30,6 +30,7 @@
   .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
   main{ padding-bottom:56px; }
   h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
+  .back{ margin:12px 0 0; font-size:.95rem; } .back a{ color:var(--mute); text-decoration:none; } h1 + .sub{ margin:-4px 0 14px; color:var(--mute); font-size:1.08rem; }
   h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
   .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
   ul, ol{ padding-left:22px; } li{ margin:4px 0; }
@@ -49,9 +50,11 @@
 <body>
 <header><a class="brand" href="../../../"><img src="../../../icons/icon.svg" alt="">ChessStrategy.org</a><a class="lang" href="../../../learn/candidate-moves/" hreflang="en" lang="en" aria-label="Read in English" title="Read in English">FR</a></header>
 <main>
-<h1>Les coups candidats aux échecs : trouver plus d&#x27;un bon coup</h1>
+<p class="back"><a href="../">‹ FAQ</a></p>
+<h1>Coups candidats</h1>
+<p class="sub">Trouver un ou plusieurs bons coups</p>
 <p class="lead">La plupart des erreurs viennent du premier coup qui a l'air bon. Le conseil d'Alexandre Kotov : dresser d'abord la liste de quelques options sérieuses, puis choisir.</p>
-<figure><img src="../../../learn/img/candidate-moves-fr.webp" width="390" height="844" alt="Correction de Coups candidats sur une position du championnat du monde 1987 : trois choix, notés Meilleur, Correct et Correct, à côté des 3 meilleurs coups du moteur" loading="lazy"><figcaption>Karpov – Kasparov, 1987, aux Blancs de jouer. Trois choix, comparés au meilleur coup de Stockfish : Rf2 (Meilleur), Qf2 et Kf1 (Correct).</figcaption></figure>
+<figure><img src="../../../learn/img/candidate-moves-fr.webp" width="390" height="844" alt="Correction de Coups candidats sur une position du championnat du monde 1987 : trois choix, notés Meilleur, Correct et Correct, à côté des 3 meilleurs coups du moteur" loading="lazy"><figcaption>Trois choix, comparés au meilleur coup de Stockfish : Rf2 (Meilleur), Qf2 et Kf1 (Correct).</figcaption></figure>
 <h2>Comment les trouver</h2>
 <ul>
   <li><strong>Les coups forcés d'abord</strong> : échecs, prises et menaces, des deux côtés.</li>

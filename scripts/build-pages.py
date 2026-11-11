@@ -17,7 +17,7 @@ GUIDES = [
       desc='What chess imbalances are (material, pawns, space, activity, king safety, threats), how to weigh them, and a free exercise to practise reading them on master games and your own games.',
       lead="Every position is a set of differences between the two sides. Strong players spot the few that decide the game, and plan around them: an idea made famous by Jeremy Silman.",
       alt='Imbalance reading review on a 1929 World Championship position: Activity and Pawns to White, Space to Black, all three answers right',
-      caption='Bogoljubow – Alekhine, 1929, Black to play. All three answers right: White has the more active pieces and the better pawns, Black more space.',
+      caption='All three answers right: White has the more active pieces and the better pawns, Black more space.',
       body="""
 <h2>The six imbalances</h2>
 <ul>
@@ -39,7 +39,7 @@ GUIDES = [
       desc="Ce que sont les déséquilibres aux échecs (matériel, pions, espace, activité, sécurité du roi, menaces), comment les peser, et un exercice gratuit pour s'entraîner à les lire sur des parties de maîtres et vos propres parties.",
       lead="Chaque position est un ensemble de différences entre les deux camps. Les joueurs forts repèrent les quelques-unes qui décident de la partie, et bâtissent leur plan autour : une idée rendue célèbre par Jeremy Silman.",
       alt='Correction de Lecture des déséquilibres sur une position du championnat du monde 1978 : Activité et Espace aux Blancs, Sécurité du roi aux Noirs, trois bonnes réponses',
-      caption="Kortschnoj – Karpov, 1978, aux Noirs de jouer. Trois bonnes réponses : les Blancs ont les pièces les plus actives et plus d'espace, les Noirs le roi le plus sûr.",
+      caption="Trois bonnes réponses : les Blancs ont les pièces les plus actives et plus d'espace, les Noirs le roi le plus sûr.",
       body="""
 <h2>Les six déséquilibres</h2>
 <ul>
@@ -63,7 +63,7 @@ GUIDES = [
       desc="How to make a plan in chess: check what's urgent, judge who is better, then decide whether to trade and whether to attack or improve. A free exercise on master positions and your own games.",
       lead="\"What do I do now?\" is the question behind most bad moves. A plan comes from four decisions, made in order.",
       alt='Plan finder, first question on a 1935 World Championship position: anything urgent for White, and who is better',
-      caption='Alekhine – Euwe, 1935, White to play. First question: is anything urgent, and who is better?',
+      caption='First question: is anything urgent, and who is better?',
       body="""
 <h2>Four questions</h2>
 <ol>
@@ -82,7 +82,7 @@ GUIDES = [
       desc="Comment faire un plan aux échecs : voir ce qui est urgent, juger qui est mieux, puis décider s'il faut échanger, attaquer ou améliorer. Un exercice gratuit sur des positions de maîtres et vos propres parties.",
       lead="« Qu'est-ce que je fais maintenant ? » : c'est la question derrière la plupart des mauvais coups. Un plan naît de quatre décisions, prises dans l'ordre.",
       alt='Recherche du plan, première question sur une position du championnat du monde 1978 : une urgence pour les Blancs, et qui est mieux',
-      caption='Karpov – Kortschnoj, 1978, aux Blancs de jouer. Première question : y a-t-il une urgence, et qui est mieux ?',
+      caption='Première question : y a-t-il une urgence, et qui est mieux ?',
       body="""
 <h2>Quatre questions</h2>
 <ol>
@@ -103,7 +103,7 @@ GUIDES = [
       desc='What candidate moves are, how to find them (checks, captures, threats, then the plan), and a free exercise grading your picks with Stockfish on master games and your own games.',
       lead="Most mistakes come from playing the first move that looks good. Alexander Kotov's advice: list a few serious options first, then choose.",
       alt="Candidate moves review on a 1954 World Championship position: three picks, graded Best, Good and Good, beside the engine's top 3",
-      caption="Smyslov – Botvinnik, 1954, Black to play. Three picks, graded against Stockfish's best: Rxg5 (Best), Nf4 and Nc7 (Good).",
+      caption="Three picks, graded against Stockfish's best: Rxg5 (Best), Nf4 and Nc7 (Good).",
       body="""
 <h2>How to find them</h2>
 <ul>
@@ -120,7 +120,7 @@ GUIDES = [
       desc="Ce que sont les coups candidats, comment les trouver (échecs, prises, menaces, puis le plan), et un exercice gratuit qui note vos choix avec Stockfish sur des parties de maîtres et vos propres parties.",
       lead="La plupart des erreurs viennent du premier coup qui a l'air bon. Le conseil d'Alexandre Kotov : dresser d'abord la liste de quelques options sérieuses, puis choisir.",
       alt='Correction de Coups candidats sur une position du championnat du monde 1987 : trois choix, notés Meilleur, Correct et Correct, à côté des 3 meilleurs coups du moteur',
-      caption='Karpov – Kasparov, 1987, aux Blancs de jouer. Trois choix, comparés au meilleur coup de Stockfish : Rf2 (Meilleur), Qf2 et Kf1 (Correct).',
+      caption='Trois choix, comparés au meilleur coup de Stockfish : Rf2 (Meilleur), Qf2 et Kf1 (Correct).',
       body="""
 <h2>Comment les trouver</h2>
 <ul>
@@ -139,7 +139,7 @@ GUIDES = [
       desc='How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own mistakes.',
       lead="Several moves look fine; only one is best. Move selection trains that last decision.",
       alt='Move selection review on a 1963 World Championship position: four moves ranked, the game move Nxe4 best, two dubious ones',
-      caption='Botvinnik – Petrosian, 1963, White to play. The game move Nxe4 is best, Qh2 good, Rh2 and Qg2 dubious.',
+      caption='The game move Nxe4 is best, Qh2 good, Rh2 and Qg2 dubious.',
       body="""
 <h2>The exercise</h2>
 <p>Rank four moves, best first. One was played in the game. In your own games, it's your move, and always a mistake: a second chance at a decision you got wrong. 1st place counts for 50%, 2nd for 30%, 3rd for 20%, each compared with the best move left.</p>
@@ -156,7 +156,7 @@ GUIDES = [
       desc="Comment choisir entre des coups qui ont l'air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres erreurs.",
       lead="Plusieurs coups ont l'air bien ; un seul est le meilleur. Le Choix du coup entraîne cette dernière décision.",
       alt='Correction de Choix du coup sur une position du championnat du monde 2023 : quatre coups classés, le coup joué Bg3 est le meilleur',
-      caption='Nepomniachtchi – Ding Liren, 2023, aux Blancs de jouer. Le coup joué, Bg3, est le meilleur ; Bxd5+ est douteux, Bc2 une erreur et Rxc4 une gaffe.',
+      caption='Le coup joué, Bg3, est le meilleur ; Bxd5+ est douteux, Bc2 une erreur et Rxc4 une gaffe.',
       body="""
 <h2>L'exercice</h2>
 <p>Classez quatre coups, le meilleur d'abord. L'un d'eux a été joué dans la partie. Dans vos parties, c'est votre coup, et toujours une erreur : une deuxième chance sur une décision manquée. La 1re place compte pour 50 %, la 2e pour 30 %, la 3e pour 20 %, chacune comparée au meilleur coup restant.</p>
@@ -262,6 +262,7 @@ STYLE = """
   .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
   main{ padding-bottom:56px; }
   h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
+  .back{ margin:12px 0 0; font-size:.95rem; } .back a{ color:var(--mute); text-decoration:none; } h1 + .sub{ margin:-4px 0 14px; color:var(--mute); font-size:1.08rem; }
   h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
   .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
   ul, ol{ padding-left:22px; } li{ margin:4px 0; }
@@ -335,7 +336,10 @@ def build():
     for g in GUIDES:
       t = g[lang]; path = f'{HUB[lang]}{t["slug"]}/index.html'; alt = f'{HUB[other]}{g[other]["slug"]}/index.html'
       img = f'{g["img"]}{"-fr" if lang=="fr" else ""}.webp'
-      body = fix(f"""<h1>{html.escape(t['title'])}</h1>
+      # heading as on the FAQ's card (name, subtitle); the search-friendly title stays in <title>
+      body = fix(f"""<p class="back"><a href="../">‹ FAQ</a></p>
+<h1>{html.escape(t['name'])}</h1>
+<p class="sub">{html.escape(t.get('sub', t['title']))}</p>
 <p class="lead">{t['lead']}</p>
 <figure><img src="{'../' * path.count('/')}learn/img/{img}" width="390" height="844" alt="{html.escape(t['alt'])}" loading="lazy"><figcaption>{t['caption']}</figcaption></figure>
 {t['body'].strip()}""")
