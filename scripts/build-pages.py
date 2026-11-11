@@ -12,7 +12,7 @@ HUB = { 'en': 'learn/', 'fr': 'fr/guides/' }   # each language's guides
 # Each: the exercise it opens (?play=), its picture, and per language its address (HUB + slug), name and text (HTML).
 GUIDES = [
   dict(play='imbalances', img='imbalance-reading',
-    en=dict(slug='chess-imbalances', name='Imbalance reading',
+    en=dict(slug='chess-imbalances', name='Imbalance reading', sub='Learn to read a position',
       title='Chess imbalances: learn to read a position',
       desc='What chess imbalances are (material, pawns, space, activity, king safety, threats), how to weigh them, and a free exercise to practise reading them on master games and your own games.',
       lead="Every position is a set of differences between the two sides. Strong players spot the few that decide the game, and plan around them: an idea made famous by Jeremy Silman.",
@@ -34,7 +34,7 @@ GUIDES = [
 <p>Choose the 3 imbalances that decide the position, and who has the edge. The review shows each one's size: <strong>=</strong> balanced, <strong>+</strong> a small edge, <strong>++</strong> a big one. A choice among the 3 biggest edges, on the right side, scores full points; a smaller edge, half; a balanced one or the wrong side, nothing.</p>
 <p>Find the ++ first. One big imbalance can outweigh several small ones, and tactics beat them all.</p>
 """),
-    fr=dict(slug='desequilibres-aux-echecs', name='Lecture des déséquilibres',
+    fr=dict(slug='desequilibres-aux-echecs', name='Lecture des déséquilibres', sub='Apprendre à lire une position',
       title='Les déséquilibres aux échecs : apprendre à lire une position',
       desc="Ce que sont les déséquilibres aux échecs (matériel, pions, espace, activité, sécurité du roi, menaces), comment les peser, et un exercice gratuit pour s'entraîner à les lire sur des parties de maîtres et vos propres parties.",
       lead="Chaque position est un ensemble de différences entre les deux camps. Les joueurs forts repèrent les quelques-unes qui décident de la partie, et bâtissent leur plan autour : une idée rendue célèbre par Jeremy Silman.",
@@ -58,7 +58,7 @@ GUIDES = [
 """)),
 
   dict(play='planq', img='plan-finder',
-    en=dict(slug='chess-plans', name='Plan finder',
+    en=dict(slug='chess-plans', name='Plan finder', sub='How to find a general plan in chess',
       title='How to find a plan in chess',
       desc="How to make a plan in chess: check what's urgent, judge who is better, then decide whether to trade and whether to attack or improve. A free exercise on master positions and your own games.",
       lead="\"What do I do now?\" is the question behind most bad moves. A plan comes from four decisions, made in order.",
@@ -77,7 +77,7 @@ GUIDES = [
 <p>Answer the first two questions, check, then the last two. Each answer is a quarter of the score.</p>
 <p>The answers follow fixed rules. Urgency: the count of threats and Stockfish must agree. The plan: each imbalance (see <a href="../chess-imbalances/">Imbalance reading</a>) votes, + for 1 vote and ++ for 2; two votes decide, otherwise either is fine. These are principles, not calculation: on master games they hold when the imbalances agree, and are less certain when they pull both ways.</p>
 """),
-    fr=dict(slug='trouver-un-plan-aux-echecs', name='Recherche du plan',
+    fr=dict(slug='trouver-un-plan-aux-echecs', name='Recherche du plan', sub='Comment trouver un plan général aux échecs',
       title='Comment trouver un plan aux échecs',
       desc="Comment faire un plan aux échecs : voir ce qui est urgent, juger qui est mieux, puis décider s'il faut échanger, attaquer ou améliorer. Un exercice gratuit sur des positions de maîtres et vos propres parties.",
       lead="« Qu'est-ce que je fais maintenant ? » : c'est la question derrière la plupart des mauvais coups. Un plan naît de quatre décisions, prises dans l'ordre.",
@@ -98,7 +98,7 @@ GUIDES = [
 """)),
 
   dict(play='candidates', img='candidate-moves',
-    en=dict(slug='candidate-moves', name='Candidate moves',
+    en=dict(slug='candidate-moves', name='Candidate moves', sub='Find one or more good moves',
       title='Candidate moves in chess: find more than one good move',
       desc='What candidate moves are, how to find them (checks, captures, threats, then the plan), and a free exercise grading your picks with Stockfish on master games and your own games.',
       lead="Most mistakes come from playing the first move that looks good. Alexander Kotov's advice: list a few serious options first, then choose.",
@@ -115,7 +115,7 @@ GUIDES = [
 <h2>The exercise</h2>
 <p>Pick 1 to 3 strong moves. Stockfish grades each against its best move: Best, Good, Ok, Dubious, Mistake or Blunder. Dubious or worse scores zero: when unsure, pick fewer.</p>
 """),
-    fr=dict(slug='coups-candidats', name='Coups candidats',
+    fr=dict(slug='coups-candidats', name='Coups candidats', sub='Trouver un ou plusieurs bons coups',
       title="Les coups candidats aux échecs : trouver plus d'un bon coup",
       desc="Ce que sont les coups candidats, comment les trouver (échecs, prises, menaces, puis le plan), et un exercice gratuit qui note vos choix avec Stockfish sur des parties de maîtres et vos propres parties.",
       lead="La plupart des erreurs viennent du premier coup qui a l'air bon. Le conseil d'Alexandre Kotov : dresser d'abord la liste de quelques options sérieuses, puis choisir.",
@@ -235,8 +235,10 @@ FAQ = {
 # ---------------------------------------------------------------- the words around the text
 W = {
   'en': dict(other='Lire en français', faq='Frequently asked questions', exercises='Exercises',
+    intro="Tactics puzzles always have one right answer. Real games don't. ChessStrategy.org trains what comes before the move: reading the position, choosing a plan, finding good moves, and picking the best one.",
     faq_desc='How ChessStrategy.org works: its four chess strategy exercises (imbalances, plans, candidate moves, move selection), scores, positions and the engine.'),
   'fr': dict(other='Read in English', faq='Questions fréquentes', exercises='Exercices',
+    intro="Les puzzles de tactique ont toujours une seule bonne réponse. Les vraies parties, non. ChessStrategy.org entraîne ce qui vient avant le coup : lire la position, choisir un plan, trouver de bons coups, et choisir le meilleur.",
     faq_desc="Comment fonctionne ChessStrategy.org : ses quatre exercices de stratégie aux échecs (déséquilibres, plans, coups candidats, choix du coup), les scores, les positions et le moteur."),
 }
 
@@ -345,10 +347,11 @@ def build():
       urls.append(path.removesuffix('index.html'))
     # the index: the guides, then the FAQ
     path = HUB[lang] + 'index.html'
-    cards = ''.join(f'<a class="card" href="{g[lang]["slug"]}/"><strong>{g[lang]["name"]}</strong><span>{html.escape(g[lang]["title"])}</span></a>' for g in GUIDES)
+    cards = ''.join(f'<a class="card" href="{g[lang]["slug"]}/"><strong>{g[lang]["name"]}</strong><span>{html.escape(g[lang].get("sub", g[lang]["title"]))}</span></a>' for g in GUIDES)
     faq = ''.join(f'<h2 class="faq-h">{html.escape(sec)}</h2>' + ''.join(f'<details><summary>{html.escape(q)}</summary><div class="a">{a}</div></details>' for q, a in qs) for sec, qs in FAQ[lang])
     hub = fix(f"""<h1>{w['faq']}</h1>
 <h2 class="faq-h">{w['exercises']}</h2>
+<p>{w['intro']}</p>
 <div class="cards">{cards}</div>
 {faq}""")
     plain = lambda h: re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', ' ', fix(h)))).strip()
