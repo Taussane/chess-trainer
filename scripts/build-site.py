@@ -80,7 +80,7 @@ beta = (page.replace('<html lang="en" class="desk2">', '<html lang="en" class="d
             .replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<base href="../">\n<meta name="robots" content="noindex">\n', 1))
 assert beta.count('class="desk2 beta"') == 1 and '<base href' in beta
 import importlib.util
-spec = importlib.util.spec_from_file_location('build_learn', root / 'scripts' / 'build-learn.py'); learn = importlib.util.module_from_spec(spec); spec.loader.exec_module(learn)
+spec = importlib.util.spec_from_file_location('build_pages', root / 'scripts' / 'build-pages.py'); learn = importlib.util.module_from_spec(spec); spec.loader.exec_module(learn)
 outs = { root / 'index.html': page, root / 'beta' / 'index.html': beta, **learn.build() }
 if '--check' in sys.argv:
     ok = all(f.exists() and f.read_text(encoding='utf-8') == t for f, t in outs.items())
@@ -88,4 +88,4 @@ if '--check' in sys.argv:
     sys.exit(0 if ok else 1)
 for f, t in outs.items():
     f.parent.mkdir(exist_ok=True); f.write_text(t, encoding='utf-8')
-print('index.html built,', len(page)//1024, 'KB (and beta/index.html, the guides, the sitemap)')
+print('index.html built,', len(page)//1024, 'KB (and beta/index.html, the guides, privacy and terms, the sitemap)')

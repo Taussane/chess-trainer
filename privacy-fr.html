@@ -4,54 +4,86 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Confidentialité · ChessStrategy.org</title>
+<meta name="description" content="Ce que ChessStrategy.org conserve à votre sujet, où, et comment le supprimer.">
+<link rel="canonical" href="https://chessstrategy.org/privacy-fr.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ChessStrategy.org">
+<meta property="og:title" content="Confidentialité">
+<meta property="og:description" content="Ce que ChessStrategy.org conserve à votre sujet, où, et comment le supprimer.">
+<meta property="og:url" content="https://chessstrategy.org/privacy-fr.html">
+<meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#12161B">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+
 <style>
-  :root{ color-scheme: dark; --bg:#12161B; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
-  body{ background:var(--bg); color:var(--text); margin:0; font:15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main{ max-width:640px; margin:0 auto; padding:24px 16px 48px; }
-  @media (min-width:1024px) and (min-height:600px){ main{ max-width:1040px; padding:32px 32px 64px; } }   /* desktop: as wide as the home page */
-  h1{ font-size:1.4rem; margin:0 0 4px; } h2{ font-size:1.05rem; margin:24px 0 6px; }
-  p, li{ color:var(--text); } small, .mute{ color:var(--mute); } a{ color:var(--accent); }
-  ul{ padding-left:20px; }
+  :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2027; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); margin:0; font:16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header, main, footer{ max-width:760px; margin:0 auto; padding:0 16px; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding-top:16px; padding-bottom:8px; }
+  header a{ color:var(--text); text-decoration:none; } .brand{ display:flex; align-items:center; gap:10px; font-weight:600; }
+  .brand img{ width:28px; height:28px; border-radius:7px; } header nav a{ color:var(--mute); font-size:.95rem; }
+  h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
+  h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
+  .lead{ font-size:1.08rem; color:var(--text); } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
+  ul{ padding-left:22px; } li{ margin:4px 0; }
+  .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--line); }
+  figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
+  .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
+  .card{ display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-decoration:none; }
+  .card strong{ color:var(--text); display:block; margin-bottom:2px; } .card span{ color:var(--mute); font-size:.95rem; }
+  .faq-h{ font-size:1rem; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; margin:28px 0 6px; }
+  details{ border-bottom:1px solid var(--line); } details summary{ cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  details summary::-webkit-details-marker{ display:none; } details summary::after{ content:'+'; color:var(--mute); font-weight:400; } details[open] summary::after{ content:'−'; }
+  details .a{ padding:0 0 12px; color:var(--mute); } details .a b{ color:var(--text); } details .a ol, details .a ul{ margin:6px 0 0; }
+  footer{ border-top:1px solid var(--line); margin-top:40px; padding-top:16px; padding-bottom:40px; color:var(--mute); font-size:.92rem; }
+  footer a{ color:var(--mute); }
 </style>
+<!-- Built by scripts/build-pages.py: edit the script (or scripts/pages/), not this file. -->
 </head>
 <body>
+<header><a class="brand" href=""><img src="icons/icon.svg" alt="">ChessStrategy.org</a><nav><a href="learn/">Guides</a> · <a href="learn/#faq">FAQ</a> · <a href="privacy.html" lang="en">English</a></nav></header>
 <main>
-  <p class="mute" style="text-align:right;margin:0"><a href="privacy.html" lang="en">English</a></p>
-  <h1>Confidentialité</h1>
-  <p class="mute">Chess Strategy est un logiciel libre et gratuit, sans publicité et sans pistage d'un site à l'autre&nbsp;; il compte seulement son propre usage, de façon anonyme (voir plus bas).</p>
+<h1>Confidentialité</h1>
+<p class="mute">Chess Strategy est un logiciel libre et gratuit, sans publicité et sans pistage d'un site à l'autre&nbsp;; il compte seulement son propre usage, de façon anonyme (voir plus bas).</p>
 
-  <h2>Sans vous connecter</h2>
-  <p>Tout reste dans votre navigateur&nbsp;: vos scores, vos parties et leur analyse. Si vous ajoutez un nom d'utilisateur Chess.com, notre serveur récupère pour vous les parties publiques de ce joueur sur Chess.com, et n'en garde rien.</p>
+<h2>Sans vous connecter</h2>
+<p>Tout reste dans votre navigateur&nbsp;: vos scores, vos parties et leur analyse. Si vous ajoutez un nom d'utilisateur Chess.com, notre serveur récupère pour vous les parties publiques de ce joueur sur Chess.com, et n'en garde rien.</p>
 
-  <h2>Si vous vous connectez avec Lichess</h2>
-  <p>Lichess nous donne votre nom d'utilisateur et rien d'autre&nbsp;: jamais votre mot de passe ni votre courriel. Nous conservons, dans votre compte&nbsp;:</p>
-  <ul>
-    <li>votre nom d'utilisateur Lichess&nbsp;;</li>
-    <li>votre entraînement&nbsp;: les positions jouées, quand, et votre score&nbsp;;</li>
-    <li>vos 100 dernières parties sur Lichess et Chess.com, synchronisées automatiquement (coups, classements, cadence, date, et les évaluations de Lichess ou de notre moteur)&nbsp;;</li>
-    <li>si vous l'ajoutez, votre nom d'utilisateur Chess.com (vos parties publiques Chess.com sont lues par notre serveur).</li>
-  </ul>
-  <p>Votre connexion Lichess reste dans votre navigateur. Notre serveur n'en garde qu'une empreinte, pendant une journée, pour ne pas redemander à Lichess à chaque requête. Se déconnecter la supprime et annule notre accès sur Lichess.</p>
+<h2>Si vous vous connectez avec Lichess</h2>
+<p>Lichess nous donne votre nom d'utilisateur et rien d'autre&nbsp;: jamais votre mot de passe ni votre courriel. Nous conservons, dans votre compte&nbsp;:</p>
+<ul>
+  <li>votre nom d'utilisateur Lichess&nbsp;;</li>
+  <li>votre entraînement&nbsp;: les positions jouées, quand, et votre score&nbsp;;</li>
+  <li>vos 100 dernières parties sur Lichess et Chess.com, synchronisées automatiquement (coups, classements, cadence, date, et les évaluations de Lichess ou de notre moteur)&nbsp;;</li>
+  <li>si vous l'ajoutez, votre nom d'utilisateur Chess.com (vos parties publiques Chess.com sont lues par notre serveur).</li>
+</ul>
+<p>Votre connexion Lichess reste dans votre navigateur. Notre serveur n'en garde qu'une empreinte, pendant une journée, pour ne pas redemander à Lichess à chaque requête. Se déconnecter la supprime et annule notre accès sur Lichess.</p>
 
-  <h2>Si vous vous connectez avec Google</h2>
-  <p>Google nous donne votre adresse courriel et un identifiant de votre compte Google, rien d'autre&nbsp;: jamais votre mot de passe, et aucun accès à votre compte Google, à vos courriels ni à vos fichiers. Nous gardons l'adresse dans votre compte pour indiquer à quel compte vous êtes connecté, ainsi que les mêmes éléments que ci-dessus (votre entraînement, vos parties, votre nom Chess.com si vous l'ajoutez). Nous ne vous écrivons jamais. Votre connexion reste dans votre navigateur&nbsp;; notre serveur n'en garde qu'une empreinte. Se déconnecter la supprime.</p>
+<h2>Si vous vous connectez avec Google</h2>
+<p>Google nous donne votre adresse courriel et un identifiant de votre compte Google, rien d'autre&nbsp;: jamais votre mot de passe, et aucun accès à votre compte Google, à vos courriels ni à vos fichiers. Nous gardons l'adresse dans votre compte pour indiquer à quel compte vous êtes connecté, ainsi que les mêmes éléments que ci-dessus (votre entraînement, vos parties, votre nom Chess.com si vous l'ajoutez). Nous ne vous écrivons jamais. Votre connexion reste dans votre navigateur&nbsp;; notre serveur n'en garde qu'une empreinte. Se déconnecter la supprime.</p>
 
-  <h2>Où c'est conservé</h2>
-  <p>Sur les serveurs de Cloudflare, qui font tourner notre serveur des comptes et sa base de données, et dans votre navigateur. Nous ne partageons et ne vendons rien, et n'utilisons aucun service externe de statistiques ou de publicité.</p>
+<h2>Où c'est conservé</h2>
+<p>Sur les serveurs de Cloudflare, qui font tourner notre serveur des comptes et sa base de données, et dans votre navigateur. Nous ne partageons et ne vendons rien, et n'utilisons aucun service externe de statistiques ou de publicité.</p>
 
-  <h2>Statistiques d'usage</h2>
-  <p>Pour savoir ce qui fonctionne et quoi améliorer, le site compte de façon anonyme comment il est utilisé&nbsp;: les visites, les positions jouées (quel exercice, le score, partie de maître ou la vôtre, dans la routine quotidienne ou non), le nombre de positions trouvées dans vos parties, et pour chaque appareil sa langue, votre mode de connexion (aucun, Lichess ou Google), si un nom Chess.com est ajouté, s'il s'agit de l'application installée, et si le moteur d'échecs n'a pas pu se charger. Ces données portent un nombre aléatoire conservé dans votre navigateur, jamais votre nom, votre pseudo ni votre compte, et sont supprimées après 13 mois. Aucun autre site n'intervient.</p>
+<h2>Statistiques d'usage</h2>
+<p>Pour savoir ce qui fonctionne et quoi améliorer, le site compte de façon anonyme comment il est utilisé&nbsp;: les visites, les positions jouées (quel exercice, le score, partie de maître ou la vôtre, dans la routine quotidienne ou non), le nombre de positions trouvées dans vos parties, et pour chaque appareil sa langue, votre mode de connexion (aucun, Lichess ou Google), si un nom Chess.com est ajouté, s'il s'agit de l'application installée, et si le moteur d'échecs n'a pas pu se charger. Ces données portent un nombre aléatoire conservé dans votre navigateur, jamais votre nom, votre pseudo ni votre compte, et sont supprimées après 13 mois. Aucun autre site n'intervient.</p>
 
-  <h2>Dons</h2>
-  <p>La page Soutenir affiche le bouton de Ko-fi, chargé depuis Ko-fi. Les dons sont traités par Ko-fi selon sa propre politique de confidentialité. Ko-fi nous transmet ce que vous choisissez de partager avec un don (comme votre nom ou un message)&nbsp;; ce n'est pas lié à votre compte ici.</p>
+<h2>Dons</h2>
+<p>La page Soutenir affiche le bouton de Ko-fi, chargé depuis Ko-fi. Les dons sont traités par Ko-fi selon sa propre politique de confidentialité. Ko-fi nous transmet ce que vous choisissez de partager avec un don (comme votre nom ou un message)&nbsp;; ce n'est pas lié à votre compte ici.</p>
 
-  <h2>Supprimer vos données</h2>
-  <p>Dans l'application&nbsp;: <b>Profil › Supprimer mon compte</b>. Tout ce qui précède est supprimé d'un coup, définitivement. Pour ne retirer que vos parties Chess.com, déconnectez Chess.com dans votre profil.</p>
+<h2>Supprimer vos données</h2>
+<p>Dans l'application&nbsp;: <b>Profil › Supprimer mon compte</b>. Tout ce qui précède est supprimé d'un coup, définitivement. Pour ne retirer que vos parties Chess.com, déconnectez Chess.com dans votre profil.</p>
 
-  <h2>Questions</h2>
-  <p>Ouvrez un ticket sur <a href="https://github.com/Taussane/chess-trainer/issues">GitHub</a>. Le code qui fait tout cela s'y trouve aussi.</p>
-  <p>Voir aussi les <a href="terms-fr.html">conditions d'utilisation</a>.</p>
-  <p><a href="./">‹ Retour à Chess Strategy</a></p>
+<h2>Questions</h2>
+<p>Ouvrez un ticket sur <a href="https://github.com/Taussane/chess-trainer/issues">GitHub</a>. Le code qui fait tout cela s'y trouve aussi.</p>
+<p>Voir aussi les <a href="terms-fr.html">conditions d'utilisation</a>.</p>
 </main>
+<footer>
+  <p><a href="learn/">Guides et FAQ</a> · <a href="privacy-fr.html">Confidentialité</a> · <a href="terms-fr.html">Conditions</a> · <a href="https://github.com/Taussane/chess-trainer">Code source</a></p>
+  <p>Entraînement à la stratégie aux échecs, gratuit et libre. Sans publicité.</p>
+</footer>
 </body>
 </html>

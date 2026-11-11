@@ -1,4 +1,5 @@
-# Builds the guides (learn/: one page per exercise, and their index) and the sitemap, for search engines and
+# Builds the site's plain pages: the guides (learn/: one page per exercise, and their index with the FAQ), privacy and
+# terms (EN, FR; their text in scripts/pages/), all in one frame, and the sitemap, for search engines and
 # for anyone who wants to know what an exercise trains before trying it. Plain pages, no script.
 # Run by scripts/build-site.py (so `build-site.py --check` covers them too); the text lives here.
 # The pictures (learn/img/) are the app's own screens on master positions, as a new visitor gets them.
@@ -185,43 +186,60 @@ STYLE = """
   footer a{ color:var(--mute); }
 """
 
-def page(path, title, desc, body, ld):
-  depth = path.count('/')   # learn/x/index.html: 2 levels down from the site's root
-  up = '../' * depth
-  others = ' · '.join(f'<a href="{up}learn/{g["slug"]}/">{g["name"]}</a>' for g in GUIDES)
+# Every page the same frame: the logo (back to the app), Guides and FAQ, the other language when there is one;
+# the same links at the bottom. French pages (privacy, terms) get it in French.
+WORDS = {
+  'en': dict(faq='FAQ', guides='Guides', help='Guides & FAQ', privacy='Privacy', terms='Terms', code='Source code',
+             tag='Free, open-source chess strategy training. No ads.'),
+  'fr': dict(faq='FAQ', guides='Guides', help='Guides et FAQ', privacy='Confidentialité', terms='Conditions', code='Code source',
+             tag="Entraînement à la stratégie aux échecs, gratuit et libre. Sans publicité."),
+}
+def page(path, title, desc, body, ld=None, lang='en', alt=None, kind='article'):
+  up = '../' * path.count('/')   # learn/x/index.html: 2 levels down from the site's root
+  w, fr = WORDS[lang], lang=='fr'
+  other = f' · <a href="{up}{alt[1]}" lang="{alt[0]}">{"English" if alt[0]=="en" else "Français"}</a>' if alt else ''
+  url = SITE + path.removesuffix('index.html')
   return f"""<!doctype html>
-<html lang="en">
+<html lang="{lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)} · ChessStrategy.org</title>
 <meta name="description" content="{html.escape(desc)}">
-<link rel="canonical" href="{SITE}{path.removesuffix('index.html')}">
-<meta property="og:type" content="article">
+<link rel="canonical" href="{url}">
+<meta property="og:type" content="{kind}">
 <meta property="og:site_name" content="ChessStrategy.org">
 <meta property="og:title" content="{html.escape(title)}">
 <meta property="og:description" content="{html.escape(desc)}">
-<meta property="og:url" content="{SITE}{path.removesuffix('index.html')}">
+<meta property="og:url" content="{url}">
 <meta property="og:image" content="{SITE}icons/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#12161B">
 <link rel="icon" type="image/svg+xml" href="{up}icons/icon.svg">
-<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>
+{f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>' if ld else ''}
 <style>{STYLE}</style>
-<!-- Built by scripts/build-learn.py: edit the script, not this file. -->
+<!-- Built by scripts/build-pages.py: edit the script (or scripts/pages/), not this file. -->
 </head>
 <body>
-<header><a class="brand" href="{up}"><img src="{up}icons/icon.svg" alt="">ChessStrategy.org</a><nav><a href="{up}learn/">Guides</a> · <a href="{up}learn/#faq">FAQ</a></nav></header>
+<header><a class="brand" href="{up}"><img src="{up}icons/icon.svg" alt="">ChessStrategy.org</a><nav><a href="{up}learn/">{w['guides']}</a> · <a href="{up}learn/#faq">{w['faq']}</a>{other}</nav></header>
 <main>
 {body}
 </main>
 <footer>
-  <p>Guides: {others}</p>
-  <p><a href="{up}">ChessStrategy.org</a>: free, open-source chess strategy training, no ads. · <a href="{up}privacy.html">Privacy</a> · <a href="{up}terms.html">Terms</a> · <a href="https://github.com/Taussane/chess-trainer">Source code</a></p>
+  <p><a href="{up}learn/">{w['help']}</a> · <a href="{up}{'privacy-fr' if fr else 'privacy'}.html">{w['privacy']}</a> · <a href="{up}{'terms-fr' if fr else 'terms'}.html">{w['terms']}</a> · <a href="https://github.com/Taussane/chess-trainer">{w['code']}</a></p>
+  <p>{w['tag']}</p>
 </footer>
 </body>
 </html>
 """
+
+# Privacy and terms, in English and French: their text in scripts/pages/, this frame around it.
+LEGAL = [
+  ('privacy.html', 'en', 'Privacy', 'What ChessStrategy.org keeps about you, where, and how to delete it.', ('fr', 'privacy-fr.html')),
+  ('privacy-fr.html', 'fr', 'Confidentialité', 'Ce que ChessStrategy.org conserve à votre sujet, où, et comment le supprimer.', ('en', 'privacy.html')),
+  ('terms.html', 'en', 'Terms of use', 'The terms of use of ChessStrategy.org, free and open-source chess strategy training.', ('fr', 'terms-fr.html')),
+  ('terms-fr.html', 'fr', "Conditions d'utilisation", "Les conditions d'utilisation de ChessStrategy.org, entraînement à la stratégie aux échecs, gratuit et libre.", ('en', 'terms.html')),
+]
 
 def crumbs(*items):
   return { '@type': 'BreadcrumbList', 'itemListElement': [{ '@type': 'ListItem', 'position': i + 1, 'name': n, 'item': SITE + u } for i, (n, u) in enumerate(items)] }
@@ -230,8 +248,7 @@ def build():
   out = {}
   for g in GUIDES:
     path = f'learn/{g["slug"]}/index.html'
-    body = f"""<p class="mute">Guide · {g['name']}</p>
-<h1>{html.escape(g['title'])}</h1>
+    body = f"""<h1>{html.escape(g['title'])}</h1>
 <p class="lead">{g['lead']}</p>
 <p><a class="cta" href="../../?play={g['play']}">Try {g['name']}, free</a></p>
 <figure><img src="../img/{g['img']}.webp" width="390" height="844" alt="{html.escape(g['alt'])}" loading="lazy"><figcaption>{g['caption']}</figcaption></figure>
@@ -257,7 +274,9 @@ def build():
           'hasPart': [{ '@type': 'Article', 'headline': g['title'], 'url': SITE + f'learn/{g["slug"]}/' } for g in GUIDES] },
         { '@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [{ '@type': 'Question', 'name': q, 'acceptedAnswer': { '@type': 'Answer', 'text': plain(a) } } for _, qs in FAQ for q, a in qs] }]
   out['learn/index.html'] = page('learn/index.html', 'Chess strategy training: guides and FAQ',
-    'Four free chess strategy exercises: imbalances, plans, candidate moves and move selection, on master games and your own Lichess and Chess.com games.', hub, ld)
+    'Four free chess strategy exercises: imbalances, plans, candidate moves and move selection, on master games and your own Lichess and Chess.com games.', hub, ld, kind='website')
+  for f, lang, title, desc, alt in LEGAL:
+    out[f] = page(f, title, desc, (root / 'scripts' / 'pages' / f).read_text(encoding='utf-8').strip(), lang=lang, alt=alt, kind='website')
   urls = ['', 'learn/'] + [f'learn/{g["slug"]}/' for g in GUIDES] + ['privacy.html', 'privacy-fr.html', 'terms.html', 'terms-fr.html']
   out['sitemap.xml'] = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                         + ''.join(f'  <url><loc>{SITE}{u}</loc></url>\n' for u in urls) + '</urlset>\n')
