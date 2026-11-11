@@ -134,7 +134,7 @@ GUIDES = [
 """)),
 
   dict(play='final', img='move-selection',
-    en=dict(slug='move-selection', name='Move selection',
+    en=dict(slug='move-selection', name='Move selection', sub='How to choose the best move',
       title='How to choose the best move in chess',
       desc='How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own mistakes.',
       lead="Several moves look fine; only one is best. Move selection trains that last decision.",
@@ -151,7 +151,7 @@ GUIDES = [
   <li><strong>Prefer the move that serves your edge</strong> (see <a href="../chess-imbalances/">Imbalance reading</a>).</li>
 </ul>
 """),
-    fr=dict(slug='choisir-le-meilleur-coup', name='Choix du coup',
+    fr=dict(slug='choisir-le-meilleur-coup', name='Choix du coup', sub='Comment choisir le meilleur coup',
       title='Comment choisir le meilleur coup aux échecs',
       desc="Comment choisir entre des coups qui ont l'air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres erreurs.",
       lead="Plusieurs coups ont l'air bien ; un seul est le meilleur. Le Choix du coup entraîne cette dernière décision.",
