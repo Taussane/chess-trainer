@@ -34,13 +34,17 @@
   .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
   .card{ display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-decoration:none; }
   .card strong{ color:var(--text); display:block; margin-bottom:2px; } .card span{ color:var(--mute); font-size:.95rem; }
+  .faq-h{ font-size:1rem; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; margin:28px 0 6px; }
+  details{ border-bottom:1px solid var(--line); } details summary{ cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  details summary::-webkit-details-marker{ display:none; } details summary::after{ content:'+'; color:var(--mute); font-weight:400; } details[open] summary::after{ content:'−'; }
+  details .a{ padding:0 0 12px; color:var(--mute); } details .a b{ color:var(--text); } details .a ol, details .a ul{ margin:6px 0 0; }
   footer{ border-top:1px solid var(--line); margin-top:40px; padding-top:16px; padding-bottom:40px; color:var(--mute); font-size:.92rem; }
   footer a{ color:var(--mute); }
 </style>
 <!-- Built by scripts/build-learn.py: edit the script, not this file. -->
 </head>
 <body>
-<header><a class="brand" href="../../"><img src="../../icons/icon.svg" alt="">ChessStrategy.org</a><nav><a href="../../learn/">Guides</a></nav></header>
+<header><a class="brand" href="../../"><img src="../../icons/icon.svg" alt="">ChessStrategy.org</a><nav><a href="../../learn/">Guides</a> · <a href="../../learn/#faq">FAQ</a></nav></header>
 <main>
 <p class="mute">Guide · Plan finder</p>
 <h1>How to find a plan in chess</h1>

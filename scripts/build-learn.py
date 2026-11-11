@@ -2,7 +2,7 @@
 # for anyone who wants to know what an exercise trains before trying it. Plain pages, no script.
 # Run by scripts/build-site.py (so `build-site.py --check` covers them too); the text lives here.
 # The pictures (learn/img/) are the app's own screens on master positions, as a new visitor gets them.
-import pathlib, json, html
+import pathlib, json, html, re
 root = pathlib.Path(__file__).resolve().parent.parent
 SITE = 'https://chessstrategy.org/'
 
@@ -121,6 +121,44 @@ GUIDES = [
 """),
 ]
 
+
+# The FAQ (it used to be a screen in the app): what the guides don't already say, at the bottom of the guides' index.
+# Answers are HTML; the structured data (FAQPage) gets them as plain text.
+FAQ = [
+  ('About the app', [
+    ('What does it train?', "Strategy: what to do in a quiet position, when there's no tactic to find. Puzzle apps train tactics very well, but most games are decided in positions where the question isn't \"what wins?\" but \"what's going on, and what should I aim for?\"."),
+    ('Who is it for?', "Club players who already know their tactics and feel stuck when the position is quiet: no plan, or a plan that doesn't fit the position."),
+    ('How does it teach?', "By practice on real positions, with a review after each answer. Every idea is made concrete: an imbalance is a count of things on the board, drawn when you tap it, and every answer is checked by an engine or by a counted rule. The exercises follow the order of questions strong players ask."),
+    ('Where do the ideas come from?', "From the classic books on strategy (Steinitz, Nimzowitsch, Capablanca, Kotov, Silman, Dvoretsky, Aagaard, Shereshevsky) and from Stockfish's former evaluation, which counts the same things in its own way."),
+  ]),
+  ('The thinking process', [
+    ('Is there an order to thinking about a position?', "Yes. The books agree on one, and each exercise trains one step of it:<ol><li><b>Is anything urgent?</b> Checks, captures and threats, for both sides (Plan finder, phase 1).</li><li><b>What's different between the two sides?</b> The imbalances (Imbalance reading).</li><li><b>Who's better?</b> The imbalances weighed together decide your attitude: the side with the edge plays to use it, the other defends (Plan finder, phase 1).</li><li><b>What's the plan?</b> Trade or keep pieces; open and attack, or keep it closed and improve (Plan finder, phase 2).</li><li><b>Which moves?</b> Candidate moves that serve the plan, then the choice, checking each for a blunder (Candidate moves, Move selection).</li></ol>"),
+    ('Why separate exercises, not one position from start to finish?', "Each step gets its own review right away. On a single position, the review of one step would give away the next, and a long chain makes each round slow. The daily routine runs the steps in order, each on its own position."),
+    ("What about the opponent's plan?", "Checking the opponent's checks, captures and threats (step 1) is the first part of prophylaxis. The full question, \"what does my opponent want?\", may become an exercise of its own later."),
+  ]),
+  ('The exercises', [
+    ('What do =, + and ++ mean in an Imbalance reading review?', "The size of the difference between the two sides, white for White, black for Black. You don't grade sizes, but the review shows them: the ++ ones are the big edges, the ones to find first. Each imbalance has its own thresholds: across the master positions, about half are \"=\", a third \"+\" and one in six \"++\"."),
+    ('How does the Plan finder know something is urgent?', "Two checks must agree. The count of threats (Other threats, drawn on the board) says what each side could win. Stockfish then plays the position for the side to move, and again as if the other side were to move, to see what each would really win. Positions where they disagree are left out, so every answer can be shown on the board. A pawn that looks free but that Stockfish doesn't take is poisoned, or there's better: the answer is \"quiet\", and the review says what Stockfish prefers."),
+    ("How is the Plan finder's answer decided?", "Each imbalance votes for the side to play (+ counts 1, ++ counts 2). A row goes to a side when its votes add up to 2 or more; otherwise the answer is Either. One vote short gives half the points for that side."),
+    ("Are the Plan finder's answers always right?", "They're the books' principles applied to the position, not a calculated line: a plan is a direction, not the next move. Checked on master games, they hold when the imbalances agree: when nothing argues against a trade, masters tried to trade (took or offered) 56 to 67% of the time, against about 45% on average; and Stockfish finds forcing play good twice as often where the plan says \"attack\" as where it says \"improve\". When imbalances pull both ways, concrete reasons decide, and the answer is less certain."),
+  ]),
+  ('Scores and progress', [
+    ("What's my average?", "Your accuracy in an exercise, smoothed over recent positions: at first a plain average, then each new position moves it 15% of the way toward its score. One bad position costs a little; a run of good ones lifts it steadily."),
+    ("What's the daily routine?", "Three positions of each exercise in the day, in as many sittings as you like, in the thinking order."),
+    ('What are missed positions?', "Positions you scored below your average at the time. Replay plays them again; scoring at or above your average takes one off the list. A position played today waits until tomorrow."),
+    ('Where is my progress kept?', "In your browser, and in your account when you're logged in, so it follows you on every device."),
+  ]),
+  ('Positions and the engine', [
+    ('Where do the positions come from?', "From World Championship games and, once connected, from your own Lichess and Chess.com games. In your games, the app looks for your mistakes: the position just before a move that lost a lot."),
+    ('How are the positions picked?', "By rules, checked with Stockfish: quiet positions where strategy matters, spread across the game, not too close to each other, and for each exercise a reason to ask. Drawn games only give their unbalanced positions."),
+    ('Which engine?', "Stockfish 19 (its \"lite\" version), running in your browser, so nothing is sent anywhere: each position is searched to depth 20, a few seconds at most. Master positions also come with their evaluation computed in advance."),
+  ]),
+  ('Credits and further reading', [
+    ('Where do the sounds come from?', "The move and capture sounds are two sounds cut from <a href=\"https://freesound.org/s/792572/\">\"chess piece\" by imrius</a> (freesound.org), licensed under <a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a>. Changes: cut, background noise reduced, volume evened out."),
+    ('Which books are behind the app?', "<ul><li><b>Jeremy Silman, <i>How to Reassess Your Chess</i>:</b> imbalances, and how they lead to a plan.</li><li><b>Aron Nimzowitsch, <i>My System</i>:</b> open files, outposts, pawn chains, blockade, prophylaxis.</li><li><b>José Raúl Capablanca, <i>Chess Fundamentals</i>:</b> the basics of every phase.</li><li><b>Alexander Kotov, <i>Think Like a Grandmaster</i>:</b> candidate moves and the order of thinking.</li><li><b>Mark Dvoretsky and Artur Yusupov, <i>Positional Play</i>:</b> prophylactic thinking.</li><li><b>Jacob Aagaard, <i>Grandmaster Preparation: Positional Play</i>:</b> three questions for any quiet position.</li><li><b>Mikhail Shereshevsky, <i>Endgame Strategy</i>:</b> the king, two weaknesses, and not hurrying.</li></ul>"),
+  ]),
+]
+
 STYLE = """
   :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2027; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
   *{ box-sizing:border-box; }
@@ -139,6 +177,10 @@ STYLE = """
   .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
   .card{ display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-decoration:none; }
   .card strong{ color:var(--text); display:block; margin-bottom:2px; } .card span{ color:var(--mute); font-size:.95rem; }
+  .faq-h{ font-size:1rem; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; margin:28px 0 6px; }
+  details{ border-bottom:1px solid var(--line); } details summary{ cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  details summary::-webkit-details-marker{ display:none; } details summary::after{ content:'+'; color:var(--mute); font-weight:400; } details[open] summary::after{ content:'−'; }
+  details .a{ padding:0 0 12px; color:var(--mute); } details .a b{ color:var(--text); } details .a ol, details .a ul{ margin:6px 0 0; }
   footer{ border-top:1px solid var(--line); margin-top:40px; padding-top:16px; padding-bottom:40px; color:var(--mute); font-size:.92rem; }
   footer a{ color:var(--mute); }
 """
@@ -169,7 +211,7 @@ def page(path, title, desc, body, ld):
 <!-- Built by scripts/build-learn.py: edit the script, not this file. -->
 </head>
 <body>
-<header><a class="brand" href="{up}"><img src="{up}icons/icon.svg" alt="">ChessStrategy.org</a><nav><a href="{up}learn/">Guides</a></nav></header>
+<header><a class="brand" href="{up}"><img src="{up}icons/icon.svg" alt="">ChessStrategy.org</a><nav><a href="{up}learn/">Guides</a> · <a href="{up}learn/#faq">FAQ</a></nav></header>
 <main>
 {body}
 </main>
@@ -207,10 +249,14 @@ def build():
 <p class="lead">Tactics puzzles always have one right answer. Real games don't. ChessStrategy.org trains what comes before the move: reading the position, choosing a plan, finding good moves, and picking the best one.</p>
 <div class="cards">{cards}</div>
 <p>Every exercise uses positions from master games, and from your own games once you connect Lichess or add your Chess.com username. Answers are checked with fixed counting rules and Stockfish, which runs in your browser. It's free, open source and has no ads.</p>
-<p><a class="cta" href="../">Start training</a></p>"""
-  ld = { '@context': 'https://schema.org', '@type': 'CollectionPage', 'name': 'Chess strategy training: the exercises', 'url': SITE + 'learn/',
-         'hasPart': [{ '@type': 'Article', 'headline': g['title'], 'url': SITE + f'learn/{g["slug"]}/' } for g in GUIDES] }
-  out['learn/index.html'] = page('learn/index.html', 'Chess strategy training: the exercises',
+<p><a class="cta" href="../">Start training</a></p>
+<h2 id="faq">Questions</h2>
+""" + ''.join(f'<h3 class="faq-h">{html.escape(sec)}</h3>' + ''.join(f'<details><summary>{html.escape(q)}</summary><div class="a">{a}</div></details>' for q, a in qs) for sec, qs in FAQ)
+  plain = lambda h: re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', ' ', h))).strip()
+  ld = [{ '@context': 'https://schema.org', '@type': 'CollectionPage', 'name': 'Chess strategy training: the exercises', 'url': SITE + 'learn/',
+          'hasPart': [{ '@type': 'Article', 'headline': g['title'], 'url': SITE + f'learn/{g["slug"]}/' } for g in GUIDES] },
+        { '@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [{ '@type': 'Question', 'name': q, 'acceptedAnswer': { '@type': 'Answer', 'text': plain(a) } } for _, qs in FAQ for q, a in qs] }]
+  out['learn/index.html'] = page('learn/index.html', 'Chess strategy training: guides and FAQ',
     'Four free chess strategy exercises: imbalances, plans, candidate moves and move selection, on master games and your own Lichess and Chess.com games.', hub, ld)
   urls = ['', 'learn/'] + [f'learn/{g["slug"]}/' for g in GUIDES] + ['privacy.html', 'privacy-fr.html', 'terms.html', 'terms-fr.html']
   out['sitemap.xml'] = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
