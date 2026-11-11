@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Comment choisir le meilleur coup aux échecs · ChessStrategy.org</title>
+<meta name="description" content="Comment choisir entre des coups qui ont l&#x27;air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres erreurs.">
+<link rel="canonical" href="https://chessstrategy.org/fr/guides/choisir-le-meilleur-coup/">
+<link rel="alternate" hreflang="fr" href="https://chessstrategy.org/fr/guides/choisir-le-meilleur-coup/">
+<link rel="alternate" hreflang="en" href="https://chessstrategy.org/learn/move-selection/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ChessStrategy.org">
+<meta property="og:title" content="Comment choisir le meilleur coup aux échecs">
+<meta property="og:description" content="Comment choisir entre des coups qui ont l&#x27;air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres erreurs.">
+<meta property="og:url" content="https://chessstrategy.org/fr/guides/choisir-le-meilleur-coup/">
+<meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">
+<meta property="og:locale" content="fr_FR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#12161B">
+<link rel="icon" type="image/svg+xml" href="../../../icons/icon.svg">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "Article", "headline": "Comment choisir le meilleur coup aux échecs", "description": "Comment choisir entre des coups qui ont l'air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres erreurs.", "inLanguage": "fr", "image": "https://chessstrategy.org/learn/img/move-selection-fr.webp", "url": "https://chessstrategy.org/fr/guides/choisir-le-meilleur-coup/", "publisher": {"@type": "Organization", "name": "ChessStrategy.org", "url": "https://chessstrategy.org/"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Guides", "item": "https://chessstrategy.org/fr/guides/"}, {"@type": "ListItem", "position": 2, "name": "Choix du coup", "item": "https://chessstrategy.org/fr/guides/choisir-le-meilleur-coup/"}]}]</script>
+<style>
+  :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2129; --border:#2E3742; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); margin:0; font:16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header, main{ max-width:760px; margin:0 auto; padding:0 16px; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding-top:16px; padding-bottom:8px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:600; color:var(--text); text-decoration:none; } .brand img{ width:28px; height:28px; border-radius:7px; }
+  /* the language, as the app's Settings show it: the current one in a chip, a tap for the other */
+  .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+  main{ padding-bottom:56px; }
+  h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
+  h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
+  .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
+  ul, ol{ padding-left:22px; } li{ margin:4px 0; }
+  .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--line); }
+  figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
+  .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
+  .card{ display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-decoration:none; }
+  .card strong{ color:var(--text); display:block; margin-bottom:2px; } .card span{ color:var(--mute); font-size:.95rem; }
+  .faq-h{ font-size:1rem; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; margin:28px 0 6px; }
+  details{ border-bottom:1px solid var(--line); } details summary{ cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  details summary::-webkit-details-marker{ display:none; } details summary::after{ content:'+'; color:var(--mute); font-weight:400; } details[open] summary::after{ content:'−'; }
+  details .a{ padding:0 0 12px; color:var(--mute); } details .a b{ color:var(--text); } details .a ol, details .a ul{ margin:6px 0 0; }
+</style>
+<!-- Built by scripts/build-pages.py: edit the script (or scripts/pages/), not this file. -->
+</head>
+<body>
+<header><a class="brand" href="../../../"><img src="../../../icons/icon.svg" alt="">ChessStrategy.org</a><a class="lang" href="../../../learn/move-selection/" hreflang="en" lang="en" aria-label="Read in English" title="Read in English">FR</a></header>
+<main>
+<h1>Comment choisir le meilleur coup aux échecs</h1>
+<p class="lead">Trouver de bons coups, c'est la moitié du travail. L'autre moitié, c'est choisir : plusieurs coups ont l'air bien, un seul est le meilleur. Le Choix du coup entraîne cette dernière décision.</p>
+<p><a class="cta" href="../../../?play=final">Essayer Choix du coup, gratuit</a></p>
+<figure><img src="../../../learn/img/move-selection-fr.webp" width="390" height="844" alt="Correction de Choix du coup sur une position du championnat du monde 2023 : quatre coups classés, le coup joué Bg3 est le meilleur" loading="lazy"><figcaption>Nepomniachtchi – Ding Liren, championnat du monde 2023, aux Blancs de jouer. Quatre coups à classer : le coup joué, Bg3, est le meilleur ; Bxd5+ est douteux, Bc2 une erreur et Rxc4 une gaffe.</figcaption></figure>
+<h2>Comment se déroule l'exercice</h2>
+<p>Vous recevez quatre coups pour le camp au trait : <strong>classez-les, le meilleur d'abord</strong>. L'un d'eux a été joué dans la partie. Dans les parties de maîtres, le coup du maître est souvent le meilleur, mais pas toujours. Dans vos parties, c'est votre coup, et c'est toujours une erreur : l'exercice vous donne une deuxième chance sur une décision que vous avez manquée.</p>
+<p>Le score récompense surtout le haut du classement : la 1re place compte pour 50 %, la 2e pour 30 %, la 3e pour 20 %. Chaque place est comparée au meilleur coup restant, si bien qu'un bon deuxième choix rapporte même si le premier était faux. La correction montre la note et l'évaluation de Stockfish pour chaque coup.</p>
+
+<h2>Comment choisir</h2>
+<ul>
+  <li><strong>Trouvez d'abord le meilleur coup</strong> : c'est la moitié du score, et dans une partie, c'est tout ce qui compte.</li>
+  <li><strong>Vérifiez ce que chaque coup permet</strong> : un coup qui perd du matériel ou expose le roi passe en dernier, aussi actif qu'il paraisse.</li>
+  <li><strong>Comparez avec le plan</strong> : avec les déséquilibres en tête (voir la <a href="../desequilibres-aux-echecs/">Lecture des déséquilibres</a>), le coup qui sert votre avantage bat en général celui qui s'agite.</li>
+</ul>
+
+<h2>Vos propres parties</h2>
+<p>Connectez Lichess, ou ajoutez votre nom d'utilisateur Chess.com, et l'application parcourt vos parties récentes, trouve les moments où vous vous êtes trompé, et en fait des exercices. Vous retrouvez vos vraies décisions, avec les meilleurs coups à côté des vôtres.</p>
+<h2>L'essayer</h2>
+<p>Choix du coup est l'un des quatre exercices de ChessStrategy.org, gratuit et sans publicité. Les positions viennent de parties de maîtres, comme les matchs de championnat du monde, et de vos propres parties Lichess et Chess.com. Les réponses sont vérifiées par des règles de calcul fixes et par Stockfish, qui tourne dans votre navigateur.</p>
+<p><a class="cta" href="../../../?play=final">Jouer à Choix du coup</a></p>
+</main>
+</body>
+</html>

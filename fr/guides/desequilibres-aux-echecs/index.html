@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Les déséquilibres aux échecs : apprendre à lire une position · ChessStrategy.org</title>
+<meta name="description" content="Ce que sont les déséquilibres aux échecs (matériel, pions, espace, activité, sécurité du roi, menaces), comment les peser, et un exercice gratuit pour s&#x27;entraîner à les lire sur des parties de maîtres et vos propres parties.">
+<link rel="canonical" href="https://chessstrategy.org/fr/guides/desequilibres-aux-echecs/">
+<link rel="alternate" hreflang="fr" href="https://chessstrategy.org/fr/guides/desequilibres-aux-echecs/">
+<link rel="alternate" hreflang="en" href="https://chessstrategy.org/learn/chess-imbalances/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ChessStrategy.org">
+<meta property="og:title" content="Les déséquilibres aux échecs : apprendre à lire une position">
+<meta property="og:description" content="Ce que sont les déséquilibres aux échecs (matériel, pions, espace, activité, sécurité du roi, menaces), comment les peser, et un exercice gratuit pour s&#x27;entraîner à les lire sur des parties de maîtres et vos propres parties.">
+<meta property="og:url" content="https://chessstrategy.org/fr/guides/desequilibres-aux-echecs/">
+<meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">
+<meta property="og:locale" content="fr_FR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#12161B">
+<link rel="icon" type="image/svg+xml" href="../../../icons/icon.svg">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "Article", "headline": "Les déséquilibres aux échecs : apprendre à lire une position", "description": "Ce que sont les déséquilibres aux échecs (matériel, pions, espace, activité, sécurité du roi, menaces), comment les peser, et un exercice gratuit pour s'entraîner à les lire sur des parties de maîtres et vos propres parties.", "inLanguage": "fr", "image": "https://chessstrategy.org/learn/img/imbalance-reading-fr.webp", "url": "https://chessstrategy.org/fr/guides/desequilibres-aux-echecs/", "publisher": {"@type": "Organization", "name": "ChessStrategy.org", "url": "https://chessstrategy.org/"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Guides", "item": "https://chessstrategy.org/fr/guides/"}, {"@type": "ListItem", "position": 2, "name": "Lecture des déséquilibres", "item": "https://chessstrategy.org/fr/guides/desequilibres-aux-echecs/"}]}]</script>
+<style>
+  :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2129; --border:#2E3742; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); margin:0; font:16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header, main{ max-width:760px; margin:0 auto; padding:0 16px; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding-top:16px; padding-bottom:8px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:600; color:var(--text); text-decoration:none; } .brand img{ width:28px; height:28px; border-radius:7px; }
+  /* the language, as the app's Settings show it: the current one in a chip, a tap for the other */
+  .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+  main{ padding-bottom:56px; }
+  h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
+  h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
+  .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
+  ul, ol{ padding-left:22px; } li{ margin:4px 0; }
+  .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--line); }
+  figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
+  .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
+  .card{ display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-decoration:none; }
+  .card strong{ color:var(--text); display:block; margin-bottom:2px; } .card span{ color:var(--mute); font-size:.95rem; }
+  .faq-h{ font-size:1rem; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; margin:28px 0 6px; }
+  details{ border-bottom:1px solid var(--line); } details summary{ cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  details summary::-webkit-details-marker{ display:none; } details summary::after{ content:'+'; color:var(--mute); font-weight:400; } details[open] summary::after{ content:'−'; }
+  details .a{ padding:0 0 12px; color:var(--mute); } details .a b{ color:var(--text); } details .a ol, details .a ul{ margin:6px 0 0; }
+</style>
+<!-- Built by scripts/build-pages.py: edit the script (or scripts/pages/), not this file. -->
+</head>
+<body>
+<header><a class="brand" href="../../../"><img src="../../../icons/icon.svg" alt="">ChessStrategy.org</a><a class="lang" href="../../../learn/chess-imbalances/" hreflang="en" lang="en" aria-label="Read in English" title="Read in English">FR</a></header>
+<main>
+<h1>Les déséquilibres aux échecs : apprendre à lire une position</h1>
+<p class="lead">Chaque position est un ensemble de différences entre les deux camps : un pion de plus, une case faible, un roi plus sûr. Les joueurs forts ne les pèsent pas toutes. Ils repèrent les quelques-unes qui décident de la partie, et bâtissent leur plan autour.</p>
+<p><a class="cta" href="../../../?play=imbalances">Essayer Lecture des déséquilibres, gratuit</a></p>
+<figure><img src="../../../learn/img/imbalance-reading-fr.webp" width="390" height="844" alt="Correction de Lecture des déséquilibres sur une position du championnat du monde 1978 : Activité et Espace aux Blancs, Sécurité du roi aux Noirs, trois bonnes réponses" loading="lazy"><figcaption>Kortschnoj – Karpov, championnat du monde 1978, aux Noirs de jouer. Trois réponses, toutes justes : les Blancs ont les pièces les plus actives et plus d'espace, les Noirs le roi le plus sûr.</figcaption></figure>
+<h2>Qu'est-ce qu'un déséquilibre ?</h2>
+<p>Un déséquilibre est une différence, durable ou passagère, entre la position des Blancs et celle des Noirs. Jeremy Silman a rendu l'idée célèbre : au lieu de chercher un coup tout de suite, faites d'abord la liste de ce qui diffère, puis choisissez le plan qui tire le meilleur parti de vos avantages.</p>
+<p>L'exercice en utilise six, chacun compté sur l'échiquier toujours de la même façon :</p>
+<ul>
+  <li><strong>Matériel</strong> : pion 1, cavalier 3, fou 3, tour 5, dame 9 ; la paire de fous ajoute un demi-pion.</li>
+  <li><strong>Pions</strong> : les pions passés et liés comptent d'autant plus qu'ils sont avancés ; les pions isolés, doublés et arriérés comptent contre.</li>
+  <li><strong>Espace</strong> : les pions et les cases sûres derrière eux au centre de l'échiquier (plus compté une fois qu'il reste peu de pièces).</li>
+  <li><strong>Activité</strong> : les cases sûres qu'atteignent vos cavaliers, fous, tours et dame, plus les avant-postes et les colonnes ouvertes. En début de partie, le <strong>Développement</strong> prend sa place.</li>
+  <li><strong>Sécurité du roi</strong> : les pions qui abritent le roi face aux pièces adverses qui le visent. Une fois les dames échangées, l'<strong>Activité du roi</strong> prend sa place : en finale, le roi devient une pièce de combat.</li>
+  <li><strong>Menaces</strong> : le matériel que vous pouvez gagner tout de suite.</li>
+</ul>
+<p>Matériel, Pions et Espace sont <em>statiques</em> : ils durent. Activité, Sécurité du roi et Menaces sont <em>dynamiques</em> : ils peuvent disparaître en quelques coups, et appellent donc à agir.</p>
+
+<h2>Comment se déroule l'exercice</h2>
+<p>Vous recevez une position tirée d'une partie de maître, ou d'une de vos parties. Choisissez les <strong>3 déséquilibres qui la décident</strong>, et pour chacun dites qui a l'avantage, les Blancs ou les Noirs.</p>
+<p>La correction montre ensuite chaque déséquilibre avec sa taille : <strong>=</strong> équilibré, <strong>+</strong> un petit avantage, <strong>++</strong> un gros, en blanc pour les Blancs et en noir pour les Noirs. Vous n'avez pas à deviner les tailles, mais les ++ sont les avantages à trouver en premier. Chaque déséquilibre a ses propres seuils : sur les positions de maîtres, environ la moitié sont =, un tiers + et un sur six ++.</p>
+<p>Chacun de vos choix compte pour un tiers du score : l'un des trois plus gros avantages, du bon côté, rapporte tous les points ; un avantage plus petit du bon côté, la moitié ; un déséquilibre équilibré ou du mauvais côté, rien. Touchez un déséquilibre pour voir sur l'échiquier comment il a été compté.</p>
+
+<h2>Conseils</h2>
+<ul>
+  <li>Cherchez d'abord les gros avantages, puis les petits les plus nets.</li>
+  <li>Ne choisissez pas un déséquilibre équilibré : il ne rapporte rien.</li>
+  <li>Les notes ne s'additionnent pas simplement. Un gros déséquilibre peut l'emporter sur plusieurs petits, et la tactique prime sur tout.</li>
+</ul>
+
+<h2>Pourquoi ça aide</h2>
+<p>Lire les déséquilibres est l'étape qui précède tout plan. Elle vous dit s'il faut échanger des pièces, où attaquer, quel pion viser, et quand se presser. Pratiquée sur des centaines de positions, elle devient un réflexe que vous emportez dans vos parties. La <a href="../trouver-un-plan-aux-echecs/">Recherche du plan</a> fait le pas suivant : des déséquilibres au plan.</p>
+<h2>L'essayer</h2>
+<p>Lecture des déséquilibres est l'un des quatre exercices de ChessStrategy.org, gratuit et sans publicité. Les positions viennent de parties de maîtres, comme les matchs de championnat du monde, et de vos propres parties Lichess et Chess.com. Les réponses sont vérifiées par des règles de calcul fixes et par Stockfish, qui tourne dans votre navigateur.</p>
+<p><a class="cta" href="../../../?play=imbalances">Jouer à Lecture des déséquilibres</a></p>
+</main>
+</body>
+</html>

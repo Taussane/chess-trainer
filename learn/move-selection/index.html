@@ -6,28 +6,33 @@
 <title>How to choose the best move in chess · ChessStrategy.org</title>
 <meta name="description" content="How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own mistakes.">
 <link rel="canonical" href="https://chessstrategy.org/learn/move-selection/">
+<link rel="alternate" hreflang="en" href="https://chessstrategy.org/learn/move-selection/">
+<link rel="alternate" hreflang="fr" href="https://chessstrategy.org/fr/guides/choisir-le-meilleur-coup/">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="ChessStrategy.org">
 <meta property="og:title" content="How to choose the best move in chess">
 <meta property="og:description" content="How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own mistakes.">
 <meta property="og:url" content="https://chessstrategy.org/learn/move-selection/">
 <meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">
+<meta property="og:locale" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#12161B">
 <link rel="icon" type="image/svg+xml" href="../../icons/icon.svg">
-<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "Article", "headline": "How to choose the best move in chess", "description": "How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own mistakes.", "image": "https://chessstrategy.org/learn/img/move-selection.webp", "url": "https://chessstrategy.org/learn/move-selection/", "publisher": {"@type": "Organization", "name": "ChessStrategy.org", "url": "https://chessstrategy.org/"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Guides", "item": "https://chessstrategy.org/learn/"}, {"@type": "ListItem", "position": 2, "name": "Move selection", "item": "https://chessstrategy.org/learn/move-selection/"}]}]</script>
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "Article", "headline": "How to choose the best move in chess", "description": "How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own mistakes.", "inLanguage": "en", "image": "https://chessstrategy.org/learn/img/move-selection.webp", "url": "https://chessstrategy.org/learn/move-selection/", "publisher": {"@type": "Organization", "name": "ChessStrategy.org", "url": "https://chessstrategy.org/"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Guides", "item": "https://chessstrategy.org/learn/"}, {"@type": "ListItem", "position": 2, "name": "Move selection", "item": "https://chessstrategy.org/learn/move-selection/"}]}]</script>
 <style>
-  :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2027; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
+  :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2129; --border:#2E3742; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
   *{ box-sizing:border-box; }
   body{ background:var(--bg); color:var(--text); margin:0; font:16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  header, main, footer{ max-width:760px; margin:0 auto; padding:0 16px; }
+  header, main{ max-width:760px; margin:0 auto; padding:0 16px; }
   header{ display:flex; align-items:center; justify-content:space-between; padding-top:16px; padding-bottom:8px; }
-  header a{ color:var(--text); text-decoration:none; } .brand{ display:flex; align-items:center; gap:10px; font-weight:600; }
-  .brand img{ width:28px; height:28px; border-radius:7px; } header nav a{ color:var(--mute); font-size:.95rem; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:600; color:var(--text); text-decoration:none; } .brand img{ width:28px; height:28px; border-radius:7px; }
+  /* the language, as the app's Settings show it: the current one in a chip, a tap for the other */
+  .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+  main{ padding-bottom:56px; }
   h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
   h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
-  .lead{ font-size:1.08rem; color:var(--text); } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
-  ul{ padding-left:22px; } li{ margin:4px 0; }
+  .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
+  ul, ol{ padding-left:22px; } li{ margin:4px 0; }
   .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
   figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--line); }
   figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
@@ -38,18 +43,16 @@
   details{ border-bottom:1px solid var(--line); } details summary{ cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px; }
   details summary::-webkit-details-marker{ display:none; } details summary::after{ content:'+'; color:var(--mute); font-weight:400; } details[open] summary::after{ content:'−'; }
   details .a{ padding:0 0 12px; color:var(--mute); } details .a b{ color:var(--text); } details .a ol, details .a ul{ margin:6px 0 0; }
-  footer{ border-top:1px solid var(--line); margin-top:40px; padding-top:16px; padding-bottom:40px; color:var(--mute); font-size:.92rem; }
-  footer a{ color:var(--mute); }
 </style>
 <!-- Built by scripts/build-pages.py: edit the script (or scripts/pages/), not this file. -->
 </head>
 <body>
-<header><a class="brand" href="../../"><img src="../../icons/icon.svg" alt="">ChessStrategy.org</a><nav><a href="../../learn/">Guides</a> · <a href="../../learn/#faq">FAQ</a></nav></header>
+<header><a class="brand" href="../../"><img src="../../icons/icon.svg" alt="">ChessStrategy.org</a><a class="lang" href="../../fr/guides/choisir-le-meilleur-coup/" hreflang="fr" lang="fr" aria-label="Lire en français" title="Lire en français">EN</a></header>
 <main>
 <h1>How to choose the best move in chess</h1>
 <p class="lead">Finding good moves is half the job. The other half is choosing: several moves look fine, and only one is best. Move selection trains that last decision.</p>
 <p><a class="cta" href="../../?play=final">Try Move selection, free</a></p>
-<figure><img src="../img/move-selection.webp" width="390" height="844" alt="Move selection review on a 1963 World Championship position: four moves ranked, the game move Nxe4 best, two dubious ones" loading="lazy"><figcaption>Botvinnik – Petrosian, World Championship match 1963, White to play. Four moves to rank: the game move Nxe4 is best, Qh2 is good, Rh2 and Qg2 are dubious.</figcaption></figure>
+<figure><img src="../../learn/img/move-selection.webp" width="390" height="844" alt="Move selection review on a 1963 World Championship position: four moves ranked, the game move Nxe4 best, two dubious ones" loading="lazy"><figcaption>Botvinnik – Petrosian, World Championship match 1963, White to play. Four moves to rank: the game move Nxe4 is best, Qh2 is good, Rh2 and Qg2 are dubious.</figcaption></figure>
 <h2>How the exercise works</h2>
 <p>You get four moves for the side to play: <strong>rank them, best first</strong>. One of them was played in the game. In master games, the master's move is often the best, but not always. In your own games, it's your move, and it's always a mistake: the exercise gives you another shot at a decision you got wrong.</p>
 <p>The score rewards the top of the ranking most: 1st place counts for 50%, 2nd for 30%, 3rd for 20%. Each place is compared with the best move left, so a good second choice still scores even if the first one was wrong. The review shows Stockfish's grade and evaluation for each move.</p>
@@ -67,9 +70,5 @@
 <p>Move selection is one of four exercises on ChessStrategy.org, free and without ads. Positions come from master games, such as World Championship matches, and from your own Lichess and Chess.com games. Answers are checked with fixed counting rules and Stockfish, which runs in your browser.</p>
 <p><a class="cta" href="../../?play=final">Play Move selection</a></p>
 </main>
-<footer>
-  <p><a href="../../learn/">Guides & FAQ</a> · <a href="../../privacy.html">Privacy</a> · <a href="../../terms.html">Terms</a> · <a href="https://github.com/Taussane/chess-trainer">Source code</a></p>
-  <p>Free, open-source chess strategy training. No ads.</p>
-</footer>
 </body>
 </html>

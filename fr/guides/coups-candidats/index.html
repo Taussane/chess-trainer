@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Les coups candidats aux échecs : trouver plus d&#x27;un bon coup · ChessStrategy.org</title>
+<meta name="description" content="Ce que sont les coups candidats, comment les trouver (échecs, prises, menaces, puis le plan), et un exercice gratuit qui note vos choix avec Stockfish sur des parties de maîtres et vos propres parties.">
+<link rel="canonical" href="https://chessstrategy.org/fr/guides/coups-candidats/">
+<link rel="alternate" hreflang="fr" href="https://chessstrategy.org/fr/guides/coups-candidats/">
+<link rel="alternate" hreflang="en" href="https://chessstrategy.org/learn/candidate-moves/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ChessStrategy.org">
+<meta property="og:title" content="Les coups candidats aux échecs : trouver plus d&#x27;un bon coup">
+<meta property="og:description" content="Ce que sont les coups candidats, comment les trouver (échecs, prises, menaces, puis le plan), et un exercice gratuit qui note vos choix avec Stockfish sur des parties de maîtres et vos propres parties.">
+<meta property="og:url" content="https://chessstrategy.org/fr/guides/coups-candidats/">
+<meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">
+<meta property="og:locale" content="fr_FR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#12161B">
+<link rel="icon" type="image/svg+xml" href="../../../icons/icon.svg">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "Article", "headline": "Les coups candidats aux échecs : trouver plus d'un bon coup", "description": "Ce que sont les coups candidats, comment les trouver (échecs, prises, menaces, puis le plan), et un exercice gratuit qui note vos choix avec Stockfish sur des parties de maîtres et vos propres parties.", "inLanguage": "fr", "image": "https://chessstrategy.org/learn/img/candidate-moves-fr.webp", "url": "https://chessstrategy.org/fr/guides/coups-candidats/", "publisher": {"@type": "Organization", "name": "ChessStrategy.org", "url": "https://chessstrategy.org/"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Guides", "item": "https://chessstrategy.org/fr/guides/"}, {"@type": "ListItem", "position": 2, "name": "Coups candidats", "item": "https://chessstrategy.org/fr/guides/coups-candidats/"}]}]</script>
+<style>
+  :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2129; --border:#2E3742; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); margin:0; font:16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header, main{ max-width:760px; margin:0 auto; padding:0 16px; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding-top:16px; padding-bottom:8px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:600; color:var(--text); text-decoration:none; } .brand img{ width:28px; height:28px; border-radius:7px; }
+  /* the language, as the app's Settings show it: the current one in a chip, a tap for the other */
+  .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+  main{ padding-bottom:56px; }
+  h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
+  h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
+  .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
+  ul, ol{ padding-left:22px; } li{ margin:4px 0; }
+  .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--line); }
+  figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
+  .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
+  .card{ display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-decoration:none; }
+  .card strong{ color:var(--text); display:block; margin-bottom:2px; } .card span{ color:var(--mute); font-size:.95rem; }
+  .faq-h{ font-size:1rem; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; margin:28px 0 6px; }
+  details{ border-bottom:1px solid var(--line); } details summary{ cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  details summary::-webkit-details-marker{ display:none; } details summary::after{ content:'+'; color:var(--mute); font-weight:400; } details[open] summary::after{ content:'−'; }
+  details .a{ padding:0 0 12px; color:var(--mute); } details .a b{ color:var(--text); } details .a ol, details .a ul{ margin:6px 0 0; }
+</style>
+<!-- Built by scripts/build-pages.py: edit the script (or scripts/pages/), not this file. -->
+</head>
+<body>
+<header><a class="brand" href="../../../"><img src="../../../icons/icon.svg" alt="">ChessStrategy.org</a><a class="lang" href="../../../learn/candidate-moves/" hreflang="en" lang="en" aria-label="Read in English" title="Read in English">FR</a></header>
+<main>
+<h1>Les coups candidats aux échecs : trouver plus d&#x27;un bon coup</h1>
+<p class="lead">La plupart des erreurs viennent du premier coup qui a l'air bon. Les coups candidats, c'est l'habitude de trouver d'abord quelques options sérieuses, puis de choisir entre elles.</p>
+<p><a class="cta" href="../../../?play=candidates">Essayer Coups candidats, gratuit</a></p>
+<figure><img src="../../../learn/img/candidate-moves-fr.webp" width="390" height="844" alt="Correction de Coups candidats sur une position du championnat du monde 1987 : trois choix, notés Meilleur, Correct et Correct, à côté des 3 meilleurs coups du moteur" loading="lazy"><figcaption>Karpov – Kasparov, championnat du monde 1987, aux Blancs de jouer. Trois choix, comparés au meilleur coup du moteur : Rf2 (Meilleur), Qf2 et Kf1 (Correct).</figcaption></figure>
+<h2>Qu'est-ce qu'un coup candidat ?</h2>
+<p>Un coup candidat est un coup qui mérite un vrai examen. L'idée, rendue célèbre par Alexandre Kotov, est d'en dresser la liste avant d'en calculer aucun, pour ne pas passer tout son temps sur la première idée et en manquer une meilleure. Dans la plupart des positions, plusieurs coups se valent à peu près : savoir les trouver, c'est tout l'art.</p>
+
+<h2>Comment les trouver</h2>
+<ul>
+  <li><strong>Les coups forcés d'abord</strong> : échecs, prises et menaces, des deux côtés. Même quand vous ne les jouez pas, ils vous disent ce que veut l'adversaire.</li>
+  <li><strong>Puis les coups qui suivent le plan</strong>. Dans l'ouverture : développer et roquer. En milieu de partie : jouer sur les déséquilibres (voir la <a href="../desequilibres-aux-echecs/">Lecture des déséquilibres</a>). En finale : activer le roi, pousser les pions passés.</li>
+  <li><strong>Vérifiez ce que chaque coup permet</strong> avant de le garder.</li>
+</ul>
+
+<h2>Comment se déroule l'exercice</h2>
+<p>Choisissez 1 à 3 bons coups pour le camp au trait, en les jouant sur l'échiquier. Stockfish note ensuite chacun par rapport à son meilleur coup : <strong>Meilleur</strong>, <strong>Bon</strong>, <strong>Correct</strong>, <strong>Douteux</strong>, <strong>Erreur</strong> ou <strong>Gaffe</strong>, selon les chances de gain que le coup abandonne. Douteux ou pire ne rapporte rien : mieux vaut moins de coups, mais meilleurs. La correction montre les 3 meilleurs coups du moteur à côté des vôtres.</p>
+
+<h2>Conseils</h2>
+<ul>
+  <li>Un doute sur un coup ? Laissez-le de côté. Deux bons coups valent mieux que deux bons et un mauvais.</li>
+  <li>Comptez les coups forcés même quand la position semble calme : c'est là que sont les surprises.</li>
+  <li>Quand vous avez trouvé un bon coup, cherchez-en un deuxième. C'est l'habitude que l'exercice entraîne.</li>
+</ul>
+<p>Étape suivante : le <a href="../choisir-le-meilleur-coup/">Choix du coup</a>, choisir le meilleur parmi plusieurs.</p>
+<h2>L'essayer</h2>
+<p>Coups candidats est l'un des quatre exercices de ChessStrategy.org, gratuit et sans publicité. Les positions viennent de parties de maîtres, comme les matchs de championnat du monde, et de vos propres parties Lichess et Chess.com. Les réponses sont vérifiées par des règles de calcul fixes et par Stockfish, qui tourne dans votre navigateur.</p>
+<p><a class="cta" href="../../../?play=candidates">Jouer à Coups candidats</a></p>
+</main>
+</body>
+</html>

@@ -4338,7 +4338,7 @@ function sideGo(where){
   render();
 }
 function siteLinks(){
-  return `<a href="${DIRECT_LICHESS ? '' : 'https://chessstrategy.org/'}learn/" target="_blank" rel="noopener">Guides &amp; FAQ</a> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
+  return `<a href="${DIRECT_LICHESS ? '' : 'https://chessstrategy.org/'}${LANG==='fr' ? 'fr/guides/' : 'learn/'}" target="_blank" rel="noopener" data-no-i18n>${LANG==='fr' ? 'Guides et FAQ' : 'Guides &amp; FAQ'}</a> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
 }
 function renderSide(){
   if(!DESK) return;

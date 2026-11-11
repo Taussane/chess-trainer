@@ -87,5 +87,5 @@ if '--check' in sys.argv:
     print('index.html is up to date' if ok else 'index.html is out of date: run python3 scripts/build-site.py')
     sys.exit(0 if ok else 1)
 for f, t in outs.items():
-    f.parent.mkdir(exist_ok=True); f.write_text(t, encoding='utf-8')
+    f.parent.mkdir(parents=True, exist_ok=True); f.write_text(t, encoding="utf-8")
 print('index.html built,', len(page)//1024, 'KB (and beta/index.html, the guides, privacy and terms, the sitemap)')

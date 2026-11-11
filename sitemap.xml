@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://chessstrategy.org/</loc></url>
-  <url><loc>https://chessstrategy.org/learn/</loc></url>
   <url><loc>https://chessstrategy.org/learn/chess-imbalances/</loc></url>
   <url><loc>https://chessstrategy.org/learn/chess-plans/</loc></url>
   <url><loc>https://chessstrategy.org/learn/candidate-moves/</loc></url>
   <url><loc>https://chessstrategy.org/learn/move-selection/</loc></url>
+  <url><loc>https://chessstrategy.org/learn/</loc></url>
+  <url><loc>https://chessstrategy.org/fr/guides/desequilibres-aux-echecs/</loc></url>
+  <url><loc>https://chessstrategy.org/fr/guides/trouver-un-plan-aux-echecs/</loc></url>
+  <url><loc>https://chessstrategy.org/fr/guides/coups-candidats/</loc></url>
+  <url><loc>https://chessstrategy.org/fr/guides/choisir-le-meilleur-coup/</loc></url>
+  <url><loc>https://chessstrategy.org/fr/guides/</loc></url>
   <url><loc>https://chessstrategy.org/privacy.html</loc></url>
   <url><loc>https://chessstrategy.org/privacy-fr.html</loc></url>
   <url><loc>https://chessstrategy.org/terms.html</loc></url>
