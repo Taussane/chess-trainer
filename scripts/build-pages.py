@@ -143,7 +143,7 @@ GUIDES = [
       body="""
 <h2>How to choose</h2>
 <ul>
-  <li><strong>Check each move for a blunder</strong>: look at your opponent's checks, captures and threats after it. A move that drops material or exposes your king generally goes last, however active it looks.</li>
+  <li><strong>Check each move for a blunder</strong>: look at your opponent's checks, captures and threats after it. A move that drops material or exposes your king generally goes last, however menacing it looks.</li>
   <li><strong>Compare the positions you reach</strong>: prefer the move that makes the most of your advantages, or reduces your opponent's, as your <a href="../chess-plans/">plan</a> requires.</li>
   <li><strong>When two moves look equal</strong>, don't spend too long on them: if they really are close in strength, the choice won't change much.</li>
 </ul>
@@ -161,7 +161,7 @@ GUIDES = [
       body="""
 <h2>Comment choisir</h2>
 <ul>
-  <li><strong>Vérifiez chaque coup contre la gaffe</strong> : regardez les échecs, prises et menaces de l'adversaire après lui. Un coup qui perd du matériel ou expose votre roi passe généralement en dernier, aussi actif qu'il paraisse.</li>
+  <li><strong>Vérifiez chaque coup contre la gaffe</strong> : regardez les échecs, prises et menaces de l'adversaire après lui. Un coup qui perd du matériel ou expose votre roi passe généralement en dernier, aussi menaçant qu'il paraisse.</li>
   <li><strong>Comparez les positions obtenues</strong> : préférez le coup qui tire le meilleur de vos avantages, ou réduit ceux de l'adversaire, comme le demande votre <a href="../trouver-un-plan-aux-echecs/">plan</a>.</li>
   <li><strong>Quand deux coups se valent</strong>, n'y passez pas trop de temps : s'ils sont vraiment proches, le choix ne changera pas grand-chose.</li>
 </ul>
