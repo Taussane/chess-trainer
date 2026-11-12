@@ -448,6 +448,22 @@
   .set-opt:disabled{opacity:.45; cursor:default;}
   .set-reset{align-self:center; margin:6px auto 0; display:block;}
   .set-page{padding-bottom:5px;}
+  /* FAQ, privacy, terms (renderDoc): the website's page, as it looks there */
+  .doc-page{display:block; line-height:1.6; padding-bottom:40px; max-width:760px;}
+  .doc-page > :first-child{margin-top:0;}
+  .doc-page .sub{margin:0 0 14px; color:var(--text-mute); font-size:1.05rem;}
+  .doc-page h2{font-size:1.2rem; margin:28px 0 8px;} .doc-page h3{font-size:1.02rem; margin:20px 0 4px;}
+  .doc-page p{margin:0 0 12px;} .doc-page .lead{font-size:1.05rem;} .doc-page .mute, .doc-note{color:var(--text-mute);} .doc-page a{color:var(--accent);}
+  .doc-page ul, .doc-page ol{padding-left:22px; margin:0 0 12px;} .doc-page li{margin:4px 0;}
+  .doc-page figure{margin:22px 0; text-align:center;} .doc-page figure img{width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--border);}
+  .doc-page figcaption{color:var(--text-mute); font-size:.9rem; max-width:520px; margin:8px auto 0;}
+  .doc-page .cards{display:grid; gap:12px; grid-template-columns:1fr; margin:16px 0 20px;} @media (min-width:640px){ .doc-page .cards{grid-template-columns:1fr 1fr;} }
+  .doc-page .card{display:block; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 14px; text-decoration:none;}
+  .doc-page .card strong{color:var(--text); display:block; margin-bottom:2px;} .doc-page .card span{color:var(--text-mute); font-size:.93rem;}
+  .doc-page .faq-h{font-size:.92rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:.06em; margin:26px 0 6px;}
+  .doc-page details{border-bottom:1px solid var(--border);} .doc-page summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px;}
+  .doc-page summary::-webkit-details-marker{display:none;} .doc-page summary::after{content:'+'; color:var(--text-mute); font-weight:400;} .doc-page details[open] summary::after{content:'−';}
+  .doc-page details .a{padding:0 0 12px; color:var(--text-mute);} .doc-page details .a b{color:var(--text);} .doc-page details .a ol, .doc-page details .a ul{margin:6px 0 0;}
   .sq.last::before{content:""; position:absolute; inset:0; background:var(--square-hl);}
   #board.slide-wait .sq.last::before{content:none;}   /* (an exercise's opening move: highlighted once its piece sets off) */
   .sq.selected::before{content:""; position:absolute; inset:0; background:var(--square-hl);}
@@ -714,6 +730,7 @@
     html.desk2 .mx-grp.mx-wide{grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:12px 20px;}
     html.desk2 .mx-grp.mx-wide > .pf-h{grid-column:1 / -1;}
     html.desk2 .wrap:not(.ex) .title-row .back, html.desk2 #settingsBtn, html.desk2 #metricsBtn{display:none;}   /* (in the sidebar) */
+    html.desk2 .wrap[data-scr=doc] .title-row .back.keep{display:inline-flex;}   /* (a guide opened from the FAQ: back to it) */
     html.desk2 .pf-cols{display:grid; grid-template-columns:360px minmax(0, 1fr); gap:28px; align-items:start;}
     html.desk2 .pf-col > .title-row{margin-bottom:4px;}
     html.desk2 .pf-col{display:flex; flex-direction:column; gap:12px; min-width:0;}
@@ -4471,7 +4488,8 @@ function sideGo(where){
   render();
 }
 function siteLinks(){
-  return `<a href="${DIRECT_LICHESS ? '' : 'https://chessstrategy.org/'}${LANG==='fr' ? 'fr/guides/' : 'learn/'}" target="_blank" rel="noopener" data-no-i18n>FAQ</a> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener">Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener">Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
+  const dd = DIRECT_LICHESS ? ' data-doc' : '';   // (on the website, opened inside the app: openDoc)
+  return `<a href="${DIRECT_LICHESS ? '' : 'https://chessstrategy.org/'}${LANG==='fr' ? 'fr/guides/' : 'learn/'}" target="_blank" rel="noopener"${dd} data-no-i18n>FAQ</a> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener"${dd}>Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener"${dd}>Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
 }
 function renderSide(){
   if(!DESK) return;
@@ -6586,7 +6604,7 @@ function renderFinal(){
   wireCommon('final', false);
 }
 
-let shownScreen = null;   // the screen drawn last (for the page transitions)
+let shownScreen = null, pageSlide = null;   // the screen drawn last (for the page transitions)
 // While a finger drags something (a move being ranked, the evaluation bar, the grades' scale), the page
 // isn't rebuilt under it: background redraws wait, and one redraw follows when it's let go.
 let renderHeld = false, renderWaiting = false;
@@ -6616,9 +6634,10 @@ function render(){
   shownScreen = screen;
   prefetchShort();   // (a share button shown: its short link asked for now)
   // pages slide: in from the right going deeper (home → a page, profile → settings), from the left coming back
+  const forced = pageSlide; pageSlide = null;   // (set by the FAQ's pages: openDoc, docBack)
   const sub = x=>x==='settings' || x==='support' || x==='metrics', settingsStep = (sub(from) && onProfile()) || (sub(screen) && ['account', 'progress', 'mygames'].includes(from));
-  if(from && from!==screen && !isDesk() && (from==='home' || screen==='home' || settingsStep)){   // (not on desktop: the menu reaches any page)
-    const app = document.getElementById('app'), cls = screen==='home' || sub(from) ? 'page-back' : 'page-fwd';
+  if(!isDesk() && (forced || from && from!==screen && (from==='home' || screen==='home' || settingsStep))){   // (not on desktop: the menu reaches any page)
+    const app = document.getElementById('app'), cls = forced ? 'page-' + forced : screen==='home' || sub(from) ? 'page-back' : 'page-fwd';
     app.classList.remove('page-fwd', 'page-back'); void app.offsetWidth; app.classList.add(cls);
     app.addEventListener('animationend', function done(e){ if(e.target===app){ app.classList.remove(cls); app.removeEventListener('animationend', done); } });
   }
@@ -6666,6 +6685,7 @@ function reviewOpened(){
 // entries back off; the phone's back button goes up one level.
 function pageDepth(){
   if(screen==='home') return 0;
+  if(screen==='doc') return (doc.from==='home' ? 0 : 1) + 1 + doc.stack.length;
   if(screen==='explorer' && explorer && explorer.ret){ const s0 = screen, x0 = explorer; screen = x0.ret.screen; explorer = x0.ret.saved; try{ return pageDepth() + 1; } finally { screen = s0; explorer = x0; } }
   let d = ['settings', 'metrics', 'tests'].includes(screen) ? 2
         : screen==='support' ? (supportFrom==='home' ? 1 : 2)
@@ -7410,6 +7430,85 @@ const SET_SAMPLE = { fen:'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b
   moves:[['a7','a6','a6'], ['f8','c5','Bc5'], ['g8','f6','Nf6'], ['b1','c3','Nc3'], ['d2','d4','d4'], ['e1','g1','O-O']] };   // in reading order: Black's (top) 1st to 3rd, then White's 4th to 6th, left to right
 let settingsPreview = false;
 function refreshBoardTracks(){ [['setBoardHue', 'hue'], ['setBoardSat', 'sat'], ['setBoardLum', 'lum']].forEach(([id, k])=>{ const el = document.getElementById(id); if(el) el.style.background = boardTrack(k); }); }
+// ================= FAQ, privacy, terms =================
+// The website's own pages (built by scripts/build-pages.py) open inside the app, as a page like Settings:
+// their content fetched and shown under the app's title and back arrow, sliding in. A link between them
+// (the FAQ to a guide and back) stays in the app, one level deeper each; any other link opens a new tab.
+// The pages themselves are unchanged (search engines, links from elsewhere).
+let doc = null, docRebuild = true;   // doc: {from, url, stack: [{url, y, w}] (the pages under this one), y, w}
+const docCache = new Map(), docFailed = new Set();   // url -> {title, html}; urls that couldn't be fetched
+function docUrl(href){
+  try{
+    const u = new URL(href, document.baseURI);
+    return u.origin===location.origin && /^\/(learn\/|fr\/guides\/|(privacy|terms)(-fr)?\.html$)/.test(u.pathname) ? u : null;
+  }catch(e){ return null; }
+}
+function docScroll(){ const pg = document.querySelector('#app .doc-page'); return { y: pg ? pg.scrollTop : 0, w: window.scrollY }; }
+function openDoc(href, inside){
+  const u = docUrl(href); if(!u) return false;
+  const url = u.origin + u.pathname;
+  if(inside && doc){ if(url===doc.url) return true; doc.stack.push({ url: doc.url, ...docScroll() }); doc.url = url; doc.y = doc.w = 0; }
+  else {
+    if(screen==='explorer' && explorer && explorer.ret){ const r = explorer.ret; explorer = r.saved; screen = r.screen; }
+    leaveExercise();
+    const from = screen==='doc' ? doc.from : screen==='home' || onProfile() ? screen : 'home';
+    doc = { from, url, stack: [], y: 0, w: 0 }; screen = 'doc';
+  }
+  pageSlide = 'fwd'; docRebuild = true; render(); window.scrollTo(0, 0);
+  loadDoc(url);
+  return true;
+}
+function docBack(){
+  if(doc.stack.length){ const s = doc.stack.pop(); doc.url = s.url; doc.y = s.y; doc.w = s.w; loadDoc(doc.url); }
+  else { screen = doc.from; doc = null; }
+  pageSlide = 'back'; docRebuild = true; render();
+}
+function loadDoc(url){
+  if(docCache.has(url)) return;
+  docFailed.delete(url);
+  fetch(url).then(r=>{ if(!r.ok) throw new Error(r.status); return r.text(); }).then(t=>{
+    const main = new DOMParser().parseFromString(t, 'text/html').querySelector('main');
+    if(!main) throw new Error('no main');
+    main.querySelectorAll('script, .back').forEach(e=>e.remove());   // (its "‹ FAQ" link: the back arrow does it)
+    const h1 = main.querySelector('h1'), title = h1 ? h1.textContent.trim() : '';
+    if(h1) h1.remove();
+    main.querySelectorAll('[href]').forEach(e=>e.setAttribute('href', new URL(e.getAttribute('href'), url).href));
+    main.querySelectorAll('[src]').forEach(e=>e.setAttribute('src', new URL(e.getAttribute('src'), url).href));
+    docCache.set(url, { title, html: main.innerHTML });
+  }).catch(()=>docFailed.add(url)).then(()=>{ if(screen==='doc' && doc && doc.url===url){ docRebuild = true; render(); } });
+}
+function renderDoc(){
+  const app = document.getElementById('app');
+  if(!docRebuild && app.querySelector('.doc-page')) return;
+  docRebuild = false;
+  const c = docCache.get(doc.url), fr = LANG==='fr';
+  app.innerHTML = `
+    <div class="title-row">
+      <button class="icon-btn back${doc.stack.length ? ' keep' : ''}" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
+      <h1 data-no-i18n>${c ? escHtml(c.title) : ''}</h1>
+    </div>
+    <div class="pf-scroll doc-page" data-no-i18n>${c ? c.html : docFailed.has(doc.url)
+      ? `<p class="doc-note">${fr ? 'Cette page a besoin d’une connexion.' : 'This page needs a connection.'}</p><p><button class="btn secondary" id="docRetry">${fr ? 'Réessayer' : 'Try again'}</button></p>` : ''}</div>`;
+  const pg = app.querySelector('.doc-page');
+  if(c && (doc.y || doc.w)){ pg.scrollTop = doc.y; window.scrollTo(0, doc.w); doc.y = doc.w = 0; }
+  document.getElementById('homeBtn').onclick = docBack;
+  const retry = document.getElementById('docRetry'); if(retry) retry.onclick = ()=>loadDoc(doc.url);
+  pg.onclick = e=>{
+    const a = e.target.closest('a[href]');
+    if(!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    const u = docUrl(a.href);
+    if(u && u.hash && u.pathname===new URL(doc.url).pathname){ e.preventDefault(); const t = pg.querySelector(u.hash); if(t) t.scrollIntoView({ behavior:'smooth' }); return; }
+    if(u){ e.preventDefault(); openDoc(a.href, true); return; }
+    a.target = '_blank'; a.rel = 'noopener';
+  };
+}
+// The menu's and the profile's links (siteLinks): opened as above; a new tab with Ctrl/Cmd, as any link.
+document.addEventListener('click', e=>{
+  const a = e.target.closest && e.target.closest('a[data-doc]');
+  if(!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+  if(openDoc(a.getAttribute('href'))) e.preventDefault();
+});
+
 function renderSettingsPreview(){
   const b = document.getElementById('setBoard'), svg = document.getElementById('setArrows'); if(!b) return;
   settingsPreview = true;
@@ -8704,6 +8803,7 @@ function renderScreen(){
   else if(onProfile()) renderAccount();
   else if(screen==='tests') renderTests();
   else if(screen==='settings') renderSettings();
+  else if(screen==='doc') renderDoc();
   else if(screen==='support') renderSupport();
   else if(screen==='metrics') renderMetrics();
   else if(screen==='explorer') renderExplorer();
