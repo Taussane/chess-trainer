@@ -68,7 +68,7 @@ GUIDES = [
 <h2>Four questions</h2>
 <ol>
   <li><strong>Anything urgent?</strong> Checks, captures and threats, for both sides: something to win, or to defend, like a pawn or the exchange. (Positions where a piece or more is at stake are left out: there, the threat decides the move.)</li>
-  <li><strong>Who's better?</strong> Weighing the <a href="../chess-imbalances/">imbalances</a> is a good way to gauge it, the most decisive ones should shape the core aspects of your plan. Balanced means the engine within half a pawn.</li>
+  <li><strong>Who's better?</strong> Weighing the imbalances is a good way to gauge it, and the most decisive ones should shape the core aspects of your plan. Balanced means the engine within half a pawn.</li>
   <li><strong>Trade, or keep pieces?</strong> Trades help the side up material, with better pawns, or short of space. Keep pieces with better pieces, more space, or against a weak king.</li>
   <li><strong>Attack, or improve?</strong> An edge that fades (active pieces, a development lead, a weak king) calls for opening up and attacking. One that lasts (material, pawns, space) leaves time to improve.</li>
 </ol>
@@ -87,7 +87,7 @@ GUIDES = [
 <h2>Quatre questions</h2>
 <ol>
   <li><strong>Une urgence ?</strong> Échecs, prises et menaces, des deux côtés : quelque chose à gagner, ou à défendre, comme un pion ou la qualité. (Les positions où une pièce ou plus est en jeu sont écartées : là, c'est la menace qui décide du coup.)</li>
-  <li><strong>Qui est mieux ?</strong> Peser les <a href="../desequilibres-aux-echecs/">déséquilibres</a> est un bon moyen d'en juger, les plus décisifs devraient façonner les grandes lignes de votre plan. Équilibré veut dire le moteur à moins d'un demi-pion.</li>
+  <li><strong>Qui est mieux ?</strong> Peser les déséquilibres est un bon moyen d'en juger, et les plus décisifs devraient façonner les grandes lignes de votre plan. Équilibré veut dire le moteur à moins d'un demi-pion.</li>
   <li><strong>Échanger, ou garder les pièces ?</strong> Les échanges aident le camp qui a plus de matériel, de meilleurs pions, ou qui manque d'espace. Gardez les pièces avec de meilleures pièces, plus d'espace, ou face à un roi faible.</li>
   <li><strong>Attaquer, ou améliorer ?</strong> Un avantage qui s'efface (pièces actives, avance de développement, roi faible) appelle à ouvrir et attaquer. Un avantage qui dure (matériel, pions, espace) laisse le temps d'améliorer.</li>
 </ol>
