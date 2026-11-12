@@ -139,7 +139,7 @@ GUIDES = [
       desc='How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own mistakes.',
       lead="Several moves may look fine, but only one is best. Once exploring <a href=\"../candidate-moves/\">candidate moves</a> has given you a few serious options, the last step is choosing between them, and that's where many games are lost.",
       alt='Move selection review on a 1963 World Championship position: four moves ranked, the game move Nxe4 best, two dubious ones',
-      caption='The best move, the game move Nxe4, was found: half the score. But Qh2, the only other good move, should have come 2nd, not last: the score stops at 50%.',
+      caption='The game move Nxe4 is best and was found. Qh2, the only other good move, should have come 2nd.',
       body="""
 <h2>Ranking your options</h2>
 <ul>
@@ -157,7 +157,7 @@ GUIDES = [
       desc="Comment choisir entre des coups qui ont l'air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres erreurs.",
       lead="Plusieurs coups peuvent avoir l'air bien, mais un seul est le meilleur. Une fois que l'exploration des <a href=\"../coups-candidats/\">coups candidats</a> vous a donné quelques options sérieuses, reste à choisir entre elles, et c'est là que beaucoup de parties se perdent.",
       alt='Correction de Choix du coup sur une position du championnat du monde 2023 : quatre coups classés, le coup joué Bg3 est le meilleur',
-      caption="Le meilleur coup, le coup joué Bg3, n'est classé que 3e, derrière une erreur et un coup douteux : 20 % seulement. En tête, il valait déjà 50 %. Bien vu en revanche : la gaffe Rxc4 en dernier.",
+      caption="Le coup joué Bg3 est le meilleur, mais n'est classé que 3e : il devait venir en tête. La gaffe Rxc4 est bien en dernier.",
       body="""
 <h2>Classer vos options</h2>
 <ul>
