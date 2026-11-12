@@ -108,8 +108,8 @@ GUIDES = [
 <h2>How to find them</h2>
 <ul>
   <li><strong>Forcing moves first</strong>: checks, captures and threats, for both sides.</li>
-  <li><strong>Then moves that follow the plan</strong> (see <a href="../chess-imbalances/">Imbalance reading</a>).</li>
-  <li><strong>Check what each move allows</strong> before keeping it.</li>
+  <li><strong>Then moves that follow the <a href="../chess-plans/">plan</a></strong>: they make the most of your most decisive imbalances, or reduce your opponent's.</li>
+  <li><strong>Keep the game phase in mind</strong>, especially when the plan is to improve: in the opening, develop and get your king safe; in the middlegame, find better squares for your pieces and fix your weaknesses; in the endgame, bring your king in and push your passed pawns.</li>
 </ul>
 
 <h2>The exercise</h2>
@@ -125,8 +125,8 @@ GUIDES = [
 <h2>Comment les trouver</h2>
 <ul>
   <li><strong>Les coups forcés d'abord</strong> : échecs, prises et menaces, des deux côtés.</li>
-  <li><strong>Puis les coups qui suivent le plan</strong> (voir la <a href="../desequilibres-aux-echecs/">Lecture des déséquilibres</a>).</li>
-  <li><strong>Vérifiez ce que chaque coup permet</strong> avant de le garder.</li>
+  <li><strong>Puis les coups qui suivent le <a href="../trouver-un-plan-aux-echecs/">plan</a></strong> : ils tirent le meilleur de vos déséquilibres les plus décisifs, ou réduisent ceux de l'adversaire.</li>
+  <li><strong>Gardez en tête la phase de la partie</strong>, surtout quand le plan est d'améliorer : dans l'ouverture, développez et mettez votre roi à l'abri ; en milieu de partie, trouvez de meilleures cases pour vos pièces et corrigez vos faiblesses ; en finale, activez votre roi et poussez vos pions passés.</li>
 </ul>
 
 <h2>L'exercice</h2>
