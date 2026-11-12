@@ -7946,7 +7946,7 @@ function explorerPlanHtml(q, x, hidden){
       const w = planqWhy(r, reasons[r.key]), can = k=>k && k.key && hasMarks(q.p.fen, k.key);
       const tapped = (k, html)=>can(k) ? `<button class="pq-reason${x && x.aspView===k.key ? ' sel' : ''}" data-key="${k.key}">${html}</button>` : html;
       text = w.inline ? w.text.replace(/\{(\d)\}/g, (_, i)=>{ const k = w.keys[+i], n = planqName(k); return tapped(k, +i===0 && w.text.startsWith('{0}') ? n[0].toUpperCase() + n.slice(1) : n); })
-        : w.keys[0] ? w.text.replace(/^([^:]+)/, m=>tapped(w.keys[0], m)) : w.text;
+        : w.keys[0] ? w.text.replace(/^([^:]+?)(?=\s*:)/, m=>tapped(w.keys[0], m)) : w.text;
     }
     return `<div class="xp-plan-row"><span class="asp-name">${R.name}</span><span class="asp-badge xp-ans eq">${ans}</span></div><p class="xp-plan-note">${text}</p>`;
   }).join('');
@@ -8357,6 +8357,37 @@ const PLANQ_WHY = {   // seen by the side to play (the question names it)
     'eval+':'Clear edge: no hurry, keep control.', 'eval-':'Clear disadvantage: complicate the game.',
   },
 };
+// The same in French (the reviews' sentences are built from pieces, so they're translated here, not word by word)
+const PLANQ_WHY_FR = {
+  pieces: {
+    'material+':"Matériel en plus : il pèse davantage à mesure que l'échiquier se vide.", 'material-':"Matériel en moins : les pièces sur l'échiquier donnent des chances de réagir.",
+    'Passed pawn':'Pion passé : il gagne en force quand les pièces disparaissent.', 'Weak enemy pawns':'Pions adverses faibles : plus faciles à gagner une fois les pièces échangées.',
+    'Enemy passed pawn':'Pion passé adverse : il gagne en force quand les pièces disparaissent.', 'Weak pawns':'Pions faibles : ils tomberaient en finale.',
+    'space+':"Plus d'espace : les pièces adverses restent à l'étroit.", 'space-':"Moins d'espace : chaque échange libère de la place.",
+    'activity+':"Meilleures pièces : elles en font plus que celles de l'adversaire.", 'activity-':"Pièces moins bonnes : échangez les pires contre les meilleures de l'adversaire.",
+    'development+':'Avance de développement : elle ne compte que tant que les pièces sont là.', 'development-':"Retard de développement : les pièces développées de l'adversaire valent plus.",
+    'king+':'Roi adverse faible : il faut des attaquants pour en profiter.', 'king-':"Roi faible : moins d'attaquants, moins de danger.",
+    'kingEg+':"Roi plus actif : il pèse davantage à mesure que l'échiquier se vide.", 'kingEg-':"Roi passif : le roi adverse pèserait davantage à mesure que l'échiquier se vide.",
+    'eval+':'Net avantage : une position simple est plus facile à gagner.', 'eval-':'Net désavantage : les complications donnent des chances de réagir.',
+  },
+  approach: {
+    'material+':'Matériel en plus : rien ne presse, gardez le contrôle et améliorez.', 'material-':'Matériel en moins : ouvrez le jeu et cherchez des chances.',
+    'Passed pawn':"Pion passé : un avantage durable, rien ne presse, améliorez d'abord.", 'Weak enemy pawns':"Pions adverses faibles : ils ne vont pas s'enfuir, améliorez d'abord.",
+    'Enemy passed pawn':"Pion passé adverse : jouez activement avant qu'il ne pèse.", 'Weak pawns':"Pions faibles : un problème durable, jouez activement avant qu'ils ne tombent.",
+    'space+':"Plus d'espace : gardez la position fermée et étouffez l'adversaire.", 'space-':"Moins d'espace : ouvrez par une poussée de pion.",
+    'activity+':"Meilleures pièces : utilisez-les maintenant, avant que l'adversaire n'améliore les siennes.", 'activity-':"Pièces moins bonnes : améliorez d'abord la pire.",
+    'development+':"Avance de développement : ouvrez le centre avant que l'adversaire ne rattrape son retard.", 'development-':'Retard de développement : gardez la position fermée et finissez votre développement.',
+    'king+':'Roi adverse faible : ouvrez des lignes vers lui.', 'king-':'Roi faible : gardez la position fermée et consolidez.',
+    'kingEg+':'Roi plus actif : utilisez-le, allez chercher les pions adverses.', 'kingEg-':"Roi passif : mettez-le d'abord en jeu.",
+    'eval+':'Net avantage : rien ne presse, gardez le contrôle.', 'eval-':'Net désavantage : compliquez le jeu.',
+  },
+};
+const PLANQ_WANTS_FR = { pieces: { 1:'des échanges', '-1':'garder les pièces' }, approach: { 1:'le jeu dynamique', '-1':'le jeu positionnel' } };
+const PLANQ_NAMES_FR = { 'extra material':'matériel en plus', 'missing material':'matériel en moins', 'passed pawn':'pion passé', 'enemy passed pawn':'pion passé adverse',
+  'weak pawns':'pions faibles', 'weak enemy pawns':'pions adverses faibles', 'extra space':"plus d'espace", 'lack of space':"moins d'espace",
+  'better pieces':'meilleures pièces', 'worse pieces':'pièces moins bonnes', 'development lead':'avance de développement', 'lagging development':'retard de développement',
+  'weak enemy king':'roi adverse faible', 'weak king':'roi faible', 'more active king':'roi plus actif', 'passive king':'roi passif',
+  'clear edge':'net avantage', 'clear disadvantage':'net désavantage' };
 // each situation as a noun, seen by the side to play, for the Either sentences ("weak enemy king calls for…")
 const PLANQ_NAMES = { 'Up material':'extra material', 'Down material':'missing material', 'Passed pawn':'passed pawn', 'Enemy passed pawn':'enemy passed pawn',
   'Weak pawns':'weak pawns', 'Weak enemy pawns':'weak enemy pawns', 'More space':'extra space', 'Less space':'lack of space',
@@ -8364,15 +8395,22 @@ const PLANQ_NAMES = { 'Up material':'extra material', 'Down material':'missing m
   'Weak enemy king':'weak enemy king', 'Weak king':'weak king', 'More active king':'more active king', 'Passive king':'passive king',
   'Clearly better':'clear edge', 'Clearly worse':'clear disadvantage' };
 const planqStrongest = (rs, dir)=>rs.filter(x=>x.dir===dir).sort((a, b)=>b.weight - a.weight || PLANQ_PRIORITY.indexOf(a.vk) - PLANQ_PRIORITY.indexOf(b.vk))[0];
-const planqSentence = (row, x)=>PLANQ_WHY[row][x.vk==='pawns' ? x.situation : x.vk + (x.edge > 0 ? '+' : '-')];
+const planqSentence = (row, x)=>(LANG==='fr' ? PLANQ_WHY_FR : PLANQ_WHY)[row][x.vk==='pawns' ? x.situation : x.vk + (x.edge > 0 ? '+' : '-')];
 // as seen by the side to play ("less space", "weak enemy king"): no side needed (the question names it)
-const planqName = x=>PLANQ_NAMES[x.situation];
+const planqName = x=>LANG==='fr' ? PLANQ_NAMES_FR[PLANQ_NAMES[x.situation]] : PLANQ_NAMES[x.situation];
 const planqPlural = x=>/(pawns|pieces)$/.test(PLANQ_NAMES[x.situation]);
 // one row's explanation: { text, keys (criteria to tap) }
 function planqWhy(r, chosen){
   if(r.answer){ const x = chosen || planqStrongest(r.reasons, r.answer); return { text: planqSentence(r.key, x), keys: [x] }; }
   // (in these, each criterion's words, {0} and {1}, can be tapped)
   const a = planqStrongest(r.reasons, 1), b = planqStrongest(r.reasons, -1), calls = x=>planqPlural(x) ? 'call' : 'calls';
+  if(LANG==='fr'){   // (French: written here, the sentence being built from pieces)
+    const W = PLANQ_WANTS_FR[r.key], pl = x=>planqPlural(x) ? 'plaident' : 'plaide';
+    if(a && b) return { text: `{0} ${pl(a)} pour ${W[1]}, {1} pour ${W[-1]}.`, keys: [a, b], inline: true };
+    const x = a || b;
+    if(x) return { text: `{0} ${pl(x)} pour ${W[x.dir]}, sans rien d'autre : pas assez pour trancher.`, keys: [x], inline: true };
+    return { text: "Rien dans la position ne penche d'un côté ou de l'autre.", keys: [] };
+  }
   if(a && b) return { text: `{0} ${calls(a)} for ${r.wants[1]}, {1} for ${r.wants[-1]}.`, keys: [a, b], inline: true };
   const x = a || b;
   if(x) return { text: `Only {0} ${calls(x)} for ${r.wants[x.dir]}: not enough to decide.`, keys: [x], inline: true };
@@ -8551,7 +8589,7 @@ function planqRowsHtml(q, ghost){
       const tapped = (x, html)=>can(x) ? `<button class="pq-reason${q.aspView===x.key ? ' sel' : ''}" data-key="${x.key}">${html}</button>` : html;
       // only the criterion's words are tappable (underlined), not the explanation
       text = w.inline ? w.text.replace(/\{(\d)\}/g, (_, i)=>{ const x = w.keys[+i], n = planqName(x); return tapped(x, +i===0 && w.text.startsWith('{0}') ? n[0].toUpperCase() + n.slice(1) : n); })
-        : w.keys[0] ? w.text.replace(/^([^:]+)/, m=>tapped(w.keys[0], m)) : w.text;
+        : w.keys[0] ? w.text.replace(/^([^:]+?)(?=\s*:)/, m=>tapped(w.keys[0], m)) : w.text;
     }
     return `<div class="pq-sides">${btn(1)}${btn(0)}${btn(-1)}</div><p class="pq-text pq-why-line">${text}</p>`;
   }).join('')}</div>`;
