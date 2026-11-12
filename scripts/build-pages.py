@@ -137,36 +137,38 @@ GUIDES = [
     en=dict(slug='move-selection', name='Move selection', sub='How to choose the best move',
       title='How to choose the best move in chess',
       desc='How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own mistakes.',
-      lead="Several moves look fine; only one is best. Move selection trains that last decision.",
+      lead="Several moves look fine; only one is best. Once <a href=\"../candidate-moves/\">Candidate moves</a> has given you a few serious options, the last step is choosing between them, and that's where many games are lost.",
       alt='Move selection review on a 1963 World Championship position: four moves ranked, the game move Nxe4 best, two dubious ones',
       caption='The game move Nxe4 is best, Qh2 good, Rh2 and Qg2 dubious.',
       body="""
-<h2>The exercise</h2>
-<p>Rank four moves, best first. One was played in the game. In your own games, it's your move, and always a mistake: a second chance at a decision you got wrong. 1st place counts for 50%, 2nd for 30%, 3rd for 20%, each compared with the best move left.</p>
-
 <h2>How to choose</h2>
 <ul>
-  <li><strong>Find the best move first</strong>: it's half the score.</li>
-  <li><strong>A move that drops material or exposes the king goes last</strong>, however active it looks.</li>
-  <li><strong>Prefer the move that serves your edge</strong> (see <a href="../chess-imbalances/">Imbalance reading</a>).</li>
+  <li><strong>Check each move for a blunder</strong>: look at your opponent's checks, captures and threats after it. A move that drops material or exposes your king goes last, however active it looks.</li>
+  <li><strong>Compare the positions you reach</strong>: prefer the move that keeps or grows your most decisive imbalances, as your <a href="../chess-plans/">plan</a> requires.</li>
+  <li><strong>When two moves look equal</strong>, pick the one you understand better: a clear position you know how to play is often worth more than a murky one.</li>
 </ul>
+
+<h2>The exercise</h2>
+<p>Rank four moves, best first. One was played in the game. In your own games, it's your move, and always a mistake: a second chance at a decision you got wrong.</p>
+<p>Finding the best move is half the score: 1st place counts for 50%, 2nd for 30%, 3rd for 20%, each compared with the best move left.</p>
 """),
     fr=dict(slug='choisir-le-meilleur-coup', name='Choix du coup', sub='Comment choisir le meilleur coup',
       title='Comment choisir le meilleur coup aux échecs',
       desc="Comment choisir entre des coups qui ont l'air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres erreurs.",
-      lead="Plusieurs coups ont l'air bien ; un seul est le meilleur. Le Choix du coup entraîne cette dernière décision.",
+      lead="Plusieurs coups ont l'air bien ; un seul est le meilleur. Une fois que les <a href=\"../coups-candidats/\">Coups candidats</a> vous ont donné quelques options sérieuses, reste à choisir entre elles, et c'est là que beaucoup de parties se perdent.",
       alt='Correction de Choix du coup sur une position du championnat du monde 2023 : quatre coups classés, le coup joué Bg3 est le meilleur',
       caption='Le coup joué, Bg3, est le meilleur ; Bxd5+ est douteux, Bc2 une erreur et Rxc4 une gaffe.',
       body="""
-<h2>L'exercice</h2>
-<p>Classez quatre coups, le meilleur d'abord. L'un d'eux a été joué dans la partie. Dans vos parties, c'est votre coup, et toujours une erreur : une deuxième chance sur une décision manquée. La 1re place compte pour 50 %, la 2e pour 30 %, la 3e pour 20 %, chacune comparée au meilleur coup restant.</p>
-
 <h2>Comment choisir</h2>
 <ul>
-  <li><strong>Trouvez d'abord le meilleur coup</strong> : c'est la moitié du score.</li>
-  <li><strong>Un coup qui perd du matériel ou expose le roi passe en dernier</strong>, aussi actif qu'il paraisse.</li>
-  <li><strong>Préférez le coup qui sert votre avantage</strong> (voir la <a href="../desequilibres-aux-echecs/">Lecture des déséquilibres</a>).</li>
+  <li><strong>Vérifiez chaque coup contre la gaffe</strong> : regardez les échecs, prises et menaces de l'adversaire après lui. Un coup qui perd du matériel ou expose votre roi passe en dernier, aussi actif qu'il paraisse.</li>
+  <li><strong>Comparez les positions obtenues</strong> : préférez le coup qui garde ou renforce vos déséquilibres les plus décisifs, comme le demande votre <a href="../trouver-un-plan-aux-echecs/">plan</a>.</li>
+  <li><strong>Quand deux coups se valent</strong>, prenez celui que vous comprenez le mieux : une position claire que vous savez jouer vaut souvent mieux qu'une position confuse.</li>
 </ul>
+
+<h2>L'exercice</h2>
+<p>Classez quatre coups, le meilleur d'abord. L'un d'eux a été joué dans la partie. Dans vos parties, c'est votre coup, et toujours une erreur : une deuxième chance sur une décision manquée.</p>
+<p>Trouver le meilleur coup, c'est la moitié du score : la 1re place compte pour 50 %, la 2e pour 30 %, la 3e pour 20 %, chacune comparée au meilleur coup restant.</p>
 """)),
 ]
 
