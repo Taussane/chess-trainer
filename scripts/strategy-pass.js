@@ -47,11 +47,8 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
       const res = { imb: [], plan: [], evals: {}, tried: 0, searched: 0 };
       const div = divideGame(fens), from = div.mid >= 0 ? div.mid : div.end; if (from < 0) return res;
       const to = div.end >= 0 ? div.end + 3 : hist.length - 1;
-      let lastImb = -99, lastPlan = -99, stop = null;   // stop: a Plan finder position that ends after phase 1, kept only if the
-      // next STOP_LOOK half-moves have no position whose plan questions follow (usually the one after the defence)
-      const STOP_LOOK = 2, commitStop = ()=>{ if (stop != null) { res.plan.push(stop); lastPlan = stop; stop = null; } };
+      let lastImb = -99, lastPlan = -99;   // (the Plan finder: a piece or more at stake, or a mate, is left out by planqFits)
       for (let ply = Math.max(1, from); ply <= Math.min(to, hist.length - 1); ply++) {
-        if (stop != null && ply > stop + STOP_LOOK) commitStop();
         const imbOk = ply - lastImb >= SPACING, planOk = ply - lastPlan >= SPACING;
         if (!imbOk && !planOk) continue;
         const fen = fens[ply], moveNo = +fen.split(' ')[5]; if (moveNo < 5 || moveNo > 40) continue;
@@ -82,17 +79,15 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
         if (planOk) {
           const pos = { key, fen, side: fen.split(' ')[1], moveNo };
           const q = planqMake(pos, info, vals, new Set());
-          if (!q.urgent.pending && !q.urgent.ambiguous && (q.urgent.stop || q.rows.some(r => r.answer)) && planqFits(pos, q)) {
+          if (!q.urgent.pending && !q.urgent.ambiguous && q.rows.some(r => r.answer) && planqFits(pos, q)) {
             if (!usLine || !usLine.pv) { const r = await run(fen, 1, CHECK_MS); res.searched++; usLine = r && !r.failed && r.lines && r.lines[0] || null; }
             const f = flipSide(fen), them = f ? await run(f, 1, CHECK_MS) : null; if (f) res.searched++;
             if (usLine && planqEngineAgrees(q.urgent, usLine, them && !them.failed && them.lines && them.lines[0], fen)) {
-              if (!q.urgent.stop) { stop = null; res.plan.push(ply); lastPlan = ply; }   // (a stop just before it gives way)
-              else if (stop == null) stop = ply;
+              res.plan.push(ply); lastPlan = ply;
             }
           }
         }
       }
-      commitStop();
       return res;
     }, [gid, SPACING, MS, CHECK_MS]);
     done++;
