@@ -2962,6 +2962,8 @@ function wireCommon(helpKey, checked){
     screen='home'; selSquare=null; render();
   };
   document.getElementById('helpBtn').onclick = ()=>{ helpVisible = true; reportOpen = null; render(); };
+  const all = document.getElementById('allExercises');
+  if(all) all.onclick = ()=>{ firstVisit = null; leaveExercise(); screen = 'home'; selSquare = null; render(); };   // (a first visit: on to the others)
   const next = document.getElementById('nextPos');
   if(next){
     next.onclick = nextPosition;
@@ -3048,6 +3050,20 @@ function lichessUrl(p){
 }
 // A review's buttons on the left, icons only: the position on Lichess, in the Strategy explorer (the game's moves around
 // it), and a link to it to share
+// A first visit (nothing played in this browser, not logged in, no games, no link to a position) opens straight
+// on Move selection, the most direct exercise; its review then offers the others in place of the Lichess, explorer
+// and share buttons, while Next position goes on with Move selection. Over once the player goes anywhere else.
+let firstVisit = null;
+function startFirstVisit(){
+  const q = new URLSearchParams(location.search);
+  if(results.length || signedIn() || myGames.length || q.has('s') || q.has('play') || screen!=='home') return;
+  // (automated test browsers start on the home screen, as the tests expect, unless one asks for the first visit)
+  try{ if(navigator.webdriver && !localStorage.getItem('cst.testFirstVisit')) return; }catch(e){}
+  let n = 0;
+  const go = ()=>{ if(screen!=='home') return; if(canOpen('final', false)){ firstVisit = 'on'; routine = false; openActivity('final'); } else if(n++ < 80) setTimeout(go, 250); };
+  go();
+}
+const allExercisesBtn = ()=>`<button class="btn secondary" id="allExercises" data-no-i18n>${LANG==='fr' ? 'Tous les exercices' : 'All exercises'}</button>`;
 function lichessLink(p){
   const url = lichessUrl(p);
   return `<a class="btn secondary lichess-open icon-only" href="${url}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn secondary lichess-open icon-only xp-open" data-xp-open aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><button class="btn secondary lichess-open icon-only" data-share aria-label="Share this position" title="Share this position">${SHARE_ICON}</button>`;
@@ -6362,7 +6378,7 @@ function renderFinal(){
       ${stackedPanel(`
         <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'Engine unavailable' : counting ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}${depthBtnHtml(ev0, p.fen)}${depthNoteHtml(s, ev, p.fen)}</div>
         <div id="reviewRows" class="rev-list">${rows.map(reviewRowHtml).join('')}</div>
-        <div class="actions-row split${s.revDone ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`, ghostFinal(), engineErrorBanner())}`;
+        <div class="actions-row split${s.revDone ? (s.justDone ? ' fade-in' : '') : failed ? '' : ' pending'}">${firstVisit ? allExercisesBtn() : lichessLink(p)}<button class="btn" id="nextPos">${nextLabel()}</button></div>`, ghostFinal(), engineErrorBanner())}`;
     renderBoard(document.getElementById('board'), bs, p.last);
     drawArrows(document.getElementById('arrows'), rows, 'af_');
     fadeOnce(s, 'score', reviewPart('.score'));   // "— Evaluating…", as the review opens
@@ -6458,6 +6474,7 @@ document.addEventListener('pointerdown', e=>{
 }, true);
 function render(){
   if(renderHeld){ renderWaiting = true; return; }
+  if(firstVisit && screen!=='final') firstVisit = null;   // (the first visit's way in is over once the player goes elsewhere)
   // The page is redrawn often (e.g. while your games are analysed): text being typed, and the
   // focus and cursor in it, carry over to the redrawn page.
   const typed = [...document.querySelectorAll('input[type=text][id], textarea[id]')].map(el=>({ id: el.id, value: el.value }));
@@ -8576,6 +8593,7 @@ initEngine();
   if(DIRECT_LICHESS){ await finishLichessLogin(); await finishGoogleLogin(); }   // back from lichess.org: signed in before anything loads
   initProgress();
   initMyGames();
+  startFirstVisit();   // (before the link's position, if any, is read: it skips the first visit)
   openSharedFromUrl();
 })();
 </script>
