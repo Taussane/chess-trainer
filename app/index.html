@@ -3029,8 +3029,7 @@ function startFirstVisit(){
   // Search engines' crawlers come as new visitors every time: they keep the home screen (the exercises, their
   // descriptions, the links to the FAQ), which every visitor reaches in one tap anyway. Automated test browsers too,
   // as the tests expect, unless one asks for the first visit.
-  if(/bot\b|bot\/|crawl|spider|slurp|mediapartners|google-inspectiontool|google-extended|lighthouse|headlesschrome|bingpreview|facebookexternalhit|embedly|quora link preview|yandex|baidu|duckduck/i.test(navigator.userAgent || '')
-     && !localStorage.getItem('cst.testFirstVisit')) return;
+  if(/bot\b|bot\/|crawl|spider|slurp|mediapartners|google-inspectiontool|google-extended|lighthouse|bingpreview|facebookexternalhit|embedly|quora link preview|yandex|baidu|duckduck/i.test(navigator.userAgent || '')) return;
   try{ if(navigator.webdriver && !localStorage.getItem('cst.testFirstVisit')) return; }catch(e){}
   let n = 0;
   const go = ()=>{ if(screen!=='home') return; if(canOpen('final', false)){ firstVisit = 'on'; routine = false; openActivity('final'); } else if(n++ < 80) setTimeout(go, 250); };
