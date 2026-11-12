@@ -17,7 +17,7 @@ GUIDES = [
       desc='What chess imbalances are (material, pawns, space, activity, king safety, threats), how to weigh them, and a free exercise to practise reading them on master games and your own games.',
       lead="Every position is a set of differences between the two sides. Strong players spot the few that decide the game, and plan around them: an idea made famous by Jeremy Silman.",
       alt='Imbalance reading review on a 1929 World Championship position: Activity and Pawns to White right, Material given to Black while balanced, Space to Black missed',
-      caption="Activity and Pawns to White: right. Material was given to Black, but it's balanced: Space, Black's edge, was the one to pick.",
+      caption="Activity and Pawns to White: right. Material was given to Black, but it's balanced: Space was the one to pick.",
       body="""
 <h2>The six imbalances</h2>
 <ul>
@@ -39,7 +39,7 @@ GUIDES = [
       desc="Ce que sont les déséquilibres aux échecs (matériel, pions, espace, activité, sécurité du roi, menaces), comment les peser, et un exercice gratuit pour s'entraîner à les lire sur des parties de maîtres et vos propres parties.",
       lead="Chaque position est un ensemble de différences entre les deux camps. Les joueurs forts repèrent les quelques-unes qui décident de la partie, et bâtissent leur plan autour : une idée rendue célèbre par Jeremy Silman.",
       alt="Correction de Lecture des déséquilibres sur une position du championnat du monde 1929 : Activité et Pions aux Blancs, justes ; Matériel donné aux Noirs alors qu'il est équilibré ; Espace aux Noirs manqué",
-      caption="Activité et Pions aux Blancs : juste. Le Matériel a été donné aux Noirs, mais il est équilibré : c'est l'Espace, l'avantage des Noirs, qu'il fallait choisir.",
+      caption="Activité et Pions aux Blancs : juste. Le Matériel a été donné aux Noirs, mais il est équilibré : c'est l'Espace qu'il fallait choisir.",
       body="""
 <h2>Les six déséquilibres</h2>
 <ul>
