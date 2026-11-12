@@ -142,6 +142,18 @@
   .card.xp-entry:hover{filter:brightness(1.06);}
   .card.xp-entry .card-glyph, .card.xp-entry .card-desc{color:var(--on-accent);} .card.xp-entry .card-desc{opacity:.8;}
   .card.xp-entry .title-badge{color:var(--on-accent); border-color:var(--on-accent);}
+  /* Rush (beta): its page (menu, countdown, end), and in a run the clock and score, and a chip per position */
+  .rush-page{display:flex; flex-direction:column; gap:14px; margin-top:12px;} .rush-lead{color:var(--text-mute); margin:4px 0 0;} .rush-soon{margin:0;}
+  .rush-mid{text-align:center; padding:28px 0 8px;} .rush-mid p{margin:4px 0; color:var(--text-mute);}
+  .rush-big{font-size:4.2rem; font-weight:700; color:var(--text) !important; line-height:1.1; font-variant-numeric:tabular-nums;} .rush-big.rush-dim{color:var(--text-mute) !important;}
+  .rush-sub b{color:var(--text);}
+  .rush-list{display:flex; flex-direction:column; border-top:1px solid var(--border);} .rush-row{display:grid; grid-template-columns:28px 1fr auto; gap:10px; align-items:center; padding:8px 2px; border-bottom:1px solid var(--border);}
+  .rush-row .num{color:var(--text-mute); text-align:center;} .rush-what small{color:var(--text-mute);}
+  .rush-top{display:flex; justify-content:space-between; align-items:baseline;} .rush-clock{font-variant-numeric:tabular-nums; font-weight:700; color:var(--text);} .rush-score{color:var(--text-mute);} .rush-score b{color:var(--text);}
+  .rush-bar .rush-chips{display:flex; flex-wrap:wrap; gap:6px; align-content:flex-start; min-height:2.6em;} .rush-none{color:var(--text-mute);}
+  .rush-chip{display:inline-block; min-width:2.2em; text-align:center; padding:1px 7px; border-radius:999px; font-size:.85rem; font-weight:700; color:#12161B; font-variant-numeric:tabular-nums;}
+  .rush-chip.hi{background:var(--best-green);} .rush-chip.mid{background:var(--dubious);} .rush-chip.lo{background:var(--bad); color:#fff;}
+  .rush-chip.new{animation:rowIn .5s ease-out both;}
   .card-glyph{font-size:1.9rem; line-height:1; width:36px; text-align:center; color:var(--accent);}
   .act-icon{width:1em; height:1em; vertical-align:-0.15em;}
   .card-title{display:block; font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
@@ -1987,7 +1999,7 @@ function pumpEngineQueue(){
   // An exercise's own search goes to depth LIVE_DEPTH (or stops at LIVE_CAP_MS); background work and the
   // position finders give a time instead (job.movetime).
   // Once its review is open: 3 s at most; Candidate moves' top 5 (its first search) only the quick 1.2 s, its picks' search next.
-  job.cap = job.movetime || (fen===reviewFen ? (screen==='candidates' && !searchmoves ? (shippedTop(curPos).length ? 200 : OWN.checkMs) : REVIEW_CAP_MS)
+  job.cap = job.movetime || (rush && rush.phase!=='end' && rush.fens.has(fen) ? RUSH_SEARCH_MS : fen===reviewFen ? (screen==='candidates' && !searchmoves ? (shippedTop(curPos).length ? 200 : OWN.checkMs) : REVIEW_CAP_MS)
                              : fen===pickFen && !job.four ? Math.round(Math.max(500, REVIEW_CAP_MS - (performance.now() - pickAt))) : LIVE_CAP_MS);
   sfWorker.postMessage((job.movetime ? 'go movetime '+job.movetime : 'go depth '+LIVE_DEPTH+' movetime '+job.cap)+(searchmoves ? ' searchmoves '+searchmoves : ''));
   sfStartedAt = performance.now();
@@ -2444,9 +2456,9 @@ let replayMode = false, replayQueue = [], replayIdx = 0;
 let sharedOpen = null;   // a position opened from a shared link: its exercise (played as a one-position replay; then on in that exercise)
 // Each source of positions (Masters, My games, Both) has its own tracks, so switching source and
 // back returns you to exactly where you were in each.
-const ctx = (a, r = routine) => testMode ? 't-' + a : replayMode ? 'x-' + a : (r ? 'r-' : '') + a + (source==='masters' ? '' : '@' + source);   // the open track for exercise `a`
+const ctx = (a, r = routine) => testMode ? 't-' + a : replayMode ? 'x-' + a : rushMode ? 'z-' + a : (r ? 'r-' : '') + a + (source==='masters' ? '' : '@' + source);   // the open track for exercise `a`
 const orders = {}, seqBy = {}, store = {};
-const isTest = t=>t.startsWith('t-') || t.startsWith('x-');   // fixed tracks: test positions, and the replay ('x-')
+const isTest = t=>t.startsWith('t-') || t.startsWith('x-') || t.startsWith('z-');   // fixed tracks: test positions, the replay ('x-'), a rush ('z-')
 // Where positions come from: the master games built into the app, your own games, or both.
 const SOURCES = { masters:'Masters', mine:'My games', both:'Both' };
 let source = 'masters';
@@ -2914,7 +2926,7 @@ function finalEval(p, moves){
 function header(title){
   return `<div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to exercises">${BACK_ARROW}</button>
-      <h1>${routine ? `Routine <span class="title-badge">${title}</span>` : testMode ? `Test <span class="title-badge">${title}</span>` : replayMode ? `${sharedOpen ? 'Shared' : 'Replay'} <span class="title-badge">${title}</span>` : title}</h1>
+      <h1>${rushMode ? `Rush <span class="title-badge">${title}</span>` : routine ? `Routine <span class="title-badge">${title}</span>` : testMode ? `Test <span class="title-badge">${title}</span>` : replayMode ? `${sharedOpen ? 'Shared' : 'Replay'} <span class="title-badge">${title}</span>` : title}</h1>
       <button class="icon-btn" id="helpBtn" aria-label="How this exercise works">?</button>
     </div>`;
 }
@@ -2958,6 +2970,7 @@ function playerLine(where){
 }
 function wireCommon(helpKey, checked){
   document.getElementById('homeBtn').onclick = ()=>{
+    if(rushMode){ rushQuit(); return; }
     if(testMode){ testMode = false; screen = 'tests'; selSquare = null; promoPending = null; render(); return; }
     if(replayMode){ replayMode = false; screen = sharedOpen ? 'home' : 'account'; sharedOpen = null; selSquare = null; promoPending = null; render(); return; }
     if(routine){ const s = st(screen); routine = false; setRoutineNext(s.checked ? routineAfter(screen) : screen); }
@@ -3052,6 +3065,106 @@ function lichessUrl(p){
 }
 // A review's buttons on the left, icons only: the position on Lichess, in the Strategy explorer (the game's moves around
 // it), and a link to it to share
+// ================= Rush (beta) =================
+// 3 minutes of positions, in one exercise (for now Move selection). The run's score is its average accuracy (so
+// going fast pays only if the answers hold up); each exercise keeps its best (profile.rushBest). Positions come from the master
+// games, prepared before they're shown (the four moves and their evaluations), so the clock never runs while the
+// engine works: it stops until the next one is ready. Nothing is recorded: averages, the routine, missed and
+// played positions are untouched. Its own track ('z-'): see ctx.
+const RUSH_MS = 180000, RUSH_AHEAD = 3, RUSH_COUNT_MS = 3000, RUSH_SEARCH_MS = 2000, RUSH_ACTS = ['final'];   // (its searches: 2 s each, so positions keep up)
+let rushMode = false, rush = null;   // rush: { a, phase: 'prep' | 'count' | 'run' | 'wait' | 'end', left, at, score, items, used, queue }
+const rushBest = a=>(profile.rushBest || {})[a];
+const rushAvg = r=>r.items.length ? Math.round(r.items.reduce((t, x)=>t + x.pts, 0) / r.items.length) : null;   // (the run's score)
+const rushFmt = ms=>{ const t = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+const rushLeft = ()=>rush ? (rush.phase==='run' ? rush.left - (performance.now() - rush.at) : rush.left) : 0;
+function rushStart(a){
+  rush = { a, phase:'prep', left: RUSH_MS, at: null, score: null, items: [], used: new Set(), queue: [], started: new Set(), fens: new Set(), countAt: null, best0: rushBest(a) };
+  const t = 'z-' + a; orders[t] = []; seqBy[t] = 0; store[t] = {};
+  rushMode = false; screen = 'rush'; rushFill(); render(); rushTick();
+}
+function rushFill(){
+  const pool = POOLS[rush.a];
+  while(rush.queue.length < RUSH_AHEAD && rush.used.size < pool.length){
+    const p = pool[Math.floor(Math.random() * pool.length)]; if(rush.used.has(p.key)) continue;
+    rush.used.add(p.key); rush.queue.push(p); rush.fens.add(p.fen);
+  }
+  // prepared in order, one at a time: the next starts once the one before is ready (all at once, the last asked
+  // would go first)
+  for(const p of rush.queue){ if(!rush.started.has(p.key)){ rush.started.add(p.key); prepareFinal(p, 0, 'front'); break; } if(rushState(p)==='wait') break; }
+}
+// ready: its four moves and their evaluations in; a position the engine couldn't do is dropped
+function rushState(p){
+  const mv = finalMoves(p); if(evalFailed(mv)) return 'failed'; if(!Array.isArray(mv)) return 'wait';
+  const ev = finalEval(p, mv); return evalFailed(ev) ? 'failed' : ev ? 'ready' : 'wait';
+}
+function rushHead(){ while(rush.queue.length && rushState(rush.queue[0])==='failed') rush.queue.shift(); rushFill(); return rush.queue[0] && rushState(rush.queue[0])==='ready' ? rush.queue[0] : null; }
+function rushShow(p){
+  rush.queue.shift(); rushFill();
+  const t = 'z-' + rush.a; orders[t].push(p); seqBy[t] = orders[t].length - 1;
+  rushMode = true; screen = rush.a; selSquare = null; promoPending = null; helpVisible = false; render();
+}
+// After Check: its points, then the next position at once (or, not ready yet, the clock stops until it is)
+function rushAnswered(p, acc){
+  if(!rush || rush.phase!=='run') return;
+  const pts = Math.round(acc || 0);
+  rush.items.push({ key: p.key, title: p.title, year: p.year, pts }); rush.score = rushAvg(rush); rush.newAt = performance.now();
+  const next = rushHead();
+  if(next) rushShow(next);
+  else { rush.left = rushLeft(); rush.phase = 'wait'; rushMode = false; screen = 'rush'; render(); }
+}
+function rushEnd(){
+  rush.left = 0; rush.phase = 'end'; rushMode = false; screen = 'rush';
+  rush.score = rushAvg(rush);
+  if(rush.items.length && (rush.best0==null || rush.score > rush.best0)){ profile.rushBest = { ...(profile.rushBest || {}), [rush.a]: rush.score }; saveProfile(); rush.newBest = true; }
+  render();
+}
+function rushQuit(){ rushMode = false; rush = null; screen = 'rush'; render(); }   // (a run left before its end: no score)
+function rushTick(){
+  const r = rush; if(!r || r.phase==='end') return;
+  const now = performance.now();
+  rushFill();
+  if(r.phase==='prep' && rushHead()){ r.phase = 'count'; r.countAt = now; render(); }
+  else if(r.phase==='count' && now - r.countAt >= RUSH_COUNT_MS){ const p = rushHead(); if(p){ r.phase = 'run'; r.at = now; rushShow(p); } }
+  else if(r.phase==='wait'){ const p = rushHead(); if(p){ r.phase = 'run'; r.at = now; rushShow(p); } }
+  else if(r.phase==='run' && rushLeft() <= 0) return rushEnd();
+  // the clock and the countdown, without redrawing the page
+  const c = document.getElementById('rushClock'); if(c) c.textContent = rushFmt(rushLeft());
+  const n = document.getElementById('rushCount'); if(n && r.phase==='count') n.textContent = String(Math.max(1, Math.ceil((RUSH_COUNT_MS - (now - r.countAt)) / 1000)));
+  setTimeout(rushTick, 100);
+}
+const rushPtsCls = n=>n >= 80 ? 'hi' : n >= 50 ? 'mid' : 'lo';
+// Above the board during a run: a chip per position played, the last one fading in
+function rushBar(){
+  const it = rush.items.slice(-12), el = rush.newAt==null ? 1e9 : performance.now() - rush.newAt;
+  return `<div class="posbar rush-bar"><div class="rush-chips">${it.map((x, i)=>`<span class="rush-chip ${rushPtsCls(x.pts)}${i===it.length-1 && el < 600 ? ' new' : ''}">${x.pts}</span>`).join('') || '<span class="rush-none">Rank the moves, best first, then Check.</span>'}</div></div>`;
+}
+const rushTop = ()=>`<p class="prompt top rush-top"><span class="rush-clock" id="rushClock">${rushFmt(rushLeft())}</span><span class="rush-score">${rush.items.length ? `Average <b>${rush.score}%</b>` : 'Average —'}</span></p>`;
+function renderRush(){
+  const app = document.getElementById('app'), r = rush, name = a=>ACT_NAMES[a];
+  const top = `<div class="title-row"><button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button><h1>Rush${r ? ` <span class="title-badge">${name(r.a)}</span>` : ''}</h1><span></span></div>`;
+  let body;
+  if(!r) body = `<p class="rush-lead">3 minutes of positions, one after another. Your score: your average accuracy.</p>
+    <div class="cards">${RUSH_ACTS.map(a=>`<button class="card" data-rush="${a}"><span class="card-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>
+      <span><span class="card-title">${name(a)}</span><span class="card-desc">${rushBest(a)!=null ? `Best: <b>${rushBest(a)}%</b>` : 'No run yet'}</span></span></button>`).join('')}</div>
+    <p class="hint rush-soon">Coming next: the other exercises, and a mixed run.</p>`;
+  else if(r.phase==='prep') body = `<div class="rush-mid"><p class="rush-big rush-dim">…</p><p>Preparing the first positions</p></div>`;
+  else if(r.phase==='count') body = `<div class="rush-mid"><p class="rush-big" id="rushCount">${Math.max(1, Math.ceil((RUSH_COUNT_MS - (performance.now() - r.countAt)) / 1000))}</p><p>3 minutes. Rank the moves, best first.</p></div>`;
+  else if(r.phase==='wait') body = `<div class="rush-mid"><p class="rush-big rush-dim" id="rushClock">${rushFmt(r.left)}</p><p>Clock stopped: preparing the next position</p><p class="rush-sub">${r.items.length ? `Average <b>${r.score}%</b> so far` : ''}</p></div>`;
+  else {
+    const best = rushBest(r.a);
+    body = `<div class="rush-mid rush-end"><p class="rush-big">${r.items.length ? r.score + '%' : '—'}</p><p>average accuracy, over ${r.items.length} position${r.items.length===1 ? '' : 's'}</p>
+      <p class="rush-sub">${r.newBest ? (r.best0==null ? 'Your first run.' : `New best! (was ${r.best0}%)`) : best!=null ? `Best: <b>${best}%</b>` : ''}</p></div>
+      <div class="rush-list">${r.items.map((x, i)=>`<div class="rush-row"><span class="num">${i + 1}</span><span class="rush-what">${escHtml(x.title || '')}${x.year ? ` <small>${escHtml(String(x.year))}</small>` : ''}</span><span class="rush-chip ${rushPtsCls(x.pts)}">${x.pts}</span></div>`).join('')}</div>
+      <div class="actions-row split rush-actions"><button class="btn secondary" id="rushMenu">Done</button><button class="btn" id="rushAgain">Play again</button></div>`;
+  }
+  app.innerHTML = top + `<div class="rush-page">${body}</div>`;
+  const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
+  on('homeBtn', ()=>{ if(r && r.phase!=='end'){ rush = null; render(); } else { rush = null; screen = 'home'; render(); } });
+  on('rushMenu', ()=>{ rush = null; render(); });
+  on('rushAgain', ()=>rushStart(r.a));
+  document.querySelectorAll('[data-rush]').forEach(b=>b.onclick = ()=>rushStart(b.dataset.rush));
+}
+
 // A first visit (nothing played in this browser, not logged in, no games, no link to a position) opens straight
 // on Move selection, the most direct exercise; its review then offers the others in place of the Lichess, explorer
 // and share buttons, while Next position goes on with Move selection. Over once the player goes anywhere else.
@@ -4313,6 +4426,7 @@ const ALL_ACTS = ['imbalances', 'analysis', 'candidates', 'final', 'planq'];   /
 const zeroCounts = ()=>Object.fromEntries(ALL_ACTS.map(a=>[a, 0]));
 // The exercises' icons (line drawings in the text colour): a balance, a gauge, a light bulb, sorting best first.
 const actIcon = d=>`<svg class="act-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const RUSH_ICON = actIcon('<circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M10 2.5h4M12 2.5V6M18.5 6.5l1.5-1.5"/>');
 const ACT_GLYPHS = {
   imbalances: actIcon('<path d="M12 4v16M8 20h8M5 7h14M12 4.5l-.01 0"/><path d="M5 7l-3 6a3 3 0 0 0 6 0z"/><path d="M19 7l-3 6a3 3 0 0 0 6 0z"/>'),
   analysis:   actIcon('<path d="M3.5 17a8.5 8.5 0 1 1 17 0"/><path d="M12 17l4.5-5"/><circle cx="12" cy="17" r="1.3"/><path d="M6 13.5l1 .6M12 8.5v1.2M18 13.5l-1 .6"/>'),
@@ -4585,6 +4699,7 @@ async function loadProfileMeta(db, id){
     if(p && p.joinedAt) profile.joinedAt = profile.joinedAt ? Math.min(profile.joinedAt, p.joinedAt) : p.joinedAt;
     if(p && p.accResetAt) profile.accResetAt = Math.max(profile.accResetAt || 0, p.accResetAt);   // (beta resets, the latest wins)
     if(p && p.timeResetAt) profile.timeResetAt = Math.max(profile.timeResetAt || 0, p.timeResetAt);
+    if(p && p.rushBest) for(const [a, n] of Object.entries(p.rushBest)) if(typeof n==='number') profile.rushBest = { ...(profile.rushBest || {}), [a]: Math.max(n, (profile.rushBest || {})[a] || 0) };   // (each run's best, the higher wins)
     if(p && p.onboard) profile.onboard = { ...(profile.onboard || {}), ...p.onboard };   // the onboarding drawn on another device wins
     if(r && Array.isArray(r.items)) r.items.forEach(x=>{ if(!legacyMissed.some(y=>y.key===x.key && y.a===x.a)) legacyMissed.push(x); });
     metaCol = col;   // written to only after a successful read
@@ -4642,6 +4757,7 @@ function levelNow(a){
 // review shows: the level after this position and how much it moved.
 function recordResult(s, a, acc){
   if(s.rec || acc==null) return;
+  if(rushMode){ s.rec = { rush: true }; return; }   // (a rush's positions count in its run only)
   markPlayed(pos().key);
   if(testMode){ s.rec = { test:true }; return; }   // test positions never count
   const before = levelNow(a);
@@ -4985,6 +5101,9 @@ function renderHome(){
           <span><span class="card-title">${ACT_NAMES[a]}</span><span class="card-desc">${desc}</span></span>
           <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small></span>
         </button>`; }).join('')}
+      ${BETA_SITE ? `<button class="card" id="rushOpen"><span class="card-glyph" aria-hidden="true">${RUSH_ICON}</span>
+          <span><span class="card-title">Rush</span><span class="card-desc">3 minutes of positions: your average accuracy.</span></span>
+          <span class="card-level${dataCls()}">${RUSH_ACTS.some(a=>rushBest(a)!=null) ? `<b>${Math.max(...RUSH_ACTS.map(a=>rushBest(a) || 0))}%</b>` : '<b>—</b>'}<small>Best</small></span></button>` : ''}
       <button class="card xp-entry" id="xpOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.explorer}</span>
           <span><span class="card-title">Strategy explorer</span><span class="card-desc">Check imbalances and plans as you play.</span></span></button>
     </div>
@@ -4996,6 +5115,7 @@ function renderHome(){
   app.querySelectorAll('.card[data-go]').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
   document.getElementById('accountBtn').onclick = ()=>{ screen = 'account'; render(); };
   const xpOpen = document.getElementById('xpOpen'); if(xpOpen) xpOpen.onclick = ()=>{ screen = 'explorer'; render(); };
+  const rushOpen = document.getElementById('rushOpen'); if(rushOpen) rushOpen.onclick = ()=>{ rush = null; screen = 'rush'; render(); };
   document.getElementById('routineBtn').onclick = startRoutine;
   prefetchHome();
   progressJustLoaded = false;
@@ -6353,6 +6473,11 @@ function renderFinal(){
   const failed = evalFailed(ev0), ev = failed ? null : ev0;
   if(!s.order || s.order.length!==moves.length || !moves.every(m=>s.order.includes(m.id))) s.order = moves.map(m=>m.id);
   const ordered = s.order.map(id=>moves.find(m=>m.id===id));
+  if(rushMode && s.checked){   // a rush: its points, then the next position (its evaluation is in: rushState)
+    if(!s.rushDone){ s.rushDone = true; const cp = {}; moves.forEach(m=>{ const o = moveOutcome(p.fen, m.uci, ev); cp[m.id] = o ? o.moverCp : null; });
+      const acc = ev ? rankAccuracyPct(s.order, cp) : 0; setTimeout(()=>rushAnswered(p, acc), 0); }
+    return;
+  }
 
   if(s.checked){
     const rows = ordered.map((m,i)=>({ ...m, num:String(i+1), outcome: moveOutcome(p.fen, m.uci, ev) }));
@@ -6422,12 +6547,12 @@ function renderFinal(){
 
   app.innerHTML = `
     ${header('Move selection')}
-    ${posBar()}
+    ${rushMode ? rushBar() : posBar()}
     ${boardHtml()}
     ${stackedPanel(`
-      <p class="prompt top" id="finalHint">Order the moves, best first.</p>
+      ${rushMode ? rushTop() : `<p class="prompt top" id="finalHint">Order the moves, best first.</p>`}
       <div id="ranked"></div>
-      <div class="actions-row" id="finalCheckRow"><button class="btn" id="check" ${sfState==='error' || (!s.swapped && hintsOn('final')) ? 'disabled' : ''}>Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
+      <div class="actions-row" id="finalCheckRow"><button class="btn" id="check" ${sfState==='error' || (!rushMode && !s.swapped && hintsOn('final')) ? 'disabled' : ''}>Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), bs, p.last);
   drawArrows(document.getElementById('arrows'), ordered, 'ar_');
   const rankedEl = document.getElementById('ranked');
@@ -6546,7 +6671,7 @@ function pageDepth(){
   if(screen==='explorer' && explorer && explorer.ret){ const s0 = screen, x0 = explorer; screen = x0.ret.screen; explorer = x0.ret.saved; try{ return pageDepth() + 1; } finally { screen = s0; explorer = x0; } }
   let d = ['settings', 'metrics', 'tests'].includes(screen) ? 2
         : screen==='support' ? (supportFrom==='home' ? 1 : 2)
-        : ACTIVITIES.includes(screen) ? (testMode ? 3 : replayMode ? 2 : 1) : 1;
+        : ACTIVITIES.includes(screen) ? (testMode ? 3 : replayMode || rushMode ? 2 : 1) : 1;
   if(aspPicker) d++;
   return d;
 }
@@ -8585,6 +8710,7 @@ function renderScreen(){
   else if(screen==='metrics') renderMetrics();
   else if(screen==='explorer') renderExplorer();
   else if(screen==='planq') renderPlanq();
+  else if(screen==='rush') renderRush();
   else if(screen==='imbalances') renderImbalances();
   else if(screen==='candidates') renderCandidates();
   else renderFinal();
