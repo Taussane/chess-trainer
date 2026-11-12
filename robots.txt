@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+# Not pages: names the app uses to reach its server or to file your data, which crawlers read in its code
+Disallow: /api/
+Disallow: /trainer/
 
 Sitemap: https://chessstrategy.org/sitemap.xml
