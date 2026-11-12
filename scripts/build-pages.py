@@ -137,15 +137,15 @@ GUIDES = [
     en=dict(slug='move-selection', name='Move selection', sub='How to choose the best move',
       title='How to choose the best move in chess',
       desc='How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own mistakes.',
-      lead="Several moves look fine; only one is best. Once <a href=\"../candidate-moves/\">Candidate moves</a> has given you a few serious options, the last step is choosing between them, and that's where many games are lost.",
+      lead="Several moves may look fine, but only one is best. Once <a href=\"../candidate-moves/\">Candidate moves</a> has given you a few serious options, the last step is choosing between them, and that's where many games are lost.",
       alt='Move selection review on a 1963 World Championship position: four moves ranked, the game move Nxe4 best, two dubious ones',
       caption='The game move Nxe4 is best, Qh2 good, Rh2 and Qg2 dubious.',
       body="""
 <h2>How to choose</h2>
 <ul>
-  <li><strong>Check each move for a blunder</strong>: look at your opponent's checks, captures and threats after it. A move that drops material or exposes your king goes last, however active it looks.</li>
-  <li><strong>Compare the positions you reach</strong>: prefer the move that keeps or grows your most decisive imbalances, as your <a href="../chess-plans/">plan</a> requires.</li>
-  <li><strong>When two moves look equal</strong>, pick the one you understand better: a clear position you know how to play is often worth more than a murky one.</li>
+  <li><strong>Check each move for a blunder</strong>: look at your opponent's checks, captures and threats after it. A move that drops material or exposes your king generally goes last, however active it looks.</li>
+  <li><strong>Compare the positions you reach</strong>: prefer the move that makes the most of your advantages, or reduces your opponent's, as your <a href="../chess-plans/">plan</a> requires.</li>
+  <li><strong>When two moves look equal</strong>, don't spend too long on them: if they really are close in strength, the choice won't change much.</li>
 </ul>
 
 <h2>The exercise</h2>
@@ -155,15 +155,15 @@ GUIDES = [
     fr=dict(slug='choisir-le-meilleur-coup', name='Choix du coup', sub='Comment choisir le meilleur coup',
       title='Comment choisir le meilleur coup aux échecs',
       desc="Comment choisir entre des coups qui ont l'air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres erreurs.",
-      lead="Plusieurs coups ont l'air bien ; un seul est le meilleur. Une fois que les <a href=\"../coups-candidats/\">Coups candidats</a> vous ont donné quelques options sérieuses, reste à choisir entre elles, et c'est là que beaucoup de parties se perdent.",
+      lead="Plusieurs coups peuvent avoir l'air bien, mais un seul est le meilleur. Une fois que les <a href=\"../coups-candidats/\">Coups candidats</a> vous ont donné quelques options sérieuses, reste à choisir entre elles, et c'est là que beaucoup de parties se perdent.",
       alt='Correction de Choix du coup sur une position du championnat du monde 2023 : quatre coups classés, le coup joué Bg3 est le meilleur',
       caption='Le coup joué, Bg3, est le meilleur ; Bxd5+ est douteux, Bc2 une erreur et Rxc4 une gaffe.',
       body="""
 <h2>Comment choisir</h2>
 <ul>
-  <li><strong>Vérifiez chaque coup contre la gaffe</strong> : regardez les échecs, prises et menaces de l'adversaire après lui. Un coup qui perd du matériel ou expose votre roi passe en dernier, aussi actif qu'il paraisse.</li>
-  <li><strong>Comparez les positions obtenues</strong> : préférez le coup qui garde ou renforce vos déséquilibres les plus décisifs, comme le demande votre <a href="../trouver-un-plan-aux-echecs/">plan</a>.</li>
-  <li><strong>Quand deux coups se valent</strong>, prenez celui que vous comprenez le mieux : une position claire que vous savez jouer vaut souvent mieux qu'une position confuse.</li>
+  <li><strong>Vérifiez chaque coup contre la gaffe</strong> : regardez les échecs, prises et menaces de l'adversaire après lui. Un coup qui perd du matériel ou expose votre roi passe généralement en dernier, aussi actif qu'il paraisse.</li>
+  <li><strong>Comparez les positions obtenues</strong> : préférez le coup qui tire le meilleur de vos avantages, ou réduit ceux de l'adversaire, comme le demande votre <a href="../trouver-un-plan-aux-echecs/">plan</a>.</li>
+  <li><strong>Quand deux coups se valent</strong>, n'y passez pas trop de temps : s'ils sont vraiment proches, le choix ne changera pas grand-chose.</li>
 </ul>
 
 <h2>L'exercice</h2>
