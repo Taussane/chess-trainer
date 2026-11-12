@@ -3057,7 +3057,11 @@ let firstVisit = null;
 function startFirstVisit(){
   const q = new URLSearchParams(location.search);
   if(results.length || signedIn() || myGames.length || q.has('s') || q.has('play') || screen!=='home') return;
-  // (automated test browsers start on the home screen, as the tests expect, unless one asks for the first visit)
+  // Search engines' crawlers come as new visitors every time: they keep the home screen (the exercises, their
+  // descriptions, the links to the FAQ), which every visitor reaches in one tap anyway. Automated test browsers too,
+  // as the tests expect, unless one asks for the first visit.
+  if(/bot\b|bot\/|crawl|spider|slurp|mediapartners|google-inspectiontool|google-extended|lighthouse|headlesschrome|bingpreview|facebookexternalhit|embedly|quora link preview|yandex|baidu|duckduck/i.test(navigator.userAgent || '')
+     && !localStorage.getItem('cst.testFirstVisit')) return;
   try{ if(navigator.webdriver && !localStorage.getItem('cst.testFirstVisit')) return; }catch(e){}
   let n = 0;
   const go = ()=>{ if(screen!=='home') return; if(canOpen('final', false)){ firstVisit = 'on'; routine = false; openActivity('final'); } else if(n++ < 80) setTimeout(go, 250); };

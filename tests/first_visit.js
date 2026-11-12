@@ -1,7 +1,7 @@
 // tests/first_visit.js (node; needs playwright and the engine): a first visit (nothing played, not logged in, no link)
 // opens straight on Move selection; its review offers "All exercises" in place of the Lichess, explorer and share
 // buttons, beside Next position; Next goes on with Move selection, All exercises goes home. A returning visitor (a
-// result in this browser) starts on the home screen.
+// result in this browser) starts on the home screen, and so does a search engine's crawler.
 const { chromium } = require('playwright');
 const path = require('path'), fs = require('fs'), { spawn } = require('child_process');
 const server = spawn('python3', ['-m', 'http.server', '8797'], { cwd: path.join(__dirname, '..'), stdio: 'ignore' });
@@ -34,6 +34,12 @@ const fail = []; const check = (what, ok, got) => { console.log((ok ? '' : 'FAIL
   // a returning visitor: the home screen, and its reviews keep their Lichess, explorer and share buttons
   await p.goto('http://localhost:8797/'); await p.waitForTimeout(2500);
   check('a returning visitor starts at home', await p.evaluate(() => screen === 'home' && !firstVisit && results.length > 0), await p.evaluate(() => [screen, firstVisit, results.length]));
+  // a search engine's crawler (a new visitor every time) keeps the home screen
+  const bot = await b.newPage({ viewport: { width: 390, height: 844 }, userAgent: 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' });
+  await bot.addInitScript(() => { try { localStorage.setItem('cst.testFirstVisit', '1'); } catch (e) {} });
+  await bot.route('**/*', r => { const u = r.request().url(); if (u.startsWith('http://localhost')) return r.continue(); if (u.includes('chess.js')) return r.fulfill({ body: cj, contentType: 'application/javascript' }); return r.abort(); });
+  await bot.goto('http://localhost:8797/'); await bot.waitForTimeout(5000);
+  check('Googlebot keeps the home screen', await bot.evaluate(() => screen === 'home' && !firstVisit), await bot.evaluate(() => [screen, firstVisit]));
   await b.close(); server.kill();
   console.log(fail.length ? 'FAILED: ' + fail.join('; ') : 'ok'); process.exit(fail.length ? 1 : 0);
 })();
