@@ -354,8 +354,8 @@ def build():
     cards = ''.join(f'<a class="card" href="{g[lang]["slug"]}/"><strong>{g[lang]["name"]}</strong><span>{html.escape(g[lang].get("sub", g[lang]["title"]))}</span></a>' for g in GUIDES)
     faq = ''.join(f'<h2 class="faq-h">{html.escape(sec)}</h2>' + ''.join(f'<details><summary>{html.escape(q)}</summary><div class="a">{a}</div></details>' for q, a in qs) for sec, qs in FAQ[lang])
     hub = fix(f"""<h1>{w['faq']}</h1>
+<p class="mute">{w['intro']}</p>
 <h2 class="faq-h">{w['exercises']}</h2>
-<p>{w['intro']}</p>
 <div class="cards">{cards}</div>
 {faq}""")
     plain = lambda h: re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', ' ', fix(h)))).strip()
