@@ -61,14 +61,14 @@ GUIDES = [
     en=dict(slug='chess-plans', name='Plan finder', sub='How to find a general plan in chess',
       title='How to find a plan in chess',
       desc="How to make a plan in chess: check what's urgent, judge who is better, then decide whether to trade and whether to attack or improve. A free exercise on master positions and your own games.",
-      lead="\"A bad plan is better than no plan at all\", as the old saying goes (often credited to Chigorin). A plan doesn't give you the move: it gives you a direction, and it comes from four decisions, made in order.",
+      lead="\"A bad plan is better than no plan at all\", as the old saying goes (often credited to Chigorin). A plan gives you a direction to search for good moves, and helps you take decisions that are more likely to be good. Four questions, in order, lead to one.",
       alt='Plan finder, first question on a 1935 World Championship position: anything urgent for White, and who is better',
       caption='First question: is anything urgent, and who is better?',
       body="""
 <h2>Four questions</h2>
 <ol>
   <li><strong>Anything urgent?</strong> Checks, captures and threats, for both sides: something to win, or to defend, like a pawn or the exchange. (Positions where a piece or more is at stake are left out: there, the threat decides the move.)</li>
-  <li><strong>Who's better?</strong> The imbalances, weighed together, tell you: that's what <a href="../chess-imbalances/">Imbalance reading</a> trains. Balanced means the engine within half a pawn.</li>
+  <li><strong>Who's better?</strong> Weighing the imbalances is a good way to gauge it (see <a href="../chess-imbalances/">Imbalance reading</a>), and the most decisive ones should guide the plan, as the next two questions show. Balanced means the engine within half a pawn.</li>
   <li><strong>Trade, or keep pieces?</strong> Trades help the side up material, with better pawns, or short of space. Keep pieces with better pieces, more space, or against a weak king.</li>
   <li><strong>Attack, or improve?</strong> An edge that fades (active pieces, a development lead, a weak king) calls for opening up and attacking. One that lasts (material, pawns, space) leaves time to improve.</li>
 </ol>
@@ -80,14 +80,14 @@ GUIDES = [
     fr=dict(slug='trouver-un-plan-aux-echecs', name='Recherche du plan', sub='Comment trouver un plan général aux échecs',
       title='Comment trouver un plan aux échecs',
       desc="Comment faire un plan aux échecs : voir ce qui est urgent, juger qui est mieux, puis décider s'il faut échanger, attaquer ou améliorer. Un exercice gratuit sur des positions de maîtres et vos propres parties.",
-      lead="« Un mauvais plan vaut mieux que pas de plan du tout », dit le vieil adage (souvent attribué à Tchigorine). Un plan ne donne pas le coup : il donne une direction, et il naît de quatre décisions, prises dans l'ordre.",
+      lead="« Un mauvais plan vaut mieux que pas de plan du tout », dit le vieil adage (souvent attribué à Tchigorine). Un plan vous donne une direction pour chercher de bons coups, et vous aide à prendre des décisions qui ont plus de chances d'être bonnes. Quatre questions, dans l'ordre, y mènent.",
       alt='Recherche du plan, première question sur une position du championnat du monde 1978 : une urgence pour les Blancs, et qui est mieux',
       caption='Première question : y a-t-il une urgence, et qui est mieux ?',
       body="""
 <h2>Quatre questions</h2>
 <ol>
   <li><strong>Une urgence ?</strong> Échecs, prises et menaces, des deux côtés : quelque chose à gagner, ou à défendre, comme un pion ou la qualité. (Les positions où une pièce ou plus est en jeu sont écartées : là, c'est la menace qui décide du coup.)</li>
-  <li><strong>Qui est mieux ?</strong> Les déséquilibres, pesés ensemble, le disent : c'est ce qu'entraîne la <a href="../desequilibres-aux-echecs/">Lecture des déséquilibres</a>. Équilibré veut dire le moteur à moins d'un demi-pion.</li>
+  <li><strong>Qui est mieux ?</strong> Peser les déséquilibres est un bon moyen d'en juger (voir la <a href="../desequilibres-aux-echecs/">Lecture des déséquilibres</a>), et les plus décisifs devraient guider le plan, comme le montrent les deux questions suivantes. Équilibré veut dire le moteur à moins d'un demi-pion.</li>
   <li><strong>Échanger, ou garder les pièces ?</strong> Les échanges aident le camp qui a plus de matériel, de meilleurs pions, ou qui manque d'espace. Gardez les pièces avec de meilleures pièces, plus d'espace, ou face à un roi faible.</li>
   <li><strong>Attaquer, ou améliorer ?</strong> Un avantage qui s'efface (pièces actives, avance de développement, roi faible) appelle à ouvrir et attaquer. Un avantage qui dure (matériel, pions, espace) laisse le temps d'améliorer.</li>
 </ol>
