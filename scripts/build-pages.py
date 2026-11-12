@@ -103,7 +103,7 @@ GUIDES = [
       desc='What candidate moves are, how to find them (checks, captures, threats, then the plan), and a free exercise grading your picks with Stockfish on master games and your own games.',
       lead="Most mistakes come from playing the first move that looks good. Alexander Kotov's advice: list a few serious options first, then choose.",
       alt="Candidate moves review on a 2024 World Championship position: bxa3 and Qa5, the engine's top two, then h5, dubious; the engine's own 3rd move is dubious too",
-      caption="Only two moves hold here: bxa3 and Qa5. Even the engine's 3rd choice is Dubious, so a third pick could only cost points: h5 scores nothing, and stopping at two would have scored 100%.",
+      caption="Only two moves hold here, bxa3 and Qa5, and both were found. The third pick should have been skipped though.",
       body="""
 <h2>How to find them</h2>
 <ul>
@@ -120,7 +120,7 @@ GUIDES = [
       desc="Ce que sont les coups candidats, comment les trouver (échecs, prises, menaces, puis le plan), et un exercice gratuit qui note vos choix avec Stockfish sur des parties de maîtres et vos propres parties.",
       lead="La plupart des erreurs viennent du premier coup qui a l'air bon. Le conseil d'Alexandre Kotov : dresser d'abord la liste de quelques options sérieuses, puis choisir.",
       alt="Correction de Coups candidats sur une position du championnat du monde 2024 : bxa3 et Qa5, les deux meilleurs coups du moteur, puis h5, douteux ; le 3e coup du moteur lui-même est douteux",
-      caption="Seuls deux coups tiennent ici : bxa3 et Qa5. Même le 3e choix du moteur est douteux, donc un troisième coup ne pouvait que coûter des points : h5 ne rapporte rien, et s'arrêter à deux aurait fait 100 %.",
+      caption="Seuls deux coups tiennent ici, bxa3 et Qa5, et les deux ont été trouvés. Le troisième choix aurait pourtant dû être évité.",
       body="""
 <h2>Comment les trouver</h2>
 <ul>
