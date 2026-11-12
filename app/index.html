@@ -7321,7 +7321,7 @@ const I18N_FR_RE = [
   [/^([^:]*\S): ([=+−]+)$/, (m, a, b)=>tr(a) + ' : ' + b],
   [/^\+ from (\S+) points? apart, \+\+ from (\S+)\.$/, (m, a, b)=>`+ dès ${a.replace('.', ',')} point${a==='1' || a==='½' ? '' : 's'} d'écart, ++ dès ${b.replace('.', ',')}.`],
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'position jouée' : 'positions jouées') + ' depuis le ' + d],
-  [/^(Total )?([+−])(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],   // decimal comma on the board's numbers
+  [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],   // decimal comma on the board's numbers
   [/^No positions played yet in (.+)\.$/, (m, a)=>`Aucune position jouée pour l'instant en ${tr(a)}.`],
   [/^Analysing your games: (\d+) of (\d+) done…$/, 'Analyse de vos parties : $1 sur $2 faites…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess connecté : vos $1 dernières parties Lichess se synchroniseront automatiquement.'],

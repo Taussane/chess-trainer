@@ -102,8 +102,8 @@ GUIDES = [
       title='Candidate moves in chess: find more than one good move',
       desc='What candidate moves are, how to find them (checks, captures, threats, then the plan), and a free exercise grading your picks with Stockfish on master games and your own games.',
       lead="Most mistakes come from playing the first move that looks good. Alexander Kotov's advice: list a few serious options first, then choose.",
-      alt="Candidate moves review on a 1954 World Championship position: three picks, graded Best, Good and Good, beside the engine's top 3",
-      caption="Three picks, graded against Stockfish's best: Rxg5 (Best), Nf4 and Nc7 (Good).",
+      alt="Candidate moves review on a 2006 World Championship position: Ra8 and Ra6, the engine's top two, then Rxd4, a blunder",
+      caption="Ra8 and Ra6 were found, but Rxd4 loses material: it scores nothing and costs about a quarter of the score. Stopping at two moves would have scored 100%.",
       body="""
 <h2>How to find them</h2>
 <ul>
@@ -119,8 +119,8 @@ GUIDES = [
       title="Les coups candidats aux échecs : trouver plus d'un bon coup",
       desc="Ce que sont les coups candidats, comment les trouver (échecs, prises, menaces, puis le plan), et un exercice gratuit qui note vos choix avec Stockfish sur des parties de maîtres et vos propres parties.",
       lead="La plupart des erreurs viennent du premier coup qui a l'air bon. Le conseil d'Alexandre Kotov : dresser d'abord la liste de quelques options sérieuses, puis choisir.",
-      alt='Correction de Coups candidats sur une position du championnat du monde 1987 : trois choix, notés Meilleur, Correct et Correct, à côté des 3 meilleurs coups du moteur',
-      caption='Trois choix, comparés au meilleur coup de Stockfish : Rf2 (Meilleur), Qf2 et Kf1 (Correct).',
+      alt="Correction de Coups candidats sur une position du championnat du monde 2006 : Ra8 et Ra6, les deux meilleurs coups du moteur, puis Rxd4, une gaffe",
+      caption="Ra8 et Ra6 ont été trouvés, mais Rxd4 perd du matériel : il ne rapporte rien et coûte environ un quart du score. S'arrêter à deux coups aurait fait 100 %.",
       body="""
 <h2>Comment les trouver</h2>
 <ul>
