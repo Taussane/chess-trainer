@@ -82,7 +82,6 @@
   .ac-row + .ac-row{margin-top:-4px;}
   .ac-row .ac-site{min-width:112px;}
   .ac-row .link-inline{margin-left:auto;}
-  .ac-sep{border-top:1px solid var(--border); padding-top:8px; margin-top:4px;}
   .ac-divider{height:1px; background:var(--border); margin:4px 0;}
   .link-plain{background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; text-decoration:underline;}
   .pf-scroll{padding-top:12px;}
@@ -94,7 +93,6 @@
   .ac-foot a, .ac-foot .link-plain{color:var(--text-mute);}
   .ac-site{display:inline-flex; align-items:center; gap:6px; color:var(--text-mute);}
   .ac-site svg{width:14px; height:14px;}
-  .mg-src .link-inline{margin-left:auto;}
   .home-head h1{font-size:1.9rem;}
   .home-head p{color:var(--text-mute); margin:8px 0 0; line-height:1.5;}
   .cards{display:flex; flex-direction:column; gap:10px;}
@@ -179,21 +177,8 @@
   @keyframes xpTurn{from{box-shadow:0 0 0 2px var(--accent);} to{box-shadow:0 0 0 2px transparent;}}
   .pq-grid{display:grid; grid-template-rows:repeat(4, var(--pq-row)); row-gap:0; --pq-row:34px; --pq-btn:30px;}   /* (Move selection's rows: 34 px, touching; the buttons a little shorter, so they don't) */   /* four rows, the same height in every question */
   .pq-grid > *{min-height:0; height:var(--pq-row); box-sizing:border-box;}
-  .pq-grid > .pq-note{align-self:center;}   /* questions 1 and 2: the note centred in its row (the plan's explanations stay at the top) */
-  .pq-grid > .pq-choice{height:var(--pq-btn); align-self:center; padding-block:0;} .pq-grid > .pq-sides{align-items:center;}
+  .pq-grid > .pq-sides{align-items:center;}
   .pq-text{margin:0; font-size:0.82rem; line-height:1.28; color:var(--text-mute); align-self:start; height:auto !important; max-height:var(--pq-row); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
-  .pq-choice{display:flex; justify-content:space-between; align-items:center; gap:10px; text-align:left; width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); font:inherit; font-size:0.92rem; cursor:pointer;}
-  .pq-choice small{font-size:0.74rem; font-weight:700; white-space:nowrap;}
-  @media (hover:hover){ button.pq-choice:not(:disabled):hover{border-color:var(--accent);} }
-  .pq-choice.on{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent);}
-  .pq-choice:disabled{cursor:default;}
-  .pq-choice.best{border-color:var(--best-green); box-shadow:inset 0 0 0 1px var(--best-green);} .pq-choice.best small{color:var(--best-green);}
-  .pq-choice.good{border-color:var(--good); box-shadow:inset 0 0 0 1px var(--good);} .pq-choice.good small{color:var(--good);}
-  .pq-choice.bad{border-color:var(--bad); box-shadow:inset 0 0 0 1px var(--bad);} .pq-choice.bad small{color:var(--bad);}
-  .pq-choice.off{opacity:.55;}
-  .pq-choice em{display:block; font-style:normal; font-size:0.76rem; color:var(--text-mute); margin-top:1px;}
-  .pq-choice.pq-why.sel{box-shadow:inset 0 0 0 1px currentColor; background:var(--panel);}
-  .pq-choice.pq-why.best.sel{box-shadow:inset 0 0 0 1px var(--best-green);} .pq-choice.pq-why.good.sel{box-shadow:inset 0 0 0 1px var(--good);}
   .pq-sides{display:grid; grid-template-columns:1fr auto 1fr; gap:6px;}
   .pq-side.mid{padding-inline:12px;} .pq-side.half{border-color:var(--ok); box-shadow:inset 0 0 0 1px var(--ok);}   /* half points: a yellow-green, told apart from the yellow selection; every coloured border bold, as in Imbalance reading */
   .pq-side{padding:0 6px; border-radius:8px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); font:inherit; font-size:0.86rem; line-height:1; cursor:pointer; text-align:center; display:flex; align-items:center; justify-content:center; height:var(--pq-btn); box-sizing:border-box; overflow:hidden;}   /* a long label: two lines in the same height */
@@ -204,17 +189,11 @@
   .diag-pre{font-size:0.72rem; line-height:1.35; white-space:pre-wrap; margin:0; max-height:340px; overflow:auto; user-select:text;}
   .pf-resets{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px 12px; margin-top:10px;}
   .pq-reserve{display:grid;} .pq-reserve > *{grid-area:1 / 1;} .pq-ghost-text{visibility:hidden;}
-  .pq-top .pq-steps{margin-left:auto; flex:none;}
   .pq-ask{display:flex; align-items:baseline; gap:12px;} .pq-ask .prompt{margin:0;}
   .pq-why-line .pq-reason{display:inline; text-align:left; line-height:inherit;}
   .pq-reason{font:inherit; font-size:inherit; color:inherit; background:none; border:0; padding:0;}
   button.pq-reason{cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; display:inline;}
   button.pq-reason.sel{color:var(--accent);}
-  .score .pq-steps{margin-left:auto;}
-  .pq-steps{display:flex; gap:6px; align-items:center;}
-  .pq-step{width:22px; height:6px; border-radius:3px; background:var(--border);}
-  .pq-step.cur{background:var(--text-mute);}
-  .pq-step.ok{background:var(--best-green);} .pq-step.half{background:var(--ok);} .pq-step.ko{background:var(--bad);}
 
   .card-title .title-badge{font-size:0.62rem; vertical-align:2px;}
   .goal-dots{display:flex; gap:8px;}
@@ -231,8 +210,6 @@
   .sup-card p{margin:0; font-size:0.92rem; line-height:1.55;}
   .sup-lead{font-family:var(--font-display); font-size:1.1rem !important; font-weight:600;}
   .sup-list{margin:-2px 0 0; padding-left:20px; font-size:0.92rem; line-height:1.55;}
-  .sup-btn{align-self:center; min-width:60%; text-align:center; justify-content:center;}
-  .sup-note{color:var(--text-mute); font-size:0.84rem !important;}
   .sup-thanks .sup-share{color:var(--accent); text-decoration-color:var(--accent);}
   .sup-thanks{margin:4px 2px 0; text-align:center; color:var(--text-mute); font-size:0.88rem; line-height:1.5;}
   /* the home page's Donate badge, under the exercises: Ko-fi's button look, opening our Donate page */
@@ -315,7 +292,6 @@
   .google-btn svg{width:18px; height:18px; flex:none;}
   .cc-btn .cc-logo{width:16px; height:20px;}
   .cc-field{background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:9px 12px; font:inherit; font-size:0.9rem; margin-top:-2px;}
-  .mg-account .link-inline{white-space:nowrap;}
   .pf-facts b{color:var(--text); font-weight:600; font-variant-numeric:tabular-nums;}
   .wk-table{border-collapse:collapse; width:100%; font-size:0.86rem; font-variant-numeric:tabular-nums;}
   .wk-table th, .wk-table td{padding:5px 4px; text-align:center; border-bottom:1px solid var(--border);}
@@ -324,7 +300,6 @@
   .wk-table tr:last-child th, .wk-table tr:last-child td{border-bottom:none;}
   .wk-table tr.idle td, .wk-table tr.idle th{color:var(--text-mute);}
   .wk-done{color:var(--good); font-weight:700;}
-  .pf-replay .btn{flex:none; white-space:nowrap;}
   .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
   .source-row{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
   .source-label{font-size:0.8rem; color:var(--text-mute); white-space:nowrap;}
@@ -333,22 +308,8 @@
   /* My games */
   .mg-card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:10px; min-width:0;}
   .mg-card h2{margin:0; font-size:1rem;}
-  .mg-field{display:flex; flex-direction:column; gap:4px; font-size:0.8rem; color:var(--text-mute);}
-  .mg-field input{font:inherit; font-size:0.95rem; color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:8px 10px;}
-  .mg-field input:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
-  .mg-steps{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px;}
-  .mg-steps li{padding-left:2px;}
-  .mg-steps a{color:var(--accent); font-weight:600; text-decoration:none;}
-  .mg-steps small{display:block; color:var(--text-mute); font-size:0.78rem; margin-top:2px;}
   .btn.small{padding:7px 12px; font-size:0.86rem;}
-  .file-btn{position:relative; display:inline-flex; overflow:hidden;}
-  .file-input{position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:0;}
-  .file-btn:focus-within{outline:2px solid var(--text); outline-offset:2px;}
   .link-inline{background:none; border:none; padding:0; font:inherit; color:var(--accent); text-decoration:underline; cursor:pointer;}
-  .mg-sub{margin:0; font-size:0.8rem; color:var(--text-mute);}
-  .mg-paste{display:flex; flex-direction:column; gap:8px; margin-top:8px;}
-  .mg-paste textarea{font:0.8rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:8px; resize:vertical; min-width:0;}
-  .mg-paste .btn{align-self:flex-start;}
   .btn.ghost{background:transparent; color:var(--text); border-color:var(--border);}
   .btn.danger{background:var(--bad); color:#fff;}
   .mg-note, .mg-status{margin:0; font-size:0.84rem; color:var(--text-mute);}
@@ -478,8 +439,8 @@
   .aspects.asp-input{position:relative;}
   .asp-badge{line-height:1.35; transition:background-color .5s, color .5s, border-color .5s, box-shadow .5s;}
   .asp-item.pickable{cursor:pointer; border-radius:6px; margin:-3px -6px; padding:3px 6px; -webkit-tap-highlight-color:transparent;}
-  .asp-item.pickable .asp-name:not(:has(.asp-qual)), .asp-item.pickable .asp-main{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
-  .asp-item.pickable.sel .asp-name, .asp-item.pickable.sel .asp-main{text-decoration:none;}   /* the one shown: no underline */
+  .asp-item.pickable .asp-name{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
+  .asp-item.pickable.sel .asp-name{text-decoration:none;}   /* the one shown: no underline */
   .asp-item.sel{background:var(--panel-2); box-shadow:inset 0 0 0 1px var(--accent);}
   .asp-item.sel .asp-name{text-decoration:none;}
   .asp-pick{font-family:inherit; cursor:pointer;}
@@ -492,9 +453,6 @@
   .asp-picker .asp-badge.on{outline:2px solid var(--accent); outline-offset:1px;}
   .asp-item{display:flex; justify-content:space-between; align-items:center; gap:4px; font-size:0.88rem; min-width:0;}
   .asp-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .asp-long{font-size:.86em; letter-spacing:-.01em;} .asp-xlong{font-size:.78em;}
-  .asp-name:has(.asp-qual){overflow:visible; line-height:1.15; position:relative; top:-5px;}
-  .asp-name:has(.asp-qual){min-width:0;} .asp-name > .asp-main{display:block; overflow:hidden; text-overflow:ellipsis;}   /* (a long name with its note: cut like the others) */
-  .asp-qual{display:block; height:0; font-size:0.68rem; line-height:1.2; color:var(--text-mute);}
   .asp-badge{flex:none; min-width:2.4em; text-align:center; padding:1px 4px; white-space:nowrap; border-radius:4px; font-size:0.9rem; font-weight:700; letter-spacing:0.04em; border:1px solid transparent;}
   .asp-badge.w{background:var(--white-fill); color:var(--black-fill);}
   .asp-badge.b{background:var(--black-fill); color:var(--white-fill); border-color:var(--text-mute);}
@@ -6832,7 +6790,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Next position": "Position suivante",
 "Next": "Suivante",
 "Finish": "Terminer",
-"Open in Lichess": "Voir sur Lichess",
 "Analyze": "Analyser",
 "Test": "Test",
 "Replay": "Revoir",
@@ -6849,8 +6806,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Source code": "Code source",
 "Test positions": "Positions de test",
 "Preview": "Aperçu",
-"Language: English": "Langue : anglais",
-"Language: French": "Langue : français",
 "Today": "Aujourd'hui",
 "Yesterday": "Hier",
 "Average": "Moyenne",
@@ -6878,14 +6833,9 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Evaluation": "Évaluation",
 "Candidates": "Candidats",
 "Selection": "Choix",
-"Who has the edge, aspect by aspect?": "Qui a l'avantage, aspect par aspect ?",
-"Who's better, and by how much?": "Qui est mieux, et de combien ?",
-"Find the strongest moves.": "Trouvez les meilleurs coups.",
-"Rank four moves, best to worst.": "Classez quatre coups, du meilleur au pire.",
 "Daily routine": "Routine quotidienne",
 "Today's routine": "Routine du jour",
 "Daily routine done": "Routine quotidienne faite",
-"Done ✓": "Fait ✓",
 "Done": "Fait",
 "Start routine": "Commencer la routine",
 "Continue routine": "Continuer la routine",
@@ -6894,13 +6844,9 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Finding positions in your games…": "Recherche de positions dans vos parties…",
 "No positions yet": "Pas encore de positions",
 "All played today": "Toutes jouées aujourd'hui",
-"Drag the bar to where you think it sits.": "Placez la barre là où vous l'estimez.",
-"Your evaluation": "Votre évaluation",
 "Static": "Statique",
 "Dynamic": "Dynamique",
 "Possible plans": "Plans possibles",
-"Possible plans for White": "Plans possibles pour les Blancs",
-"Possible plans for Black": "Plans possibles pour les Noirs",
 "Suggest a strong move for White.": "Proposez un bon coup pour les Blancs.",
 "Suggest a strong move for Black.": "Proposez un bon coup pour les Noirs.",
 "Add up to three moves; avoid bad ones.": "Jusqu'à trois coups ; évitez les mauvais.",
@@ -6923,8 +6869,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "A known ending (Stockfish scores it on its own): only Material is scored.": "Une finale connue (Stockfish l'évalue à part) : seul le Matériel est noté.",
 "Space only counts with most pieces on the board.": "L'Espace ne compte qu'avec la plupart des pièces sur l'échiquier.",
 "The engine is unavailable, so analysis is paused.": "Le moteur est indisponible, l'analyse est en pause.",
-"The chess engine stopped working, so positions can't be evaluated. Try reloading the page.": "Le moteur d'échecs s'est arrêté, les positions ne peuvent pas être évaluées. Essayez de recharger la page.",
-"The chess engine couldn't be loaded, so positions can't be evaluated. Try reloading the page.": "Le moteur d'échecs n'a pas pu être chargé, les positions ne peuvent pas être évaluées. Essayez de recharger la page.",
 "Material": "Matériel",
 "Pawns": "Pions",
 "Space": "Espace",
@@ -6979,57 +6923,30 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "5th": "5e",
 "6th": "6e",
 "7th": "7e",
-"Mate is on": "Mat en vue",
-"Check forcing moves": "Cherchez les coups forcés",
-"Mate threat": "Menace de mat",
-"Defend first": "Défendez d'abord",
 "Up material": "Matériel en plus",
 "Trade pieces": "Échangez les pièces",
-"No, the position is quiet": "Non, la position est calme",
-"Position is balanced": "La position est équilibrée",
 "Keep pieces": "Gardez les pièces",
 "Either": "Au choix",
 "Open / Attack": "Ouvrir / Attaquer",
 "Close / Improve": "Fermer / Améliorer",
-"Next question": "Question suivante",
-"See the review": "Voir la correction",
 "Look at checks, captures and threats, for both sides.": "Regardez les échecs, les prises et les menaces, des deux côtés.",
 "Nothing obvious to win or to parry.": "Rien d'évident à gagner ni à parer.",
-"Your answer": "Votre réponse",
 "Down material": "Matériel en moins",
-"Avoid trades, attack": "Évitez les échanges, attaquez",
 "Clearly better": "Nettement mieux",
-"Simplify, stay safe": "Simplifiez, restez prudent",
 "Clearly worse": "Nettement moins bien",
-"Complicate": "Compliquez",
 "More active king": "Roi plus actif",
-"Go for the pawns": "Allez chercher les pions",
 "Passive king": "Roi passif",
-"Centralize it": "Centralisez-le",
 "Weak enemy king": "Roi adverse faible",
-"Open lines to it": "Ouvrez des lignes vers lui",
 "Weak king": "Roi faible",
-"Trade attackers": "Échangez les attaquants",
 "Your threats": "Vos menaces",
-"Forcing moves first": "Coups forcés d'abord",
-"Their threats": "Menaces adverses",
-"Parry them first": "Parez-les d'abord",
 "Passed pawn": "Pion passé",
-"Push it": "Poussez-le",
 "Weak enemy pawns": "Pions adverses faibles",
-"Attack them": "Attaquez-les",
 "Enemy passed pawn": "Pion passé adverse",
-"Blockade it": "Bloquez-le",
 "Weak pawns": "Pions faibles",
-"Keep pieces active": "Gardez les pièces actives",
 "More space": "Plus d'espace",
-"Avoid freeing trades": "Évitez les échanges libérateurs",
 "Less space": "Moins d'espace",
-"Trade to breathe": "Échangez pour respirer",
 "Better pieces": "Meilleures pièces",
-"Keep the initiative": "Gardez l'initiative",
 "Worse pieces": "Pièces moins bonnes",
-"Improve the worst": "Améliorez la pire",
 "Balanced": "Équilibré",
 "Can win": "Peut gagner",
 "Quiet": "Calme",
@@ -7039,8 +6956,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Anything urgent?": "Une urgence ?",
 "Who's better?": "Qui est mieux ?",
 "Each row: a quarter of the position's score.": "Chaque ligne : un quart du score de la position.",
-"A pawn or two: noted, then the plan.": "Un pion ou deux : noté, puis le plan.",
-"Find a pawn break": "Trouvez une rupture de pions",
 "Games and positions": "Parties et positions",
 "Games": "Parties",
 "No positions from your games yet": "Pas encore de positions tirées de vos parties",
@@ -7075,9 +6990,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Removing your games…": "Suppression de vos parties…",
 "Loading positions…": "Chargement des positions…",
 "Remove": "Retirer",
-"Add these games": "Ajouter ces parties",
 "No games found. Use the .pgn file from step 1, or paste games in PGN format.": "Aucune partie trouvée. Utilisez le fichier .pgn de l'étape 1, ou collez des parties au format PGN.",
-"This file could not be read. Try downloading it again.": "Ce fichier n'a pas pu être lu. Essayez de le télécharger à nouveau.",
 "The account couldn't be deleted. Try again.": "Le compte n'a pas pu être supprimé. Réessayez.",
 "Bullet": "Bullet",
 "Blitz": "Blitz",
@@ -7095,7 +7008,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Your data is never sold.": "Vos données ne sont jamais vendues.",
 "Open source.": "Code libre.",
 "Made by one person. Donations help pay for the server and new features.": "Fait par une seule personne. Les dons aident à payer le serveur et les nouveautés.",
-"Ko-fi: coming soon": "Ko-fi : bientôt disponible",
 "Last move": "Dernier coup",
 "Move notation": "Notation des coups",
 "International": "Internationale",
@@ -7123,21 +7035,12 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Threats marks": "Marques Menaces",
 "King activity marks": "Marques Activité du roi",
 "World Championship match": "Match du championnat du monde",
-"0 of 4": "0 sur 4",
-"1 for each of your pawns in it.": "1 par pion à vous dans la zone.",
-"1st place counts 50%, 2nd 30%, 3rd 20%.": "La 1re place compte pour 50 %, la 2e pour 30 %, la 3e pour 20 %.",
-": the engine's first choice.": " : le premier choix du moteur.",
-": the move played in the game (": " : le coup joué dans la partie (",
-"in your own games: Dubious or worse).": "dans vos parties : Douteux ou pire).",
 "Bonuses": "Bonus",
-"Borders.": "Bordures.",
 "Counted": "Décompte",
 "Details.": "Détails.",
 "Grades": "Notes",
 "Keep in mind.": "À retenir.",
-"Levels.": "Niveaux.",
 "Lists": "Listes",
-"Plan.": "Plan.",
 "Plans": "Plans",
 "Plans for White": "Plans pour les Blancs",
 "Plans for Black": "Plans pour les Noirs",
@@ -7222,30 +7125,13 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Two moves look equal? Don't spend too long: if they really are close, the choice won't change much.": "Deux coups se valent ? N'y passez pas trop de temps : s'ils sont vraiment proches, le choix ne changera pas grand-chose.",
 "Checks, captures and threats first, for both sides.": "Échecs, prises et menaces d'abord, pour les deux camps.",
 "Good, Ok, Dubious, Mistake, Blunder": "Bon, Correct, Douteux, Erreur, Gaffe",
-"Green: right level.": "Vert : bon niveau.",
-"In sharp positions, the side to move often has the edge.": "Dans les positions tranchantes, le camp au trait a souvent l'avantage.",
 "Inspired by Stockfish's former evaluation system.": "Inspiré de l'ancien système d'évaluation de Stockfish.",
-"Look at both sides before grading.": "Regardez les deux camps avant de noter.",
 "Mates count in King safety.": "Les mats comptent dans la Sécurité du roi.",
-"Otherwise: nothing.": "Sinon : rien.",
-"Outlined in yellow: arrows on the queen.": "Cerclées de jaune : les flèches sur la dame.",
-"Pinned to its king or queen −5.": "Clouée sur son roi ou sa dame −5.",
-"Right level: all of it.": "Bon niveau : toute la part.",
-"Rook on an Open file +5, Half-open +2.5.": "Tour sur une colonne Ouverte +5, Semi-ouverte +2,5.",
-"Shelter: each own pawn in the zone +1.": "Abri : chaque pion à soi dans la zone +1.",
-"Tap a king to see its side alone.": "Touchez un roi pour ne voir que son camp.",
 "Tap a list's title to show its arrows.": "Touchez le titre d'une liste pour afficher ses flèches.",
-"Yellow: right side, wrong strength.": "Jaune : bon camp, mauvaise intensité.",
 ": the engine's top choice.": " : le premier choix du moteur.",
 ": how much winning chance a move gives up.": " : combien de chances de gain un coup cède.",
 "Colours": "Couleurs",
 "Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all.": "Les notes ne s'additionnent pas simplement. Un gros déséquilibre peut l'emporter sur plusieurs petits, et la tactique prime sur tout.",
-"Who's better, and by how much? Drag the bar to your answer.": "Qui est mieux, et de combien ? Placez la barre sur votre réponse.",
-"Weigh the imbalances, then check what's forcing: checks, captures, threats.": "Pesez les déséquilibres, puis vérifiez ce qui est forcé : échecs, prises, menaces.",
-"Start with material. Near equality, a pawn is about one square of the bar.": "Commencez par le matériel. Près de l'égalité, un pion vaut environ une case de la barre.",
-"A safer king or better pieces can make up for some material.": "Un roi plus sûr ou de meilleures pièces compensent un peu de matériel.",
-"Each square you're off costs 25%.": "Chaque case d'écart coûte 25 %.",
-"Up to three ideas for the side to play, from its strongest imbalances. General principles, not calculated lines.": "Jusqu'à trois idées pour le camp au trait, tirées de ses plus forts déséquilibres. Des principes, pas des variantes calculées.",
 "Pick 1 to 3 strong moves for the side to play.": "Choisissez 1 à 3 bons coups pour le camp au trait.",
 "Unsure? Pick fewer. A Dubious or worse move scores zero.": "Un doute ? Choisissez-en moins. Un coup Douteux ou pire ne rapporte rien.",
 "Find the best move first. It's half the score.": "Trouvez d'abord le meilleur coup. Il vaut la moitié du score.",
@@ -7274,22 +7160,11 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Weak king: trade attackers, keep your pawns, keep lines closed.": "Roi faible : échangez les attaquants, gardez vos pions, gardez les lignes fermées.",
 "Anything urgent?": "Quelque chose d'urgent ?",
 "First, what can't wait: checks, captures and threats, for both sides.": "D'abord, ce qui ne peut pas attendre : échecs, prises et menaces, des deux côtés.",
-"The answers": "Les réponses",
 "Quiet: nothing to win or to parry right now.": "Calme : rien à gagner ni à parer pour l'instant.",
-"Can win something: a capture or a threat wins material, and Stockfish's best move goes for it.": "Peut gagner quelque chose : une prise ou une menace gagne du matériel, et le meilleur coup de Stockfish y va.",
 "A pawn that looks free may be poisoned: look at what follows.": "Un pion qui semble gratuit peut être empoisonné : regardez la suite.",
-"A pawn of yours under attack isn't urgent when nothing can be done about it.": "Un de vos pions attaqué n'est pas urgent quand on ne peut rien y faire.",
-"The right answer: 100%. Anything else: nothing. A quarter of the position's score.": "La bonne réponse : 100 %. Le reste : rien. Un quart du score de la position.",
-"What follows": "La suite",
-"A piece or more at stake, or a mate: the position ends here. The threat comes first.": "Une pièce ou plus en jeu, ou un mat : la position s'arrête là. La menace passe d'abord.",
-"A pawn or two: noted, then the next questions.": "Un pion ou deux : c'est noté, puis les questions suivantes.",
 "The threats are drawn: what can be won, and by whom.": "Les menaces sont dessinées : ce qui peut être gagné, et par qui.",
-"Who's winning?": "Qui gagne ?",
-"Judge the position as a whole: who is better?": "Jugez la position dans son ensemble : qui est mieux ?",
 "Balanced: Stockfish within ±0.5.": "Équilibrée : Stockfish entre −0,5 et +0,5.",
 "Better: half a pawn or more ahead.": "Mieux : un demi-pion d'avance ou plus.",
-"A pawn won in question 1 counts: Stockfish sees the capture.": "Un pion gagné à la question 1 compte : Stockfish voit la prise.",
-"The right answer: 100%. Within 0.15 of the ±0.5 line, the neighbouring answer: half. A quarter of the position's score.": "La bonne réponse : 100 %. À moins de 0,15 de la limite de ±0,5, la réponse voisine : la moitié. Un quart du score de la position.",
 "Choose a plan": "Choisissez un plan",
 "Two decisions follow from the imbalances: whether to trade, and how to play.": "Deux décisions découlent des déséquilibres : échanger ou non, et comment jouer.",
 "Trades": "Échanges",
@@ -7316,21 +7191,15 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Development (minors to move)": "Développement (pièces mineures à sortir)",
 "Minors to move: Development replaces Activity.": "Pièces mineures à sortir : le Développement remplace l'Activité.",
 "A piece that went back to its first square has moved: it still counts.": "Une pièce revenue sur sa case de départ a bougé : elle compte quand même.",
-"+ from 1 piece apart, ++ from 3.": "+ dès 1 pièce d'écart, ++ dès 3.",
 "Ahead: open the centre before they catch up.": "En avance : ouvrez le centre avant que l'adversaire ne rattrape son retard.",
 "Behind: finish developing, keep the centre closed.": "En retard : finissez votre développement, gardez le centre fermé.",
 "Ahead in development": "En avance de développement",
 "Behind in development": "En retard de développement",
-"Open the centre": "Ouvrez le centre",
-"Finish developing": "Finissez votre développement",
-"Open the centre while ahead": "Ouvrez le centre tant que vous êtes en avance",
-"Finish your development": "Finissez votre développement",
 "Development marks": "Marques Développement",
 "No queens: the king becomes a fighter.": "Sans dames : le roi devient une pièce de combat.",
 "+1 per own passed pawn next to it.": "+1 par pion passé de son camp à côté de lui.",
 "More active king: attack pawns, escort your passed pawn.": "Roi plus actif : attaquez les pions, escortez votre pion passé.",
 "Passive king: centralize it first.": "Roi passif : centralisez-le d'abord.",
-"+1 per enemy piece or pawn you can win now: Hanging (unprotected, or the exchange wins) or Losing (attacked by a cheaper piece).": "+1 par pièce ou pion adverse à gagner maintenant : En prise (non défendu, ou l'échange gagne) ou Menacée (attaquée par une pièce moins chère).",
 "Yellow arrows: attacks on the queen.": "Flèches jaunes : attaques sur la dame.",
 "Your threats: play forcing moves first.": "Vos menaces : jouez d'abord les coups forcés.",
 "Saturation": "Saturation",
@@ -7344,7 +7213,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Support me on Ko-fi": "Soutenez-moi sur Ko-fi",
 "Free chess strategy training on master games and your own.": "Entraînement gratuit à la stratégie aux échecs, sur des parties de maîtres et les vôtres.",
 "Tap an imbalance to see it on the board, then a king for that side alone, or the '?' button for how it's counted.": "Touchez un déséquilibre pour le voir sur l'échiquier, puis un roi pour ce camp seul, ou le bouton « ? » pour savoir comment il se compte.",
-"Tap a line to see its imbalance on the board, then the '?' button for how it's counted.": "Touchez une ligne pour voir son déséquilibre sur l'échiquier, puis le bouton « ? » pour savoir comment il se compte.",
 "Support me": "Soutenez-moi",
 "Feedback": "Commentaires",
 "Ponder each strategic aspect.": "Examinez chaque aspect stratégique.",
@@ -7688,7 +7556,6 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Grades": "Bewertungen",
 "Keep in mind.": "Merke dir.",
 "Lists": "Listen",
-"Plan.": "Plan.",
 "Plans": "Pläne",
 "Plans for White": "Pläne für Weiß",
 "Plans for Black": "Pläne für Schwarz",
@@ -7838,7 +7705,6 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Development (minors to move)": "Entwicklung (Leichtfiguren zu entwickeln)",
 "Minors to move: Development replaces Activity.": "Leichtfiguren noch zu entwickeln: Entwicklung ersetzt Aktivität.",
 "A piece that went back to its first square has moved: it still counts.": "Eine Figur, die auf ihr Ausgangsfeld zurückging, hat gezogen: Sie zählt trotzdem.",
-"+ from 1 piece apart, ++ from 3.": "+ ab 1 Figur Unterschied, ++ ab 3.",
 "Ahead: open the centre before they catch up.": "Vorn: das Zentrum öffnen, bevor der Gegner aufholt.",
 "Behind: finish developing, keep the centre closed.": "Hinten: die Entwicklung abschließen, das Zentrum geschlossen halten.",
 "Ahead in development": "Entwicklungsvorsprung",
@@ -8141,7 +8007,6 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Grades": "Calificaciones",
 "Keep in mind.": "Ten en cuenta.",
 "Lists": "Listas",
-"Plan.": "Plan.",
 "Plans": "Planes",
 "Plans for White": "Planes para las blancas",
 "Plans for Black": "Planes para las negras",
@@ -8291,7 +8156,6 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Development (minors to move)": "Desarrollo (piezas menores por sacar)",
 "Minors to move: Development replaces Activity.": "Piezas menores por sacar: Desarrollo sustituye a Actividad.",
 "A piece that went back to its first square has moved: it still counts.": "Una pieza que volvió a su casilla inicial se ha movido: cuenta igual.",
-"+ from 1 piece apart, ++ from 3.": "+ desde 1 pieza de diferencia, ++ desde 3.",
 "Ahead: open the centre before they catch up.": "Por delante: abre el centro antes de que el rival se ponga al día.",
 "Behind: finish developing, keep the centre closed.": "Por detrás: termina el desarrollo, mantén el centro cerrado.",
 "Ahead in development": "Ventaja en desarrollo",
@@ -8594,7 +8458,6 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Grades": "Giudizi",
 "Keep in mind.": "Da ricordare.",
 "Lists": "Elenchi",
-"Plan.": "Piano.",
 "Plans": "Piani",
 "Plans for White": "Piani per il Bianco",
 "Plans for Black": "Piani per il Nero",
@@ -8744,7 +8607,6 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Development (minors to move)": "Sviluppo (pezzi minori da sviluppare)",
 "Minors to move: Development replaces Activity.": "Pezzi minori da sviluppare: Sviluppo sostituisce Attività.",
 "A piece that went back to its first square has moved: it still counts.": "Un pezzo tornato alla sua casa iniziale ha mosso: conta comunque.",
-"+ from 1 piece apart, ++ from 3.": "+ da 1 pezzo di differenza, ++ da 3.",
 "Ahead: open the centre before they catch up.": "In vantaggio: apri il centro prima che l'avversario recuperi.",
 "Behind: finish developing, keep the centre closed.": "In ritardo: completa lo sviluppo, tieni chiuso il centro.",
 "Ahead in development": "Vantaggio di sviluppo",
