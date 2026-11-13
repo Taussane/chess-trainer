@@ -6852,7 +6852,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Positions from": "Positions de",
 "Learn from master games and your own mistakes.": "Apprenez des parties de maîtres et de vos propres erreurs.",
 "Train your strategy beyond tactics puzzles: gauge the imbalances, evaluate the position, find good candidates, choose the best.": "Entraînez votre stratégie au-delà des problèmes tactiques : jaugez les déséquilibres, évaluez la position, trouvez de bons candidats, choisissez le meilleur.",
-"Imbalance reading": "Lecture des déséquilibres",
+"Imbalance reading": "Déséquilibres",
 "Candidate moves": "Coups candidats",
 "Move selection": "Choix du coup",
 "Imbalances": "Déséquilibres",
@@ -7357,7 +7357,7 @@ const I18N_FR_RE = [
   [/^\+ from (\S+) (point|piece)s? apart, \+\+ from ([^\s.]+)(\.?)$/, (m, a, u, b, dot)=>`+ dès ${a.replace('.', ',')} ${u==='piece' ? 'pièce' : 'point'}${a==='1' || a==='½' ? '' : 's'} d'écart, ++ dès ${b.replace('.', ',')}${dot}`],
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'position jouée' : 'positions jouées') + ' depuis le ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],   // decimal comma on the board's numbers
-  [/^No positions played yet in (.+)\.$/, (m, a)=>`Aucune position jouée pour l'instant en ${tr(a)}.`],
+  [/^No positions played yet in (.+)\.$/, (m, a)=>`Aucune position jouée pour l'instant (${tr(a)}).`],
   [/^Analysing your games: (\d+) of (\d+) done…$/, 'Analyse de vos parties : $1 sur $2 faites…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess connecté : vos $1 dernières parties Lichess se synchroniseront automatiquement.'],
   [/^No Chess\.com player named (.+)\.$/, 'Aucun joueur Chess.com nommé $1.'],

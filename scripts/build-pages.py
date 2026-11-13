@@ -34,11 +34,11 @@ GUIDES = [
 <p>Choose 3 of the imbalances that decide the position (there can be more than 3), and who has the edge. The review shows each one's size: <strong>=</strong> balanced; <strong>+</strong> or <strong>++</strong> a small or big edge for White, <strong>−</strong> or <strong>−−</strong> for Black. A choice among the 3 biggest edges, on the right side, scores full points; a smaller edge, half; a balanced one or the wrong side, nothing.</p>
 <p>Find the ++ first. One big imbalance can outweigh several small ones, and tactics beat them all.</p>
 """),
-    fr=dict(slug='desequilibres-aux-echecs', name='Lecture des déséquilibres', sub='Apprendre à lire une position',
+    fr=dict(slug='desequilibres-aux-echecs', name='Déséquilibres', sub='Apprendre à lire une position',
       title='Les déséquilibres aux échecs : apprendre à lire une position',
       desc="Ce que sont les déséquilibres aux échecs (matériel, pions, espace, activité, sécurité du roi, menaces), comment les peser, et un exercice gratuit pour s'entraîner à les lire sur des parties de maîtres et vos propres parties.",
       lead="Chaque position est un ensemble de différences entre les deux camps. Les joueurs forts repèrent les quelques-unes qui décident de la partie, et bâtissent leur plan autour : une idée rendue célèbre par Jeremy Silman.",
-      alt="Correction de Lecture des déséquilibres sur une position du championnat du monde 1929 : Activité et Pions aux Blancs, justes ; Matériel donné aux Noirs alors qu'il est équilibré ; Espace aux Noirs manqué",
+      alt="Correction de Déséquilibres sur une position du championnat du monde 1929 : Activité et Pions aux Blancs, justes ; Matériel donné aux Noirs alors qu'il est équilibré ; Espace aux Noirs manqué",
       caption="Activité et Pions aux Blancs : juste. Le Matériel a été donné aux Noirs, mais il est équilibré : c'est l'Espace qu'il fallait choisir.",
       body="""
 <h2>Les six déséquilibres</h2>
@@ -212,7 +212,7 @@ FAQ = {
     ("D'où viennent les idées ?", "Des livres classiques de stratégie (Steinitz, Nimzowitsch, Capablanca, Kotov, Silman, Dvoretsky, Aagaard, Shereshevsky) et de l'ancienne évaluation de Stockfish, qui compte les mêmes choses à sa façon."),
   ]),
   ("La démarche de réflexion", [
-    ("Y a-t-il un ordre pour réfléchir à une position ?", "Oui. Les livres s'accordent sur un ordre, et chaque exercice en entraîne une étape :<ol><li><b>Une urgence ?</b> Échecs, prises et menaces, des deux côtés (Recherche du plan, phase 1).</li><li><b>Qu'est-ce qui diffère entre les deux camps ?</b> Les déséquilibres (Lecture des déséquilibres).</li><li><b>Qui est mieux ?</b> Les déséquilibres pesés ensemble décident de votre attitude : le camp qui a l'avantage joue pour s'en servir, l'autre se défend (Recherche du plan, phase 1).</li><li><b>Quel plan ?</b> Échanger ou garder les pièces ; ouvrir et attaquer, ou garder fermé et améliorer (Recherche du plan, phase 2).</li><li><b>Quels coups ?</b> Des coups candidats qui servent le plan, puis le choix, en vérifiant chacun contre la gaffe (Coups candidats, Choix du coup).</li></ol>"),
+    ("Y a-t-il un ordre pour réfléchir à une position ?", "Oui. Les livres s'accordent sur un ordre, et chaque exercice en entraîne une étape :<ol><li><b>Une urgence ?</b> Échecs, prises et menaces, des deux côtés (Recherche du plan, phase 1).</li><li><b>Qu'est-ce qui diffère entre les deux camps ?</b> Les déséquilibres (exercice Déséquilibres).</li><li><b>Qui est mieux ?</b> Les déséquilibres pesés ensemble décident de votre attitude : le camp qui a l'avantage joue pour s'en servir, l'autre se défend (Recherche du plan, phase 1).</li><li><b>Quel plan ?</b> Échanger ou garder les pièces ; ouvrir et attaquer, ou garder fermé et améliorer (Recherche du plan, phase 2).</li><li><b>Quels coups ?</b> Des coups candidats qui servent le plan, puis le choix, en vérifiant chacun contre la gaffe (Coups candidats, Choix du coup).</li></ol>"),
     ("Pourquoi des exercices séparés, et pas une position du début à la fin ?", "Chaque étape a sa correction tout de suite. Sur une seule position, la correction d'une étape trahirait la suivante, et une longue chaîne rend chaque tour lent. La routine quotidienne enchaîne les étapes dans l'ordre, chacune sur sa propre position."),
     ("Et le plan de l'adversaire ?", "Vérifier les échecs, prises et menaces de l'adversaire (étape 1) est la première partie de la prophylaxie. La question complète, « que veut mon adversaire ? », pourra devenir un exercice à part plus tard."),
   ]),
