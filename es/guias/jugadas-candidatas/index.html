@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jugadas candidatas en ajedrez: encuentra más de una buena jugada · ChessStrategy.org</title>
+<meta name="description" content="Qué son las jugadas candidatas, cómo encontrarlas (jaques, capturas, amenazas, luego el plan), y un ejercicio gratuito que califica tus elecciones con Stockfish en partidas de maestros y en tus propias partidas.">
+<link rel="canonical" href="https://chessstrategy.org/es/guias/jugadas-candidatas/">
+<link rel="alternate" hreflang="en" href="https://chessstrategy.org/learn/candidate-moves/">
+<link rel="alternate" hreflang="fr" href="https://chessstrategy.org/fr/guides/coups-candidats/">
+<link rel="alternate" hreflang="de" href="https://chessstrategy.org/de/anleitungen/kandidatenzuege/">
+<link rel="alternate" hreflang="es" href="https://chessstrategy.org/es/guias/jugadas-candidatas/">
+<link rel="alternate" hreflang="it" href="https://chessstrategy.org/it/guide/mosse-candidate/">
+<link rel="alternate" hreflang="x-default" href="https://chessstrategy.org/learn/candidate-moves/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ChessStrategy.org">
+<meta property="og:title" content="Jugadas candidatas en ajedrez: encuentra más de una buena jugada">
+<meta property="og:description" content="Qué son las jugadas candidatas, cómo encontrarlas (jaques, capturas, amenazas, luego el plan), y un ejercicio gratuito que califica tus elecciones con Stockfish en partidas de maestros y en tus propias partidas.">
+<meta property="og:url" content="https://chessstrategy.org/es/guias/jugadas-candidatas/">
+<meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#12161B">
+<link rel="icon" type="image/svg+xml" href="../../../icons/icon.svg">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "Article", "headline": "Jugadas candidatas en ajedrez: encuentra más de una buena jugada", "description": "Qué son las jugadas candidatas, cómo encontrarlas (jaques, capturas, amenazas, luego el plan), y un ejercicio gratuito que califica tus elecciones con Stockfish en partidas de maestros y en tus propias partidas.", "inLanguage": "es", "image": "https://chessstrategy.org/learn/img/candidate-moves-es.webp", "url": "https://chessstrategy.org/es/guias/jugadas-candidatas/", "publisher": {"@type": "Organization", "name": "ChessStrategy.org", "url": "https://chessstrategy.org/"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Preguntas frecuentes", "item": "https://chessstrategy.org/es/guias/"}, {"@type": "ListItem", "position": 2, "name": "Jugadas candidatas", "item": "https://chessstrategy.org/es/guias/jugadas-candidatas/"}]}]</script>
+<style>
+  :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2129; --border:#2E3742; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); margin:0; font:16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header, main{ max-width:760px; margin:0 auto; padding:0 16px; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding-top:16px; padding-bottom:8px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:600; color:var(--text); text-decoration:none; } .brand img{ width:28px; height:28px; border-radius:7px; }
+  /* the language, as the app's Settings show it: the current one in a chip, a tap for the other */
+  .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+  .langs{ position:relative; } .langs{ border:0; } .langs summary.lang{ list-style:none; cursor:pointer; padding:6px 14px; display:inline-flex; font-weight:600; } .langs summary::after{ content:none !important; } .langs summary::-webkit-details-marker{ display:none; }
+  .langs .list{ position:absolute; right:0; top:calc(100% + 6px); z-index:5; display:flex; flex-direction:column; min-width:150px; padding:6px; background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.35); }
+  .langs .list a{ display:flex; gap:10px; padding:8px 12px; border-radius:8px; color:var(--text); text-decoration:none; } .langs .list a b{ width:22px; color:var(--mute); font-weight:600; font-size:.85rem; }
+  .langs .list a:hover{ background:#222A33; } .langs .list a.on, .langs .list a.on b{ color:var(--accent); }
+  main{ padding-bottom:56px; }
+  h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
+  .back{ margin:12px 0 0; font-size:.95rem; } .back a{ color:var(--mute); text-decoration:none; } h1 + .sub{ margin:-4px 0 14px; color:var(--mute); font-size:1.08rem; }
+  h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
+  .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
+  ul, ol{ padding-left:22px; } li{ margin:4px 0; }
+  .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--line); }
+  figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
+  .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
+  .card{ display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-decoration:none; }
+  .card strong{ color:var(--text); display:block; margin-bottom:2px; } .card span{ color:var(--mute); font-size:.95rem; }
+  .faq-h{ font-size:1rem; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; margin:28px 0 6px; }
+  details{ border-bottom:1px solid var(--line); } details summary{ cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  details summary::-webkit-details-marker{ display:none; } details summary::after{ content:'+'; color:var(--mute); font-weight:400; } details[open] summary::after{ content:'−'; }
+  details .a{ padding:0 0 12px; color:var(--mute); } details .a b{ color:var(--text); } details .a ol, details .a ul{ margin:6px 0 0; }
+</style>
+<!-- Built by scripts/build-pages.py: edit the script (or scripts/pages/), not this file. -->
+</head>
+<body>
+<header><a class="brand" href="../../../"><img src="../../../icons/icon.svg" alt="">ChessStrategy.org</a><details class="langs"><summary class="lang" aria-label="Language · Langue · Sprache · Idioma · Lingua" title="Language · Langue · Sprache · Idioma · Lingua">ES</summary><div class="list"><a href="../../../learn/candidate-moves/" hreflang="en" lang="en"><b>EN</b>English</a><a href="../../../fr/guides/coups-candidats/" hreflang="fr" lang="fr"><b>FR</b>Français</a><a href="../../../de/anleitungen/kandidatenzuege/" hreflang="de" lang="de"><b>DE</b>Deutsch</a><a href="../../../es/guias/jugadas-candidatas/" hreflang="es" lang="es" class="on"><b>ES</b>Español</a><a href="../../../it/guide/mosse-candidate/" hreflang="it" lang="it"><b>IT</b>Italiano</a></div></details></header>
+<main>
+<p class="back"><a href="../">‹ FAQ</a></p>
+<h1>Jugadas candidatas</h1>
+<p class="sub">Encuentra una o más buenas jugadas</p>
+<p class="lead">La mayoría de los errores vienen de jugar la primera jugada que parece buena. El consejo de Alexander Kotov: haz primero una lista de algunas opciones serias, luego elige.</p>
+<figure><img src="../../../learn/img/candidate-moves-es.webp" width="390" height="844" alt="Corrección de Jugadas candidatas en una posición del Campeonato del Mundo de 2024: bxa3 y Qa5, las dos mejores del motor, luego h5, dudosa; la propia 3.ª jugada del motor también es dudosa" loading="lazy"><figcaption>Aquí solo aguantan dos jugadas, bxa3 y Qa5, y se encontraron las dos. Pero la tercera elección debía haberse evitado.</figcaption></figure>
+<h2>Cómo encontrarlas</h2>
+<ul>
+  <li><strong>Primero las jugadas forzantes</strong>: jaques, capturas y amenazas, de ambos bandos.</li>
+  <li><strong>Luego las jugadas que siguen el <a href="../como-hacer-un-plan-en-ajedrez/">plan</a></strong>: sacan el máximo de tus desequilibrios más decisivos, o reducen los del rival.</li>
+  <li><strong>Ten en cuenta la fase de la partida</strong>, sobre todo cuando el plan es mejorar: en la apertura, desarrolla y pon a salvo tu rey; en el medio juego, busca mejores casillas para tus piezas y corrige tus debilidades; en el final, activa tu rey y avanza tus peones pasados.</li>
+</ul>
+
+<h2>El ejercicio</h2>
+<p>Elige de 1 a 3 jugadas fuertes. Stockfish califica cada una frente a su mejor jugada: Mejor, Buena, Aceptable, Dudosa, Error o Error grave. Dudosa o peor no suma nada: ante la duda, elige menos.</p>
+</main>
+</body>
+</html>

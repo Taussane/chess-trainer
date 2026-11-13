@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Los desequilibrios en ajedrez: aprende a leer una posición · ChessStrategy.org</title>
+<meta name="description" content="Qué son los desequilibrios en ajedrez (material, peones, espacio, actividad, seguridad del rey, amenazas), cómo sopesarlos, y un ejercicio gratuito para practicar su lectura en partidas de maestros y en tus propias partidas.">
+<link rel="canonical" href="https://chessstrategy.org/es/guias/desequilibrios-en-ajedrez/">
+<link rel="alternate" hreflang="en" href="https://chessstrategy.org/learn/chess-imbalances/">
+<link rel="alternate" hreflang="fr" href="https://chessstrategy.org/fr/guides/desequilibres-aux-echecs/">
+<link rel="alternate" hreflang="de" href="https://chessstrategy.org/de/anleitungen/ungleichgewichte-im-schach/">
+<link rel="alternate" hreflang="es" href="https://chessstrategy.org/es/guias/desequilibrios-en-ajedrez/">
+<link rel="alternate" hreflang="it" href="https://chessstrategy.org/it/guide/squilibri-negli-scacchi/">
+<link rel="alternate" hreflang="x-default" href="https://chessstrategy.org/learn/chess-imbalances/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ChessStrategy.org">
+<meta property="og:title" content="Los desequilibrios en ajedrez: aprende a leer una posición">
+<meta property="og:description" content="Qué son los desequilibrios en ajedrez (material, peones, espacio, actividad, seguridad del rey, amenazas), cómo sopesarlos, y un ejercicio gratuito para practicar su lectura en partidas de maestros y en tus propias partidas.">
+<meta property="og:url" content="https://chessstrategy.org/es/guias/desequilibrios-en-ajedrez/">
+<meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#12161B">
+<link rel="icon" type="image/svg+xml" href="../../../icons/icon.svg">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "Article", "headline": "Los desequilibrios en ajedrez: aprende a leer una posición", "description": "Qué son los desequilibrios en ajedrez (material, peones, espacio, actividad, seguridad del rey, amenazas), cómo sopesarlos, y un ejercicio gratuito para practicar su lectura en partidas de maestros y en tus propias partidas.", "inLanguage": "es", "image": "https://chessstrategy.org/learn/img/imbalance-reading-es.webp", "url": "https://chessstrategy.org/es/guias/desequilibrios-en-ajedrez/", "publisher": {"@type": "Organization", "name": "ChessStrategy.org", "url": "https://chessstrategy.org/"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Preguntas frecuentes", "item": "https://chessstrategy.org/es/guias/"}, {"@type": "ListItem", "position": 2, "name": "Desequilibrios", "item": "https://chessstrategy.org/es/guias/desequilibrios-en-ajedrez/"}]}]</script>
+<style>
+  :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2129; --border:#2E3742; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); margin:0; font:16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header, main{ max-width:760px; margin:0 auto; padding:0 16px; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding-top:16px; padding-bottom:8px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:600; color:var(--text); text-decoration:none; } .brand img{ width:28px; height:28px; border-radius:7px; }
+  /* the language, as the app's Settings show it: the current one in a chip, a tap for the other */
+  .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+  .langs{ position:relative; } .langs{ border:0; } .langs summary.lang{ list-style:none; cursor:pointer; padding:6px 14px; display:inline-flex; font-weight:600; } .langs summary::after{ content:none !important; } .langs summary::-webkit-details-marker{ display:none; }
+  .langs .list{ position:absolute; right:0; top:calc(100% + 6px); z-index:5; display:flex; flex-direction:column; min-width:150px; padding:6px; background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.35); }
+  .langs .list a{ display:flex; gap:10px; padding:8px 12px; border-radius:8px; color:var(--text); text-decoration:none; } .langs .list a b{ width:22px; color:var(--mute); font-weight:600; font-size:.85rem; }
+  .langs .list a:hover{ background:#222A33; } .langs .list a.on, .langs .list a.on b{ color:var(--accent); }
+  main{ padding-bottom:56px; }
+  h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
+  .back{ margin:12px 0 0; font-size:.95rem; } .back a{ color:var(--mute); text-decoration:none; } h1 + .sub{ margin:-4px 0 14px; color:var(--mute); font-size:1.08rem; }
+  h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
+  .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
+  ul, ol{ padding-left:22px; } li{ margin:4px 0; }
+  .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--line); }
+  figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
+  .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
+  .card{ display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-decoration:none; }
+  .card strong{ color:var(--text); display:block; margin-bottom:2px; } .card span{ color:var(--mute); font-size:.95rem; }
+  .faq-h{ font-size:1rem; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; margin:28px 0 6px; }
+  details{ border-bottom:1px solid var(--line); } details summary{ cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  details summary::-webkit-details-marker{ display:none; } details summary::after{ content:'+'; color:var(--mute); font-weight:400; } details[open] summary::after{ content:'−'; }
+  details .a{ padding:0 0 12px; color:var(--mute); } details .a b{ color:var(--text); } details .a ol, details .a ul{ margin:6px 0 0; }
+</style>
+<!-- Built by scripts/build-pages.py: edit the script (or scripts/pages/), not this file. -->
+</head>
+<body>
+<header><a class="brand" href="../../../"><img src="../../../icons/icon.svg" alt="">ChessStrategy.org</a><details class="langs"><summary class="lang" aria-label="Language · Langue · Sprache · Idioma · Lingua" title="Language · Langue · Sprache · Idioma · Lingua">ES</summary><div class="list"><a href="../../../learn/chess-imbalances/" hreflang="en" lang="en"><b>EN</b>English</a><a href="../../../fr/guides/desequilibres-aux-echecs/" hreflang="fr" lang="fr"><b>FR</b>Français</a><a href="../../../de/anleitungen/ungleichgewichte-im-schach/" hreflang="de" lang="de"><b>DE</b>Deutsch</a><a href="../../../es/guias/desequilibrios-en-ajedrez/" hreflang="es" lang="es" class="on"><b>ES</b>Español</a><a href="../../../it/guide/squilibri-negli-scacchi/" hreflang="it" lang="it"><b>IT</b>Italiano</a></div></details></header>
+<main>
+<p class="back"><a href="../">‹ FAQ</a></p>
+<h1>Desequilibrios</h1>
+<p class="sub">Aprende a leer una posición</p>
+<p class="lead">Cada posición es un conjunto de diferencias entre los dos bandos. Los jugadores fuertes detectan las pocas que deciden la partida y planifican en torno a ellas: una idea que hizo famosa Jeremy Silman.</p>
+<figure><img src="../../../learn/img/imbalance-reading-es.webp" width="390" height="844" alt="Corrección de Desequilibrios en una posición del Campeonato del Mundo de 1929: Actividad y Peones para las blancas, correctos; Material dado a las negras aunque está equilibrado; Espacio para las negras, olvidado" loading="lazy"><figcaption>Actividad y Peones para las blancas: correcto. El Material se dio a las negras, pero está equilibrado: había que elegir el Espacio.</figcaption></figure>
+<h2>Los seis desequilibrios</h2>
+<ul>
+  <li><strong>Material</strong>: peón 1, caballo y alfil 3, torre 5, dama 9; la pareja de alfiles suma medio peón.</li>
+  <li><strong>Peones</strong>: peones pasados y ligados, más cuanto más avanzados; los peones aislados, doblados y retrasados cuentan en contra.</li>
+  <li><strong>Espacio</strong>: los peones y las casillas seguras detrás de ellos en el centro.</li>
+  <li><strong>Actividad</strong>: las casillas seguras que alcanzan tus piezas, los puestos avanzados, las columnas abiertas. Al principio de la partida, el <strong>Desarrollo</strong> en su lugar.</li>
+  <li><strong>Seguridad del rey</strong>: el refugio de peones frente a las piezas atacantes. Sin damas, la <strong>Actividad del rey</strong> en su lugar.</li>
+  <li><strong>Amenazas</strong>: el material que puedes ganar ya, y las amenazas para la siguiente jugada, como un avance de peón que ataca una pieza.</li>
+</ul>
+<p>Material, Peones y Espacio son <em>estáticos</em>: tienden a durar. Los demás son <em>dinámicos</em>: úsalos antes de que se desvanezcan.</p>
+
+<h2>El ejercicio</h2>
+<p>Elige 3 de los desequilibrios que deciden la posición (puede haber más de 3) y quién tiene la ventaja. La corrección muestra el tamaño de cada uno: <strong>=</strong> equilibrado; <strong>+</strong> o <strong>++</strong> una ventaja pequeña o grande para las blancas, <strong>−</strong> o <strong>−−</strong> para las negras. Una elección entre las 3 mayores ventajas, del bando correcto, suma todos los puntos; una ventaja menor, la mitad; uno equilibrado o del bando equivocado, nada.</p>
+<p>Busca primero los ++. Un gran desequilibrio puede pesar más que varios pequeños, y la táctica les gana a todos.</p>
+</main>
+</body>
+</html>

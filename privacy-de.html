@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Datenschutz · ChessStrategy.org</title>
+<meta name="description" content="Was ChessStrategy.org über dich speichert, wo, und wie du es löschst.">
+<link rel="canonical" href="https://chessstrategy.org/privacy-de.html">
+<link rel="alternate" hreflang="en" href="https://chessstrategy.org/privacy.html">
+<link rel="alternate" hreflang="fr" href="https://chessstrategy.org/privacy-fr.html">
+<link rel="alternate" hreflang="de" href="https://chessstrategy.org/privacy-de.html">
+<link rel="alternate" hreflang="es" href="https://chessstrategy.org/privacy-es.html">
+<link rel="alternate" hreflang="it" href="https://chessstrategy.org/privacy-it.html">
+<link rel="alternate" hreflang="x-default" href="https://chessstrategy.org/privacy.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ChessStrategy.org">
+<meta property="og:title" content="Datenschutz">
+<meta property="og:description" content="Was ChessStrategy.org über dich speichert, wo, und wie du es löschst.">
+<meta property="og:url" content="https://chessstrategy.org/privacy-de.html">
+<meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">
+<meta property="og:locale" content="de_DE">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#12161B">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+
+<style>
+  :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2129; --border:#2E3742; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); margin:0; font:16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header, main{ max-width:760px; margin:0 auto; padding:0 16px; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding-top:16px; padding-bottom:8px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:600; color:var(--text); text-decoration:none; } .brand img{ width:28px; height:28px; border-radius:7px; }
+  /* the language, as the app's Settings show it: the current one in a chip, a tap for the other */
+  .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+  .langs{ position:relative; } .langs{ border:0; } .langs summary.lang{ list-style:none; cursor:pointer; padding:6px 14px; display:inline-flex; font-weight:600; } .langs summary::after{ content:none !important; } .langs summary::-webkit-details-marker{ display:none; }
+  .langs .list{ position:absolute; right:0; top:calc(100% + 6px); z-index:5; display:flex; flex-direction:column; min-width:150px; padding:6px; background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.35); }
+  .langs .list a{ display:flex; gap:10px; padding:8px 12px; border-radius:8px; color:var(--text); text-decoration:none; } .langs .list a b{ width:22px; color:var(--mute); font-weight:600; font-size:.85rem; }
+  .langs .list a:hover{ background:#222A33; } .langs .list a.on, .langs .list a.on b{ color:var(--accent); }
+  main{ padding-bottom:56px; }
+  h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
+  .back{ margin:12px 0 0; font-size:.95rem; } .back a{ color:var(--mute); text-decoration:none; } h1 + .sub{ margin:-4px 0 14px; color:var(--mute); font-size:1.08rem; }
+  h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
+  .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
+  ul, ol{ padding-left:22px; } li{ margin:4px 0; }
+  .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--line); }
+  figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
+  .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
+  .card{ display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-decoration:none; }
+  .card strong{ color:var(--text); display:block; margin-bottom:2px; } .card span{ color:var(--mute); font-size:.95rem; }
+  .faq-h{ font-size:1rem; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; margin:28px 0 6px; }
+  details{ border-bottom:1px solid var(--line); } details summary{ cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  details summary::-webkit-details-marker{ display:none; } details summary::after{ content:'+'; color:var(--mute); font-weight:400; } details[open] summary::after{ content:'−'; }
+  details .a{ padding:0 0 12px; color:var(--mute); } details .a b{ color:var(--text); } details .a ol, details .a ul{ margin:6px 0 0; }
+</style>
+<!-- Built by scripts/build-pages.py: edit the script (or scripts/pages/), not this file. -->
+</head>
+<body>
+<header><a class="brand" href=""><img src="icons/icon.svg" alt="">ChessStrategy.org</a><details class="langs"><summary class="lang" aria-label="Language · Langue · Sprache · Idioma · Lingua" title="Language · Langue · Sprache · Idioma · Lingua">DE</summary><div class="list"><a href="privacy.html" hreflang="en" lang="en"><b>EN</b>English</a><a href="privacy-fr.html" hreflang="fr" lang="fr"><b>FR</b>Français</a><a href="privacy-de.html" hreflang="de" lang="de" class="on"><b>DE</b>Deutsch</a><a href="privacy-es.html" hreflang="es" lang="es"><b>ES</b>Español</a><a href="privacy-it.html" hreflang="it" lang="it"><b>IT</b>Italiano</a></div></details></header>
+<main>
+<h1>Datenschutz</h1>
+<p class="mute">Chess Strategy ist kostenlose Open-Source-Software, ohne Werbung und ohne seitenübergreifendes Tracking; sie zählt nur ihre eigene Nutzung, anonym (siehe unten).</p>
+
+<h2>Ohne Anmeldung</h2>
+<p>Alles bleibt in deinem Browser: deine Wertungen, deine Partien und ihre Analyse. Wenn du einen Chess.com-Benutzernamen hinzufügst, holt unser Server die öffentlichen Partien dieses Spielers für dich von Chess.com und speichert nichts.</p>
+
+<h2>Bei Anmeldung mit Lichess</h2>
+<p>Lichess teilt uns deinen Benutzernamen mit und sonst nichts: nie dein Passwort oder deine E-Mail-Adresse. In deinem Konto speichern wir:</p>
+<ul>
+  <li>deinen Lichess-Benutzernamen;</li>
+  <li>dein Training: welche Stellungen du gespielt hast, wann, und deine Wertung;</li>
+  <li>deine letzten 100 Partien von Lichess und Chess.com, automatisch synchronisiert (Züge, Wertungszahlen, Bedenkzeit, Datum und die Bewertungen von Lichess oder unserer Engine);</li>
+  <li>falls du ihn hinzufügst, deinen Chess.com-Benutzernamen (deine öffentlichen Chess.com-Partien werden über unseren Server gelesen).</li>
+</ul>
+<p>Deine Lichess-Anmeldung bleibt in deinem Browser. Unser Server speichert nur einen Fingerabdruck davon, für einen Tag, damit er Lichess nicht bei jeder Anfrage erneut fragen muss. Beim Abmelden wird er gelöscht und unser Zugriff auf Lichess aufgehoben.</p>
+
+<h2>Bei Anmeldung mit Google</h2>
+<p>Google teilt uns deine E-Mail-Adresse und eine Kennung deines Google-Kontos mit, sonst nichts: nie dein Passwort und kein Zugriff auf dein Google-Konto, deine E-Mails oder Dateien. Wir speichern die E-Mail-Adresse in deinem Konto, um anzuzeigen, mit welchem Konto du angemeldet bist, sowie dasselbe wie oben (dein Training, deine Partien, deinen Chess.com-Benutzernamen, falls du ihn hinzufügst). Wir schreiben dir nie. Deine Anmeldung bleibt in deinem Browser; unser Server speichert nur einen Fingerabdruck davon. Beim Abmelden wird sie gelöscht.</p>
+
+<h2>Wo es gespeichert wird</h2>
+<p>Auf den Servern von Cloudflare, die unseren Kontoserver und seine Datenbank betreiben, und in deinem Browser. Wir geben nichts weiter, verkaufen nichts und nutzen keine externen Analyse- oder Werbedienste.</p>
+
+<h2>Nutzungszählung</h2>
+<p>Um zu sehen, was funktioniert und was verbessert werden sollte, zählt die Website anonym, wie sie genutzt wird: Besuche, gespielte Stellungen (welche Übung, die Wertung, Meister- oder eigene Partie, in der täglichen Routine oder nicht), wie viele Stellungen in deinen Partien gefunden werden, und für jedes Gerät seine Sprache, wie du angemeldet bist (gar nicht, mit Lichess oder Google), ob ein Chess.com-Benutzername hinzugefügt ist, ob sie als installierte App läuft und ob die Schach-Engine nicht geladen werden konnte. Diese Zählungen tragen eine Zufallszahl, die in deinem Browser gespeichert wird, nie deinen Namen, Benutzernamen oder dein Konto, und werden nach 13 Monaten gelöscht. Keine andere Website ist beteiligt.</p>
+
+<h2>Spenden</h2>
+<p>Die Seite „Unterstützen“ zeigt die Schaltfläche von Ko-fi, die von Ko-fi geladen wird. Spenden werden von Ko-fi nach dessen eigener Datenschutzerklärung abgewickelt. Ko-fi teilt uns mit, was du bei einer Spende freiwillig angibst (etwa deinen Namen oder eine Nachricht); das ist nicht mit deinem Konto hier verknüpft.</p>
+
+<h2>Deine Daten löschen</h2>
+<p>In der App: <b>Profil › Mein Konto löschen</b>. Alles oben Genannte wird sofort und endgültig gelöscht. Um nur deine Chess.com-Partien zu entfernen, trenne Chess.com in deinem Profil.</p>
+
+<h2>Fragen</h2>
+<p>Eröffne ein Issue auf <a href="https://github.com/Taussane/chess-trainer/issues">GitHub</a>. Dort ist auch der Code, der all das tut.</p>
+<p>Siehe auch die <a href="terms-de.html">Nutzungsbedingungen</a>.</p>
+<p class="mute">Diese Übersetzung dient der Information; maßgeblich ist die <a href="privacy.html">englische Fassung</a>.</p>
+</main>
+</body>
+</html>

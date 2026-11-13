@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Come scegliere la mossa migliore negli scacchi · ChessStrategy.org</title>
+<meta name="description" content="Come scegliere tra mosse che sembrano buone: trovare la migliore, poi verificare cosa concede ogni mossa. Un esercizio gratuito in cui ordini quattro mosse da partite di maestri e dai tuoi errori.">
+<link rel="canonical" href="https://chessstrategy.org/it/guide/scegliere-la-mossa-migliore/">
+<link rel="alternate" hreflang="en" href="https://chessstrategy.org/learn/move-selection/">
+<link rel="alternate" hreflang="fr" href="https://chessstrategy.org/fr/guides/choisir-le-meilleur-coup/">
+<link rel="alternate" hreflang="de" href="https://chessstrategy.org/de/anleitungen/besten-zug-waehlen/">
+<link rel="alternate" hreflang="es" href="https://chessstrategy.org/es/guias/elegir-la-mejor-jugada/">
+<link rel="alternate" hreflang="it" href="https://chessstrategy.org/it/guide/scegliere-la-mossa-migliore/">
+<link rel="alternate" hreflang="x-default" href="https://chessstrategy.org/learn/move-selection/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ChessStrategy.org">
+<meta property="og:title" content="Come scegliere la mossa migliore negli scacchi">
+<meta property="og:description" content="Come scegliere tra mosse che sembrano buone: trovare la migliore, poi verificare cosa concede ogni mossa. Un esercizio gratuito in cui ordini quattro mosse da partite di maestri e dai tuoi errori.">
+<meta property="og:url" content="https://chessstrategy.org/it/guide/scegliere-la-mossa-migliore/">
+<meta property="og:image" content="https://chessstrategy.org/icons/og-image.png">
+<meta property="og:locale" content="it_IT">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#12161B">
+<link rel="icon" type="image/svg+xml" href="../../../icons/icon.svg">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "Article", "headline": "Come scegliere la mossa migliore negli scacchi", "description": "Come scegliere tra mosse che sembrano buone: trovare la migliore, poi verificare cosa concede ogni mossa. Un esercizio gratuito in cui ordini quattro mosse da partite di maestri e dai tuoi errori.", "inLanguage": "it", "image": "https://chessstrategy.org/learn/img/move-selection-it.webp", "url": "https://chessstrategy.org/it/guide/scegliere-la-mossa-migliore/", "publisher": {"@type": "Organization", "name": "ChessStrategy.org", "url": "https://chessstrategy.org/"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Domande frequenti", "item": "https://chessstrategy.org/it/guide/"}, {"@type": "ListItem", "position": 2, "name": "Scelta della mossa", "item": "https://chessstrategy.org/it/guide/scegliere-la-mossa-migliore/"}]}]</script>
+<style>
+  :root{ color-scheme: dark; --bg:#12161B; --panel:#1B2129; --border:#2E3742; --line:#2A313A; --text:#EDE7DC; --mute:#9A9488; --accent:#C9A227; }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); margin:0; font:16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header, main{ max-width:760px; margin:0 auto; padding:0 16px; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding-top:16px; padding-bottom:8px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:600; color:var(--text); text-decoration:none; } .brand img{ width:28px; height:28px; border-radius:7px; }
+  /* the language, as the app's Settings show it: the current one in a chip, a tap for the other */
+  .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+  .langs{ position:relative; } .langs{ border:0; } .langs summary.lang{ list-style:none; cursor:pointer; padding:6px 14px; display:inline-flex; font-weight:600; } .langs summary::after{ content:none !important; } .langs summary::-webkit-details-marker{ display:none; }
+  .langs .list{ position:absolute; right:0; top:calc(100% + 6px); z-index:5; display:flex; flex-direction:column; min-width:150px; padding:6px; background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.35); }
+  .langs .list a{ display:flex; gap:10px; padding:8px 12px; border-radius:8px; color:var(--text); text-decoration:none; } .langs .list a b{ width:22px; color:var(--mute); font-weight:600; font-size:.85rem; }
+  .langs .list a:hover{ background:#222A33; } .langs .list a.on, .langs .list a.on b{ color:var(--accent); }
+  main{ padding-bottom:56px; }
+  h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
+  .back{ margin:12px 0 0; font-size:.95rem; } .back a{ color:var(--mute); text-decoration:none; } h1 + .sub{ margin:-4px 0 14px; color:var(--mute); font-size:1.08rem; }
+  h2{ font-size:1.25rem; margin:32px 0 8px; } h3{ font-size:1.05rem; margin:20px 0 4px; }
+  .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
+  ul, ol{ padding-left:22px; } li{ margin:4px 0; }
+  .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--line); }
+  figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
+  .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
+  .card{ display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-decoration:none; }
+  .card strong{ color:var(--text); display:block; margin-bottom:2px; } .card span{ color:var(--mute); font-size:.95rem; }
+  .faq-h{ font-size:1rem; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; margin:28px 0 6px; }
+  details{ border-bottom:1px solid var(--line); } details summary{ cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  details summary::-webkit-details-marker{ display:none; } details summary::after{ content:'+'; color:var(--mute); font-weight:400; } details[open] summary::after{ content:'−'; }
+  details .a{ padding:0 0 12px; color:var(--mute); } details .a b{ color:var(--text); } details .a ol, details .a ul{ margin:6px 0 0; }
+</style>
+<!-- Built by scripts/build-pages.py: edit the script (or scripts/pages/), not this file. -->
+</head>
+<body>
+<header><a class="brand" href="../../../"><img src="../../../icons/icon.svg" alt="">ChessStrategy.org</a><details class="langs"><summary class="lang" aria-label="Language · Langue · Sprache · Idioma · Lingua" title="Language · Langue · Sprache · Idioma · Lingua">IT</summary><div class="list"><a href="../../../learn/move-selection/" hreflang="en" lang="en"><b>EN</b>English</a><a href="../../../fr/guides/choisir-le-meilleur-coup/" hreflang="fr" lang="fr"><b>FR</b>Français</a><a href="../../../de/anleitungen/besten-zug-waehlen/" hreflang="de" lang="de"><b>DE</b>Deutsch</a><a href="../../../es/guias/elegir-la-mejor-jugada/" hreflang="es" lang="es"><b>ES</b>Español</a><a href="../../../it/guide/scegliere-la-mossa-migliore/" hreflang="it" lang="it" class="on"><b>IT</b>Italiano</a></div></details></header>
+<main>
+<p class="back"><a href="../">‹ FAQ</a></p>
+<h1>Scelta della mossa</h1>
+<p class="sub">Come scegliere la mossa migliore</p>
+<p class="lead">Diverse mosse possono sembrare buone, ma solo una è la migliore. Quando l'esplorazione delle <a href="../mosse-candidate/">mosse candidate</a> ti ha dato alcune opzioni serie, resta l'ultimo passo: scegliere tra loro, ed è lì che si perdono molte partite.</p>
+<figure><img src="../../../learn/img/move-selection-it.webp" width="390" height="844" alt="Correzione di Scelta della mossa su una posizione del Campionato del mondo 1963: quattro mosse ordinate, la mossa della partita Nxe4 è la migliore, due dubbie" loading="lazy"><figcaption>La mossa della partita, Nxe4, è la migliore ed è stata trovata. Qh2, l'unica altra mossa giocabile, andava messa 2ª.</figcaption></figure>
+<h2>Ordinare le opzioni</h2>
+<ul>
+  <li><strong>Verifica che nessuna mossa sia un errore grave</strong>: guarda gli scacchi, le catture e le minacce dell'avversario dopo di essa. Una mossa che perde materiale o espone il re di solito scende in classifica, per quanto minacciosa sembri.</li>
+  <li><strong>Confronta le posizioni che ottieni</strong>: preferisci le mosse che sfruttano al meglio i tuoi vantaggi o riducono quelli dell'avversario, come chiede il tuo piano.</li>
+  <li><strong>Quando due mosse sembrano equivalenti</strong>, non perderci troppo tempo: se hanno davvero una forza simile, la scelta non cambierà molto.</li>
+</ul>
+
+<h2>L'esercizio</h2>
+<p>Ordina quattro mosse dalla migliore alla peggiore. Una è stata giocata nella partita. Nelle tue partite è la tua mossa, che era Dubbia o peggio: una seconda possibilità su una decisione andata male.</p>
+<p>Trovare la mossa migliore vale metà del punteggio: il 1º posto conta il 50%, il 2º il 30%, il 3º il 20%, ciascuno confrontato con la migliore mossa rimasta.</p>
+</main>
+</body>
+</html>

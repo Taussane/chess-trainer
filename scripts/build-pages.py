@@ -1,4 +1,4 @@
-# Builds the site's plain pages, in English and French: the guides (one page per exercise, and their index with the
+# Builds the site's plain pages, in English, French, German, Spanish and Italian (the last three's text in guides_more.py): the guides (one page per exercise, and their index with the
 # FAQ), privacy and terms (their text in scripts/pages/), all in one frame, and the sitemap. For search engines, and
 # for anyone who wants to know what an exercise trains before trying it. Plain pages, no script.
 # Run by scripts/build-site.py (so `build-site.py --check` covers them too); the text lives here.
@@ -6,7 +6,10 @@
 import pathlib, json, html, re
 root = pathlib.Path(__file__).resolve().parent.parent
 SITE = 'https://chessstrategy.org/'
-HUB = { 'en': 'learn/', 'fr': 'fr/guides/' }   # each language's guides
+LANGS = ['en', 'fr', 'de', 'es', 'it']
+NAMES = { 'en':'English', 'fr':'Français', 'de':'Deutsch', 'es':'Español', 'it':'Italiano' }
+LOCALES = { 'en':'en_GB', 'fr':'fr_FR', 'de':'de_DE', 'es':'es_ES', 'it':'it_IT' }
+HUB = { 'en': 'learn/', 'fr': 'fr/guides/', 'de': 'de/anleitungen/', 'es': 'es/guias/', 'it': 'it/guide/' }   # each language's guides (as the app's FAQ_PATH)
 
 # ---------------------------------------------------------------- the guides
 # Each: the exercise it opens (?play=), its picture, and per language its address (HUB + slug), name and text (HTML).
@@ -234,6 +237,12 @@ FAQ = {
 ],
 }
 
+# ---------------------------------------------------------------- German, Spanish, Italian
+import sys; sys.path.insert(0, str(root / 'scripts'))
+from guides_more import GUIDES_MORE, FAQ_MORE, W_MORE, LEGAL_MORE
+for g in GUIDES: g.update(GUIDES_MORE[g['play']])
+FAQ.update(FAQ_MORE)
+
 # ---------------------------------------------------------------- the words around the text
 W = {
   'en': dict(other='Lire en français', faq='Frequently asked questions', exercises='Exercises',
@@ -243,6 +252,8 @@ W = {
     intro="Les puzzles de tactique ont toujours une seule bonne réponse. Les vraies parties, non. ChessStrategy.org entraîne ce qui vient avant le coup : lire la position, choisir un plan, trouver de bons coups, et choisir le meilleur.",
     faq_desc="Comment fonctionne ChessStrategy.org : ses quatre exercices de stratégie aux échecs (déséquilibres, plans, coups candidats, choix du coup), les scores, les positions et le moteur."),
 }
+W.update(W_MORE)
+LANG_LABEL = 'Language · Langue · Sprache · Idioma · Lingua'
 
 def nbsp(t):
   # French typography: a non-breaking space before : ; ? ! and inside « », outside tags
@@ -262,6 +273,10 @@ STYLE = """
   .brand{ display:flex; align-items:center; gap:10px; font-weight:600; color:var(--text); text-decoration:none; } .brand img{ width:28px; height:28px; border-radius:7px; }
   /* the language, as the app's Settings show it: the current one in a chip, a tap for the other */
   .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+  .langs{ position:relative; } .langs{ border:0; } .langs summary.lang{ list-style:none; cursor:pointer; padding:6px 14px; display:inline-flex; font-weight:600; } .langs summary::after{ content:none !important; } .langs summary::-webkit-details-marker{ display:none; }
+  .langs .list{ position:absolute; right:0; top:calc(100% + 6px); z-index:5; display:flex; flex-direction:column; min-width:150px; padding:6px; background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.35); }
+  .langs .list a{ display:flex; gap:10px; padding:8px 12px; border-radius:8px; color:var(--text); text-decoration:none; } .langs .list a b{ width:22px; color:var(--mute); font-weight:600; font-size:.85rem; }
+  .langs .list a:hover{ background:#222A33; } .langs .list a.on, .langs .list a.on b{ color:var(--accent); }
   main{ padding-bottom:56px; }
   h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
   .back{ margin:12px 0 0; font-size:.95rem; } .back a{ color:var(--mute); text-decoration:none; } h1 + .sub{ margin:-4px 0 14px; color:var(--mute); font-size:1.08rem; }
@@ -281,11 +296,13 @@ STYLE = """
 """
 
 # Every page the same frame: the logo (back to the app) and the language chip (the same page in the other language).
-def page(path, lang, title, desc, body, alt, ld=None, kind='article'):
+def page(path, lang, title, desc, body, alts, ld=None, kind='article'):
+  # alts: each language's version of this page ({ lang: path }); the chip opens the list (no script: a <details>)
   up = '../' * path.count('/')
   url = lambda p: SITE + p.removesuffix('index.html')
-  other = 'fr' if lang=='en' else 'en'
-  chip = f'<a class="lang" href="{up}{alt.removesuffix("index.html")}" hreflang="{other}" lang="{other}" aria-label="{W[lang]["other"]}" title="{W[lang]["other"]}">{lang.upper()}</a>'
+  items = ''.join(f'<a href="{up}{alts[l].removesuffix("index.html")}" hreflang="{l}" lang="{l}"{" class=\"on\"" if l==lang else ""}><b>{l.upper()}</b>{NAMES[l]}</a>' for l in LANGS)
+  chip = f'<details class="langs"><summary class="lang" aria-label="{LANG_LABEL}" title="{LANG_LABEL}">{lang.upper()}</summary><div class="list">{items}</div></details>'
+  hreflangs = '\n'.join(f'<link rel="alternate" hreflang="{l}" href="{url(alts[l])}">' for l in LANGS) + f'\n<link rel="alternate" hreflang="x-default" href="{url(alts["en"])}">'
   return f"""<!doctype html>
 <html lang="{lang}">
 <head>
@@ -294,15 +311,14 @@ def page(path, lang, title, desc, body, alt, ld=None, kind='article'):
 <title>{html.escape(title)} · ChessStrategy.org</title>
 <meta name="description" content="{html.escape(desc)}">
 <link rel="canonical" href="{url(path)}">
-<link rel="alternate" hreflang="{lang}" href="{url(path)}">
-<link rel="alternate" hreflang="{other}" href="{url(alt)}">
+{hreflangs}
 <meta property="og:type" content="{kind}">
 <meta property="og:site_name" content="ChessStrategy.org">
 <meta property="og:title" content="{html.escape(title)}">
 <meta property="og:description" content="{html.escape(desc)}">
 <meta property="og:url" content="{url(path)}">
 <meta property="og:image" content="{SITE}icons/og-image.png">
-<meta property="og:locale" content="{'fr_FR' if lang=='fr' else 'en_GB'}">
+<meta property="og:locale" content="{LOCALES[lang]}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#12161B">
 <link rel="icon" type="image/svg+xml" href="{up}icons/icon.svg">
@@ -320,24 +336,23 @@ def page(path, lang, title, desc, body, alt, ld=None, kind='article'):
 """
 
 # Privacy and terms: their text in scripts/pages/, this frame around it.
-LEGAL = [
-  ('privacy.html', 'en', 'Privacy', 'What ChessStrategy.org keeps about you, where, and how to delete it.', 'privacy-fr.html'),
-  ('privacy-fr.html', 'fr', 'Confidentialité', 'Ce que ChessStrategy.org conserve à votre sujet, où, et comment le supprimer.', 'privacy.html'),
-  ('terms.html', 'en', 'Terms of use', 'The terms of use of ChessStrategy.org, free and open-source chess strategy training.', 'terms-fr.html'),
-  ('terms-fr.html', 'fr', "Conditions d'utilisation", "Les conditions d'utilisation de ChessStrategy.org, entraînement à la stratégie aux échecs, gratuit et libre.", 'terms.html'),
-]
+LEGAL_TEXT = [
+  ('en', 'Privacy', 'What ChessStrategy.org keeps about you, where, and how to delete it.', 'Terms of use', 'The terms of use of ChessStrategy.org, free and open-source chess strategy training.'),
+  ('fr', 'Confidentialité', 'Ce que ChessStrategy.org conserve à votre sujet, où, et comment le supprimer.', "Conditions d'utilisation", "Les conditions d'utilisation de ChessStrategy.org, entraînement à la stratégie aux échecs, gratuit et libre."),
+] + LEGAL_MORE
+legal = lambda k, l: f'{k}{"" if l=="en" else "-" + l}.html'
+LEGAL = [(legal(k, l), l, t, d, k) for l, pt, pd, tt, td in LEGAL_TEXT for k, t, d in (('privacy', pt, pd), ('terms', tt, td))]
 
 def crumbs(*items):
   return { '@type': 'BreadcrumbList', 'itemListElement': [{ '@type': 'ListItem', 'position': i + 1, 'name': n, 'item': SITE + u } for i, (n, u) in enumerate(items)] }
 
 def build():
   out, urls = {}, ['']
-  for lang in ('en', 'fr'):
+  for lang in LANGS:
     w, fix = W[lang], (nbsp if lang=='fr' else (lambda t: t))
-    other = 'fr' if lang=='en' else 'en'
     for g in GUIDES:
-      t = g[lang]; path = f'{HUB[lang]}{t["slug"]}/index.html'; alt = f'{HUB[other]}{g[other]["slug"]}/index.html'
-      img = f'{g["img"]}{"-fr" if lang=="fr" else ""}.webp'
+      t = g[lang]; path = f'{HUB[lang]}{t["slug"]}/index.html'; alts = { l: f'{HUB[l]}{g[l]["slug"]}/index.html' for l in LANGS }
+      img = f'{g["img"]}{"" if lang=="en" else "-" + lang}.webp'
       # heading as on the FAQ's card (name, subtitle); the search-friendly title stays in <title>
       body = fix(f"""<p class="back"><a href="../">‹ FAQ</a></p>
 <h1>{html.escape(t['name'])}</h1>
@@ -349,7 +364,7 @@ def build():
               'image': SITE + f'learn/img/{img}', 'url': SITE + path.removesuffix('index.html'),
               'publisher': { '@type': 'Organization', 'name': 'ChessStrategy.org', 'url': SITE } },
             { '@context': 'https://schema.org', **crumbs((W[lang]['faq'], HUB[lang]), (t['name'], path.removesuffix('index.html'))) }]
-      out[path] = page(path, lang, t['title'], t['desc'], body, alt, ld)
+      out[path] = page(path, lang, t['title'], t['desc'], body, alts, ld)
       urls.append(path.removesuffix('index.html'))
     # the index: the guides, then the FAQ
     path = HUB[lang] + 'index.html'
@@ -365,10 +380,10 @@ def build():
             'hasPart': [{ '@type': 'Article', 'headline': g[lang]['title'], 'url': SITE + HUB[lang] + g[lang]['slug'] + '/' } for g in GUIDES] },
           { '@context': 'https://schema.org', '@type': 'FAQPage', 'inLanguage': lang,
             'mainEntity': [{ '@type': 'Question', 'name': plain(q), 'acceptedAnswer': { '@type': 'Answer', 'text': plain(a) } } for _, qs in FAQ[lang] for q, a in qs] }]
-    out[path] = page(path, lang, w['faq'], w['faq_desc'], hub, HUB[other] + 'index.html', ld, kind='website')
+    out[path] = page(path, lang, w['faq'], w['faq_desc'], hub, { l: HUB[l] + 'index.html' for l in LANGS }, ld, kind='website')
     urls.append(HUB[lang])
-  for f, lang, title, desc, alt in LEGAL:
-    out[f] = page(f, lang, title, desc, (root / 'scripts' / 'pages' / f).read_text(encoding='utf-8').strip(), alt, kind='website')
+  for f, lang, title, desc, k in LEGAL:
+    out[f] = page(f, lang, title, desc, (root / 'scripts' / 'pages' / f).read_text(encoding='utf-8').strip(), { l: legal(k, l) for l in LANGS }, kind='website')
     urls.append(f)
   out['sitemap.xml'] = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                         + ''.join(f'  <url><loc>{SITE}{u}</loc></url>\n' for u in urls) + '</urlset>\n')

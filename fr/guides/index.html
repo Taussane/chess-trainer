@@ -6,8 +6,12 @@
 <title>Questions fréquentes · ChessStrategy.org</title>
 <meta name="description" content="Comment fonctionne ChessStrategy.org : ses quatre exercices de stratégie aux échecs (déséquilibres, plans, coups candidats, choix du coup), les scores, les positions et le moteur.">
 <link rel="canonical" href="https://chessstrategy.org/fr/guides/">
-<link rel="alternate" hreflang="fr" href="https://chessstrategy.org/fr/guides/">
 <link rel="alternate" hreflang="en" href="https://chessstrategy.org/learn/">
+<link rel="alternate" hreflang="fr" href="https://chessstrategy.org/fr/guides/">
+<link rel="alternate" hreflang="de" href="https://chessstrategy.org/de/anleitungen/">
+<link rel="alternate" hreflang="es" href="https://chessstrategy.org/es/guias/">
+<link rel="alternate" hreflang="it" href="https://chessstrategy.org/it/guide/">
+<link rel="alternate" hreflang="x-default" href="https://chessstrategy.org/learn/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ChessStrategy.org">
 <meta property="og:title" content="Questions fréquentes">
@@ -28,6 +32,10 @@
   .brand{ display:flex; align-items:center; gap:10px; font-weight:600; color:var(--text); text-decoration:none; } .brand img{ width:28px; height:28px; border-radius:7px; }
   /* the language, as the app's Settings show it: the current one in a chip, a tap for the other */
   .lang{ display:inline-flex; align-items:center; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 14px; font-size:.86rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+  .langs{ position:relative; } .langs{ border:0; } .langs summary.lang{ list-style:none; cursor:pointer; padding:6px 14px; display:inline-flex; font-weight:600; } .langs summary::after{ content:none !important; } .langs summary::-webkit-details-marker{ display:none; }
+  .langs .list{ position:absolute; right:0; top:calc(100% + 6px); z-index:5; display:flex; flex-direction:column; min-width:150px; padding:6px; background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.35); }
+  .langs .list a{ display:flex; gap:10px; padding:8px 12px; border-radius:8px; color:var(--text); text-decoration:none; } .langs .list a b{ width:22px; color:var(--mute); font-weight:600; font-size:.85rem; }
+  .langs .list a:hover{ background:#222A33; } .langs .list a.on, .langs .list a.on b{ color:var(--accent); }
   main{ padding-bottom:56px; }
   h1{ font-size:1.9rem; line-height:1.2; margin:20px 0 10px; font-family:Georgia, "Times New Roman", serif; }
   .back{ margin:12px 0 0; font-size:.95rem; } .back a{ color:var(--mute); text-decoration:none; } h1 + .sub{ margin:-4px 0 14px; color:var(--mute); font-size:1.08rem; }
@@ -48,7 +56,7 @@
 <!-- Built by scripts/build-pages.py: edit the script (or scripts/pages/), not this file. -->
 </head>
 <body>
-<header><a class="brand" href="../../"><img src="../../icons/icon.svg" alt="">ChessStrategy.org</a><a class="lang" href="../../learn/" hreflang="en" lang="en" aria-label="Read in English" title="Read in English">FR</a></header>
+<header><a class="brand" href="../../"><img src="../../icons/icon.svg" alt="">ChessStrategy.org</a><details class="langs"><summary class="lang" aria-label="Language · Langue · Sprache · Idioma · Lingua" title="Language · Langue · Sprache · Idioma · Lingua">FR</summary><div class="list"><a href="../../learn/" hreflang="en" lang="en"><b>EN</b>English</a><a href="../../fr/guides/" hreflang="fr" lang="fr" class="on"><b>FR</b>Français</a><a href="../../de/anleitungen/" hreflang="de" lang="de"><b>DE</b>Deutsch</a><a href="../../es/guias/" hreflang="es" lang="es"><b>ES</b>Español</a><a href="../../it/guide/" hreflang="it" lang="it"><b>IT</b>Italiano</a></div></details></header>
 <main>
 <h1>Questions fréquentes</h1>
 <p class="mute">Les puzzles de tactique ont toujours une seule bonne réponse. Les vraies parties, non. ChessStrategy.org entraîne ce qui vient avant le coup : lire la position, choisir un plan, trouver de bons coups, et choisir le meilleur.</p>
