@@ -1677,7 +1677,7 @@ const ASP_HELP = {
   pawns: {
     count:["Passed (no pawn can stop it): 2, then 4, 6, 8 on the 5th, 6th, 7th rank.", "Connected (next to or protected by a pawn): 2, 4, 6 on the 5th, 6th, 7th.",
            "Isolated (no pawn can protect it): −1.", "Doubled (not protected, a pawn behind it): −1.", "Backward (behind its neighbours, the square in front isn't safe): −1."],
-    plans:["Your passed pawn: push it and protect it.", "Enemy passed pawn: block it.", "Weak enemy pawns: fix and attack them.", "Your weak pawns: avoid trades."],
+    plans:["Your passed pawn: push it and protect it.", "Enemy passed pawn: block it.", "Weak enemy pawns: fix them, trade pieces, then win them.", "Your weak pawns: avoid trades."],
   },
   space: {
     count:["Dashed area: c to f files, ranks 3 to 6.", "+1 per pawn in the area.", "+1 per square behind your pawns that no enemy piece or pawn holds.", "Not counted with few pieces left."],
@@ -7148,6 +7148,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Score.": "Score.",
 "The idea.": "L'idée.",
 "Tips": "Conseils",
+"Weak enemy pawns: fix them, trade pieces, then win them.": "Pions adverses faibles : fixez-les, échangez des pièces, puis gagnez-les.",
 "More space: keep pieces on, keep it closed and squeeze.": "Plus d'espace : gardez les pièces, gardez la position fermée et étouffez.",
 "One was played in the game. In your own games, it's your move, which was Dubious or worse. Can you do better?": "L'un d'eux a été joué dans la partie. Dans vos parties, c'est votre coup, qui était Douteux ou pire. Pouvez-vous faire mieux ?",
 "Trade: up material, clearly better, better pawns, less space, worse pieces, or a more active king.": "Échanger : matériel en plus, net avantage, meilleurs pions, moins d'espace, pièces moins bonnes, ou roi plus actif.",
@@ -7245,7 +7246,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Behind: avoid trades, look for activity or an attack.": "En retard : évitez les échanges, cherchez l'activité ou l'attaque.",
 "Passed (no pawn can stop it): 2, then 4, 6, 8 on the 5th, 6th, 7th rank.": "Passé (aucun pion ne peut l'arrêter) : 2, puis 4, 6, 8 sur la 5e, 6e, 7e rangée.",
 "Connected (next to or protected by a pawn): 2, 4, 6 on the 5th, 6th, 7th.": "Lié (à côté d'un pion ou protégé par un pion) : 2, 4, 6 sur la 5e, 6e, 7e.",
-"Weak enemy pawns: fix and attack them.": "Pions adverses faibles : fixez-les et attaquez-les.",
 "+1 per pawn in the area.": "+1 par pion dans la zone.",
 "Not counted with few pieces left.": "Pas compté quand il reste peu de pièces.",
 "Less space: trade pieces, break with a pawn.": "Moins d'espace : échangez des pièces, rompez avec un pion.",
