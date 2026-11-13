@@ -3241,6 +3241,7 @@ const ASPECTS = [
 const aspNameText = (x, fen)=>!fen ? x.name : x.key==='king' && isEndgame(fen) ? 'King activity (no queens)' : x.key==='activity' && devActive(fen) ? 'Development (minors to move)' : x.key==='space' && !spaceCounts(fen) ? 'Space (few pieces)' : x.name;
 // (in the grids: the qualifier on a small second line, so the name fits on a phone)
 const aspName = (x, fen)=>{ const t = aspNameText(x, fen), m = t.match(/^(.*) \((.*)\)$/), n = LANG==='en' ? 0 : tr(m ? m[1] : t).length, long = n > 16 ? ' asp-long asp-xlong' : n > 15 ? ' asp-long' : '';   // (a long name in another language: a little smaller, to fit a phone)
+  if(m && !['en', 'fr'].includes(LANG)) return long ? `<span class="${long.trim()}">${m[1]}</span>` : m[1];   // (the note, "no queens"…, too long in the other languages: the help's tips explain it)
   return m ? `<span class="asp-main${long}">${m[1]}</span><span class="asp-qual">${m[2]}</span>` : long ? `<span class="${long.trim()}">${t}</span>` : t; };
 const curFen = ()=>{ try{ const p = pos(); return p && p.fen; }catch(e){ return null; } };
 // Stockfish 10's piece values [middlegame, endgame], and its game-phase limits (non-pawn material).
@@ -9003,6 +9004,7 @@ function setLanguage(){
   // the browser's first language the app has (else English)
   const auto = (()=>{ try{ for(const l of (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''])){ const c = String(l).slice(0, 2).toLowerCase(); if(LANGS.includes(c)) return c; } }catch(e){} return 'en'; })();
   LANG = LANGS.includes(settings.lang) ? settings.lang : auto;
+  try{ I18N_DONE.clear(); }catch(e){}   // (another language's texts: "Material" is German as well as English)
   localPieces = LOCAL_PIECES[LANG] || null;
   document.documentElement.lang = LANG;
   document.title = 'ChessStrategy.org · ' + L({ en:'Chess strategy trainer', fr:'Entraînement stratégique aux échecs', de:'Schachstrategie-Training', es:'Entrenamiento de estrategia de ajedrez', it:'Allenamento di strategia scacchistica' });
