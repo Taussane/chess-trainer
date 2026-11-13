@@ -5104,7 +5104,7 @@ function renderHome(){
   app.innerHTML = `
     <div class="home-head">
       <div class="home-top"><h1 data-no-i18n>Chess<span class="beta">${LANG==='fr' ? 'Bêta' : 'Beta'}</span><br>Strategy<span class="tld">.org</span></h1>${isDesk() ? '' : acctChip}</div>
-      ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isDesk() ? `<p>Train your strategy beyond tactics puzzles: gauge the imbalances, evaluate the position, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
+      ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isDesk() ? `<p>Train your strategy beyond tactics puzzles: read the imbalances, define your plan, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
     ${routineCard()}
     <div class="source-row">${isDesk() ? acctChip : ''}<span class="source-label">Positions from</span>
@@ -6882,7 +6882,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Both": "Les deux",
 "Positions from": "Positions de",
 "Learn from master games and your own mistakes.": "Apprenez des parties de maîtres et de vos propres erreurs.",
-"Train your strategy beyond tactics puzzles: gauge the imbalances, evaluate the position, find good candidates, choose the best.": "Entraînez votre stratégie au-delà des problèmes tactiques : jaugez les déséquilibres, évaluez la position, trouvez de bons candidats, choisissez le meilleur.",
+"Train your strategy beyond tactics puzzles: read the imbalances, define your plan, find good candidates, choose the best.": "Entraînez votre stratégie au-delà des problèmes tactiques : lisez les déséquilibres, définissez votre plan, trouvez de bons candidats, choisissez le meilleur.",
 "Imbalance reading": "Déséquilibres",
 "Candidate moves": "Coups candidats",
 "Move selection": "Choix du coup",
