@@ -156,8 +156,8 @@ GUIDES = [
       title='Comment choisir le meilleur coup aux échecs',
       desc="Comment choisir entre des coups qui ont l'air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres erreurs.",
       lead="Plusieurs coups peuvent avoir l'air bien, mais un seul est le meilleur. Une fois que l'exploration des <a href=\"../coups-candidats/\">coups candidats</a> vous a donné quelques options sérieuses, reste à choisir entre elles, et c'est là que beaucoup de parties se perdent.",
-      alt='Correction de Choix du coup sur une position du championnat du monde 2023 : quatre coups classés, le coup joué Bg3 est le meilleur',
-      caption="Le coup joué Bg3 est le meilleur, mais n'est classé que 3e : il devait venir en tête. La gaffe Rxc4 est bien en dernier.",
+      alt="Correction de Choix du coup sur une position du championnat du monde 1963 : quatre coups classés, le coup joué Nxe4 est le meilleur, deux coups douteux",
+      caption="Le coup joué Nxe4 est le meilleur et a été trouvé. Qh2, le seul autre coup valable, aurait dû être 2e.",
       body="""
 <h2>Classer vos options</h2>
 <ul>
