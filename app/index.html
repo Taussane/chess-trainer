@@ -9100,7 +9100,7 @@ function langMenu(btn){
   document.querySelectorAll('.lang-menu').forEach(m=>m.remove());
   const r = btn.getBoundingClientRect(), m = document.createElement('div');
   m.className = 'lang-menu'; m.setAttribute('role', 'menu'); m.setAttribute('data-no-i18n', '');
-  m.innerHTML = LANGS.map(l=>`<button role="menuitemradio" aria-checked="${l===LANG}" class="${l===LANG ? 'on' : ''}" data-l="${l}"><b>${l.toUpperCase()}</b>${LANG_NAMES[l]}</button>`).join('');
+  m.innerHTML = LANGS.map(l=>`<button role="menuitemradio" aria-checked="${l===LANG}" class="${l===LANG ? 'on' : ''}" data-l="${l}" lang="${l}">${LANG_NAMES[l]}</button>`).join('');
   document.body.appendChild(m);
   const w = m.offsetWidth, left = Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w));
   m.style.left = (r.right - w < 8 && r.left + w < window.innerWidth - 8 ? r.left : left) + 'px';

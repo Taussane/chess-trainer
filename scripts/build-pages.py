@@ -300,7 +300,7 @@ def page(path, lang, title, desc, body, alts, ld=None, kind='article'):
   # alts: each language's version of this page ({ lang: path }); the chip opens the list (no script: a <details>)
   up = '../' * path.count('/')
   url = lambda p: SITE + p.removesuffix('index.html')
-  items = ''.join(f'<a href="{up}{alts[l].removesuffix("index.html")}" hreflang="{l}" lang="{l}"{" class=\"on\"" if l==lang else ""}><b>{l.upper()}</b>{NAMES[l]}</a>' for l in LANGS)
+  items = ''.join(f'<a href="{up}{alts[l].removesuffix("index.html")}" hreflang="{l}" lang="{l}"{" class=\"on\"" if l==lang else ""}>{NAMES[l]}</a>' for l in LANGS)
   chip = f'<details class="langs"><summary class="lang" aria-label="{LANG_LABEL}" title="{LANG_LABEL}">{lang.upper()}</summary><div class="list">{items}</div></details>'
   hreflangs = '\n'.join(f'<link rel="alternate" hreflang="{l}" href="{url(alts[l])}">' for l in LANGS) + f'\n<link rel="alternate" hreflang="x-default" href="{url(alts["en"])}">'
   return f"""<!doctype html>
