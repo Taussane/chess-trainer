@@ -623,6 +623,10 @@
   .modal-backdrop-inner{height:100%; display:flex; align-items:center; justify-content:center; padding:24px;}
   .modal-box{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; max-width:380px; max-height:90%; overflow:auto;}
   .modal-box h3{margin:0 0 10px; font-size:1.05rem; font-family:var(--font-display);}
+  .lang-menu{position:fixed; z-index:1000; display:flex; flex-direction:column; gap:2px; padding:6px; min-width:150px; background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.35);}
+  .lang-menu button{display:flex; align-items:baseline; gap:10px; padding:9px 12px; border:0; border-radius:8px; background:none; color:var(--text); font:inherit; text-align:left; cursor:pointer;}
+  .lang-menu button b{width:22px; color:var(--text-mute); font-weight:600; font-size:.85rem;}
+  .lang-menu button:hover{background:var(--panel-2, rgba(255,255,255,.06));} .lang-menu button.on{color:var(--accent);} .lang-menu button.on b{color:var(--accent);}
   .modal-box h3.help-h{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:2px 12px;}
   .help-side{font-family:var(--font-body); font-size:.82rem; font-weight:400; color:var(--text-mute);}   /* (an imbalance's levels) */
   .modal-box p{font-size:0.88rem; color:var(--text); line-height:1.55; margin:0 0 10px;}
@@ -3143,7 +3147,7 @@ function renderRush(){
     body = `<div class="rush-mid rush-end"><p class="rush-big">${r.items.length ? r.score + '%' : '—'}</p><p>average accuracy, over ${r.items.length} position${r.items.length===1 ? '' : 's'}</p>
       <p class="rush-sub">${r.newBest ? (r.best0==null ? 'Your first run.' : `New best! (was ${r.best0}%)`) : best!=null ? `Best: <b>${best}%</b>` : ''}</p></div>
       <div class="rush-list">${r.items.map((x, i)=>`<div class="rush-row"><span class="num">${i + 1}</span><span class="rush-what">${escHtml(x.title || '')}${x.year ? ` <small>${escHtml(String(x.year))}</small>` : ''}</span><span class="rush-chip ${rushPtsCls(x.pts)}">${x.pts}</span></div>`).join('')}</div>
-      <div class="actions-row split rush-actions"><button class="btn secondary" id="rushMenu">${LANG==='fr' ? 'Terminé' : 'Done'}</button><button class="btn" id="rushAgain">Play again</button></div>`;
+      <div class="actions-row split rush-actions"><button class="btn secondary" id="rushMenu" data-no-i18n>${L({ en:'Done', fr:'Terminé', de:'Fertig', es:'Terminar', it:'Fine' })}</button><button class="btn" id="rushAgain">Play again</button></div>`;
   }
   app.innerHTML = top + `<div class="rush-page">${body}</div>`;
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
@@ -3169,7 +3173,7 @@ function startFirstVisit(){
   const go = ()=>{ if(screen!=='home') return; if(canOpen('final', false)){ firstVisit = 'on'; routine = false; openActivity('final'); } else if(n++ < 80) setTimeout(go, 250); };
   go();
 }
-const allExercisesBtn = ()=>`<button class="btn secondary" id="allExercises" data-no-i18n>${LANG==='fr' ? 'Tous les exercices' : 'All exercises'}</button>`;
+const allExercisesBtn = ()=>`<button class="btn secondary" id="allExercises" data-no-i18n>${L({ en:'All exercises', fr:'Tous les exercices', de:'Alle Übungen', es:'Todos los ejercicios', it:'Tutti gli esercizi' })}</button>`;
 function lichessLink(p){
   const url = lichessUrl(p);
   return `<a class="btn secondary lichess-open icon-only" href="${url}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn secondary lichess-open icon-only xp-open" data-xp-open aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><button class="btn secondary lichess-open icon-only" data-share aria-label="Share this position" title="Share this position">${SHARE_ICON}</button>`;
@@ -4462,7 +4466,7 @@ function sideGo(where){
 }
 function siteLinks(){
   const dd = DIRECT_LICHESS ? ' data-doc' : '';   // (on the website, opened inside the app: openDoc)
-  return `<a href="${DIRECT_LICHESS ? '' : 'https://chessstrategy.org/'}${LANG==='fr' ? 'fr/guides/' : 'learn/'}" target="_blank" rel="noopener"${dd} data-no-i18n>FAQ</a> · ${DIRECT_LICHESS ? `<a href="${LANG==='fr' ? 'privacy-fr.html' : 'privacy.html'}" target="_blank" rel="noopener"${dd}>Privacy</a> · <a href="${LANG==='fr' ? 'terms-fr.html' : 'terms.html'}" target="_blank" rel="noopener"${dd}>Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
+  return `<a href="${DIRECT_LICHESS ? '' : 'https://chessstrategy.org/'}${FAQ_PATH[LANG]}" target="_blank" rel="noopener"${dd} data-no-i18n>FAQ</a> · ${DIRECT_LICHESS ? `<a href="${legalPath('privacy')}" target="_blank" rel="noopener"${dd}>Privacy</a> · <a href="${legalPath('terms')}" target="_blank" rel="noopener"${dd}>Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
 }
 function renderSide(){
   if(!DESK) return;
@@ -4472,7 +4476,7 @@ function renderSide(){
   const c = todayBy(), total = ACTS.reduce((t,a)=>t+Math.min(c[a], DAILY_GOAL), 0);
   const item = (k, icon, name, extra, dis)=>`<button class="side-item${at===k ? ' on' : ''}" data-side="${k}"${dis ? ' disabled' : ''}${at===k ? ' aria-current="page"' : ''}>${icon}<span class="side-name">${name}</span>${extra ? `<span class="side-n">${extra}</span>` : ''}</button>`;
   const html = `
-    <button class="side-logo${at==='home' ? ' on' : ''}" data-side="home" data-no-i18n aria-label="Home"><b>Chess<span class="beta">${LANG==='fr' ? 'Bêta' : 'Beta'}</span><br>Strategy<span class="tld">.org</span></b></button>
+    <button class="side-logo${at==='home' ? ' on' : ''}" data-side="home" data-no-i18n aria-label="Home"><b>Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span></b></button>
     <div class="side-sec">Exercises</div>
     ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
@@ -4482,7 +4486,7 @@ function renderSide(){
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
     ${isOwner() ? item('metrics', SIDE_ICONS.metrics, 'Metrics') : ''}
     <div class="side-foot">
-      <button class="title-chip" id="sideLang" data-no-i18n aria-label="Language">${LANG==='fr' ? 'FR · Français' : 'EN · English'}</button>
+      <button class="title-chip" id="sideLang" data-no-i18n aria-label="Language" aria-haspopup="true">${LANG.toUpperCase()} · ${LANG_NAMES[LANG]}</button>
       <button class="donate-badge${at==='support' ? ' on' : ''}" data-side="support"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>
       <p class="side-links">${siteLinks().replace(/ · /g, '<br>')}${installOffered() ? `<br><button class="link-plain install-link" id="sideInstall">Install the app</button>` : ''}</p>
     </div>`;
@@ -4491,7 +4495,7 @@ function renderSide(){
   if(nav._html===html) return;
   nav._html = html; nav.innerHTML = html;
   nav.querySelectorAll('[data-side]').forEach(b=>b.onclick = ()=>sideGo(b.dataset.side==='account' ? 'account' : b.dataset.side));
-  const lang = nav.querySelector('#sideLang'); if(lang) lang.onclick = ()=>{ settings.lang = LANG==='fr' ? 'en' : 'fr'; setLanguage(); saveSettings(); settingsRebuild = true; supportRebuild = true; render(); };
+  const lang = nav.querySelector('#sideLang'); if(lang) lang.onclick = e=>{ e.stopPropagation(); langMenu(lang); };
   const inst = nav.querySelector('#sideInstall'); if(inst) inst.onclick = installApp;
 }
 const BACK_ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -5072,7 +5076,7 @@ function renderHome(){
   const acctChip = `<button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span><span class="acct-name">${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</span></button>`;   // (desktop: beside "Positions from")
   app.innerHTML = `
     <div class="home-head">
-      <div class="home-top"><h1 data-no-i18n>Chess<span class="beta">${LANG==='fr' ? 'Bêta' : 'Beta'}</span><br>Strategy<span class="tld">.org</span></h1>${isDesk() ? '' : acctChip}</div>
+      <div class="home-top"><h1 data-no-i18n>Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span></h1>${isDesk() ? '' : acctChip}</div>
       ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isDesk() ? `<p>Train your strategy beyond tactics puzzles: read the imbalances, define your plan, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
     ${routineCard()}
@@ -6409,9 +6413,14 @@ function depthNoteHtml(s, ev, fen){
   const d = shownDepth(ev, fen);
   if(!s.depthNote || !d) return '';
   const v = sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10', capped = d < LIVE_DEPTH, secs = ev.ms ? String(Math.round(ev.ms/100)/10) : null;
-  return `<p class="depth-note" data-no-i18n>${LANG==='fr'
-    ? `${v}${sfVersion==='SF19' ? ' (version allégée, dans votre navigateur)' : ' (dans votre navigateur)'} a cherché jusqu'à la profondeur ${d}${capped && secs ? ` (arrêtée après ${secs.replace('.', ',')} s)` : ''}. Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer.`
-    : `${v}${sfVersion==='SF19' ? ' (lite, in your browser)' : ' (in your browser)'} searched to depth ${d}${capped && secs ? ` (stopped after ${secs} s)` : ''}. Lichess analyses deeper on its servers, so its numbers can differ a little.`}</p>`;
+  const lite = sfVersion==='SF19', sc = secs && LANG!=='en' ? secs.replace('.', ',') : secs, stop = capped && secs;
+  return `<p class="depth-note" data-no-i18n>${L({
+    en: `${v}${lite ? ' (lite, in your browser)' : ' (in your browser)'} searched to depth ${d}${stop ? ` (stopped after ${sc} s)` : ''}. Lichess analyses deeper on its servers, so its numbers can differ a little.`,
+    fr: `${v}${lite ? ' (version allégée, dans votre navigateur)' : ' (dans votre navigateur)'} a cherché jusqu'à la profondeur ${d}${stop ? ` (arrêtée après ${sc} s)` : ''}. Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer.`,
+    de: `${v}${lite ? ' (Lite-Version, in Ihrem Browser)' : ' (in Ihrem Browser)'} hat bis Tiefe ${d} gerechnet${stop ? ` (nach ${sc} s angehalten)` : ''}. Lichess rechnet auf seinen Servern tiefer, daher können seine Zahlen leicht abweichen.`,
+    es: `${v}${lite ? ' (versión ligera, en tu navegador)' : ' (en tu navegador)'} buscó hasta la profundidad ${d}${stop ? ` (detenido tras ${sc} s)` : ''}. Lichess analiza más a fondo en sus servidores, así que sus cifras pueden variar un poco.`,
+    it: `${v}${lite ? ' (versione leggera, nel tuo browser)' : ' (nel tuo browser)'} ha cercato fino alla profondità ${d}${stop ? ` (fermato dopo ${sc} s)` : ''}. Lichess analizza più a fondo sui suoi server, quindi i suoi numeri possono variare un po'.`,
+  })}</p>`;
 }
 function wireDepthBtn(s){
   const b = document.getElementById('depthBtn'); if(!b) return;
@@ -6786,12 +6795,20 @@ function fmtSan(san, html = true){
   return san.replace(/^[KQRBN]/, x=>g(x)).replace(/=([QRBN])/, (_, x)=>'=' + g(x));
 }
 // ================= Language =================
-const dateLoc = ()=>typeof LANG!=='undefined' && LANG==='fr' ? 'fr-CA' : undefined;   // dates in the app's language
+const dateLoc = ()=>typeof LANG==='undefined' ? undefined : ({ fr:'fr-CA', de:'de-DE', es:'es-ES', it:'it-IT' })[LANG];   // dates in the app's language
 // The app is written in English; in French, every text shown is swapped as it appears on the page
 // (a watcher on the page: screens, popups, help, board marks alike), from I18N_FR (exact texts) and
 // I18N_FR_RE (texts with numbers or names in them). Anything not listed stays in English. Elements
 // marked data-no-i18n (and their children) are left alone: moves, names.
 var LANG = 'en';   // (var: read by dateLoc before this line runs, at worst)
+// The app's languages: English as written, the others from their dictionaries below (I18N_MAPS, I18N_RES).
+const LANGS = ['en', 'fr'];   // (German, Spanish, Italian: added once translated)
+const LANG_NAMES = { en:'English', fr:'Français', de:'Deutsch', es:'Español', it:'Italiano' };
+// a text written here in each language (where a dictionary won't do: a word that differs by place)
+function L(o){ return o[LANG]!=null ? o[LANG] : o.en; }
+// the website's pages in each language: the FAQ (with the guides), privacy, terms
+const FAQ_PATH = { en:'learn/', fr:'fr/guides/', de:'de/anleitungen/', es:'es/guias/', it:'it/guide/' };
+const legalPath = k=>k + (LANG==='en' ? '' : '-' + LANG) + '.html';
 const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Back to exercises": "Retour aux exercices",
 "Back to profile": "Retour au profil",
@@ -7399,19 +7416,24 @@ const I18N_FR_RE = [
     .replace(/(\d+) not played by (you|[^,.]+)/, (m, n, w)=>`${n} non jouées par ${w==='you' ? 'vous' : w}`).replace(/(\d+) too short/, '$1 trop courtes')
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} partie${n==='1' ? '' : 's'} interrompue${n==='1' ? '' : 's'} la dernière fois, terminée${n==='1' ? '' : 's'}.`)],
 ];
-const I18N_DONE = new Set();   // texts already in French (what tr produced): never translated again
+const I18N_DE = new Map(Object.entries(/*I18N_DE*/{}/*END I18N_DE*/));
+const I18N_ES = new Map(Object.entries(/*I18N_ES*/{}/*END I18N_ES*/));
+const I18N_IT = new Map(Object.entries(/*I18N_IT*/{}/*END I18N_IT*/));
+const I18N_DE_RE = [], I18N_ES_RE = [], I18N_IT_RE = [];   /*I18N_RES*/
+const I18N_MAPS = { fr: I18N_FR, de: I18N_DE, es: I18N_ES, it: I18N_IT }, I18N_RES = { fr: I18N_FR_RE, de: I18N_DE_RE, es: I18N_ES_RE, it: I18N_IT_RE };
+const I18N_DONE = new Set();   // texts already translated (what tr produced): never translated again
 function tr(s){
-  if(LANG!=='fr' || s==null) return s;
+  const D = I18N_MAPS[LANG]; if(!D || s==null) return s;
   const t = String(s).trim(); if(!t || I18N_DONE.has(t)) return s;
-  let out = I18N_FR.get(t);
-  if(out==null) for(const [re, to] of I18N_FR_RE){ if(re.test(t)){ out = t.replace(re, to); break; } }
+  let out = D.get(t);
+  if(out==null) for(const [re, to] of I18N_RES[LANG]){ if(re.test(t)){ out = t.replace(re, to); break; } }
   if(out==null) return s;
   I18N_DONE.add(out.trim());
   return String(s).replace(t, out);
 }
 const I18N_ATTRS = ['aria-label', 'title', 'placeholder'];
 function translateNode(n){
-  if(LANG!=='fr') return;
+  if(!I18N_MAPS[LANG]) return;
   if(n.nodeType===3){ const p = n.parentElement; if(!p || p.closest('[data-no-i18n],script,style')) return; const v = tr(n.nodeValue); if(v!==n.nodeValue) n.nodeValue = v; return; }
   if(n.nodeType!==1 || n.closest('[data-no-i18n]') || /^(SCRIPT|STYLE)$/.test(n.tagName)) return;
   for(const a of I18N_ATTRS){ const v = n.getAttribute(a); if(v){ const w = tr(v); if(w!==v) n.setAttribute(a, w); } }
@@ -7421,18 +7443,19 @@ function translateNode(n){
     else translateNode(x);
   }
 }
-const i18nObserver = new MutationObserver(ms=>{ if(LANG!=='fr') return; for(const m of ms){
+const i18nObserver = new MutationObserver(ms=>{ if(!I18N_MAPS[LANG]) return; for(const m of ms){
   if(m.type==='characterData') translateNode(m.target);
   else if(m.type==='attributes') translateNode(m.target);
   else m.addedNodes.forEach(translateNode); } });
 function setLanguage(){
-  const auto = (()=>{ try{ return /^fr\b/i.test(navigator.language || '') ? 'fr' : 'en'; }catch(e){ return 'en'; } })();
-  LANG = settings.lang || auto;
+  // the browser's first language the app has (else English)
+  const auto = (()=>{ try{ for(const l of (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''])){ const c = String(l).slice(0, 2).toLowerCase(); if(LANGS.includes(c)) return c; } }catch(e){} return 'en'; })();
+  LANG = LANGS.includes(settings.lang) ? settings.lang : auto;
   localPieces = LOCAL_PIECES[LANG] || null;
   document.documentElement.lang = LANG;
-  document.title = LANG==='fr' ? 'ChessStrategy.org · Entraînement stratégique aux échecs' : 'ChessStrategy.org · Chess strategy trainer';
+  document.title = 'ChessStrategy.org · ' + L({ en:'Chess strategy trainer', fr:'Entraînement stratégique aux échecs', de:'Schachstrategie-Training', es:'Entrenamiento de estrategia de ajedrez', it:'Allenamento di strategia scacchistica' });
   i18nObserver.disconnect();
-  if(LANG==='fr'){ translateNode(document.body); i18nObserver.observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:I18N_ATTRS }); }
+  if(I18N_MAPS[LANG]){ translateNode(document.body); i18nObserver.observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:I18N_ATTRS }); }
 }
 setLanguage();
 // The settings page: a sample position on top (coordinates, last move, the six arrows, their moves
@@ -7451,7 +7474,7 @@ const docCache = new Map(), docFailed = new Set();   // url -> {title, html}; ur
 function docUrl(href){
   try{
     const u = new URL(href, document.baseURI);
-    return u.origin===location.origin && /^\/(learn\/|fr\/guides\/|(privacy|terms)(-fr)?\.html$)/.test(u.pathname) ? u : null;
+    return u.origin===location.origin && /^\/(learn\/|fr\/guides\/|de\/anleitungen\/|es\/guias\/|it\/guide\/|(privacy|terms)(-(fr|de|es|it))?\.html$)/.test(u.pathname) ? u : null;
   }catch(e){ return null; }
 }
 function docScroll(){ const pg = document.querySelector('#app .doc-page'); return { y: pg ? pg.scrollTop : 0, w: window.scrollY }; }
@@ -7492,14 +7515,14 @@ function renderDoc(){
   const app = document.getElementById('app');
   if(!docRebuild && app.querySelector('.doc-page')) return;
   docRebuild = false;
-  const c = docCache.get(doc.url), fr = LANG==='fr';
+  const c = docCache.get(doc.url);
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back${doc.stack.length ? ' keep' : ''}" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
       <h1 data-no-i18n>${c ? escHtml(c.title) : ''}</h1>
     </div>
     <div class="pf-scroll doc-page" data-no-i18n>${c ? c.html : docFailed.has(doc.url)
-      ? `<p class="doc-note">${fr ? 'Cette page a besoin d\'une connexion.' : 'This page needs a connection.'}</p><p><button class="btn secondary" id="docRetry">${fr ? 'Réessayer' : 'Try again'}</button></p>` : ''}</div>`;
+      ? `<p class="doc-note">${L({ en:'This page needs a connection.', fr:"Cette page a besoin d'une connexion.", de:'Diese Seite braucht eine Verbindung.', es:'Esta página necesita conexión.', it:'Questa pagina richiede una connessione.' })}</p><p><button class="btn secondary" id="docRetry">${L({ en:'Try again', fr:'Réessayer', de:'Erneut versuchen', es:'Reintentar', it:'Riprova' })}</button></p>` : ''}</div>`;
   const pg = app.querySelector('.doc-page');
   if(c && (doc.y || doc.w)){ pg.scrollTop = doc.y; window.scrollTo(0, doc.w); doc.y = doc.w = 0; }
   document.getElementById('homeBtn').onclick = docBack;
@@ -7520,6 +7543,22 @@ document.addEventListener('click', e=>{
   if(openDoc(a.getAttribute('href'))) e.preventDefault();
 });
 
+// The language list (Settings' chip, the desktop menu's): the app's languages, each in its own name.
+function langMenu(btn){
+  document.querySelectorAll('.lang-menu').forEach(m=>m.remove());
+  const r = btn.getBoundingClientRect(), m = document.createElement('div');
+  m.className = 'lang-menu'; m.setAttribute('role', 'menu'); m.setAttribute('data-no-i18n', '');
+  m.innerHTML = LANGS.map(l=>`<button role="menuitemradio" aria-checked="${l===LANG}" class="${l===LANG ? 'on' : ''}" data-l="${l}"><b>${l.toUpperCase()}</b>${LANG_NAMES[l]}</button>`).join('');
+  document.body.appendChild(m);
+  const w = m.offsetWidth, left = Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w));
+  m.style.left = (r.right - w < 8 && r.left + w < window.innerWidth - 8 ? r.left : left) + 'px';
+  m.style.top = Math.min(window.innerHeight - m.offsetHeight - 8, r.bottom + 6) + 'px';
+  const close = ()=>{ m.remove(); document.removeEventListener('click', away, true); };
+  const away = e=>{ if(!m.contains(e.target)){ close(); if(e.target.closest && e.target.closest('#setLang, #sideLang')) e.stopPropagation(); } };
+  setTimeout(()=>document.addEventListener('click', away, true), 0);
+  m.querySelectorAll('[data-l]').forEach(b=>b.onclick = ()=>{ close(); if(b.dataset.l===LANG) return;
+    settings.lang = b.dataset.l; setLanguage(); saveSettings(); settingsRebuild = true; supportRebuild = true; docRebuild = true; render(); });
+}
 function renderSettingsPreview(){
   const b = document.getElementById('setBoard'), svg = document.getElementById('setArrows'); if(!b) return;
   settingsPreview = true;
@@ -7551,7 +7590,7 @@ function renderSettings(){
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to profile">${BACK_ARROW}</button>
       <h1>Settings</h1>
-      <button class="title-chip" id="setLang" data-no-i18n aria-label="Language: ${LANG==='fr' ? 'French' : 'English'}">${LANG.toUpperCase()}</button>
+      <button class="title-chip" id="setLang" data-no-i18n aria-label="Language: ${LANG_NAMES[LANG]}" aria-haspopup="true">${LANG.toUpperCase()}</button>
     </div>
     <div class="pf-scroll set-page">
       <div class="set-preview" aria-label="Preview">
@@ -7573,7 +7612,7 @@ function renderSettings(){
   renderSettingsPreview();
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; settingsRebuild = true; render(); };
   const rebuild = ()=>{ settingsRebuild = true; render(); };
-  document.getElementById('setLang').onclick = ()=>{ settings.lang = LANG==='fr' ? 'en' : 'fr'; setLanguage(); saveSettings(); rebuild(); };
+  document.getElementById('setLang').onclick = e=>{ e.stopPropagation(); langMenu(e.currentTarget); };
   const live = ()=>{ applySettings(); renderSettingsPreview(); saveSettings(); document.querySelectorAll('.set-sw').forEach(x=>x.style.background = x.style.background); };
   const on = (id, ev, f)=>{ const el = document.getElementById(id); if(el) el[ev] = f; };
   document.querySelectorAll('.set-page .seg-btn').forEach(b=>b.onclick = ()=>{ setTab = b.dataset.tab; rebuild(); });
@@ -8392,11 +8431,19 @@ const PLANQ_WHY_FR = {
   },
 };
 const PLANQ_WANTS_FR = { pieces: { 1:'des échanges', '-1':'garder les pièces' }, approach: { 1:'le jeu dynamique', '-1':'le jeu positionnel' } };
+// each language's: { why (PLANQ_WHY), names (PLANQ_NAMES' nouns), wants (each row's two sides), two, one (the
+// Either sentences: plural, the wanted sides), none }
+const PLANQ_L = {};
 const PLANQ_NAMES_FR = { 'extra material':'matériel en plus', 'missing material':'matériel en moins', 'passed pawn':'pion passé', 'enemy passed pawn':'pion passé adverse',
   'weak pawns':'pions faibles', 'weak enemy pawns':'pions adverses faibles', 'extra space':"plus d'espace", 'lack of space':"moins d'espace",
   'better pieces':'meilleures pièces', 'worse pieces':'pièces moins bonnes', 'development lead':'avance de développement', 'lagging development':'retard de développement',
   'weak enemy king':'roi adverse faible', 'weak king':'roi faible', 'more active king':'roi plus actif', 'passive king':'roi passif',
   'clear edge':'net avantage', 'clear disadvantage':'net désavantage' };
+PLANQ_L.fr = { why: PLANQ_WHY_FR, names: PLANQ_NAMES_FR, wants: PLANQ_WANTS_FR,
+  two: (pl, w1, w2)=>`{0} ${pl ? 'plaident' : 'plaide'} pour ${w1}, {1} pour ${w2}.`,
+  one: (pl, w)=>`{0} ${pl ? 'plaident' : 'plaide'} pour ${w}, sans rien d'autre : pas assez pour trancher.`,
+  none: "Rien dans la position ne penche d'un côté ou de l'autre." };
+/*PLANQ_L*/
 // each situation as a noun, seen by the side to play, for the Either sentences ("weak enemy king calls for…")
 const PLANQ_NAMES = { 'Up material':'extra material', 'Down material':'missing material', 'Passed pawn':'passed pawn', 'Enemy passed pawn':'enemy passed pawn',
   'Weak pawns':'weak pawns', 'Weak enemy pawns':'weak enemy pawns', 'More space':'extra space', 'Less space':'lack of space',
@@ -8404,21 +8451,22 @@ const PLANQ_NAMES = { 'Up material':'extra material', 'Down material':'missing m
   'Weak enemy king':'weak enemy king', 'Weak king':'weak king', 'More active king':'more active king', 'Passive king':'passive king',
   'Clearly better':'clear edge', 'Clearly worse':'clear disadvantage' };
 const planqStrongest = (rs, dir)=>rs.filter(x=>x.dir===dir).sort((a, b)=>b.weight - a.weight || PLANQ_PRIORITY.indexOf(a.vk) - PLANQ_PRIORITY.indexOf(b.vk))[0];
-const planqSentence = (row, x)=>(LANG==='fr' ? PLANQ_WHY_FR : PLANQ_WHY)[row][x.vk==='pawns' ? x.situation : x.vk + (x.edge > 0 ? '+' : '-')];
+const planqSentence = (row, x)=>((PLANQ_L[LANG] || {}).why || PLANQ_WHY)[row][x.vk==='pawns' ? x.situation : x.vk + (x.edge > 0 ? '+' : '-')];
 // as seen by the side to play ("less space", "weak enemy king"): no side needed (the question names it)
-const planqName = x=>LANG==='fr' ? PLANQ_NAMES_FR[PLANQ_NAMES[x.situation]] : PLANQ_NAMES[x.situation];
+const planqName = x=>PLANQ_L[LANG] ? PLANQ_L[LANG].names[PLANQ_NAMES[x.situation]] : PLANQ_NAMES[x.situation];
 const planqPlural = x=>/(pawns|pieces)$/.test(PLANQ_NAMES[x.situation]);
 // one row's explanation: { text, keys (criteria to tap) }
 function planqWhy(r, chosen){
   if(r.answer){ const x = chosen || planqStrongest(r.reasons, r.answer); return { text: planqSentence(r.key, x), keys: [x] }; }
   // (in these, each criterion's words, {0} and {1}, can be tapped)
   const a = planqStrongest(r.reasons, 1), b = planqStrongest(r.reasons, -1), calls = x=>planqPlural(x) ? 'call' : 'calls';
-  if(LANG==='fr'){   // (French: written here, the sentence being built from pieces)
-    const W = PLANQ_WANTS_FR[r.key], pl = x=>planqPlural(x) ? 'plaident' : 'plaide';
-    if(a && b) return { text: `{0} ${pl(a)} pour ${W[1]}, {1} pour ${W[-1]}.`, keys: [a, b], inline: true };
+  const PL = PLANQ_L[LANG];
+  if(PL){   // (the other languages: written here, the sentence being built from pieces)
+    const W = PL.wants[r.key], pl = x=>planqPlural(x);
+    if(a && b) return { text: PL.two(pl(a), W[1], W[-1]), keys: [a, b], inline: true };
     const x = a || b;
-    if(x) return { text: `{0} ${pl(x)} pour ${W[x.dir]}, sans rien d'autre : pas assez pour trancher.`, keys: [x], inline: true };
-    return { text: "Rien dans la position ne penche d'un côté ou de l'autre.", keys: [] };
+    if(x) return { text: PL.one(pl(x), W[x.dir]), keys: [x], inline: true };
+    return { text: PL.none, keys: [] };
   }
   if(a && b) return { text: `{0} ${calls(a)} for ${r.wants[1]}, {1} for ${r.wants[-1]}.`, keys: [a, b], inline: true };
   const x = a || b;
@@ -8809,7 +8857,7 @@ function prefetchShort(){
 async function sharePosition(){
   const a = screen, p = pos(); if(!p) return;
   const code = shareCode(a, p), url = location.origin + location.pathname + '?s=' + (shortIds.get(code) || code);
-  if(navigator.share){ try{ await navigator.share({ title: 'Chess Strategy', text: LANG==='fr' ? `Une position à essayer : ${tr(ACT_NAMES[a])}` : `A position to try in ${ACT_NAMES[a]}`, url }); return; }catch(e){ if(e && e.name==='AbortError') return; } }
+  if(navigator.share){ try{ await navigator.share({ title: 'Chess Strategy', text: L({ en:'A position to try in ', fr:'Une position à essayer : ', de:'Eine Stellung zum Ausprobieren: ', es:'Una posición para probar: ', it:'Una posizione da provare: ' }) + tr(ACT_NAMES[a]), url }); return; }catch(e){ if(e && e.name==='AbortError') return; } }
   try{ await navigator.clipboard.writeText(url); flashNote('Link copied'); }catch(e){ window.prompt(tr('Copy the link'), url); }
 }
 document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-share]'); if(b) sharePosition(); });
