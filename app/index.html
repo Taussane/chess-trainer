@@ -7052,6 +7052,9 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Enter your Chess.com username.": "Entrez votre nom d'utilisateur Chess.com.",
 "Remove all your games and their positions?": "Retirer toutes vos parties et leurs positions ?",
 "Remove my games": "Retirer mes parties",
+"Reset my games": "Réinitialiser mes parties",
+"Removing your games…": "Suppression de vos parties…",
+"Loading positions…": "Chargement des positions…",
 "Remove": "Retirer",
 "Add these games": "Ajouter ces parties",
 "No games found. Use the .pgn file from step 1, or paste games in PGN format.": "Aucune partie trouvée. Utilisez le fichier .pgn de l'étape 1, ou collez des parties au format PGN.",
@@ -7496,7 +7499,7 @@ function renderDoc(){
       <h1 data-no-i18n>${c ? escHtml(c.title) : ''}</h1>
     </div>
     <div class="pf-scroll doc-page" data-no-i18n>${c ? c.html : docFailed.has(doc.url)
-      ? `<p class="doc-note">${fr ? 'Cette page a besoin d’une connexion.' : 'This page needs a connection.'}</p><p><button class="btn secondary" id="docRetry">${fr ? 'Réessayer' : 'Try again'}</button></p>` : ''}</div>`;
+      ? `<p class="doc-note">${fr ? 'Cette page a besoin d\'une connexion.' : 'This page needs a connection.'}</p><p><button class="btn secondary" id="docRetry">${fr ? 'Réessayer' : 'Try again'}</button></p>` : ''}</div>`;
   const pg = app.querySelector('.doc-page');
   if(c && (doc.y || doc.w)){ pg.scrollTop = doc.y; window.scrollTo(0, doc.w); doc.y = doc.w = 0; }
   document.getElementById('homeBtn').onclick = docBack;
