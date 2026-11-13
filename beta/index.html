@@ -5112,7 +5112,7 @@ function renderHome(){
     <div class="source-row">${isDesk() ? acctChip : ''}<span class="source-label">Positions from</span>
       <div class="seg seg-sm" role="radiogroup" aria-label="Positions from">${Object.entries(SOURCES).map(([k,v])=>{
         const off = k!=='masters' && !myPositions.length;
-        return `<button class="seg-btn${k===source?' active':''}" role="radio" aria-checked="${k===source}" data-src="${k}" ${off ? 'disabled title="No positions from your games yet"' : ''}>${k==='mine' && LANG==='fr' ? '<span data-no-i18n>Miennes</span>' : v}</button>`; }).join('')}</div>
+        return `<button class="seg-btn${k===source?' active':''}" role="radio" aria-checked="${k===source}" data-src="${k}" ${off ? 'disabled title="No positions from your games yet"' : ''}>${v}</button>`; }).join('')}</div>
     </div>
     <div class="cards">
       ${ACTS.map(a=>[a, ACT_GLYPHS[a], ACT_DESC[a]]).map(([a, glyph, desc])=>{
@@ -6888,7 +6888,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Imbalance reading": "Lecture des déséquilibres",
 "Candidate moves": "Coups candidats",
 "Move selection": "Choix du coup",
-"Imbalances": "Lecture",
+"Imbalances": "Déséquilibres",
 "Evaluation": "Évaluation",
 "Candidates": "Candidats",
 "Selection": "Choix",
@@ -7142,7 +7142,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "in your own games: Dubious or worse).": "dans vos parties : Douteux ou pire).",
 "Bonuses": "Bonus",
 "Borders.": "Bordures.",
-"Counted": "Comptage",
+"Counted": "Décompte",
 "Details.": "Détails.",
 "Grades": "Notes",
 "Keep in mind.": "À retenir.",
@@ -7165,7 +7165,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Off": "Arrêt",
 "Exercises": "Exercices",
 "You": "Vous",
-"Check imbalances and plans as you play.": "Vérifiez les déséquilibres et les plans en jouant.",
+"Check imbalances and plans as you play.": "Vérifiez les déséquilibres et les plans.",
 "Score": "Score",
 "Score.": "Score.",
 "The idea.": "L'idée.",
@@ -7309,7 +7309,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Why": "Pourquoi",
 "Under each row, its main reason. Tap the underlined criterion to see it on the board, then the '?' button for how it's counted.": "Sous chaque ligne, sa raison principale. Touchez le critère souligné pour le voir sur l'échiquier, puis le bouton « ? » pour savoir comment il est compté.",
 "Plan finder": "Recherche du plan",
-"Follow the process to set your goal.": "Suivez la démarche pour fixer votre objectif.",
+"Follow the process to set your goal.": "Fixez votre objectif pas à pas.",
 "Time per position": "Temps par position",
 "Median": "Médiane",
 "Timed": "Chronométrées",
@@ -7359,7 +7359,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Feedback": "Commentaires",
 "Ponder each strategic aspect.": "Examinez chaque aspect stratégique.",
 "Gauge the overall position.": "Évaluez la position dans son ensemble.",
-"Identify the most promising moves.": "Repérez les coups les plus prometteurs.",
+"Identify the most promising moves.": "Repérez les meilleurs coups.",
 "Decide what you should play.": "Décidez ce que vous devriez jouer.",
 "Lichess analyses deeper on its servers, so its numbers can differ a little.": "Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer."
 }/*END I18N_FR*/));
@@ -8835,8 +8835,8 @@ function prefetchShort(){
 async function sharePosition(){
   const a = screen, p = pos(); if(!p) return;
   const code = shareCode(a, p), url = location.origin + location.pathname + '?s=' + (shortIds.get(code) || code);
-  if(navigator.share){ try{ await navigator.share({ title: 'Chess Strategy', text: `A position to try in ${tr(ACT_NAMES[a])}`, url }); return; }catch(e){ if(e && e.name==='AbortError') return; } }
-  try{ await navigator.clipboard.writeText(url); flashNote('Link copied'); }catch(e){ window.prompt('Copy the link', url); }
+  if(navigator.share){ try{ await navigator.share({ title: 'Chess Strategy', text: LANG==='fr' ? `Une position à essayer : ${tr(ACT_NAMES[a])}` : `A position to try in ${ACT_NAMES[a]}`, url }); return; }catch(e){ if(e && e.name==='AbortError') return; } }
+  try{ await navigator.clipboard.writeText(url); flashNote('Link copied'); }catch(e){ window.prompt(tr('Copy the link'), url); }
 }
 document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-share]'); if(b) sharePosition(); });
 function flashNote(text){
