@@ -7348,6 +7348,10 @@ const I18N_FR_RE = [
   [/^Stockfish (\d+), depth (\d+)$/, 'Stockfish $1, profondeur $2'],
   [/^Stockfish (\d+), searching$/, 'Stockfish $1, recherche en cours'],
   [/^(\d+) of (\d+)$/, '$1 sur $2'],
+  [/^(\d+) days$/, '$1 jours'],
+  [/^Replay (\d+) missed$/, (m, n)=>`Revoir ${n==='1' ? 'la position manquée' : `les ${n} positions manquées`}`],   // (Progress)
+  [/^(.+) positions you scored below your average on$/, (m, a)=>`Positions de ${tr(a)} sous votre moyenne`],
+  [/^Accuracy (\d+)% · Average (\d+)%$/, 'Précision $1 % · Moyenne $2 %'],   // (the chart's tooltip)
   [/^average accuracy, over (\d+) positions?$/, (m, n)=>`précision moyenne, sur ${n} position${n==='1' ? '' : 's'}`],   // (Rush)
   [/^New best! \(was (\d+)%\)$/, 'Nouveau record ! (avant : $1 %)'],
   [/^Evaluation (.+)$/, (m, v)=>'Évaluation ' + v.replace(/(\d)\.(\d)/, '$1,$2')],
