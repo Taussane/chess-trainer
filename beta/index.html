@@ -656,6 +656,8 @@
   .modal-backdrop-inner{height:100%; display:flex; align-items:center; justify-content:center; padding:24px;}
   .modal-box{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; max-width:380px; max-height:90%; overflow:auto;}
   .modal-box h3{margin:0 0 10px; font-size:1.05rem; font-family:var(--font-display);}
+  .modal-box h3.help-h{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:2px 12px;}
+  .help-side{font-family:var(--font-body); font-size:.82rem; font-weight:400; color:var(--text-mute);}   /* (an imbalance's levels) */
   .modal-box p{font-size:0.88rem; color:var(--text); line-height:1.55; margin:0 0 10px;}
   .modal-box p.eval-note{color:var(--text-mute);}
   .modal-box .help-list{font-size:0.88rem; line-height:1.5; margin:-6px 0 10px; padding-left:18px;}
@@ -1630,11 +1632,11 @@ const HELP = {
     task:[
       "Choose 3 of the imbalances that decide the position (there can be more), and who has the edge: White or Black. Tap ? to clear one.",
       ['The idea', "Every position is a set of differences between the two sides. Strong players spot the few that decide the game, and plan around them."],
-      ['Tips', '', ["Look for the big edges first.", "Then the clearest small ones.", "Don't choose one that's balanced: it scores nothing.", "Material, Pawns and Space tend to last. The others fade: use them before they do.", "Few pieces left: no Space. No queens: King activity replaces King safety.", "Minors to move: Development replaces Activity."]],
+      ['Tips', '', ["Look for the big edges first, then the clearest small ones.", "Few pieces left: Space is not available, as there's room for every piece.", "No queens: King activity replaces King safety.", "Minors to move: Development replaces Activity."]],
     ],
     note:"Inspired by Stockfish's former evaluation system.",
     review:[
-      ['Score', "Each choice counts for a third.", ["Among the 3 biggest edges, on the right side: full points.", "A smaller edge, on the right side: half.", "Balanced, or the wrong side: nothing."]],
+      ['Score', "Each choice counts for a third.", ["Among the 3 biggest edges: full points.", "A smaller edge: half.", "Balanced, or the wrong side: nothing."]],
       ['Sizes', "= balanced; + or ++ a small or big edge for White, − or −− for Black."],
       ['Colours', "The real sizes appear beside your answers, then your choices get their rings: green, yellow-green or red."],
       ['Details', "Tap an imbalance to see it on the board, then a king for that side alone, or the '?' button for how it's counted."],
@@ -1672,12 +1674,13 @@ const HELP = {
 // ASPECTS), what to do with it.
 const ASP_HELP = {
   material: {
-    count:["Pawn 1, knight 3, bishop 3, rook 5, queen 9.", "Bishop pair: +½, so the extra bishop counts 3.5 (Pair)."],
+    count:["Pawn 1, knight 3, bishop 3, rook 5, queen 9.", "Bishop pair: +½, so the extra bishop counts 3.5."],
     plans:["Ahead: trade pieces, not pawns. Head for the endgame.", "Behind: avoid trades, look for activity or an attack."],
   },
   pawns: {
     count:["Passed (no pawn can stop it): 2, then 4, 6, 8 on the 5th, 6th, 7th rank.", "Connected (next to or protected by a pawn): 2, 4, 6 on the 5th, 6th, 7th.",
-           "Weak −1: isolated, doubled or backward. Doubled and isolated: −2.", "A doubled pawn protected by a pawn isn't weak (arrow to its protector)."],
+           "Isolated −1: no pawn of its own on the next files to protect it.", "Doubled −1: a pawn of its own behind it on the same file, unless a pawn protects it.",
+           "Backward −1: its neighbours are all ahead, and an enemy pawn controls the square in front: it can't advance safely."],
     plans:["Passed pawn: push it, pieces behind.", "Enemy passed pawn: block it, ideally with a knight.", "Weak enemy pawns: fix and attack them.", "Your weak pawns: stay active, avoid the endgame."],
   },
   space: {
@@ -1698,13 +1701,13 @@ const ASP_HELP = {
   dev: {
     name:'Development',
     count:["Shown in place of Activity while a knight or bishop has never moved and few pieces have been traded.", "+1 per knight, bishop, queen or rook that has moved (ringed). Castling moves the rook.", "A piece that went back to its first square has moved: it still counts."],
-    levels:"+ from 2 pieces apart, ++ from 3.",
+    levels:"+ from 2 pieces apart, ++ from 3",
     plans:["Ahead: open the centre before they catch up.", "Behind: finish developing, keep the centre closed."],
   },
   kingEg: {
     name:'King activity',
     count:["No queens: the king becomes a fighter.", "Centre: 3 on d4–e5, 2 on c3–f6, 1 on b2–g7, 0 on the edge (dashed rings).", "+1 per enemy pawn it attacks (arrow).", "+1 per own passed pawn next to it.", "Forced mate: ++."],
-    levels:"+ from 1 point apart, ++ from 2.",
+    levels:"+ from 1 point apart, ++ from 2",
     plans:["More active king: attack pawns, escort your passed pawn.", "Passive king: centralize it first."],
   },
   threats: {
@@ -1718,7 +1721,8 @@ const helpPara = q=>Array.isArray(q) ? `${q[1] || !q[2] ? `<p><strong>${q[0]}.</
 function helpBody(helpKey, checked, asp){
   if(asp && ASP_HELP[asp]){
     const x = ASPECTS.find(a=>a.key===asp), eg = asp==='king' && isEndgame(curFen() || ''), dev = asp==='activity' && devActive(curFen() || ''), h = eg ? ASP_HELP.kingEg : dev ? ASP_HELP.dev : ASP_HELP[asp];
-    return { title:eg || dev ? h.name : x.name, html:[['Counted', '', h.count], ...(h.bonus && !dev ? [['Bonuses', '', h.bonus]] : []), ['Levels', h.levels || `+ from ${fmtLvl(x.levels[0])} point${x.levels[0] > 1 ? 's' : ''} apart, ++ from ${fmtLvl(x.levels[1])}.`], ['Plans', '', h.plans]].map(helpPara).join('') };
+    return { title:eg || dev ? h.name : x.name, side:h.levels || `+ from ${fmtLvl(x.levels[0])} point${x.levels[0] > 1 ? 's' : ''} apart, ++ from ${fmtLvl(x.levels[1])}`,   // (its levels: beside the title)
+      html:[['Counted', '', h.count], ...(h.bonus && !dev ? [['Bonuses', '', h.bonus]] : []), ['Plans', '', h.plans]].map(helpPara).join('') };
   }
   const h = HELP[helpKey];
   return { title:h.title, html:(checked ? h.review : h.task).map(helpPara).join('') + (!checked && h.note ? `<p class="eval-note">${h.note}</p>` : '') };
@@ -3041,7 +3045,7 @@ function helpModal(app, h, a){
   const done = can && reportedKeys.has(reportId(a, p));
   const left = !can ? '' : done ? `<span class="report-done">Reported</span>` : `<button class="link-btn quiet" id="reportPos">Report this position</button>`;
   div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box" role="dialog" aria-label="${h.title}">
-      <h3>${h.title}</h3>
+      <h3${h.side ? ' class="help-h"' : ''}>${h.title}${h.side ? `<span class="help-side">${h.side}</span>` : ''}</h3>
       ${h.html}
       <div class="modal-actions${left ? ' split' : ''}">${left}<button class="btn" id="closeHelp">Got it</button></div>
     </div></div>`;
@@ -7150,12 +7154,20 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Score.": "Score.",
 "The idea.": "L'idée.",
 "Tips": "Conseils",
+"Look for the big edges first, then the clearest small ones.": "Cherchez d'abord les gros avantages, puis les petits les plus nets.",
+"Few pieces left: Space is not available, as there's room for every piece.": "Peu de pièces : l'Espace n'est pas disponible, il y a de la place pour toutes les pièces.",
+"No queens: King activity replaces King safety.": "Sans dames : l'Activité du roi remplace la Sécurité du roi.",
+"Among the 3 biggest edges: full points.": "Parmi les 3 plus gros avantages : tous les points.",
+"A smaller edge: half.": "Un avantage plus petit : la moitié.",
+"Bishop pair: +½, so the extra bishop counts 3.5.": "Paire de fous : +½, le fou en plus compte donc 3,5.",
+"Isolated −1: no pawn of its own on the next files to protect it.": "Isolé −1 : aucun pion de son camp sur les colonnes voisines pour le protéger.",
+"Doubled −1: a pawn of its own behind it on the same file, unless a pawn protects it.": "Doublé −1 : un pion de son camp derrière lui sur la même colonne, sauf si un pion le protège.",
+"Backward −1: its neighbours are all ahead, and an enemy pawn controls the square in front: it can't advance safely.": "Arriéré −1 : ses voisins sont tous devant lui, et un pion adverse contrôle la case devant : il ne peut pas avancer sans risque.",
 "A bad plan is better than no plan at all. A plan gives you a direction to search for good moves, and helps you take better decisions.": "Un mauvais plan vaut mieux que pas de plan du tout. Un plan vous donne une direction pour chercher de bons coups, et vous aide à prendre de meilleures décisions.",
 "Weigh the imbalances: material first, then what lasts (pawns, space), then what can change fast (pieces, kings).": "Pesez les déséquilibres : le matériel d'abord, puis ce qui dure (pions, espace), puis ce qui peut vite changer (pièces, rois).",
 "The most decisive imbalances should shape the core aspects of your plan.": "Les déséquilibres les plus décisifs devraient façonner les grandes lignes de votre plan.",
 "Choose 3 of the imbalances that decide the position (there can be more), and who has the edge: White or Black. Tap ? to clear one.": "Choisissez 3 des déséquilibres qui décident de la position (il peut y en avoir plus), et qui a l'avantage : les Blancs ou les Noirs. Touchez ? pour en effacer un.",
 "Every position is a set of differences between the two sides. Strong players spot the few that decide the game, and plan around them.": "Chaque position est un ensemble de différences entre les deux camps. Les joueurs forts repèrent les quelques-unes qui décident de la partie, et bâtissent leur plan autour.",
-"Material, Pawns and Space tend to last. The others fade: use them before they do.": "Matériel, Pions et Espace tendent à durer. Les autres s'effacent : utilisez-les avant.",
 "Sizes": "Tailles",
 "Sizes.": "Tailles.",
 "Board.": "Échiquier.",
@@ -7187,7 +7199,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Yellow: right side, wrong strength.": "Jaune : bon camp, mauvaise intensité.",
 ": the engine's top choice.": " : le premier choix du moteur.",
 ": how much winning chance a move gives up.": " : combien de chances de gain un coup cède.",
-"Few pieces left: no Space. No queens: King activity replaces King safety.": "Peu de pièces : pas d'Espace. Sans dames : l'Activité du roi remplace la Sécurité du roi.",
 "Colours.": "Couleurs.",
 "Colours": "Couleurs",
 "Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all.": "Les notes ne s'additionnent pas simplement. Un gros déséquilibre peut l'emporter sur plusieurs petits, et la tactique prime sur tout.",
@@ -7207,13 +7218,10 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 ": played in the game (": " : joué dans la partie (",
 "in yours: always Dubious or worse).": "dans les vôtres : toujours Douteux ou pire).",
 "Pawn 1, knight 3, bishop 3, rook 5, queen 9.": "Pion 1, cavalier 3, fou 3, tour 5, dame 9.",
-"Bishop pair: +½, so the extra bishop counts 3.5 (Pair).": "Paire de fous : +½, le fou en plus compte donc 3,5 (Paire).",
 "Ahead: trade pieces, not pawns. Head for the endgame.": "En avance : échangez les pièces, pas les pions. Allez vers la finale.",
 "Behind: avoid trades, look for activity or an attack.": "En retard : évitez les échanges, cherchez l'activité ou l'attaque.",
 "Passed (no pawn can stop it): 2, then 4, 6, 8 on the 5th, 6th, 7th rank.": "Passé (aucun pion ne peut l'arrêter) : 2, puis 4, 6, 8 sur la 5e, 6e, 7e rangée.",
 "Connected (next to or protected by a pawn): 2, 4, 6 on the 5th, 6th, 7th.": "Lié (à côté d'un pion ou protégé par un pion) : 2, 4, 6 sur la 5e, 6e, 7e.",
-"Weak −1: isolated, doubled or backward. Doubled and isolated: −2.": "Faible −1 : isolé, doublé ou arriéré. Doublé et isolé : −2.",
-"A doubled pawn protected by a pawn isn't weak (arrow to its protector).": "Un pion doublé protégé par un pion n'est pas faible (flèche vers son protecteur).",
 "Passed pawn: push it, pieces behind.": "Pion passé : poussez-le, les pièces derrière.",
 "Enemy passed pawn: block it, ideally with a knight.": "Pion passé adverse : bloquez-le, idéalement avec un cavalier.",
 "Weak enemy pawns: fix and attack them.": "Pions adverses faibles : fixez-les et attaquez-les.",
@@ -7289,12 +7297,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Start the timing again from now?": "Repartir de maintenant pour le chronométrage ?",
 "Reset": "Remettre à zéro",
 "Gauge the 3 most decisive imbalances.": "Évaluez les 3 déséquilibres décisifs.",
-"Look for the big edges first.": "Cherchez d'abord les gros avantages.",
-"Then the clearest small ones.": "Puis les petits les plus nets.",
-"Don't choose one that's balanced: it scores nothing.": "Ne choisissez pas un déséquilibre équilibré : il ne rapporte rien.",
 "Each choice counts for a third.": "Chaque choix compte pour un tiers.",
-"Among the 3 biggest edges, on the right side: full points.": "Parmi les 3 plus gros avantages, du bon côté : tous les points.",
-"A smaller edge, on the right side: half.": "Un avantage plus petit, du bon côté : la moitié.",
 "Balanced, or the wrong side: nothing.": "Équilibré, ou le mauvais camp : rien.",
 "The real sizes appear beside your answers, then your choices get their rings: green, yellow-green or red.": "Les vraies tailles apparaissent à côté de vos réponses, puis vos choix s'entourent de vert, vert-jaune ou rouge.",
 "Three chosen already: clear one first.": "Trois déjà choisis : retirez-en un d'abord.",
@@ -7362,7 +7365,7 @@ const I18N_FR_RE = [
   [/^Remove (.+)$/, 'Retirer $1'],
   [/^(.+\S): not counted here$/, (m, a)=>tr(a) + ' : non compté ici'],
   [/^([^:]*\S): ([=+−]+)$/, (m, a, b)=>tr(a) + ' : ' + b],
-  [/^\+ from (\S+) points? apart, \+\+ from (\S+)\.$/, (m, a, b)=>`+ dès ${a.replace('.', ',')} point${a==='1' || a==='½' ? '' : 's'} d'écart, ++ dès ${b.replace('.', ',')}.`],
+  [/^\+ from (\S+) (point|piece)s? apart, \+\+ from ([^\s.]+)(\.?)$/, (m, a, u, b, dot)=>`+ dès ${a.replace('.', ',')} ${u==='piece' ? 'pièce' : 'point'}${a==='1' || a==='½' ? '' : 's'} d'écart, ++ dès ${b.replace('.', ',')}${dot}`],
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'position jouée' : 'positions jouées') + ' depuis le ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],   // decimal comma on the board's numbers
   [/^No positions played yet in (.+)\.$/, (m, a)=>`Aucune position jouée pour l'instant en ${tr(a)}.`],
