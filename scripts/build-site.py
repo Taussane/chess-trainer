@@ -81,7 +81,7 @@ beta = (page.replace('<html lang="en" class="desk2">', '<html lang="en" class="d
 assert beta.count('class="desk2 beta"') == 1 and '<base href' in beta
 import importlib.util
 spec = importlib.util.spec_from_file_location('build_pages', root / 'scripts' / 'build-pages.py'); learn = importlib.util.module_from_spec(spec); spec.loader.exec_module(learn)
-outs = { root / 'index.html': page, root / 'beta' / 'index.html': beta, **learn.build() }
+outs = { root / 'index.html': page, root / 'beta' / 'index.html': beta, **learn.build({ 'index.html': page }) }
 if '--check' in sys.argv:
     ok = all(f.exists() and f.read_text(encoding='utf-8') == t for f, t in outs.items())
     print('index.html is up to date' if ok else 'index.html is out of date: run python3 scripts/build-site.py')

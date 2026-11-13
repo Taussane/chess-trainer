@@ -346,7 +346,7 @@ LEGAL = [(legal(k, l), l, t, d, k) for l, pt, pd, tt, td in LEGAL_TEXT for k, t,
 def crumbs(*items):
   return { '@type': 'BreadcrumbList', 'itemListElement': [{ '@type': 'ListItem', 'position': i + 1, 'name': n, 'item': SITE + u } for i, (n, u) in enumerate(items)] }
 
-def build():
+def build(extra=None):   # extra: pages built elsewhere, {path: text} (the app's index.html, from build-site.py), for their sitemap dates
   out, urls = {}, ['']
   for lang in LANGS:
     w, fix = W[lang], (nbsp if lang=='fr' else (lambda t: t))
@@ -385,8 +385,18 @@ def build():
   for f, lang, title, desc, k in LEGAL:
     out[f] = page(f, lang, title, desc, (root / 'scripts' / 'pages' / f).read_text(encoding='utf-8').strip(), { l: legal(k, l) for l in LANGS }, kind='website')
     urls.append(f)
+  # Each page's last change (lastmod, for search engines' recrawls): kept from the current sitemap while the page is
+  # unchanged, today's date when it changes (or is new). Pages not given here (the app, when run on its own) keep theirs.
+  sm = root / 'sitemap.xml'
+  old = dict(re.findall(r'<loc>' + re.escape(SITE) + r'([^<]*)</loc><lastmod>([^<]+)</lastmod>', sm.read_text(encoding='utf-8'))) if sm.exists() else {}
+  import datetime; today = datetime.date.today().isoformat(); pages = { **(extra or {}), **out }
+  def lastmod(u):
+    f = u + 'index.html' if u == '' or u.endswith('/') else u
+    if f not in pages: return old.get(u, today)
+    cur = root / f
+    return old[u] if u in old and cur.exists() and cur.read_text(encoding='utf-8') == pages[f] else today
   out['sitemap.xml'] = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-                        + ''.join(f'  <url><loc>{SITE}{u}</loc></url>\n' for u in urls) + '</urlset>\n')
+                        + ''.join(f'  <url><loc>{SITE}{u}</loc><lastmod>{lastmod(u)}</lastmod></url>\n' for u in urls) + '</urlset>\n')
   return { root / k: v for k, v in out.items() }
 
 if __name__ == '__main__':
