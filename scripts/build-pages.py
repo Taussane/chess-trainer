@@ -161,13 +161,13 @@ GUIDES = [
       body="""
 <h2>Classer vos options</h2>
 <ul>
-  <li><strong>Vérifiez chaque coup contre la gaffe</strong> : regardez les échecs, prises et menaces de l'adversaire après lui. Un coup qui perd du matériel ou expose votre roi descend généralement dans le classement, aussi menaçant qu'il paraisse.</li>
+  <li><strong>Vérifiez que chaque coup n'est pas une gaffe</strong> : regardez les échecs, prises et menaces de l'adversaire après lui. Un coup qui perd du matériel ou expose votre roi descend généralement dans le classement, aussi menaçant qu'il paraisse.</li>
   <li><strong>Comparez les positions obtenues</strong> : préférez les coups qui tirent le meilleur de vos avantages, ou réduisent ceux de l'adversaire, comme le demande votre plan.</li>
   <li><strong>Quand deux coups se valent</strong>, n'y passez pas trop de temps : s'ils sont vraiment proches, le choix ne changera pas grand-chose.</li>
 </ul>
 
 <h2>L'exercice</h2>
-<p>Classez quatre coups, du meilleur au moins bon. L'un d'eux a été joué dans la partie. Dans vos parties, c'est votre coup, et toujours une erreur : une deuxième chance sur une décision manquée.</p>
+<p>Classez quatre coups, du meilleur au pire. L'un d'eux a été joué dans la partie. Dans vos parties, c'est votre coup, et toujours une erreur : une deuxième chance sur une décision manquée.</p>
 <p>Trouver le meilleur coup, c'est la moitié du score : la 1re place compte pour 50 %, la 2e pour 30 %, la 3e pour 20 %, chacune comparée au meilleur coup restant.</p>
 """)),
 ]
