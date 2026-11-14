@@ -5846,13 +5846,22 @@ const currentGame = id=>myGames.find(x=>x.id===id);   // games can be reloaded m
 // mistake (Candidate moves), Move selection's searches, Imbalance reading's check and the Plan finder's (with its
 // short search for the best move when the game doesn't have it). Positions come in game by game, in every exercise.
 const myReached = new Set(), myDone = new Set();
-// The time left for your games, updated after each game fully analysed: the median time per game in this visit (so a
-// pause while the page was in the background counts little) times the games left. null before the first game.
-const myGameMs = []; let myEta = null;
+// The time left for your games, updated after each game fully analysed: the positions the pass has left to search, in
+// every game not done yet (a long game counts more than a short one), times the median time of one search in this
+// visit (so searches slowed down while the page was in the background count little), plus 5% for the other checks.
+// null before the first game.
+const myGameMs = [], myPassMs = [], myPassPlies = {}; let myEta = null;
 function updateMyEta(){
-  if(!myGameMs.length) return;
-  const ms = myGameMs.slice().sort((a, b)=>a - b)[myGameMs.length >> 1], left = myGames.filter(g=>!(myDone.has(g.id) || gameFinished(g))).length;
-  const min = Math.max(1, Math.round(ms * left / 60000));
+  if(!myPassMs.length) return;
+  let left = 0;
+  for(const g of myGames){
+    if(myDone.has(g.id) || gameFinished(g)) continue;
+    let plies = myPassPlies[g.id];
+    if(!plies){ try{ const c = new Chess(), fens = [c.fen()], hist = []; g.sans.forEach(s=>{ const mv = c.move(s); hist.push(mv); fens.push(c.fen()); }); plies = myPassPlies[g.id] = passPliesOf(g, fens, hist); }catch(e){ continue; } }
+    left += plies.filter(ply=>passLines(g, ply)===null).length;
+  }
+  const ms = myPassMs.slice().sort((a, b)=>a - b)[myPassMs.length >> 1];
+  let min = Math.max(1, Math.round(ms * 1.05 * left / 60000)); if(min >= 60) min = Math.round(min / 5) * 5;   // (past an hour: to 5 minutes)
   myEta = left ? (min < 60 ? `${min} min` : `${Math.floor(min / 60)} h${min % 60 ? ' ' + (min % 60) + ' min' : ''}`) : null;
 }
 // The owner's screen stays on while games are being analysed with the page in view (the browser slows a hidden page
@@ -5907,7 +5916,8 @@ async function ownPass(id){
     if(passLines(g, ply)!==null) continue;
     if(new Chess(fens[ply]).perft(1)===0) passStore(g, ply, null);   // (mate or stalemate on the board: nothing to search)
     else {
-      const res = await diagTimed('pass: one position', bgEval(fens[ply], { multipv:DISCOVERY_MULTIPV, movetime:OWN.passMs }));
+      const t0 = Date.now(), res = await diagTimed('pass: one position', bgEval(fens[ply], { multipv:DISCOVERY_MULTIPV, movetime:OWN.passMs }));
+      myPassMs.push(Date.now() - t0); if(myPassMs.length > 300) myPassMs.shift();
       if(evalFailed(res)) return 'retry';
       g = currentGame(id); if(!g) return 'gone';
       passStore(g, ply, res);
