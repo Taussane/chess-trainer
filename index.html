@@ -4590,7 +4590,7 @@ let quietTimer = null, quietRendered = 0, quietFound = false;
 // against Stockfish's better side left out); the Plan finder's (2: a pawn at risk is "must defend"; 3: Stockfish's check of
 // question 1; 4: the same lean rule as Imbalance reading); both 5: Pawns graded + from 2 points, ++ from 4; Imbalance
 // reading's 6: 3 criteria graded at least, and none read otherwise by Stockfish 10 (as the master positions)
-const OWN_CHECK_V = { quietChk: 9, planqChk: 8 };   // (quietChk 9: decisiveDisagree too; quietChk 7, planqChk 6: Space graded + from 2 points; 8 and 7: Activity + from 7, King safety and Other threats + from 2, Development + from 2 pieces, King activity ++ from 2)
+const OWN_CHECK_V = { quietChk: 9, planqChk: 9 };   // (planqChk 9: no longer Imbalance reading's check on top; quietChk 9: decisiveDisagree too; quietChk 7, planqChk 6: Space graded + from 2 points; 8 and 7: Activity + from 7, King safety and Other threats + from 2, Development + from 2 pieces, King activity ++ from 2)
 function ownStoreCheck(p, field, value){
   const g = myGames.find(x=>x.id===p.gameId); if(!g) return;
   const c = { v: OWN_CHECK_V[field], ok: value };
@@ -5842,7 +5842,6 @@ async function myGameTurn(g0){
   for(let n = 0; n < 300; n++){
     if(!currentGame(id)) return 'gone';
     const p = openFor('planq'); if(!p) break;
-    if(quietOwn(p)===undefined) quietNow(p);   // (its grades read as Imbalance reading's: planqFits)
     if(planqOwnOk(p)===undefined && planqNeedsLine(p)){
       const res = await bgEval(p.fen, { multipv: 1, movetime: 400 });
       if(evalFailed(res)) return 'retry';
@@ -9598,7 +9597,6 @@ function decisiveDisagree(fen, vals){
 function planqFits(p, c){
   if(c.urgent.stop) return false;
   if(gradesDisagree(p.fen, c.vals)) return false;
-  if(p.gameId){ const q = quietOwn(p); if(q!==true) return false; }   // (your games: quiet enough, known once checked)
   const lean = ASPECTS.reduce((t, x)=>t + (c.vals.off.includes(x.key) ? 0 : aspectLevel(c.vals[x.key], x.key, c.vals)), 0), cp = c.info.mate!=null ? 1e5 * Math.sign(c.info.mate) : c.info.cp;
   return !(Math.abs(cp) >= 100 && lean===0) && !(Math.abs(cp) >= 50 && lean!==0 && Math.sign(lean)!==Math.sign(cp));   // (grades leaning against Stockfish's better side, 0.5 or more: as Imbalance reading, imbalanceLeanWrong)
 }
@@ -9613,7 +9611,7 @@ function planqOwnOk(p){
   if(!info) return undefined;
   if(!vals || vals.special){ planqOwnKnown.set(p.key, false); ownStoreCheck(p, 'planqChk', false); return false; }
   const c = planqMake(p, info, vals, new Set());
-  if(c.urgent.pending || (!c.urgent.stop && quietOwn(p)===undefined)) return undefined;
+  if(c.urgent.pending) return undefined;   // (your games: the same rules as master positions, not Imbalance reading's check on top)
   let ok = !c.urgent.ambiguous && (c.urgent.stop || c.rows.some(r=>r.answer)) && planqFits(p, c);
   if(ok && p.gameId){   // yours: Stockfish's check of question 1 too (both sides), in the game's turn (myGameTurn)
     const e = planqEngineOk.get(p.key);
