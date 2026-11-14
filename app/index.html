@@ -5412,13 +5412,15 @@ async function syncLichess(){
   }catch(e){ diagMark('Lichess sync failed: ' + String(e && e.message || e).slice(0, 80)); return { error:"couldn't reach Lichess" }; }
 }
 async function syncChesscom(){
-  const newest = myGames.some(g=>siteOf(g)==='chesscom' && g.whiteElo===undefined) ? 0 : newestOf('chesscom');
+  // all 100 again once: very short games used to be left out (one less than 100), they're kept now
+  let full = false; try{ full = !localStorage.getItem('cst.ccfull.v1'); localStorage.setItem('cst.ccfull.v1', '1'); }catch(e){}
+  const newest = full || myGames.some(g=>siteOf(g)==='chesscom' && g.whiteElo===undefined) ? 0 : newestOf('chesscom');
   if(chesscomName && chesscomName===chesscomName.toLowerCase()) try{   // saved before names kept their capitals
     const r = await serverCall(signedIn(), 'GET', '/api/chesscom/player?user=' + encodeURIComponent(chesscomName));
     if(r.username && r.username!==chesscomName && r.username.toLowerCase()===chesscomName){ setChesscomName(r.username); const st = await getStore(); if(st && st.db) st.db.doc('meta/chesscom').set({ username:r.username }).catch(()=>{}); }
   }catch(e){}
-  try{   // (10 more than kept: a few the app skips, so 100 remain; the newest 100 are kept)
-    const r = await fetch(API_BASE + `/api/chesscom/games?user=${encodeURIComponent(chesscomName)}&max=${CORE_GAMES + 10}` + (newest ? '&since=' + (newest + 1000) : ''),
+  try{
+    const r = await fetch(API_BASE + `/api/chesscom/games?user=${encodeURIComponent(chesscomName)}&max=${CORE_GAMES}` + (newest ? '&since=' + (newest + 1000) : ''),
       { headers: signedIn() ? { Authorization:'Bearer ' + signedIn().token, 'X-Auth-Site':signedIn().site } : {} });
     if(!r.ok){ let why = ''; try{ why = (await r.json()).error; }catch(e){} return { error: why || `error ${r.status}` }; }
     const text = await r.text(), before = myGames.length;
@@ -5511,7 +5513,7 @@ function importPgnText(text, quiet, playerName){
     if(speed==='ultraBullet'){ skipped.bullet++; continue; }   // too fast to learn from
     const side = (h.White||'').toLowerCase()===me ? 'w' : (h.Black||'').toLowerCase()===me ? 'b' : null;
     if(!side){ skipped.notMine++; continue; }
-    if(p.sans.length < 2*OWN.minMove){ skipped.other++; continue; }
+    // (a very short game is kept, so the list holds your 100 newest: it simply gives no position)
     // Keep only the moves chess.js accepts (a broken move ends the game there). Strict reading
     // first: chess.js's lenient ("sloppy") reading takes a b-pawn capture like "bxc6" for a bishop
     // move and fails, which used to cut games short at their first b-pawn capture.
