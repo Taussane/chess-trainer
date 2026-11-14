@@ -5802,12 +5802,12 @@ function updateMyEta(){
   const min = Math.max(1, Math.round(ms * left / 60000));
   myEta = left ? (min < 60 ? `${min} min` : `${Math.floor(min / 60)} h${min % 60 ? ' ' + (min % 60) + ' min' : ''}`) : null;
 }
-// The screen stays on while your games are being analysed with the page in view (the browser slows a hidden page
+// The owner's screen stays on while games are being analysed with the page in view (the browser slows a hidden page
 // down, and a sleeping screen stops it): released when it's done.
 let myWakeLock = null;
 async function keepAwake(on){
   try{
-    if(on && !myWakeLock && !document.hidden && navigator.wakeLock){ myWakeLock = await navigator.wakeLock.request('screen'); myWakeLock.addEventListener('release', ()=>{ myWakeLock = null; }); }
+    if(on && !myWakeLock && !document.hidden && navigator.wakeLock && isOwner()){   // (the owner only, for long test runs) myWakeLock = await navigator.wakeLock.request('screen'); myWakeLock.addEventListener('release', ()=>{ myWakeLock = null; }); }
     else if(!on && myWakeLock){ const l = myWakeLock; myWakeLock = null; await l.release(); }
   }catch(e){ myWakeLock = null; }
 }
