@@ -12,7 +12,11 @@ async def main():
         await pg.click('#accountBtn'); await pg.evaluate("(t=>{ importPgnText(t, false, 'TestPlayer'); render(); })", pathlib.Path(T.SAMPLE).read_text()); await pg.wait_for_timeout(300)
         await pg.evaluate("importPgnText(%s, false, 'TestPlayer')" % json.dumps(pathlib.Path('/home/claude/chess-trainer/tests/chesscom-sample.pgn').read_text()))
         await pg.wait_for_timeout(2000)
-        saved = await pg.evaluate("""(()=>{ myGames.forEach(g=>{ if(!g.evals){ g.evals = g.sans.map((s,i)=>({cp: Math.round(80*Math.sin(i*1.7))})); g.evalBy='pass'; g.verified=true; g.status='evaluated'; } });
+        saved = await pg.evaluate("""(()=>{ myGames.forEach(g=>{ if(!g.evals){ g.evals = g.sans.map((s,i)=>({cp: Math.round(80*Math.sin(i*1.7))})); g.evalBy='pass'; g.verified=true; g.status='evaluated'; }
+             // the pass's searches (made-up moves and values): finding the positions reads them, as for real games
+             const c = new Chess(), fens = [c.fen()]; g.sans.forEach(s=>{ c.move(s); fens.push(c.fen()); }); g.pass = { v:PASS_V, at:Date.now(), l:{}, pv:{} };
+             for(let ply = 1; ply <= g.sans.length; ply++){ const mv = new Chess(fens[ply]).moves({ verbose:true }).slice(0, 5), e = g.evals[ply-1] || { cp:0 }, w = fens[ply].split(' ')[1]==='w' ? 1 : -1;
+               g.pass.l[ply] = mv.map((m, i)=>m.from + m.to + (m.promotion || '') + ':' + Math.round(w * (e.cp || 0) - i * 40)).join(','); } });
            const out=[]; for(let k=0;k<11;k++) myGames.forEach(g=>out.push({...g, id:g.id+'x'+k})); return JSON.stringify(out.slice(0,200)); })()""")
         await b.close()
         first = None
@@ -23,9 +27,11 @@ async def main():
                 elif r.request.url.startswith('https://app.test/') and '/vendor/' not in r.request.url: await r.fulfill(body='<!doctype html><html><head><meta charset="utf-8"></head><body>'+T.SRC+'</body></html>', content_type='text/html')
                 else: await r.abort()
             await pg.route('http*://**/*', lambda r: asyncio.ensure_future(route(r)))
-            await pg.add_init_script("window.claude = { use: async()=>null }; window.__longest=0; new PerformanceObserver(l=>l.getEntries().forEach(e=>{ window.__longest=Math.max(window.__longest, Math.round(e.duration)); })).observe({type:'longtask', buffered:true});")
+            await pg.add_init_script("window.claude = { use: async()=>null }; window.__longest=0; new PerformanceObserver(l=>l.getEntries().forEach(e=>{ window.__longest=Math.max(window.__longest, Math.round(e.duration)); window.__busy=(window.__busy||0)+Math.round(e.duration); })).observe({type:'longtask', buffered:true});")
             await pg.add_init_script(f"localStorage.setItem('cst.mygames.v1', {saved!r});")
-            await pg.goto('https://app.test/'); await pg.wait_for_timeout(600)
+            await pg.goto('https://app.test/'); await pg.wait_for_timeout(4000)
+            home = await pg.evaluate("[screen, window.__busy||0, window.__longest||0]"); print(label, '| on the home page, 4 s after loading: busy (ms), longest (ms):', home[1:])
+            if home[1] > 1500: fails.append(f'{label}: the home page busy {home[1]} ms in its first 4 s')
             # the profile opened right away: its counts (Imbalance reading's checks) fill in without freezing
             await pg.click('#accountBtn'); await pg.wait_for_timeout(4400)
             r = await pg.evaluate("[myGames.length, myPositions.length, (window.__longest||0)]")

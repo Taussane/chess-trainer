@@ -5822,7 +5822,7 @@ const myGameMs = [], myPassMs = [], myPassPlies = {}; let myEta = null;
 // The game being analysed and how far its pass has gone (the line under the status, updated after each search)
 let myNow = null;
 const nowLine = ()=>{ const g = myNow && myGames.find(x=>x.id===myNow.id); if(!g || !myNow.total) return '';
-  return `(${g.white || '?'} – ${g.black || '?'} · ${Math.ceil(g.sans.length / 2)} moves · ${Math.min(100, Math.round(100 * myNow.done / myNow.total))}%)`; };
+  return `${g.white || '?'} – ${g.black || '?'} · ${Math.ceil(g.sans.length / 2)} moves · ${Math.min(100, Math.round(100 * myNow.done / myNow.total))}%`; };
 function showNowLine(){ const el = document.getElementById('mgNow'); if(el) el.textContent = tr(nowLine()); }
 function updateMyEta(){
   if(!myPassMs.length) return;
@@ -5969,6 +5969,7 @@ let preparing = null;
 function reextractAll(games){
   (games || myGames).forEach(g=>{ if(Array.isArray(g.sans) && !positionsUpToDate(g)) toPrepare.add(g); });
   if(!preparing && toPrepare.size) preparing = new Promise(done=>{
+    let shown = performance.now();
     const slice = ()=>{
       const t0 = performance.now();
       for(const g of toPrepare){
@@ -5976,7 +5977,9 @@ function reextractAll(games){
         if(myGames.includes(g)) extractOwnPositions(g);
         if(performance.now() - t0 > 25) break;
       }
-      onOwnPositionsChanged();
+      // the counts and pools redone (and the page drawn again) once a second at most: done after every slice, a few
+      // hundred games kept the page busy redrawing
+      if(!toPrepare.size || performance.now() - shown > 1000){ onOwnPositionsChanged(); shown = performance.now(); }
       if(toPrepare.size) return setTimeout(slice, 0);
       preparing = null; saveMyLocal(); myBackground(); done();
     };
@@ -7324,7 +7327,7 @@ const I18N_FR_RE = [
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'position jouée' : 'positions jouées') + ' depuis le ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],   // decimal comma on the board's numbers
   [/^Analysing your games: (\d+) left…$/, 'Vos parties : encore $1 à analyser…'],
-  [/^\((.+) · (\d+) moves · (\d+)%\)$/, '($1 · $2 coups · $3 %)'],
+  [/^(.+) · (\d+) moves · (\d+)%$/, '$1 · $2 coups · $3 %'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Vos parties : encore $1, environ $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess connecté : vos $1 dernières parties Lichess se synchroniseront automatiquement.'],
   [/^No Chess\.com player named (.+)\.$/, 'Aucun joueur Chess.com nommé $1.'],
@@ -8745,7 +8748,7 @@ const I18N_DE_RE = [
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t ? 'Gesamt ' : '') + s + a + ',' + b],
   [/^Total ([+−]?\d+)$/, 'Gesamt $1'],
   [/^Analysing your games: (\d+) left…$/, 'Analyse deiner Partien: noch $1…'],
-  [/^\((.+) · (\d+) moves · (\d+)%\)$/, '($1 · $2 Züge · $3 %)'],
+  [/^(.+) · (\d+) moves · (\d+)%$/, '$1 · $2 Züge · $3 %'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Analyse deiner Partien: noch $1, etwa $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess verbunden: Deine letzten $1 Lichess-Partien werden automatisch synchronisiert.'],
   [/^No Chess\.com player named (.+)\.$/, 'Kein Chess.com-Spieler namens $1.'],
@@ -8810,7 +8813,7 @@ const I18N_ES_RE = [
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'posición jugada' : 'posiciones jugadas') + ' desde el ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],
   [/^Analysing your games: (\d+) left…$/, 'Tus partidas: $1 por analizar…'],
-  [/^\((.+) · (\d+) moves · (\d+)%\)$/, '($1 · $2 jugadas · $3 %)'],
+  [/^(.+) · (\d+) moves · (\d+)%$/, '$1 · $2 jugadas · $3 %'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Tus partidas: $1 por analizar, unos $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess conectado: tus últimas $1 partidas de Lichess se sincronizarán automáticamente.'],
   [/^No Chess\.com player named (.+)\.$/, 'No hay ningún jugador de Chess.com llamado $1.'],
@@ -8876,7 +8879,7 @@ const I18N_IT_RE = [
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t ? 'Totale ' : '') + s + a + ',' + b],
   [/^Total ([+−]?\d+)$/, 'Totale $1'],
   [/^Analysing your games: (\d+) left…$/, 'Analisi delle tue partite: ancora $1…'],
-  [/^\((.+) · (\d+) moves · (\d+)%\)$/, '($1 · $2 mosse · $3%)'],
+  [/^(.+) · (\d+) moves · (\d+)%$/, '$1 · $2 mosse · $3%'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Analisi delle tue partite: ancora $1, circa $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess collegato: le tue ultime $1 partite di Lichess si sincronizzeranno automaticamente.'],
   [/^No Chess\.com player named (.+)\.$/, 'Nessun giocatore di Chess.com di nome $1.'],
