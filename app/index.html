@@ -5416,8 +5416,8 @@ async function syncChesscom(){
     const r = await serverCall(signedIn(), 'GET', '/api/chesscom/player?user=' + encodeURIComponent(chesscomName));
     if(r.username && r.username!==chesscomName && r.username.toLowerCase()===chesscomName){ setChesscomName(r.username); const st = await getStore(); if(st && st.db) st.db.doc('meta/chesscom').set({ username:r.username }).catch(()=>{}); }
   }catch(e){}
-  try{
-    const r = await fetch(API_BASE + `/api/chesscom/games?user=${encodeURIComponent(chesscomName)}&max=${CORE_GAMES}` + (newest ? '&since=' + (newest + 1000) : ''),
+  try{   // (10 more than kept: a few the app skips, so 100 remain; the newest 100 are kept)
+    const r = await fetch(API_BASE + `/api/chesscom/games?user=${encodeURIComponent(chesscomName)}&max=${CORE_GAMES + 10}` + (newest ? '&since=' + (newest + 1000) : ''),
       { headers: signedIn() ? { Authorization:'Bearer ' + signedIn().token, 'X-Auth-Site':signedIn().site } : {} });
     if(!r.ok){ let why = ''; try{ why = (await r.json()).error; }catch(e){} return { error: why || `error ${r.status}` }; }
     const text = await r.text(), before = myGames.length;
@@ -5818,6 +5818,11 @@ const myReached = new Set(), myDone = new Set();
 // visit (so searches slowed down while the page was in the background count little), plus 5% for the other checks.
 // null before the first game.
 const myGameMs = [], myPassMs = [], myPassPlies = {}; let myEta = null;
+// The game being analysed and how far its pass has gone (the line under the status, updated after each search)
+let myNow = null;
+const nowLine = ()=>{ const g = myNow && myGames.find(x=>x.id===myNow.id); if(!g || !myNow.total) return '';
+  return `Now: ${g.white || '?'} – ${g.black || '?'}, ${Math.ceil(g.sans.length / 2)} moves · ${Math.min(100, Math.round(100 * myNow.done / myNow.total))}%`; };
+function showNowLine(){ const el = document.getElementById('mgNow'); if(el) el.textContent = tr(nowLine()); }
 function updateMyEta(){
   if(!myPassMs.length) return;
   let left = 0;
@@ -5878,6 +5883,7 @@ async function ownPass(id){
     const b = winForMover(g.evals[ply-1], t), a = winForMover(g.evals[ply], t); return b!=null && a!=null && b - a >= OWN.mistakeDrop; }) : [];
   const order = Array.from(new Set(first.flatMap(ply=>[ply, ply + 1]).filter(ply=>plies.includes(ply)).concat(plies)));
   let n = 0;
+  myNow = { id, total: order.length, done: order.filter(ply=>passLines(g, ply)!==null).length }; showNowLine();
   for(const ply of order){
     g = currentGame(id); if(!g) return 'gone';
     if(passLines(g, ply)!==null) continue;
@@ -5889,6 +5895,7 @@ async function ownPass(id){
       g = currentGame(id); if(!g) return 'gone';
       passStore(g, ply, res);
     }
+    myNow.done++; showNowLine();
     if(++n % 4===0 && lich){ extractOwnPositions(g); onOwnPositionsChanged(); }
     if(n % 10===0) saveMyLocal();
   }
@@ -6092,7 +6099,7 @@ function positionsSection(){
           <thead><tr><th></th>${cols.map(([label])=>`<th scope="col">${label}</th>`).join('')}</tr></thead>
           <tbody>${row('Games', ([, games])=>games)}${ACTS.map(a=>row(`<span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}`, ([, , c])=>c[a])).join('')}</tbody>
         </table></div>
-        ${status ? `<p class="mg-status">${status}</p>` : ''}
+        ${status ? `<p class="mg-status">${status}</p>` : ''}${status && done < myGames.length && nowLine() ? `<p class="mg-status mg-now" id="mgNow">${nowLine()}</p>` : ''}
         ${myConfirmClear==='resetting' ? `<p class="mg-status">Resetting the analysis…</p>`
           : myGames.length ? (myConfirmClear
           ? (DIRECT_LICHESS ? `<div class="mg-confirm"><span>Analyse your games again from scratch?</span><button class="btn small danger" id="resetYes">Reset</button><button class="btn small ghost" id="clearNo">Keep</button></div>`
@@ -7316,6 +7323,7 @@ const I18N_FR_RE = [
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'position jouée' : 'positions jouées') + ' depuis le ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],   // decimal comma on the board's numbers
   [/^Analysing your games: (\d+) left…$/, 'Vos parties : encore $1 à analyser…'],
+  [/^Now: (.+), (\d+) moves · (\d+)%$/, 'En cours : $1, $2 coups · $3 %'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Vos parties : encore $1, environ $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess connecté : vos $1 dernières parties Lichess se synchroniseront automatiquement.'],
   [/^No Chess\.com player named (.+)\.$/, 'Aucun joueur Chess.com nommé $1.'],
@@ -8736,6 +8744,7 @@ const I18N_DE_RE = [
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t ? 'Gesamt ' : '') + s + a + ',' + b],
   [/^Total ([+−]?\d+)$/, 'Gesamt $1'],
   [/^Analysing your games: (\d+) left…$/, 'Analyse deiner Partien: noch $1…'],
+  [/^Now: (.+), (\d+) moves · (\d+)%$/, 'Gerade: $1, $2 Züge · $3 %'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Analyse deiner Partien: noch $1, etwa $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess verbunden: Deine letzten $1 Lichess-Partien werden automatisch synchronisiert.'],
   [/^No Chess\.com player named (.+)\.$/, 'Kein Chess.com-Spieler namens $1.'],
@@ -8800,6 +8809,7 @@ const I18N_ES_RE = [
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'posición jugada' : 'posiciones jugadas') + ' desde el ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],
   [/^Analysing your games: (\d+) left…$/, 'Tus partidas: $1 por analizar…'],
+  [/^Now: (.+), (\d+) moves · (\d+)%$/, 'Ahora: $1, $2 jugadas · $3 %'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Tus partidas: $1 por analizar, unos $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess conectado: tus últimas $1 partidas de Lichess se sincronizarán automáticamente.'],
   [/^No Chess\.com player named (.+)\.$/, 'No hay ningún jugador de Chess.com llamado $1.'],
@@ -8865,6 +8875,7 @@ const I18N_IT_RE = [
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t ? 'Totale ' : '') + s + a + ',' + b],
   [/^Total ([+−]?\d+)$/, 'Totale $1'],
   [/^Analysing your games: (\d+) left…$/, 'Analisi delle tue partite: ancora $1…'],
+  [/^Now: (.+), (\d+) moves · (\d+)%$/, 'Ora: $1, $2 mosse · $3%'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Analisi delle tue partite: ancora $1, circa $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess collegato: le tue ultime $1 partite di Lichess si sincronizzeranno automaticamente.'],
   [/^No Chess\.com player named (.+)\.$/, 'Nessun giocatore di Chess.com di nome $1.'],
