@@ -1,7 +1,7 @@
 // Position finder rules — every threshold the finder uses, and nothing else.
 // Mirrors the "Position finder rules" doc. Change a rule here (and in the doc), bump VERSION.
 module.exports = {
-  VERSION: '2026-11-04.1',
+  VERSION: '2026-11-13.1',
 
   // The app's own engine (Stockfish 19 lite in the page), 1.2 s per search, as for a player's own games:
   // one calibration for both (2026-10-22: 1.2 s matches depth 18 as well as 2 s does; safety margins below).
@@ -37,7 +37,8 @@ module.exports = {
   CANDIDATES: {
     trapTopN: 5,                   // a trap among the top 5: a move losing 12+ points of winning chances
     trapMinDrop: 12,               // (10 = Dubious, plus a 2-point margin: the live search can differ a little)
-    spacingPlies: 7,               // 7 half-moves between kept positions from the same game
+    maxDecent: 3,                  // at most 3 decent moves (not a trap) in the top 5: with 4, almost any sensible picks score
+    spacingPlies: 10,              // 10 half-moves between kept positions from the same game
   },
 
   FINAL: {

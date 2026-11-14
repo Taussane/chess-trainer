@@ -81,9 +81,11 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
         else if(div.mid>=0 && ply < div.mid + R.ANALYSIS.earlyBalanced.plies && ls[0].mate==null && Math.abs(ls[0].cp) < R.ANALYSIS.earlyBalanced.maxEval) tally(stats.analysis,'rejected: balanced, early in the middlegame');
         else { e.options.add('analysis'); e.metrics.evalWhite = (fen.split(' ')[1]==='w' ? 1 : -1) * moverScore(ls[0]); e.metrics.mate = ls[0].mate ?? null; }
       }
-      // Candidate moves: a trap (Dubious or worse) among the top 5.
-      if(top5.some(l=>drop(l) >= R.CANDIDATES.trapMinDrop)){ e.options.add('candidates'); e.metrics.decentMoves = top5.filter(l=>drop(l) < R.CANDIDATES.trapMinDrop).length; }
-      else tally(stats.candidates, 'rejected: no trap in top 5');
+      // Candidate moves: a trap (Dubious or worse) among the top 5, and at most 3 decent moves.
+      { const decent = top5.filter(l=>drop(l) < R.CANDIDATES.trapMinDrop).length;
+        if(decent === top5.length) tally(stats.candidates, 'rejected: no trap in top 5');
+        else if(decent > R.CANDIDATES.maxDecent) tally(stats.candidates, 'rejected: more than 3 decent moves');
+        else { e.options.add('candidates'); e.metrics.decentMoves = decent; } }
       // Final choice (the only check needing more searches, so it comes last).
       const f = await finalCheck(ply, top5);
       if(f){ e.options.add('final'); e.final = f.final; Object.assign(e.metrics, f.metrics); }
