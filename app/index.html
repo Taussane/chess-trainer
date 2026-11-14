@@ -5090,10 +5090,10 @@ function renderHome(){
 // mistakes go to Candidate moves at once, and to Move selection after one top-5 search. The others
 // get a quick background scan, only while the engine has nothing else to do, and each likely
 // mistake it flags is checked with the engine first. Everything is saved privately to your account.
-const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacingPlies:3, retryPlies:3, maxMaterialDiff:3, bigMaterialMaxWin:85, earlyBalancedPlies:14, earlyBalancedCp:100,
+const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacingPlies:3, maxMaterialDiff:3, bigMaterialMaxWin:85, 
               candidatesMinLegal:2, finalMinLegal:4, scanMs:300, maxGamesPerUpload:200,
               // your other positions (either side to move), after your mistakes: the master rules (finder/rules.js), every 3rd half-move
-              extraStride:3, trapMinDrop:12, maxDecent:3, candidatesSpacing:10, finalSpacing:2,
+              extraStride:1, trapMinDrop:12, maxDecent:3, candidatesSpacing:10, finalSpacing:2,
               flagDrop:7,        // quick evaluations flag a likely mistake from 7 points (the check then needs 10)
               checkMs:1200 };    // the check: the app's usual search (top 5, then your move with them)
 // Move selection's spread rule (see finalSpreadOk), the same as the master positions' (finder/rules.js).
@@ -5596,8 +5596,19 @@ function extractOwnPositions0(g){
              last: prev ? [prev.from, prev.to] : null, hist:{ uci:m.from+m.to+(m.promotion||''), san:m.san, from:m.from, to:m.to },
              acts, gameId:g.id, ply, ...extra };
   };
+  // A mistake of yours: Move selection once its searches say the four moves are spread enough (g.finalOk); Candidate
+  // moves when at most 3 of the top 5 moves are decent (g.decent: the master rule; a position where almost any sensible
+  // pick is good makes a weak exercise). Each waits for its search ("pending"): the count of decent moves first.
+  const mistakeEntry = (ply, nLegal, drop)=>{
+    const canFinal = nLegal >= OWN.finalMinLegal, ready = g.finalOk && g.finalOk[ply]!=null ? g.finalOk[ply] : null;
+    const dec = g.decent && g.decent[ply]!=null ? g.decent[ply] : null;
+    const acts = []; if(dec!=null && dec <= OWN.maxDecent) acts.push('candidates'); if(canFinal && ready===1) acts.push('final');
+    const extra = { drop: Math.round(drop), mistake:true };
+    if(dec==null) Object.assign(extra, { pending:true, prep:'decent' }); else if(canFinal && ready==null) Object.assign(extra, { pending:true, prep:'final' });
+    return entry(ply, acts, extra);
+  };
   const div = divideGame(fens);
-  const baFrom = div.mid>=0 ? div.mid : div.end, baLast = div.end>=0 ? div.end : hist.length-1, baTo = div.end>=0 ? div.end + OWN.retryPlies : baLast;   // middlegame and endgame starting together: from the endgame start
+  const baFrom = div.mid>=0 ? div.mid : div.end, baTo = hist.length-1;   // from the middlegame's start (or the endgame's, when they start together) to move 40 (OWN.maxMove)
   const out = [], ba = [];
   // One pass over the game, every half-move checked once (early exits).
   for(let ply=0; ply<hist.length; ply++){
@@ -5615,23 +5626,13 @@ function extractOwnPositions0(g){
       // only for the app's searches: four moves to rank, spread enough (finalSpreadOk; g.finalOk).
       const before = winForMover(g.evals[ply-1], turn), after = winForMover(g.evals[ply], turn);
       const quick = before!=null && after!=null ? before - after : null;
-      if(quick!=null && quick >= OWN.mistakeDrop){
-        const canFinal = nLegal >= OWN.finalMinLegal, ready = g.finalOk && g.finalOk[ply]!=null ? g.finalOk[ply] : null;
-        const final = canFinal && ready===1;
-        out.push(entry(ply, final ? ['candidates','final'] : ['candidates'], { drop: Math.round(quick), ...(canFinal && ready==null ? { pending:true, prep:'final' } : {}) }));
-        continue;
-      }
+      if(quick!=null && quick >= OWN.mistakeDrop){ out.push(mistakeEntry(ply, nLegal, quick)); continue; }
     } else if(turn===g.me && nLegal >= OWN.candidatesMinLegal && ply>0){
       const checked = g.checks && g.checks[ply]!=null ? g.checks[ply] : null;
       const before = g.evals ? winForMover(g.evals[ply-1], turn) : null, after = g.evals ? winForMover(g.evals[ply], turn) : null;
       const quick = before!=null && after!=null ? before - after : null;
       const drop = checked!=null ? checked : g.verified ? quick : null;
-      if(drop!=null && drop >= OWN.mistakeDrop){
-        // Move selection too once its searches say the four moves are spread enough (g.finalOk), as for Lichess's games.
-        const canFinal = nLegal >= OWN.finalMinLegal, ready = g.finalOk && g.finalOk[ply]!=null ? g.finalOk[ply] : null;
-        out.push(entry(ply, canFinal && ready===1 ? ['candidates','final'] : ['candidates'], { drop: Math.round(drop), ...(canFinal && ready==null ? { pending:true, prep:'final' } : {}) }));
-        continue;   // a mistake position is never a quiet position
-      }
+      if(drop!=null && drop >= OWN.mistakeDrop){ out.push(mistakeEntry(ply, nLegal, drop)); continue; }   // (a mistake position is never a quiet position)
       if(drop==null && quick!=null && quick >= OWN.flagDrop){ out.push(entry(ply, [], { pending:true })); continue; }
       // The analysis decides each move's place at once: flagged as a likely mistake, it is for
       // Candidate moves and Move selection (if the engine confirms it), never a quiet one, even
@@ -5650,9 +5651,6 @@ function extractOwnPositions0(g){
       const e = g.evals && ply>0 ? g.evals[ply-1] : null;
       if(!e || winForMover(e, materialDiff(pc) > 0 ? 'w' : 'b') >= OWN.bigMaterialMaxWin) continue;
     }
-    // Balanced (within ±1.00) early in the middlegame (its first 14 half-moves): skipped.
-    const ev = g.evals && ply>0 ? g.evals[ply-1] : null;
-    if(div.mid>=0 && ply < div.mid + OWN.earlyBalancedPlies && ev && ev.mate==null && ev.cp!=null && Math.abs(ev.cp) < OWN.earlyBalancedCp) continue;
     ba.push(ply);
   }
   // The quiet positions, as the master positions' (scripts/strategy-pass.js): each exercise its own, half-move after
@@ -5678,8 +5676,8 @@ function extractOwnPositions0(g){
   // apart for Candidate moves, 2 for Move selection). One search answers both (xtraChk: { c, f }); the walk stops at the
   // first one not checked yet ("open": the game's turn checks it, after the mistakes' checks). Not while a mistake waits.
   if(!out.some(e=>e.pending)){
-    const mist = new Set(out.filter(e=>e.acts.includes('candidates')).map(e=>e.ply));
-    const keptC = [...mist], keptF = out.filter(e=>e.acts.includes('final')).map(e=>e.ply), near = (k, ply, n)=>k.some(x=>Math.abs(x - ply) < n);
+    const mist = new Set(out.filter(e=>e.mistake).map(e=>e.ply));
+    const keptC = out.filter(e=>e.acts.includes('candidates')).map(e=>e.ply), keptF = out.filter(e=>e.acts.includes('final')).map(e=>e.ply), near = (k, ply, n)=>k.some(x=>Math.abs(x - ply) < n);
     const found = {}; let next = null;
     for(let ply = OWN.extraStride; ply < hist.length; ply += OWN.extraStride){
       if(mist.has(ply)) continue;
@@ -5803,18 +5801,19 @@ async function myGameTurn(g0){
   }
   // then each kind of check in turn, cheapest first; every position counts as soon as it's validated
   const open = x=>x.pending && !myTried.has(job(x));
-  const runChecks = async kind=>{   // kind: 'check' (likely mistakes: Candidate moves) or 'final' (Move selection's searches)
+  const runChecks = async kind=>{   // kind: 'check' (likely mistakes), 'decent' (a mistake's decent moves: Candidate moves) or 'final' (Move selection's searches)
     for(;;){
       g = currentGame(id); if(!g) return 'gone';
-      const p = (g.positions||[]).find(x=>open(x) && (kind==='final' ? x.prep==='final' : x.prep!=='final'));
+      const p = (g.positions||[]).find(x=>open(x) && (x.prep || 'check')===kind);
       if(!p) return 'ok';
       myTried.add(job(p));
       let r = null;
-      try{ r = p.prep==='final' ? await diagTimed('selection: check of the 4 moves', prepFinal(p)) : await diagTimed('candidates: mistake check', checkMistake(p)); }
+      try{ r = p.prep==='final' ? await diagTimed('selection: check of the 4 moves', prepFinal(p)) : p.prep==='decent' ? await diagTimed('candidates: decent moves', countDecent(p)) : await diagTimed('candidates: mistake check', checkMistake(p)); }
       catch(e){ r = 0; }   // a position that can't be checked is left out
       if(r==null){ myTried.delete(job(p)); return 'retry'; }
       g = currentGame(id); if(!g) return 'gone';
       if(p.prep==='final') (g.finalOk = g.finalOk || {})[p.ply] = r;
+      else if(p.prep==='decent') (g.decent = g.decent || {})[p.ply] = r;
       else (g.checks = g.checks || {})[p.ply] = r;
       extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged();
     }
@@ -5833,6 +5832,7 @@ async function myGameTurn(g0){
   }
   // 3. its likely mistakes checked (Candidate moves; Move selection's checks follow from them)
   { const r = await runChecks('check'); if(r!=='ok') return r; }
+  { const r = await runChecks('decent'); if(r!=='ok') return r; }   // (your mistakes for Candidate moves: right after)
   // 4. the Plan finder (no engine, except a short search for the best move when the game hasn't it, and Stockfish's
   // check of question 1)
   const planqTries = new Map();
@@ -5866,6 +5866,15 @@ async function myGameTurn(g0){
 }
 // The check of one likely mistake: a quick search of the position (top 5, 1.2 s), and your move judged in
 // the same search as the top 5. Kept apart (prepStore): the exercises search the position in full themselves.
+// A mistake's count of decent moves (within 12 points of the best) among the top 5: the same quick search, reused
+// when the mistake check just made it (and by Move selection's searches after). null if the engine failed.
+async function countDecent(p){
+  const disc = prepStore[p.fen] || await bgEval(p.fen, { multipv:DISCOVERY_MULTIPV, movetime:OWN.checkMs });
+  if(evalFailed(disc) || !disc.lines.length) return null;
+  prepStore[p.fen] = disc;
+  const ls = disc.lines.slice(0, DISCOVERY_MULTIPV), best = winPercent(ls[0].cp, ls[0].mate);
+  return ls.filter(l=>best - winPercent(l.cp, l.mate) < OWN.trapMinDrop).length;
+}
 async function checkMistake(p){
   const disc = await bgEval(p.fen, { multipv:DISCOVERY_MULTIPV, movetime:OWN.checkMs });
   if(evalFailed(disc) || !disc.lines.length) return null;
