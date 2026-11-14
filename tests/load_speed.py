@@ -12,7 +12,7 @@ async def main():
         await pg.click('#accountBtn'); await pg.evaluate("(t=>{ importPgnText(t, false, 'TestPlayer'); render(); })", pathlib.Path(T.SAMPLE).read_text()); await pg.wait_for_timeout(300)
         await pg.evaluate("importPgnText(%s, false, 'TestPlayer')" % json.dumps(pathlib.Path('/home/claude/chess-trainer/tests/chesscom-sample.pgn').read_text()))
         await pg.wait_for_timeout(2000)
-        saved = await pg.evaluate("""(()=>{ myGames.forEach(g=>{ if(!g.evals){ g.evals = g.sans.map((s,i)=>({cp: Math.round(80*Math.sin(i*1.7))})); g.evalBy='scan'; g.status='evaluated'; } });
+        saved = await pg.evaluate("""(()=>{ myGames.forEach(g=>{ if(!g.evals){ g.evals = g.sans.map((s,i)=>({cp: Math.round(80*Math.sin(i*1.7))})); g.evalBy='pass'; g.verified=true; g.status='evaluated'; } });
            const out=[]; for(let k=0;k<11;k++) myGames.forEach(g=>out.push({...g, id:g.id+'x'+k})); return JSON.stringify(out.slice(0,200)); })()""")
         await b.close()
         first = None
