@@ -5090,7 +5090,7 @@ function renderHome(){
 // mistakes go to Candidate moves at once, and to Move selection after one top-5 search. The others
 // get a quick background scan, only while the engine has nothing else to do, and each likely
 // mistake it flags is checked with the engine first. Everything is saved privately to your account.
-const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacingPlies:7, retryPlies:3, maxMaterialDiff:3, bigMaterialMaxWin:85, earlyBalancedPlies:14, earlyBalancedCp:100,
+const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacingPlies:3, retryPlies:3, maxMaterialDiff:3, bigMaterialMaxWin:85, earlyBalancedPlies:14, earlyBalancedCp:100,
               candidatesMinLegal:2, finalMinLegal:4, scanMs:300, maxGamesPerUpload:200,
               // your other positions (either side to move), after your mistakes: the master rules (finder/rules.js), every 3rd half-move
               extraStride:3, trapMinDrop:12, maxDecent:3, candidatesSpacing:10, finalSpacing:2,
