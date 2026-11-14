@@ -5090,10 +5090,10 @@ function renderHome(){
 // mistakes go to Candidate moves at once, and to Move selection after one top-5 search. The others
 // get a quick background scan, only while the engine has nothing else to do, and each likely
 // mistake it flags is checked with the engine first. Everything is saved privately to your account.
-const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacingPlies:3, maxMaterialDiff:3, bigMaterialMaxWin:85, 
+const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacing:{ imbalances:4, planq:3 }, maxMaterialDiff:3, bigMaterialMaxWin:85, 
               candidatesMinLegal:2, finalMinLegal:4, scanMs:300, maxGamesPerUpload:200,
               // your other positions (either side to move), after your mistakes: the master rules (finder/rules.js), every 3rd half-move
-              extraStride:1, trapMinDrop:12, maxDecent:3, candidatesSpacing:10, finalSpacing:2,
+              extraStride:2, trapMinDrop:12, maxDecent:3, candidatesSpacing:10, finalSpacing:2,
               flagDrop:7,        // quick evaluations flag a likely mistake from 7 points (the check then needs 10)
               checkMs:1200 };    // the check: the app's usual search (top 5, then your move with them)
 // Move selection's spread rule (see finalSpreadOk), the same as the master positions' (finder/rules.js).
@@ -5657,8 +5657,8 @@ function extractOwnPositions0(g){
   // half-move, 7 apart; one its check turns down gives way to the next half-move. The walk stops at the first one not
   // checked yet ("open": the game's turn checks it, then the walk goes on: myGameTurn).
   // Those already accepted always stay (counts never drop, results keep their positions: also those chosen another way before).
-  const near = (kept, ply)=>kept.some(k=>Math.abs(k - ply) < OWN.spacingPlies);
-  const pick = field=>{ const kept = []; let next = null;
+  const pick = field=>{ const kept = []; let next = null, gap = OWN.spacing[field==='quietChk' ? 'imbalances' : 'planq'];
+    const near = (k, ply)=>k.some(x=>Math.abs(x - ply) < gap);
     for(const ply of ba) if(ownChk(g, field, ply)===true && !near(kept, ply)) kept.push(ply);
     for(const ply of ba){ if(near(kept, ply)) continue; const ok = ownChk(g, field, ply);
       if(ok===true) kept.push(ply); else if(ok===undefined){ next = ply; break; } }
@@ -5672,14 +5672,15 @@ function extractOwnPositions0(g){
     out.push(e);
   }
   // Candidate moves' and Move selection's other positions, either side to move: after your mistakes (kept first), the
-  // master rules, every 3rd half-move, each kept one spaced from those already kept, mistakes included (10 half-moves
+  // master rules, every 2nd half-move (one side in a game, the other in the next: by the game's id), each kept one spaced from those already kept, mistakes included (10 half-moves
   // apart for Candidate moves, 2 for Move selection). One search answers both (xtraChk: { c, f }); the walk stops at the
   // first one not checked yet ("open": the game's turn checks it, after the mistakes' checks). Not while a mistake waits.
   if(!out.some(e=>e.pending)){
     const mist = new Set(out.filter(e=>e.mistake).map(e=>e.ply));
     const keptC = out.filter(e=>e.acts.includes('candidates')).map(e=>e.ply), keptF = out.filter(e=>e.acts.includes('final')).map(e=>e.ply), near = (k, ply, n)=>k.some(x=>Math.abs(x - ply) < n);
     const found = {}; let next = null;
-    for(let ply = OWN.extraStride; ply < hist.length; ply += OWN.extraStride){
+    const side0 = [...String(g.id)].reduce((t, ch)=>t + ch.charCodeAt(0), 0) % OWN.extraStride;
+    for(let ply = 1 + side0; ply < hist.length; ply += OWN.extraStride){
       if(mist.has(ply)) continue;
       const fen = fens[ply], moveNo = +fen.split(' ')[5]; if(moveNo < OWN.minMove || moveNo > OWN.maxMove) continue;
       const needC = !near(keptC, ply, OWN.candidatesSpacing), needF = !near(keptF, ply, OWN.finalSpacing); if(!needC && !needF) continue;
