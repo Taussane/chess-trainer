@@ -5886,6 +5886,9 @@ async function myBackground(){
   let retry = false;
   try{
     while(sfState==='ready'){
+      // games already analysed (kept from an earlier visit) need no turn: going through them again at each load kept the
+      // page busy for seconds (and wrote each one to the account again)
+      myGames.forEach(x=>{ if(!myDone.has(x.id) && gameFinished(x)) myDone.add(x.id); });
       const g = myGames.map((x, i)=>[x, i]).sort((a, b)=>gameRank(a[0]) - gameRank(b[0]) || a[1] - b[1]).map(x=>x[0]).find(x=>!myDone.has(x.id));
       if(!g) break;
       myTurnId = g.id; myTurnDirty = false;
@@ -5896,6 +5899,7 @@ async function myBackground(){
       myDone.add(g.id); myGameMs.push(Date.now() - t0); updateMyEta();
       if(myDone.size >= myGames.length) diagMark('all games done');
       myPosVersion++; refreshPools(true); onOwnPositionsChanged(); render();
+      await tick();   // (between two games, the page gets a turn: a run of quick games never holds it)
     }
   } finally {
     myBgRunning = false; pumpEngineQueue(); if(!retry) keepAwake(false);
@@ -5932,6 +5936,7 @@ async function ownPass(id){
     if(n % 10===0) saveMyLocal();
   }
   g = currentGame(id); if(!g) return 'gone';
+  if(!n && (lich || g.evalBy==='pass')) return 'ok';   // (nothing searched: nothing new to keep)
   if(!lich && g.evalBy!=='pass'){ g.evals = passEvals(g, fens, hist); g.status = 'evaluated'; g.evalBy = 'pass'; g.verified = true; }
   delete g.checks; delete g.finalOk; delete g.decent; if(g.chk) delete g.chk.xtraChk;   // (the separate checks before the pass: read from it now)
   extractOwnPositions(g); saveMyGame(g); onOwnPositionsChanged();
