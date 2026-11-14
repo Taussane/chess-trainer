@@ -5990,7 +5990,11 @@ async function initMyGames(){
         myClearedDoc = db.doc('data/users/' + id + '/trainer/meta/games-cleared');
         const [snap, cd] = await Promise.all([col.limit(1000).get(), myClearedDoc.get()]);
         const clearedAt = cd.exists ? (cd.data().at || 0) : 0;
-        const fromDb = snap.docs.map(d=>d.data()).filter(g=>g && g.id && Array.isArray(g.sans));
+        let fromDb = snap.docs.map(d=>d.data()).filter(g=>g && g.id && Array.isArray(g.sans));
+        // Games added before a reset that the account still has (the reset's deletions didn't all finish before the
+        // page reloaded): they stay gone, and are deleted again.
+        const stale = clearedAt ? fromDb.filter(g=>(g.addedAt || 0) <= clearedAt) : [];
+        if(stale.length){ fromDb = fromDb.filter(g=>!stale.includes(g)); stale.forEach(g=>col.doc(g.id).delete().catch(()=>{})); }
         fromDb.forEach(x=>{ const l = myGames.find(g=>g.id===x.id); if(l && Array.isArray(l.positions) && l.posSig && l.posSig===posSig(x)){ x.positions = l.positions; x.posSig = l.posSig; } });
         // Games only on this device go up to your account, unless "Remove my games" (inside Claude only) was used
         // (on any device) after they were added.
