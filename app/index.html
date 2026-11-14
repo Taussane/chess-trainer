@@ -5581,7 +5581,7 @@ function passLines(g, ply){
   return s ? s.split(',').map(x=>{ const i = x.indexOf(':'), uci = x.slice(0, i), v = x.slice(i + 1); return v[0]==='m' ? { uci, cp:null, mate:+v.slice(1) } : { uci, cp:+v, mate:null }; }) : [];
 }
 function passStore(g, ply, res){
-  if(!g.pass || g.pass.v!==PASS_V) g.pass = { v:PASS_V, l:{}, pv:{} };
+  if(!g.pass || g.pass.v!==PASS_V) g.pass = { v:PASS_V, at:Date.now(), l:{}, pv:{} };
   const ls = (res && res.lines || []).slice(0, DISCOVERY_MULTIPV).filter(l=>l.uci && (l.cp!=null || l.mate!=null));
   g.pass.l[ply] = ls.map(l=>l.uci + ':' + (l.mate!=null ? 'm' + l.mate : Math.round(l.cp))).join(',');
   if(ls[0] && ls[0].pv) g.pass.pv[ply] = ls[0].pv.slice(0, 8).join(' ');
@@ -5978,7 +5978,8 @@ async function initMyGames(){
         const col = db.collection('data/users/' + id + '/trainer/games');
         myClearedDoc = db.doc('data/users/' + id + '/trainer/meta/games-cleared');
         const [snap, cd] = await Promise.all([col.limit(1000).get(), myClearedDoc.get()]);
-        const clearedAt = cd.exists ? (cd.data().at || 0) : 0;
+        const clearedAt = cd.exists ? (cd.data().at || 0) : 0, resetAt = cd.exists ? (cd.data().analysisAt || 0) : 0;   // (games removed / analysis reset)
+        myClearedAt = clearedAt;
         let fromDb = snap.docs.map(d=>d.data()).filter(g=>g && g.id && Array.isArray(g.sans));
         // Games added before a reset that the account still has (the reset's deletions didn't all finish before the
         // page reloaded): they stay gone, and are deleted again.
@@ -5991,6 +5992,7 @@ async function initMyGames(){
         const local = myGames.filter(g=>!fromDb.some(x=>x.id===g.id) && (!clearedAt || (g.addedAt || 0) > clearedAt) && (chesscomName || siteOf(g)!=='chesscom'));
         myGamesCol = col;
         myGames = fromDb.concat(local);
+        clearOldAnalysis(myGames, resetAt);   // (an analysis from before a reset: started over)
         local.forEach(g=>myGamesCol.doc(g.id).set(g).catch(()=>{}));
         saveMyLocal();
       }
@@ -6006,17 +6008,25 @@ async function initMyGames(){
   myBackground();
   setTimeout(()=>myPositions.forEach(p=>{ if(posIn(p, 'imbalances')) quietOwn(p); }), 1500);   // Imbalance reading's checks, ahead of time
 }
-// Beta: your games removed everywhere, then the page loads again and brings them back from Lichess and
-// Chess.com as if for the first time (analysis, checks and the timing log all start over).
+// Beta: your games' analysis started over (the games stay: no new download from Lichess or Chess.com). Each game's
+// analysis is cleared here and in your account; the reset's time is kept too, so a game the account still had with its
+// older analysis (a save unfinished when the page reloaded) is cleared at the next load (clearOldAnalysis).
+function clearAnalysis(g){
+  delete g.pass; delete g.chk; delete g.checks; delete g.finalOk; delete g.decent; delete g.shown; delete g.posSig; g.positions = [];
+  if(!lichessEvals(g)){ g.evals = null; delete g.evalBy; delete g.verified; g.status = 'queued'; }   // (evaluations from the app's own analysis go too)
+}
+let myClearedAt = 0;
 async function resetMyGames(){
-  const ids = myGames.map(g=>g.id);
   myConfirmClear = 'resetting'; render();
-  myGames = []; saveMyLocal();
-  const waits = myGamesCol ? ids.map(id=>myGamesCol.doc(id).delete().catch(()=>{})) : [];
-  if(myClearedDoc) waits.push(myClearedDoc.set({ at: Date.now() }).catch(()=>{}));
+  const at = Date.now();
+  myGames.forEach(clearAnalysis); saveMyLocal();
+  const waits = [];
+  if(myClearedDoc) waits.push(myClearedDoc.set({ at: myClearedAt, analysisAt: at }).catch(()=>{}));   // (kept with the games' removal time)
+  if(myGamesCol) myGames.forEach(g=>waits.push(myGamesCol.doc(g.id).set(g).catch(()=>{})));
   await Promise.race([Promise.all(waits), new Promise(r=>setTimeout(r, 8000))]);
   location.reload();
 }
+function clearOldAnalysis(games, resetAt){ games.forEach(g=>{ if(resetAt && (g.pass ? g.pass.at || 0 : 0) < resetAt && (g.pass || g.chk || g.evalBy==='pass' || g.evalBy==='scan')) clearAnalysis(g); }); }
 function clearMyGames(){
   const ids = myGames.map(g=>g.id);
   myGames = []; saveMyLocal();
@@ -6073,9 +6083,9 @@ function positionsSection(){
           <tbody>${row('Games', ([, games])=>games)}${ACTS.map(a=>row(`<span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}`, ([, , c])=>c[a])).join('')}</tbody>
         </table></div>
         ${status ? `<p class="mg-status">${status}</p>` : ''}
-        ${myConfirmClear==='resetting' ? `<p class="mg-status">Removing your games…</p>`
+        ${myConfirmClear==='resetting' ? `<p class="mg-status">Resetting the analysis…</p>`
           : myGames.length ? (myConfirmClear
-          ? (DIRECT_LICHESS ? `<div class="mg-confirm"><span>Remove your games and analyse them again from scratch?</span><button class="btn small danger" id="resetYes">Reset</button><button class="btn small ghost" id="clearNo">Keep</button></div>`
+          ? (DIRECT_LICHESS ? `<div class="mg-confirm"><span>Analyse your games again from scratch?</span><button class="btn small danger" id="resetYes">Reset</button><button class="btn small ghost" id="clearNo">Keep</button></div>`
                             : `<div class="mg-confirm"><span>Remove all your games and their positions?</span><button class="btn small danger" id="clearYes">Remove</button><button class="btn small ghost" id="clearNo">Keep</button></div>`)
           : myGamesLoaded && (!DIRECT_LICHESS || BETA_SITE) ? `<button class="link-btn quiet" id="clearBtn">${DIRECT_LICHESS ? 'Reset my games' : 'Remove my games'}</button>${DIRECT_LICHESS ? ' <span class="title-badge">Beta</span>' : ''}` : '') : ''}
       </section>`;
@@ -7031,7 +7041,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Remove all your games and their positions?": "Retirer toutes vos parties et leurs positions ?",
 "Remove my games": "Retirer mes parties",
 "Reset my games": "Réinitialiser mes parties",
-"Removing your games…": "Suppression de vos parties…",
+"Resetting the analysis…": "Réinitialisation de l'analyse…",
 "Loading positions…": "Chargement des positions…",
 "Remove": "Retirer",
 "No games found. Use the .pgn file from step 1, or paste games in PGN format.": "Aucune partie trouvée. Utilisez le fichier .pgn de l'étape 1, ou collez des parties au format PGN.",
@@ -7546,7 +7556,7 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Remove all your games and their positions?": "Alle deine Partien und ihre Stellungen entfernen?",
 "Remove my games": "Meine Partien entfernen",
 "Reset my games": "Meine Partien zurücksetzen",
-"Removing your games…": "Deine Partien werden entfernt…",
+"Resetting the analysis…": "Analyse wird zurückgesetzt…",
 "Loading positions…": "Stellungen werden geladen…",
 "Remove": "Entfernen",
 "No games found. Use the .pgn file from step 1, or paste games in PGN format.": "Keine Partien gefunden. Nutze die .pgn-Datei aus Schritt 1 oder füge Partien im PGN-Format ein.",
@@ -7996,7 +8006,7 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Remove all your games and their positions?": "¿Quitar todas tus partidas y sus posiciones?",
 "Remove my games": "Quitar mis partidas",
 "Reset my games": "Restablecer mis partidas",
-"Removing your games…": "Quitando tus partidas…",
+"Resetting the analysis…": "Reiniciando el análisis…",
 "Loading positions…": "Cargando posiciones…",
 "Remove": "Quitar",
 "No games found. Use the .pgn file from step 1, or paste games in PGN format.": "No se encontraron partidas. Usa el archivo .pgn del paso 1 o pega partidas en formato PGN.",
@@ -8446,7 +8456,7 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Remove all your games and their positions?": "Rimuovere tutte le tue partite e le loro posizioni?",
 "Remove my games": "Rimuovi le mie partite",
 "Reset my games": "Reimposta le mie partite",
-"Removing your games…": "Rimozione delle tue partite…",
+"Resetting the analysis…": "Azzeramento dell'analisi…",
 "Loading positions…": "Caricamento delle posizioni…",
 "Remove": "Rimuovi",
 "No games found. Use the .pgn file from step 1, or paste games in PGN format.": "Nessuna partita trovata. Usa il file .pgn del passo 1 o incolla partite in formato PGN.",
