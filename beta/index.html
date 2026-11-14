@@ -5807,7 +5807,7 @@ function updateMyEta(){
 let myWakeLock = null;
 async function keepAwake(on){
   try{
-    if(on && !myWakeLock && !document.hidden && navigator.wakeLock && isOwner()){   // (the owner only, for long test runs) myWakeLock = await navigator.wakeLock.request('screen'); myWakeLock.addEventListener('release', ()=>{ myWakeLock = null; }); }
+    if(on && !myWakeLock && !document.hidden && navigator.wakeLock && isOwner()){ myWakeLock = await navigator.wakeLock.request('screen'); myWakeLock.addEventListener('release', ()=>{ myWakeLock = null; }); }
     else if(!on && myWakeLock){ const l = myWakeLock; myWakeLock = null; await l.release(); }
   }catch(e){ myWakeLock = null; }
 }
