@@ -5399,13 +5399,16 @@ async function syncLichess(){
   try{
     const headers = { Accept:'application/x-chess-pgn' }; if(lichessAuth) headers.Authorization = 'Bearer ' + lichessAuth.token;
     const res = await fetch(url, { headers });
+    diagMark(`Lichess answered ${res.status}` + (newest ? ' (new games only)' : '') + (name ? '' : ', no username'));
     if(res.status===401 && lichessAuth){ setLichessAuth(null); return { error:'your Lichess login expired. Log in again' }; }
     if(res.status===429) return { error:'Lichess is busy, try again in a minute' };
     if(!res.ok) return { error:`Lichess didn't answer (error ${res.status})` };
     const text = await res.text(), before = myGames.length;
+    diagMark(`Lichess games received: ${(text.match(/\[Event /g) || []).length}`);
     if(text.trim()) importPgnText(text, true, name);
+    diagMark(`Lichess games added: ${myGames.length - before}`);
     return { added: myGames.length - before };
-  }catch(e){ return { error:"couldn't reach Lichess" }; }
+  }catch(e){ diagMark('Lichess sync failed: ' + String(e && e.message || e).slice(0, 80)); return { error:"couldn't reach Lichess" }; }
 }
 async function syncChesscom(){
   const newest = myGames.some(g=>siteOf(g)==='chesscom' && g.whiteElo===undefined) ? 0 : newestOf('chesscom');
