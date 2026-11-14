@@ -9468,6 +9468,7 @@ function renderExplorer(){
   const mineFirst = sfQueue.filter(j=>j.fen===fen); if(mineFirst.length){ for(const j of mineFirst) sfQueue.splice(sfQueue.indexOf(j), 1); sfQueue.unshift(...mineFirst); }
   const c = sfCurrentJob; if(c && c.explorer && c.fen!==fen && !c.preempted){ c.preempted = true; stopForWait(c); }
   const vals = explorerShownVals(x, fen, explorerVals(fen));
+  if(x.aspView && vals && isOff(vals, { key:x.aspView })){ x.aspView = null; x.aspPiece = x.aspKing = null; }   // (an imbalance switched off by the move, Space after trades: its marks go too)
   const done = ev && !failed && ev.lines.length ? ev.lines[0] : null, live = !ev && x.engineOn ? explorerLive[fen] : null;
   const line = done || live, info = line ? toWhitePerspective(line, fen) : null;
   if(info){ x.lastPct = cpToPct(info.cp, info.mate); x.lastInfo = info; }   // (the bar stays where it was until the next position's first reading)
