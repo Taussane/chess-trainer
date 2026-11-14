@@ -9162,10 +9162,17 @@ function stat(k, o){
 }
 addEventListener('pagehide', statFlush);
 addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') statFlush(); });
-// Own games: their count and the positions found in them, once a visit, when they've settled.
+// The player's rating, as a bracket of 400 points ("lichess:1600" = 1600 to 1999), from their newest game: Lichess's
+// when they have Lichess games, else Chess.com's. Nothing else about the games.
+function ratingBracket(){
+  const newest = site=>myGames.filter(g=>siteOf(g)===site).sort((x, y)=>gamePlayedAt(y) - gamePlayedAt(x))[0];
+  for(const site of ['lichess', 'chesscom']){ const g = newest(site), elo = g && (g.me==='w' ? g.whiteElo : g.blackElo); if(elo > 0) return site + ':' + Math.min(2800, Math.floor(elo / 400) * 400); }
+  return undefined;
+}
+// Own games: their count, the positions found in them and the rating bracket, once a visit, when they've settled.
 function statOwnGames(){
   clearTimeout(statGamesTimer);
-  statGamesTimer = setTimeout(()=>{ if(myGames.length) stat('games', { n1: myGames.length, n2: myPositions.length }); }, 30000);
+  statGamesTimer = setTimeout(()=>{ if(myGames.length) stat('games', { n1: myGames.length, n2: myPositions.length, src: ratingBracket() }); }, 30000);
 }
 
 // The dashboard (the owner's only: Test positions' neighbour in the profile).
@@ -9209,6 +9216,13 @@ function renderMetrics(){
           <div class="mx-rep-acts">${reportPos(r) ? `<button class="link-btn" data-rep-play="${i}">Play</button>` : `<button class="link-btn" data-rep-xp="${i}">Explorer</button>`}<button class="link-btn quiet" data-rep-del="${i}">Dismiss</button></div></div>`).join('')}</div>`
         : `<p class="mx-note">None: a player reports a position from a review's help (?).</p>`}</section>
       </div>
+      ${d.referrers ? `<div class="mx-grp mx-2"><h2 class="pf-h">Came from</h2>
+      <section class="pf-card"><table class="mx-table"><thead><tr><th></th><th>Visits</th><th>Devices</th><th>Players</th></tr></thead><tbody>
+        ${d.referrers.map(r=>`<tr><td>${escHtml(r.src || 'direct')}</td><td>${r.visits}</td><td>${r.devices}</td><td>${r.players}</td></tr>`).join('') || '<tr><td colspan="4">No visits yet</td></tr>'}
+      </tbody></table><p class="mx-note">The site a visit came from (direct: typed, a bookmark, the installed app, or a link that hides where it was).</p></section>
+      <section class="pf-card"><table class="mx-table"><thead><tr><th>Rating</th><th>Lichess</th><th>Chess.com</th></tr></thead><tbody>
+        ${[0, 400, 800, 1200, 1600, 2000, 2400, 2800].filter(r=>d.ratings.some(x=>+x.src.split(':')[1]===r)).map(r=>`<tr><td>${r===2800 ? '2800+' : r + '–' + (r + 399)}</td><td>${(d.ratings.find(x=>x.src==='lichess:' + r) || {}).n || ''}</td><td>${(d.ratings.find(x=>x.src==='chesscom:' + r) || {}).n || ''}</td></tr>`).join('') || '<tr><td colspan="3">No linked games yet</td></tr>'}
+      </tbody></table><p class="mx-note">Devices with linked games, by the player's rating in their newest game (Lichess's, else Chess.com's).</p></section></div>` : ''}
       <div class="mx-grp mx-wide"><h2 class="pf-h">Every day</h2>
       <section class="pf-card">${metricsChart(d.daily.map(r=>({ ...r, visitors: Math.max(0, r.devices - (r.players || 0)) })), d.players ? [['players', 'var(--accent)', 'Players'], ['visitors', 'var(--text-mute)', 'Visitors (nothing played)'], ['newPlayers', 'var(--cyan-arrow)', 'New players'], ['newAccounts', 'var(--pick1)', 'New accounts']] : [['devices', 'var(--accent)', 'Active devices'], ['newDevices', 'var(--cyan-arrow)', 'New devices'], ['newAccounts', 'var(--pick1)', 'New accounts']])}</section>
       <section class="pf-card">${metricsChart(d.daily, [['positions', 'var(--accent)', 'Positions'], ['visits', 'var(--cyan-arrow)', 'Visits']])}</section>
@@ -10542,7 +10556,8 @@ function renderScreen(){
 }
 
 render();
-stat('open');
+// where the visit comes from: the referring site's domain only (never the page), none when typed or from this site
+stat('open', (()=>{ try{ const h = new URL(document.referrer).hostname.toLowerCase().replace(/^(www|m)\./, ''); return h && !/(^|\.)chessstrategy\.org$|github\.io$/.test(h) ? { src: h.slice(0, 60) } : {}; }catch(e){ return {}; } })());
 initEngine();
 (async()=>{
   if(DIRECT_LICHESS){ await finishLichessLogin(); await finishGoogleLogin(); }   // back from lichess.org: signed in before anything loads

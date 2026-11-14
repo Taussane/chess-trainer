@@ -48,7 +48,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const VERSION = '2026-11-14';   // shown by /api/health: which version is deployed
+const VERSION = '2026-11-14.2';   // shown by /api/health: which version is deployed
 const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
@@ -390,6 +390,10 @@ async function ccGames(user, since, max) {
 // load, 2 stopped). Each carries a random device id
 // and visit id, never an account or a name. Kept 13 months.
 const EV_KINDS = ['open', 'pos', 'games', 'err'], EV_ACTS = ['imbalances', 'analysis', 'candidates', 'final', 'planq'], KEEP_DAYS = 400;
+// src: a position's source (masters, mine); a visit's referring domain; the own games' rating bracket (lichess:1600)
+const evSrc = e => e.k === 'pos' ? (['masters', 'mine'].includes(e.src) ? e.src : null)
+  : e.k === 'open' ? (typeof e.src === 'string' && /^[a-z0-9.-]{1,60}$/.test(e.src) ? e.src : null)
+  : e.k === 'games' ? (typeof e.src === 'string' && /^(lichess|chesscom):\d{1,4}$/.test(e.src) ? e.src : null) : null;
 let eventsReady = false;
 async function ensureEvents(env) {
   if (eventsReady) return;
@@ -419,7 +423,7 @@ async function usageEvents(req, env) {
     const ts = int(e.ts, now - DAY, now) ?? now;
     stmts.push(env.DB.prepare('INSERT INTO events (ts, day, did, sid, k, a, acc, src, auth, cc, lang, app, n1, n2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(
       ts, new Date(ts).toISOString().slice(0, 10), b.did, b.sid, e.k, EV_ACTS.includes(e.a) ? e.a : null, int(e.acc, 0, 100),
-      ['masters', 'mine'].includes(e.src) ? e.src : null, auth, c.cc ? 1 : 0, lang, c.app ? 1 : 0, int(e.n1, 0, 1e6), int(e.n2, 0, 1e6)));
+      evSrc(e), auth, c.cc ? 1 : 0, lang, c.app ? 1 : 0, int(e.n1, 0, 1e6), int(e.n2, 0, 1e6)));
   }
   if (stmts.length) stmts.push(env.DB.prepare('INSERT OR IGNORE INTO devices (did, first) VALUES (?, ?)').bind(b.did, new Date(now).toISOString().slice(0, 10)));
   if (Math.random() < 0.01) stmts.push(env.DB.prepare('DELETE FROM events WHERE ts < ?').bind(now - KEEP_DAYS * DAY));   // now and then: the oldest go
@@ -512,6 +516,10 @@ async function metricsNow(env, days) {
   const firstPlay = await all(`SELECT first AS day, COUNT(*) n FROM (SELECT did, MIN(day) first FROM events WHERE k = 'pos' GROUP BY did) WHERE first >= ? GROUP BY first`, since);
   const newPlayersBy = Object.fromEntries(firstPlay.map(r => [r.day, r.n]));
   const players = async n => (await one(`SELECT COUNT(DISTINCT did) n FROM events WHERE k = 'pos' AND day >= ?`, day(n - 1))).n || 0;
+  // where visits come from (the referring domain), and how many of those devices played; players' rating brackets
+  const referrers = await all(`SELECT o.src, COUNT(DISTINCT o.sid) visits, COUNT(DISTINCT o.did) devices, COUNT(DISTINCT p.did) players FROM events o
+    LEFT JOIN (SELECT DISTINCT did FROM events WHERE k = 'pos' AND day >= ?) p ON p.did = o.did WHERE o.k = 'open' AND o.day >= ? GROUP BY o.src ORDER BY devices DESC LIMIT 15`, since, since);
+  const ratings = await all(`SELECT src, COUNT(*) n FROM (SELECT did, src, MAX(ts) FROM events WHERE k = 'games' AND src IS NOT NULL AND day >= ? GROUP BY did) GROUP BY src`, since);
   const fresh = await all(`SELECT first AS day, COUNT(*) n FROM devices WHERE first >= ? GROUP BY first`, since);
   const newBy = Object.fromEntries(fresh.map(r => [r.day, r.n]));
   const acts = await all(`SELECT a, COUNT(*) n, ROUND(AVG(acc), 1) avg, SUM(acc < 50) low, SUM(acc >= 80) high, COUNT(DISTINCT did) devices FROM events WHERE k = 'pos' AND a IS NOT NULL AND day >= ? GROUP BY a ORDER BY n DESC`, since);
@@ -542,6 +550,7 @@ async function metricsNow(env, days) {
       visits: byDay[d] ? byDay[d].visits : 0, positions: byDay[d] ? byDay[d].positions : 0, newAccounts: accBy[d] || 0 })),
     active: { day: active(1), week: active(7), month: active(30), period: devs.length },
     players: { day: await players(1), week: await players(7), month: await players(30) },
+    referrers, ratings,
     visits: { n: visits.visits || 0, playing: visits.playing || 0, positionsPerVisit: visits.positions || 0, exercisesPerVisit: visits.exercises || 0 },
     exercises: acts, sources: Object.fromEntries(src.map(r => [r.src || '?', r.n])),
     routine: { positions: routine.r || 0, of: routine.n || 0 },
