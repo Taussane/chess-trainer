@@ -9228,8 +9228,7 @@ function renderMetrics(){
       <section class="pf-card">${(d.reports || []).length ? `<div class="mx-reports">${d.reports.map((r, i)=>`<div class="mx-rep">
           <div><b>${ACT_SHORT[r.a] || escHtml(r.a)}</b> · ${escHtml(r.label || r.key)}${r.ply!=null ? ` · ply ${r.ply}` : ''}<br>
           <small>${r.n} report${r.n > 1 ? 's' : ''}${r.devices > 1 ? ` (${r.devices} devices)` : ''} · last ${new Date(r.last).toLocaleDateString(dateLoc(), { day:'numeric', month:'short' })}${r.acc!=null ? ` · score ${r.acc}%` : ''}</small></div>
-          <div class="mx-rep-acts"><a class="link-btn" href="https://lichess.org/analysis/${encodeURI(r.fen.replace(/ /g, '_'))}" target="_blank" rel="noopener">Lichess</a>
-          <button class="link-btn" data-rep-xp="${i}">Explorer</button><button class="link-btn quiet" data-rep-del="${i}">Dismiss</button></div></div>`).join('')}</div>`
+          <div class="mx-rep-acts">${reportPos(r) ? `<button class="link-btn" data-rep-play="${i}">Play</button>` : `<button class="link-btn" data-rep-xp="${i}">Explorer</button>`}<button class="link-btn quiet" data-rep-del="${i}">Dismiss</button></div></div>`).join('')}</div>`
         : `<p class="mx-note">None: a player reports a position from a review's help (?).</p>`}</section>
       </div>
       <div class="mx-grp mx-wide"><h2 class="pf-h">Every day</h2>
@@ -9283,7 +9282,13 @@ function renderMetrics(){
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
   app.querySelectorAll('[data-days]').forEach(b=>b.onclick = ()=>{ metricsDays = +b.dataset.days; loadMetrics(); });
-  // a reported position: on the explorer's board (from there), or dismissed (every report of it goes)
+  // a reported position: played in its exercise (as a shared position: one position, then on in that exercise), on
+  // the explorer's board when it can't be (another player's own game), or dismissed (every report of it goes)
+  app.querySelectorAll('[data-rep-play]').forEach(b=>b.onclick = ()=>{
+    const r = d.reports[+b.dataset.repPlay], p = reportPos(r); if(!p) return;
+    sharedOpen = r.a; replayQueue = [{ a: r.a, key: p.key, pos: p }]; replayMode = true; routine = false; testMode = false; replayIdx = 0;
+    openReplayAt(0);
+  });
   app.querySelectorAll('[data-rep-xp]').forEach(b=>b.onclick = ()=>{
     const r = d.reports[+b.dataset.repXp];
     exploreFrom({ fen: r.fen, ply: r.ply, game: /^g\d+$/.test(r.game || '') ? r.game : null });
@@ -10464,6 +10469,13 @@ function masterPosAt(game, ply){
   DEV_HIST.set(fen, devTouched(moves, ply));
   return { key: fen.split(' ').slice(0, 4).join(' '), fen, side: fen.split(' ')[1], moveNo: +fen.split(' ')[5], title: gi.title || '', year: (gi.date || '').slice(0, 4),
            last: prev ? { squares: [prev.from, prev.to] } : null, hist: { uci: m.from + m.to + (m.promotion || ''), san: m.san, from: m.from, to: m.to }, game, ply, added: gi.added || 0 };
+}
+// A reported position, to play it again: a master game's (by game and half-move), or one of your own games' (found among
+// your positions); null for another player's own game (only its board is known)
+function reportPos(r){
+  if(!(ACTIVITIES.includes(r.a) || r.a==='planq')) return null;
+  if(/^g\d+$/.test(r.game || '') && Number.isInteger(r.ply)) return masterPosAt(r.game, r.ply) || null;
+  return myPositions.find(p=>p.key===r.key && (!r.game || p.gameId===r.game)) || null;
 }
 function sharedPos(code){
   const [a, x, y] = String(code || '').split('.');
