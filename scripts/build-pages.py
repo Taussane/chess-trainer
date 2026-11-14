@@ -139,7 +139,7 @@ GUIDES = [
   dict(play='final', img='move-selection',
     en=dict(slug='move-selection', name='Move selection', sub='How to choose the best move',
       title='How to choose the best move in chess',
-      desc='How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own mistakes.',
+      desc='How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own games.',
       lead="Several moves may look fine, but only one is best. Once exploring <a href=\"../candidate-moves/\">candidate moves</a> has given you a few serious options, the last step is choosing between them, and that's where many games are lost.",
       alt='Move selection review on a 1963 World Championship position: four moves ranked, the game move Nxe4 best, two dubious ones',
       caption='The game move Nxe4 is best and was found. Qh2, the only other good move, should have come 2nd.',
@@ -152,12 +152,12 @@ GUIDES = [
 </ul>
 
 <h2>The exercise</h2>
-<p>Rank four moves, from best to worst. One was played in the game. In your own games, it's your move, and always a mistake: a second chance at a decision you got wrong.</p>
+<p>Rank four moves, from best to worst. One was played in the game. In your own games, your mistakes come first: a second chance at a decision you got wrong.</p>
 <p>Finding the best move is half the score: 1st place counts for 50%, 2nd for 30%, 3rd for 20%, each compared with the best move left.</p>
 """),
     fr=dict(slug='choisir-le-meilleur-coup', name='Choix du coup', sub='Comment choisir le meilleur coup',
       title='Comment choisir le meilleur coup aux échecs',
-      desc="Comment choisir entre des coups qui ont l'air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres erreurs.",
+      desc="Comment choisir entre des coups qui ont l'air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres parties.",
       lead="Plusieurs coups peuvent avoir l'air bien, mais un seul est le meilleur. Une fois que l'exploration des <a href=\"../coups-candidats/\">coups candidats</a> vous a donné quelques options sérieuses, reste à choisir entre elles, et c'est là que beaucoup de parties se perdent.",
       alt="Correction de Choix du coup sur une position du championnat du monde 1963 : quatre coups classés, le coup joué Nxe4 est le meilleur, deux coups douteux",
       caption="Le coup joué Nxe4 est le meilleur et a été trouvé. Qh2, le seul autre coup valable, aurait dû être 2e.",
@@ -170,7 +170,7 @@ GUIDES = [
 </ul>
 
 <h2>L'exercice</h2>
-<p>Classez quatre coups, du meilleur au pire. L'un d'eux a été joué dans la partie. Dans vos parties, c'est votre coup, et toujours une erreur : une deuxième chance sur une décision manquée.</p>
+<p>Classez quatre coups, du meilleur au pire. L'un d'eux a été joué dans la partie. Dans vos parties, vos erreurs passent en premier : une deuxième chance sur une décision manquée.</p>
 <p>Trouver le meilleur coup, c'est la moitié du score : la 1re place compte pour 50 %, la 2e pour 30 %, la 3e pour 20 %, chacune comparée au meilleur coup restant.</p>
 """)),
 ]
@@ -198,7 +198,7 @@ FAQ = {
     ('Where is my progress kept?', "In your browser, and in your account when you're logged in, so it follows you on every device."),
   ]),
   ('Positions and the engine', [
-    ('Where do the positions come from?', "From World Championship games and, once connected, from your own Lichess and Chess.com games. In your games, the app looks for your mistakes: the position just before a move that lost a lot."),
+    ('Where do the positions come from?', "From World Championship games and, once connected, from your own Lichess and Chess.com games. In your games, the app looks for your mistakes first, then other positions, as in master games."),
     ('How are the positions picked?', "By rules, checked with Stockfish: quiet positions where strategy matters, spread across the game, not too close to each other, and for each exercise a reason to ask. Drawn games only give their unbalanced positions."),
     ('Which engine?', "Stockfish 19 (its \"lite\" version), running in your browser, so nothing is sent anywhere: each position is searched to depth 20, a few seconds at most. Master positions also come with their evaluation computed in advance."),
   ]),
@@ -226,7 +226,7 @@ FAQ = {
     ("Où sont gardés mes progrès ?", "Dans votre navigateur, et dans votre compte quand vous êtes connecté, pour qu'ils vous suivent sur tous vos appareils."),
   ]),
   ("Les positions et le moteur", [
-    ("D'où viennent les positions ?", "Des parties de championnat du monde et, une fois connecté, de vos propres parties Lichess et Chess.com. Dans vos parties, l'application cherche vos erreurs : la position juste avant un coup qui a beaucoup perdu."),
+    ("D'où viennent les positions ?", "Des parties de championnat du monde et, une fois connecté, de vos propres parties Lichess et Chess.com. Dans vos parties, l'application cherche d'abord vos erreurs, puis d'autres positions, comme dans les parties de maîtres."),
     ("Comment les positions sont-elles choisies ?", "Par des règles, vérifiées avec Stockfish : des positions calmes où la stratégie compte, réparties sur la partie, pas trop proches les unes des autres, et pour chaque exercice une raison de poser la question. Les parties nulles ne donnent que leurs positions déséquilibrées."),
     ("Quel moteur ?", "Stockfish 19 (sa version « lite »), qui tourne dans votre navigateur, si bien que rien n'est envoyé nulle part : chaque position est analysée à la profondeur 20, en quelques secondes au plus. Les positions de maîtres viennent aussi avec leur évaluation calculée à l'avance."),
   ]),

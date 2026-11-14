@@ -1621,13 +1621,13 @@ const HELP = {
     title:'Move selection',
     task:[
       "Rank the four moves from best to worst.",
-      "One was played in the game. In your own games, it's your move, which was Dubious or worse. Can you do better?",
+      "One was played in the game. In your own games, mistakes are prioritized. Can you do better?",
       ['The idea', "Several moves may look fine, but only one is best. After exploring candidate moves, the last step is choosing between them."],
       ['Tips', '', ["Check each move for a blunder: your opponent's checks, captures and threats after it. A move that drops material or exposes your king generally goes down, however menacing it looks.", "Prefer moves that make the most of your advantages, or reduce your opponent's.", "Two moves look equal? Don't spend too long: if they really are close, the choice won't change much.", "Find the best move first. It's half the score."]],
     ],
     review:[
       ['Score', '', ["1st place: 50%, 2nd: 30%, 3rd: 20%.", "Each place is compared with the best move left: full points if yours is as good, zero if it's Dubious or worse."]],
-      ['Grades', '', GRADES.concat(["<strong>Game move</strong>: played in the game (<strong>Your move</strong> in yours: always Dubious or worse)."])],
+      ['Grades', '', GRADES.concat(["<strong>Game move</strong>: played in the game."])],
     ],
   },
 };
@@ -2551,7 +2551,7 @@ function candidatesFor(a, src){
     const added = Math.floor((g ? (g.addedAt || g.playedAt || 0) : (p.added || 0)) / DAY);
     core.push({ p, r, added, played: g ? gamePlayedAt(g) : 0 });
   }
-  core.sort((x,y)=>(!!x.r - !!y.r) || (x.r ? x.r.ts - y.r.ts : (y.added - x.added) || (y.played - x.played) || (rnd(x.p.key) - rnd(y.p.key))));
+  core.sort((x,y)=>(!!x.r - !!y.r) || (x.r ? x.r.ts - y.r.ts : (!!x.p.extra - !!y.p.extra) || (y.added - x.added) || (y.played - x.played) || (rnd(x.p.key) - rnd(y.p.key))));
   const v = { core: core.map(x=>x.p), replay };
   lineCache[a + src] = { ck, v };
   return v;
@@ -4376,7 +4376,7 @@ function boardHtml(){
 // Move selection review row: grade as plain coloured text, like the Candidate moves lists.
 function reviewRowHtml(m){
   const label = m.outcome ? m.outcome.label : m.na ? '—' : '…';
-  const tags = m.historical ? [pos().gameId ? 'Your move' : 'Game move'] : [];
+  const tags = m.historical ? [pos().gameId && (myGames.find(g=>g.id===pos().gameId) || {}).me===pos().side ? 'Your move' : 'Game move'] : [];
   const labelStyle = m.outcome ? `color:${labelColor(label)};` : '';
   return `<div class="review-row${label==='Best' ? ' best-row' : ''}">
       <div class="move-tag"><span class="num">${m.num}</span><span class="move-chip" style="background:${m.color}">${fmtSan(m.san)}</span>${tags.length ? `<span class="badges">${tags.map(t=>`<span class="badge">${t}</span>`).join('')}</span>` : ''}</div>
@@ -4592,7 +4592,7 @@ let quietTimer = null, quietRendered = 0, quietFound = false;
 // against Stockfish's better side left out); the Plan finder's (2: a pawn at risk is "must defend"; 3: Stockfish's check of
 // question 1; 4: the same lean rule as Imbalance reading); both 5: Pawns graded + from 2 points, ++ from 4; Imbalance
 // reading's 6: 3 criteria graded at least, and none read otherwise by Stockfish 10 (as the master positions)
-const OWN_CHECK_V = { quietChk: 9, planqChk: 9 };   // (planqChk 9: no longer Imbalance reading's check on top; quietChk 9: decisiveDisagree too; quietChk 7, planqChk 6: Space graded + from 2 points; 8 and 7: Activity + from 7, King safety and Other threats + from 2, Development + from 2 pieces, King activity ++ from 2)
+const OWN_CHECK_V = { quietChk: 9, planqChk: 9, xtraChk: 1 };   // (planqChk 9: no longer Imbalance reading's check on top; quietChk 9: decisiveDisagree too; quietChk 7, planqChk 6: Space graded + from 2 points; 8 and 7: Activity + from 7, King safety and Other threats + from 2, Development + from 2 pieces, King activity ++ from 2)
 function ownStoreCheck(p, field, value){
   const g = myGames.find(x=>x.id===p.gameId); if(!g) return;
   const c = { v: OWN_CHECK_V[field], ok: value };
@@ -5125,6 +5125,8 @@ function renderHome(){
 // mistake it flags is checked with the engine first. Everything is saved privately to your account.
 const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacingPlies:7, retryPlies:3, maxMaterialDiff:3, bigMaterialMaxWin:85, earlyBalancedPlies:14, earlyBalancedCp:100,
               candidatesMinLegal:2, finalMinLegal:4, scanMs:300, maxGamesPerUpload:200,
+              // your other positions (either side to move), after your mistakes: the master rules (finder/rules.js), every 3rd half-move
+              extraStride:3, trapMinDrop:12, maxDecent:3, candidatesSpacing:10, finalSpacing:2,
               flagDrop:7,        // quick evaluations flag a likely mistake from 7 points (the check then needs 10)
               checkMs:1200 };    // the check: the app's usual search (top 5, then your move with them)
 // Move selection's spread rule (see finalSpreadOk), the same as the master positions' (finder/rules.js).
@@ -5704,6 +5706,32 @@ function extractOwnPositions0(g){
     for(const f of ['quietChk', 'planqChk']){ const c = g.chk && g.chk[f] && g.chk[f][ply]; if(c) e[f] = c; }
     out.push(e);
   }
+  // Candidate moves' and Move selection's other positions, either side to move: after your mistakes (kept first), the
+  // master rules, every 3rd half-move, each kept one spaced from those already kept, mistakes included (10 half-moves
+  // apart for Candidate moves, 2 for Move selection). One search answers both (xtraChk: { c, f }); the walk stops at the
+  // first one not checked yet ("open": the game's turn checks it, after the mistakes' checks). Not while a mistake waits.
+  if(!out.some(e=>e.pending)){
+    const mist = new Set(out.filter(e=>e.acts.includes('candidates')).map(e=>e.ply));
+    const keptC = [...mist], keptF = out.filter(e=>e.acts.includes('final')).map(e=>e.ply), near = (k, ply, n)=>k.some(x=>Math.abs(x - ply) < n);
+    const found = {}; let next = null;
+    for(let ply = OWN.extraStride; ply < hist.length; ply += OWN.extraStride){
+      if(mist.has(ply)) continue;
+      const fen = fens[ply], moveNo = +fen.split(' ')[5]; if(moveNo < OWN.minMove || moveNo > OWN.maxMove) continue;
+      const needC = !near(keptC, ply, OWN.candidatesSpacing), needF = !near(keptF, ply, OWN.finalSpacing); if(!needC && !needF) continue;
+      const pc = new Chess(fen); if(pc.perft(1) < OWN.minLegal) continue;
+      const prev = hist[ply-1]; if(prev && prev.captured && pc.moves({verbose:true}).some(m=>m.to===prev.to && m.captured)) continue;
+      const e0 = g.evals[ply-2], e1 = g.evals[ply-1]; if(e0 && e1 && e0.mate!=null && e1.mate!=null) continue;   // (a mate already under way)
+      const r = ownChk(g, 'xtraChk', ply);
+      if(r===undefined){ next = ply; break; }
+      const acts = []; if(needC && r.c){ keptC.push(ply); acts.push('candidates'); } if(needF && r.f){ keptF.push(ply); acts.push('final'); }
+      if(acts.length) found[ply] = acts;
+    }
+    const add = (ply, acts, extra)=>{ const e = out.find(x=>x.ply===ply);
+      if(e){ e.acts = e.acts.concat(acts); if(extra.open) e.open = (e.open || []).concat(extra.open); if(extra.extra) e.extra = true; } else out.push(entry(ply, acts, extra)); };
+    for(const ply of Object.keys(found)) add(+ply, found[ply], { extra:true });
+    if(next!=null) add(next, [], { open:['xtra'] });
+    out.sort((a, b)=>a.ply - b.ply);
+  }
   g.positions = out;
 }
 // Lichess's game phases (scalachess Divider, MIT licence: see THIRD_PARTY.md in the source), as in the position finder.
@@ -5857,6 +5885,14 @@ async function myGameTurn(g0){
   }
   // 5. Move selection's searches (the longest)
   { const r = await runChecks('final'); if(r!=='ok') return r; }
+  // 6. your other positions for Candidate moves and Move selection (after all the above: your mistakes come first)
+  for(let n = 0; n < 300; n++){
+    if(!currentGame(id)) return 'gone';
+    const p = openFor('xtra'); if(!p) break;
+    let r = null; try{ r = await diagTimed('other positions: check', checkExtra(p)); }catch(e){ r = { c:false, f:false }; }
+    if(r==null) return 'retry';
+    walkOn(p, 'xtraChk', r); await tick();
+  }
   { const g1 = currentGame(id); if(g1 && !g1.shown){ g1.shown = true; saveMyGame(g1); } }   // (its positions stay in from now on, whatever the next visit's turn finds)
   diagJob('one game, all its checks', performance.now() - t0);
   return 'ok';
@@ -5875,6 +5911,19 @@ async function checkMistake(p){
   }
   const drop = gm ? winPercent(lines[0].cp, lines[0].mate) - winPercent(gm.cp, gm.mate) : 0;
   return Math.round(drop*10)/10;
+}
+// One of your other positions (not a mistake): the same quick top-5 search, read with the master rules. Candidate
+// moves: a trap among the top 5 (12+ points below the best) and at most 3 decent moves; Move selection: its four
+// moves spread enough (prepFinal, reusing that search). { c, f }, or null if the engine failed (tried again later).
+async function checkExtra(p){
+  const disc = await bgEval(p.fen, { multipv:DISCOVERY_MULTIPV, movetime:OWN.checkMs });
+  if(evalFailed(disc)) return null;
+  if(!disc.lines.length) return { c:false, f:false };
+  prepStore[p.fen] = disc;
+  const ls = disc.lines.slice(0, DISCOVERY_MULTIPV), best = winPercent(ls[0].cp, ls[0].mate);
+  const decent = ls.filter(l=>best - winPercent(l.cp, l.mate) < OWN.trapMinDrop).length;
+  const f = await prepFinal(p); if(f==null) return null;
+  return { c: decent < ls.length && decent <= OWN.maxDecent, f: f===1 };
 }
 // Move selection for a mistake: the same quick top-5 search (with your move, if it isn't in the top 5;
 // reused when the check just made it), then ONE search of the four moves it gives. Returns 1 if they are
@@ -7100,7 +7149,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "No positions played yet.": "Aucune position jouée pour l'instant.",
 "Weak enemy pawns: fix them, trade pieces, then win them.": "Pions adverses faibles : fixez-les, échangez des pièces, puis gagnez-les.",
 "More space: keep pieces on, keep it closed and squeeze.": "Plus d'espace : gardez les pièces, gardez la position fermée et étouffez.",
-"One was played in the game. In your own games, it's your move, which was Dubious or worse. Can you do better?": "L'un d'eux a été joué dans la partie. Dans vos parties, c'est votre coup, qui était Douteux ou pire. Pouvez-vous faire mieux ?",
+"One was played in the game. In your own games, mistakes are prioritized. Can you do better?": "L'un d'eux a été joué dans la partie. Dans vos parties, vos erreurs passent en priorité. Pouvez-vous faire mieux ?",
 "Trade: up material, clearly better, better pawns, less space, worse pieces, or a more active king.": "Échanger : matériel en plus, net avantage, meilleurs pions, moins d'espace, pièces moins bonnes, ou roi plus actif.",
 "Keep pieces: down material, more space, better pieces, development lead, or the enemy king is weak.": "Garder les pièces : matériel en moins, plus d'espace, meilleures pièces, avance de développement, ou roi adverse faible.",
 "Open / Attack: an edge that fades (better pieces, development lead, weak enemy king, more active king): use it now.": "Ouvrir / Attaquer : un avantage qui s'efface (meilleures pièces, avance de développement, roi adverse faible, roi plus actif) : utilisez-le maintenant.",
@@ -7172,8 +7221,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Find the best move first. It's half the score.": "Trouvez d'abord le meilleur coup. Il vaut la moitié du score.",
 "1st place: 50%, 2nd: 30%, 3rd: 20%.": "1re place : 50 %, 2e : 30 %, 3e : 20 %.",
 "Each place is compared with the best move left: full points if yours is as good, zero if it's Dubious or worse.": "Chaque place est comparée au meilleur coup restant : tous les points si le vôtre le vaut, zéro s'il est Douteux ou pire.",
-": played in the game (": " : joué dans la partie (",
-"in yours: always Dubious or worse).": "dans les vôtres : toujours Douteux ou pire).",
+": played in the game.": " : joué dans la partie.",
 "Pawn 1, knight 3, bishop 3, rook 5, queen 9.": "Pion 1, cavalier 3, fou 3, tour 5, dame 9.",
 "Ahead: trade pieces, not pawns. Head for the endgame.": "En avance : échangez les pièces, pas les pions. Allez vers la finale.",
 "Behind: avoid trades, look for activity or an attack.": "En retard : évitez les échanges, cherchez l'activité ou l'attaque.",
@@ -7615,7 +7663,7 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "No positions played yet.": "Noch keine Stellungen gespielt.",
 "Weak enemy pawns: fix them, trade pieces, then win them.": "Schwache gegnerische Bauern: fixiere sie, tausche Figuren, dann gewinne sie.",
 "More space: keep pieces on, keep it closed and squeeze.": "Mehr Raum: Figuren behalten, die Stellung geschlossen halten und einengen.",
-"One was played in the game. In your own games, it's your move, which was Dubious or worse. Can you do better?": "Einer wurde in der Partie gespielt. In deinen eigenen Partien ist es dein Zug, der Zweifelhaft oder schlechter war. Findest du einen besseren?",
+"One was played in the game. In your own games, mistakes are prioritized. Can you do better?": "Einer wurde in der Partie gespielt. In deinen eigenen Partien kommen deine Fehler zuerst. Findest du einen besseren?",
 "Trade: up material, clearly better, better pawns, less space, worse pieces, or a more active king.": "Tauschen: Materialvorteil, klar besser, bessere Bauern, weniger Raum, schlechtere Figuren oder ein aktiverer König.",
 "Keep pieces: down material, more space, better pieces, development lead, or the enemy king is weak.": "Figuren behalten: Materialnachteil, mehr Raum, bessere Figuren, Entwicklungsvorsprung oder ein schwacher gegnerischer König.",
 "Open / Attack: an edge that fades (better pieces, development lead, weak enemy king, more active king): use it now.": "Öffnen / Angreifen: ein Vorteil, der verblasst (bessere Figuren, Entwicklungsvorsprung, schwacher gegnerischer König, aktiverer König): nutze ihn jetzt.",
@@ -7687,8 +7735,7 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Find the best move first. It's half the score.": "Finde zuerst den besten Zug. Er ist die halbe Wertung.",
 "1st place: 50%, 2nd: 30%, 3rd: 20%.": "1. Platz: 50 %, 2.: 30 %, 3.: 20 %.",
 "Each place is compared with the best move left: full points if yours is as good, zero if it's Dubious or worse.": "Jeder Platz wird mit dem besten verbleibenden Zug verglichen: volle Punkte, wenn deiner gleich gut ist, nichts, wenn er Zweifelhaft oder schlechter ist.",
-": played in the game (": ": in der Partie gespielt (",
-"in yours: always Dubious or worse).": "in deinen: immer Zweifelhaft oder schlechter).",
+": played in the game.": ": in der Partie gespielt.",
 "Pawn 1, knight 3, bishop 3, rook 5, queen 9.": "Bauer 1, Springer 3, Läufer 3, Turm 5, Dame 9.",
 "Ahead: trade pieces, not pawns. Head for the endgame.": "Im Vorteil: Figuren tauschen, keine Bauern. Steuere aufs Endspiel zu.",
 "Behind: avoid trades, look for activity or an attack.": "Im Nachteil: Abtausch vermeiden, Aktivität oder einen Angriff suchen.",
@@ -8066,7 +8113,7 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "No positions played yet.": "Aún no has jugado ninguna posición.",
 "Weak enemy pawns: fix them, trade pieces, then win them.": "Peones rivales débiles: fíjalos, cambia piezas y luego gánalos.",
 "More space: keep pieces on, keep it closed and squeeze.": "Más espacio: mantén las piezas, mantén la posición cerrada y asfixia.",
-"One was played in the game. In your own games, it's your move, which was Dubious or worse. Can you do better?": "Una se jugó en la partida. En tus propias partidas, es tu jugada, que fue Dudosa o peor. ¿Puedes hacerlo mejor?",
+"One was played in the game. In your own games, mistakes are prioritized. Can you do better?": "Una se jugó en la partida. En tus propias partidas, tus errores van primero. ¿Puedes hacerlo mejor?",
 "Trade: up material, clearly better, better pawns, less space, worse pieces, or a more active king.": "Cambiar: material de más, claramente mejor, mejores peones, menos espacio, peores piezas o un rey más activo.",
 "Keep pieces: down material, more space, better pieces, development lead, or the enemy king is weak.": "Mantener piezas: material de menos, más espacio, mejores piezas, ventaja en desarrollo o el rey rival es débil.",
 "Open / Attack: an edge that fades (better pieces, development lead, weak enemy king, more active king): use it now.": "Abrir / Atacar: una ventaja que se desvanece (mejores piezas, ventaja en desarrollo, rey rival débil, rey más activo): úsala ya.",
@@ -8138,8 +8185,7 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Find the best move first. It's half the score.": "Encuentra primero la mejor jugada. Vale la mitad de la puntuación.",
 "1st place: 50%, 2nd: 30%, 3rd: 20%.": "1.er puesto: 50 %, 2.º: 30 %, 3.º: 20 %.",
 "Each place is compared with the best move left: full points if yours is as good, zero if it's Dubious or worse.": "Cada puesto se compara con la mejor jugada restante: todos los puntos si la tuya es igual de buena, cero si es Dudosa o peor.",
-": played in the game (": ": jugada en la partida (",
-"in yours: always Dubious or worse).": "en las tuyas: siempre Dudosa o peor).",
+": played in the game.": ": jugada en la partida.",
 "Pawn 1, knight 3, bishop 3, rook 5, queen 9.": "Peón 1, caballo 3, alfil 3, torre 5, dama 9.",
 "Ahead: trade pieces, not pawns. Head for the endgame.": "Con ventaja: cambia piezas, no peones. Ve hacia el final.",
 "Behind: avoid trades, look for activity or an attack.": "En desventaja: evita los cambios, busca actividad o un ataque.",
@@ -8517,7 +8563,7 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "No positions played yet.": "Ancora nessuna posizione giocata.",
 "Weak enemy pawns: fix them, trade pieces, then win them.": "Pedoni avversari deboli: fissali, cambia pezzi, poi vincili.",
 "More space: keep pieces on, keep it closed and squeeze.": "Più spazio: tieni i pezzi, tieni la posizione chiusa e soffoca l'avversario.",
-"One was played in the game. In your own games, it's your move, which was Dubious or worse. Can you do better?": "Una è stata giocata nella partita. Nelle tue partite è la tua mossa, che era Dubbia o peggio. Sai fare di meglio?",
+"One was played in the game. In your own games, mistakes are prioritized. Can you do better?": "Una è stata giocata nella partita. Nelle tue partite i tuoi errori vengono prima. Sai fare di meglio?",
 "Trade: up material, clearly better, better pawns, less space, worse pieces, or a more active king.": "Cambiare: materiale in più, nettamente meglio, pedoni migliori, meno spazio, pezzi peggiori o un re più attivo.",
 "Keep pieces: down material, more space, better pieces, development lead, or the enemy king is weak.": "Tenere i pezzi: materiale in meno, più spazio, pezzi migliori, vantaggio di sviluppo o il re avversario è debole.",
 "Open / Attack: an edge that fades (better pieces, development lead, weak enemy king, more active king): use it now.": "Apri / Attacca: un vantaggio che svanisce (pezzi migliori, vantaggio di sviluppo, re avversario debole, re più attivo): usalo ora.",
@@ -8589,8 +8635,7 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Find the best move first. It's half the score.": "Trova prima la mossa migliore. Vale metà del punteggio.",
 "1st place: 50%, 2nd: 30%, 3rd: 20%.": "1º posto: 50%, 2º: 30%, 3º: 20%.",
 "Each place is compared with the best move left: full points if yours is as good, zero if it's Dubious or worse.": "Ogni posto è confrontato con la migliore mossa rimasta: tutti i punti se la tua è altrettanto buona, zero se è Dubbia o peggio.",
-": played in the game (": ": giocata nella partita (",
-"in yours: always Dubious or worse).": "nelle tue: sempre Dubbia o peggio).",
+": played in the game.": ": giocata nella partita.",
 "Pawn 1, knight 3, bishop 3, rook 5, queen 9.": "Pedone 1, cavallo 3, alfiere 3, torre 5, donna 9.",
 "Ahead: trade pieces, not pawns. Head for the endgame.": "In vantaggio: cambia i pezzi, non i pedoni. Punta al finale.",
 "Behind: avoid trades, look for activity or an attack.": "In svantaggio: evita i cambi, cerca attività o un attacco.",

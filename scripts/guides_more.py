@@ -185,7 +185,7 @@ GUIDES_MORE = {
 'final': dict(
   de=dict(slug='besten-zug-waehlen', name='Zugwahl', sub='Wie man den besten Zug wählt',
     title='Wie man im Schach den besten Zug wählt',
-    desc='Wie man im Schach zwischen gut aussehenden Zügen wählt: den besten finden, dann prüfen, was jeder Zug zulässt. Eine kostenlose Übung, in der du vier Züge aus Meisterpartien und deinen eigenen Fehlern ordnest.',
+    desc='Wie man im Schach zwischen gut aussehenden Zügen wählt: den besten finden, dann prüfen, was jeder Zug zulässt. Eine kostenlose Übung, in der du vier Züge aus Meisterpartien und deinen eigenen Partien ordnest.',
     lead='Mehrere Züge mögen gut aussehen, aber nur einer ist der beste. Wenn das Erkunden der <a href="../kandidatenzuege/">Kandidatenzüge</a> dir einige ernsthafte Optionen gegeben hat, bleibt als letzter Schritt die Wahl zwischen ihnen, und genau dort gehen viele Partien verloren.',
     alt='Auswertung der Zugwahl in einer WM-Stellung von 1963: vier Züge geordnet, der Partiezug Nxe4 ist der beste, zwei zweifelhafte',
     caption='Der Partiezug Nxe4 ist der beste und wurde gefunden. Qh2, der einzige andere spielbare Zug, hätte auf Platz 2 gehört.',
@@ -198,12 +198,12 @@ GUIDES_MORE = {
 </ul>
 
 <h2>Die Übung</h2>
-<p>Ordne vier Züge vom besten zum schlechtesten. Einer wurde in der Partie gespielt. In deinen eigenen Partien ist es dein Zug, der Zweifelhaft oder schlechter war: eine zweite Chance bei einer Entscheidung, die schiefging.</p>
+<p>Ordne vier Züge vom besten zum schlechtesten. Einer wurde in der Partie gespielt. In deinen eigenen Partien kommen deine Fehler zuerst: eine zweite Chance bei einer Entscheidung, die schiefging.</p>
 <p>Den besten Zug zu finden ist die halbe Wertung: Platz 1 zählt 50 %, Platz 2 30 %, Platz 3 20 %, jeweils im Vergleich zum besten verbleibenden Zug.</p>
 """),
   es=dict(slug='elegir-la-mejor-jugada', name='Elección de jugada', sub='Cómo elegir la mejor jugada',
     title='Cómo elegir la mejor jugada en ajedrez',
-    desc='Cómo elegir entre jugadas que parecen buenas: encontrar la mejor y comprobar lo que permite cada una. Un ejercicio gratuito en el que ordenas cuatro jugadas de partidas de maestros y de tus propios errores.',
+    desc='Cómo elegir entre jugadas que parecen buenas: encontrar la mejor y comprobar lo que permite cada una. Un ejercicio gratuito en el que ordenas cuatro jugadas de partidas de maestros y de tus propias partidas.',
     lead='Varias jugadas pueden parecer buenas, pero solo una es la mejor. Cuando explorar las <a href="../jugadas-candidatas/">jugadas candidatas</a> te ha dado algunas opciones serias, queda el último paso: elegir entre ellas, y ahí es donde se pierden muchas partidas.',
     alt='Corrección de Elección de jugada en una posición del Campeonato del Mundo de 1963: cuatro jugadas ordenadas, la jugada de la partida Nxe4 es la mejor, dos dudosas',
     caption='La jugada de la partida, Nxe4, es la mejor y se encontró. Qh2, la única otra jugada jugable, debía ir 2.ª.',
@@ -216,12 +216,12 @@ GUIDES_MORE = {
 </ul>
 
 <h2>El ejercicio</h2>
-<p>Ordena cuatro jugadas de la mejor a la peor. Una se jugó en la partida. En tus propias partidas, es tu jugada, que fue Dudosa o peor: una segunda oportunidad en una decisión que salió mal.</p>
+<p>Ordena cuatro jugadas de la mejor a la peor. Una se jugó en la partida. En tus propias partidas, tus errores van primero: una segunda oportunidad en una decisión que salió mal.</p>
 <p>Encontrar la mejor jugada es la mitad de la puntuación: el 1.er puesto vale el 50 %, el 2.º el 30 %, el 3.º el 20 %, cada uno comparado con la mejor jugada restante.</p>
 """),
   it=dict(slug='scegliere-la-mossa-migliore', name='Scelta della mossa', sub='Come scegliere la mossa migliore',
     title='Come scegliere la mossa migliore negli scacchi',
-    desc='Come scegliere tra mosse che sembrano buone: trovare la migliore, poi verificare cosa concede ogni mossa. Un esercizio gratuito in cui ordini quattro mosse da partite di maestri e dai tuoi errori.',
+    desc='Come scegliere tra mosse che sembrano buone: trovare la migliore, poi verificare cosa concede ogni mossa. Un esercizio gratuito in cui ordini quattro mosse da partite di maestri e dalle tue partite.',
     lead='Diverse mosse possono sembrare buone, ma solo una è la migliore. Quando l\'esplorazione delle <a href="../mosse-candidate/">mosse candidate</a> ti ha dato alcune opzioni serie, resta l\'ultimo passo: scegliere tra loro, ed è lì che si perdono molte partite.',
     alt='Correzione di Scelta della mossa su una posizione del Campionato del mondo 1963: quattro mosse ordinate, la mossa della partita Nxe4 è la migliore, due dubbie',
     caption='La mossa della partita, Nxe4, è la migliore ed è stata trovata. Qh2, l\'unica altra mossa giocabile, andava messa 2ª.',
@@ -234,7 +234,7 @@ GUIDES_MORE = {
 </ul>
 
 <h2>L'esercizio</h2>
-<p>Ordina quattro mosse dalla migliore alla peggiore. Una è stata giocata nella partita. Nelle tue partite è la tua mossa, che era Dubbia o peggio: una seconda possibilità su una decisione andata male.</p>
+<p>Ordina quattro mosse dalla migliore alla peggiore. Una è stata giocata nella partita. Nelle tue partite i tuoi errori vengono prima: una seconda possibilità su una decisione andata male.</p>
 <p>Trovare la mossa migliore vale metà del punteggio: il 1º posto conta il 50%, il 2º il 30%, il 3º il 20%, ciascuno confrontato con la migliore mossa rimasta.</p>
 """)),
 }
@@ -259,7 +259,7 @@ FAQ_MORE = {
     ('Wo wird mein Fortschritt gespeichert?', 'In deinem Browser, und in deinem Konto, wenn du angemeldet bist, damit er dich auf jedem Gerät begleitet.'),
   ]),
   ('Stellungen und Engine', [
-    ('Woher kommen die Stellungen?', 'Aus WM-Partien und, sobald du verbunden bist, aus deinen eigenen Lichess- und Chess.com-Partien. In deinen Partien sucht die App deine Fehler: die Stellung direkt vor einem Zug, der viel verloren hat.'),
+    ('Woher kommen die Stellungen?', 'Aus WM-Partien und, sobald du verbunden bist, aus deinen eigenen Lichess- und Chess.com-Partien. In deinen Partien sucht die App zuerst deine Fehler, dann weitere Stellungen, wie in Meisterpartien.'),
     ('Wie werden die Stellungen ausgewählt?', 'Nach Regeln, mit Stockfish geprüft: ruhige Stellungen, in denen Strategie zählt, über die Partie verteilt, nicht zu nah beieinander, und für jede Übung ein Grund, die Frage zu stellen. Remispartien liefern nur ihre unausgeglichenen Stellungen.'),
     ('Welche Engine?', 'Stockfish 19 (seine „Lite“-Version), die in deinem Browser läuft, sodass nichts irgendwohin geschickt wird: Jede Stellung wird bis Tiefe 20 berechnet, in höchstens ein paar Sekunden. Meisterstellungen kommen außerdem mit ihrer vorab berechneten Bewertung.'),
   ]),
@@ -287,7 +287,7 @@ FAQ_MORE = {
     ('¿Dónde se guarda mi progreso?', 'En tu navegador, y en tu cuenta cuando has iniciado sesión, para que te acompañe en todos tus dispositivos.'),
   ]),
   ('Las posiciones y el motor', [
-    ('¿De dónde salen las posiciones?', 'De partidas del Campeonato del Mundo y, una vez conectado, de tus propias partidas de Lichess y Chess.com. En tus partidas, la app busca tus errores: la posición justo antes de una jugada que perdió mucho.'),
+    ('¿De dónde salen las posiciones?', 'De partidas del Campeonato del Mundo y, una vez conectado, de tus propias partidas de Lichess y Chess.com. En tus partidas, la app busca primero tus errores y luego otras posiciones, como en las partidas de maestros.'),
     ('¿Cómo se eligen las posiciones?', 'Con reglas, comprobadas con Stockfish: posiciones tranquilas donde la estrategia importa, repartidas por la partida, no demasiado cercanas entre sí, y para cada ejercicio un motivo para preguntar. Las partidas tablas solo aportan sus posiciones desequilibradas.'),
     ('¿Qué motor?', 'Stockfish 19 (su versión «lite»), que funciona en tu navegador, así que no se envía nada a ninguna parte: cada posición se analiza hasta la profundidad 20, en unos segundos como mucho. Las posiciones de maestros también traen su evaluación calculada de antemano.'),
   ]),
@@ -315,7 +315,7 @@ FAQ_MORE = {
     ('Dove sono conservati i miei progressi?', 'Nel tuo browser, e nel tuo account quando hai effettuato l\'accesso, così ti seguono su tutti i dispositivi.'),
   ]),
   ('Le posizioni e il motore', [
-    ('Da dove vengono le posizioni?', 'Da partite del Campionato del mondo e, una volta collegato, dalle tue partite su Lichess e Chess.com. Nelle tue partite l\'app cerca i tuoi errori: la posizione subito prima di una mossa che ha perso molto.'),
+    ('Da dove vengono le posizioni?', 'Da partite del Campionato del mondo e, una volta collegato, dalle tue partite su Lichess e Chess.com. Nelle tue partite l\'app cerca prima i tuoi errori, poi altre posizioni, come nelle partite di maestri.'),
     ('Come vengono scelte le posizioni?', 'Con delle regole, verificate con Stockfish: posizioni tranquille in cui la strategia conta, distribuite lungo la partita, non troppo vicine tra loro, e per ogni esercizio un motivo per porre la domanda. Le partite patte danno solo le loro posizioni squilibrate.'),
     ('Quale motore?', 'Stockfish 19 (la sua versione «lite»), che gira nel tuo browser, quindi nulla viene inviato altrove: ogni posizione è analizzata fino alla profondità 20, in pochi secondi al massimo. Le posizioni dei maestri arrivano anche con la loro valutazione calcolata in anticipo.'),
   ]),
