@@ -4955,7 +4955,7 @@ function renderAccount(){
       </section>`, acct = DIRECT_LICHESS ? accountSection() : '';
         // desktop: two columns (you, your account, your games and positions; progress)
         const timing = BETA ? timingSection() : '';
-        const diag = isOwner() ? `<h2 class="pf-h">Timing log <span class="title-badge">Owner</span></h2><section class="mg-card"><div id="diagBox">${diagHtml()}</div><div class="pf-resets"><button class="link-btn quiet" id="diagCopy">Copy the report</button></div></section>` : '';
+        const diag = isOwner() ? `<h2 class="pf-h">Timing log <span class="title-badge">Owner</span></h2><section class="mg-card"><div id="diagBox">${diagHtml()}</div><div class="pf-resets"><button class="link-btn quiet" id="diagCopy">Copy the report</button><button class="link-btn quiet" id="diagGames">Download my games</button></div></section>` : '';
         return isDesk() ? `<div class="pf-cols"><div class="pf-col">${head}${id}${acct}${positionsSection()}</div><div class="pf-col pf-wide">${prog.html}${timing}${diag}</div></div>`
                         : `${id}${prog.html}${timing}${positionsSection()}${acct}${diag}`; })()}
       <p class="ac-foot">${siteLinks()}${installLink()}</p>
@@ -4964,6 +4964,9 @@ function renderAccount(){
   document.getElementById('homeBtn').onclick = ()=>{ screen='home'; myImportNote = ''; pfConfirmDelete = false; myConfirmClear = false; pfConfirmReset = null; render(); };
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('testsBtn', ()=>{ screen = 'tests'; render(); });
+  // the owner's games as the app keeps them (moves, evaluations, checks, positions found), for checking the selection offline
+  on('diagGames', ()=>{ try{ const blob = new Blob([JSON.stringify({ at: new Date().toISOString(), rules: { OWN, OWN_CHECK_V }, games: myGames })], { type:'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'my-games-' + new Date().toISOString().slice(0, 10) + '.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 5000); }catch(e){} });
   on('diagCopy', e=>{ const b = e && e.currentTarget || document.getElementById('diagCopy'), done = ok=>{ b.textContent = ok ? 'Copied' : 'Copy failed: select the text above'; };
     (navigator.clipboard ? navigator.clipboard.writeText(diagReport()).then(()=>done(true), ()=>done(false)) : done(false)); });
   on('metricsBtn', ()=>{ screen = 'metrics'; loadMetrics(); });
