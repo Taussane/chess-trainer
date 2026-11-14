@@ -1,8 +1,8 @@
 # How "My games" fills up after an upload, and what happens while it does:
 #  1. right after the upload (engine busy elsewhere): only the game being worked on has positions, each
 #     as it's validated; the others wait for their turn, game by game;
-#  2. the background goes game by game, Lichess's analysed games first: their flagged mistakes are all checked
-#     before it quick-scans any other game;
+#  2. the background goes game by game, Lichess's analysed games first, one search per position (the pass): a game's
+#     likely mistakes first, no position searched twice;
 #  3. when every position was played today, the review's Next waits, and comes back by itself
 #     when a new position arrives.
 import asyncio, sys, pathlib
@@ -18,7 +18,7 @@ async def main():
         b, pg, errs = await T.page_with_app(p)
         # Engine work is held back until we release it, and every background call is logged.
         await pg.evaluate("""(()=>{ window.__log=[]; window.__hold=true; const real=bgEval;
-          bgEval = (fen,o)=>new Promise(res=>{ const go=()=>{ __log.push(o && (o.movetime===400 || o.movetime===500) ? 'plan' : o && o.multipv===1 ? 'scan' : 'check'); real(fen,o).then(res); };
+          bgEval = (fen,o)=>new Promise(res=>{ const go=()=>{ __log.push([o && (o.movetime===400 || o.movetime===500) ? 'plan' : 'check', fen]); real(fen,o).then(res); };
             const wait=()=>{ if(__hold) setTimeout(wait,20); else go(); }; wait(); }); })()""")
         await pg.click('#accountBtn'); await pg.evaluate("(t=>{ importPgnText(t, false, 'TestPlayer'); render(); })", pathlib.Path(T.SAMPLE).read_text()); await pg.wait_for_timeout(300)
         st = await pg.evaluate("({games:myGames.length, analysed:myGames.filter(g=>g.evals).length, gamesWithBA:myGames.filter(g=>g.positions.some(p=>p.acts.includes('imbalances') || p.acts.includes('planq'))).length, unanalysedWithPositions:myGames.filter(g=>!g.evals && g.positions.length).length, flagged:myGames.flatMap(g=>g.positions).filter(p=>p.pending).length, c:countsOf(myPositions)})")
@@ -27,7 +27,9 @@ async def main():
         if not st['flagged']: fails.append('no likely mistakes flagged from Lichess evaluations')
         early = await pg.evaluate("[...new Set(myPositions.map(p=>p.gameId))].filter(id=>!myReached.has(id)).length")
         if early: fails.append(f"positions from {early} games not reached yet: games are done one at a time")
-        # Release the engine: all checks must come before the first quick scan.
+        pending_by_game = await pg.evaluate("Object.fromEntries(myGames.map(g=>[g.id, (g.positions||[]).filter(p=>p.pending).map(p=>p.fen)]))")
+        fens_by_game = await pg.evaluate("Object.fromEntries(myGames.map(g=>{ const c = new Chess(), f = [c.fen()]; g.sans.forEach(s=>{ c.move(s); f.push(c.fen()); }); return [g.id, f]; }))")
+        # Release the engine: the pass begins with the likely mistakes.
         await pg.evaluate("__hold=false")
         # the first finished game: its positions in, the exercises open
         for _ in range(80):
@@ -42,15 +44,18 @@ async def main():
             if done: break
             await pg.wait_for_timeout(250)
         log = await pg.evaluate("__log")
-        first_scan = log.index('scan') if 'scan' in log else len(log)
-        print('work order:', ''.join('C' if x=='check' else 'p' if x=='plan' else 's' for x in log)[:80], '…', len(log), 'searches')
-        if 'scan' in log and log[:first_scan].count('check') < st['flagged']: fails.append('a game was scanned before the flagged mistakes were checked')
+        print('work order:', ''.join('C' if x[0]=='check' else 'p' for x in log)[:80], '…', len(log), 'searches')
+        # each game's pass begins with its likely mistakes (Lichess's), when it has some
+        for gid, pend in pending_by_game.items():
+            mine = [x[1] for x in log if x[0]=='check' and x[1] in fens_by_game[gid]]
+            if pend and mine and mine[0] not in pend: fails.append(f'game {gid}: its pass did not start with a likely mistake')
         c = await pg.evaluate("countsOf(myPositions)"); print('finally:', c)
-        tried = await pg.evaluate("[...myTried].filter(k=>!k.startsWith('scan:')).length")
-        xtra = await pg.evaluate("myGames.reduce((t, g)=>t + Object.keys(g.chk && g.chk.xtraChk || {}).length, 0)")   # your other positions: up to 3 searches each (top 5, with the game move, the four)
-        checks = log.count('check')
-        print('distinct mistakes checked:', tried, '| check searches:', checks)
-        if checks > 2*tried + 3*xtra: fails.append(f'a likely mistake was checked more than once ({checks} searches for {tried} mistakes and {xtra} other positions)')
+        fens = [x[1] for x in log if x[0]=='check']
+        print('pass searches:', len(fens), '| distinct positions:', len(set(fens)))
+        # (the same position can come up in two games: searched once per game)
+        occ = await pg.evaluate("(()=>{ const n = {}; myGames.forEach(g=>{ const c = new Chess(), f = [c.fen()]; g.sans.forEach(s=>{ c.move(s); f.push(c.fen()); }); new Set(f).forEach(x=>n[x] = (n[x] || 0) + 1); }); return n; })()")
+        over = [f for f in set(fens) if fens.count(f) > occ.get(f, 1)]
+        if over: fails.append(f'a position was searched more than once in a game: {over[:2]}')
         if not c['final']: fails.append('no Final choice positions after the searches')
         # Waiting at the review: everything but one Imbalance reading position already played today.
         await pg.evaluate("(()=>{ const t=ctx('imbalances',false); ensureTrack(t); const pool=poolOf(t); const cur=posAt(t, firstAvailable(t, seqBy[t])); pool.forEach(p=>{ if(p.key!==cur.key) markPlayed(p.key); }); })()")
