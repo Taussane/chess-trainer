@@ -9227,7 +9227,10 @@ function renderMetrics(){
     const shares = o=>Object.entries(o).sort((a, b)=>b[1] - a[1]).map(([k, n])=>`${escHtml(k)} ${pc(n, dev)}`).join(' · ') || '—';
     body = `
       <section class="pf-card"><div class="mx-tiles">
-        ${d.players ? tile(d.players.day, 'players today') + tile(d.players.week, 'players 7 days') + tile(d.players.month, 'players 30 days') + tile(sum('newPlayers'), 'new players')
+        ${d.players ? tile(d.players.day, 'players today') + tile(d.players.week, 'players 7 days') + tile(d.players.month, 'players 30 days')
+            // visitors: devices that came but played nothing (yet), in the same windows
+            + tile(d.active.day - d.players.day, 'visitors today') + tile(d.active.week - d.players.week, 'visitors 7 days') + tile(d.active.month - d.players.month, 'visitors 30 days')
+            + tile(sum('newPlayers'), 'new players')
           : tile(d.active.day, 'active today') + tile(d.active.week, 'active 7 days') + tile(d.active.month, 'active 30 days') + tile(sum('newDevices'), 'new devices')}${tile(sum('visits'), 'visits')}${tile(sum('positions'), 'positions')}
       </div></section>
       <div class="mx-grp mx-wide"><h2 class="pf-h">Reported positions (${(d.reports || []).length})</h2>
@@ -9238,7 +9241,7 @@ function renderMetrics(){
         : `<p class="mx-note">None: a player reports a position from a review's help (?).</p>`}</section>
       </div>
       <div class="mx-grp mx-wide"><h2 class="pf-h">Every day</h2>
-      <section class="pf-card">${metricsChart(d.daily, d.players ? [['players', 'var(--accent)', 'Players'], ['newPlayers', 'var(--cyan-arrow)', 'New players'], ['newAccounts', 'var(--pick1)', 'New accounts']] : [['devices', 'var(--accent)', 'Active devices'], ['newDevices', 'var(--cyan-arrow)', 'New devices'], ['newAccounts', 'var(--pick1)', 'New accounts']])}</section>
+      <section class="pf-card">${metricsChart(d.daily.map(r=>({ ...r, visitors: Math.max(0, r.devices - (r.players || 0)) })), d.players ? [['players', 'var(--accent)', 'Players'], ['visitors', 'var(--text-mute)', 'Visitors (nothing played)'], ['newPlayers', 'var(--cyan-arrow)', 'New players'], ['newAccounts', 'var(--pick1)', 'New accounts']] : [['devices', 'var(--accent)', 'Active devices'], ['newDevices', 'var(--cyan-arrow)', 'New devices'], ['newAccounts', 'var(--pick1)', 'New accounts']])}</section>
       <section class="pf-card">${metricsChart(d.daily, [['positions', 'var(--accent)', 'Positions'], ['visits', 'var(--cyan-arrow)', 'Visits']])}</section>
       </div><div class="mx-grp mx-2"><h2 class="pf-h">Exercises</h2>
       <section class="pf-card"><table class="mx-table"><thead><tr><th></th><th>Played</th><th>Share</th><th>Avg</th><th>&lt;50</th><th>≥80</th></tr></thead><tbody>
