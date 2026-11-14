@@ -5431,13 +5431,13 @@ async function syncLichess(){
   const name = lichessName(), url = lichessExportUrl(name) + (newest ? '&since=' + (newest + 1000) : '');
   try{
     const headers = { Accept:'application/x-chess-pgn' }; if(lichessAuth) headers.Authorization = 'Bearer ' + lichessAuth.token;
-    const res = await fetch(url, { headers });
+    const res = await fetch(url, { headers, cache:'no-store' });   // (never a stored copy of an earlier answer)
     diagMark(`Lichess answered ${res.status}` + (newest ? ' (new games only)' : '') + (name ? '' : ', no username'));
     if(res.status===401 && lichessAuth){ setLichessAuth(null); return { error:'your Lichess login expired. Log in again' }; }
     if(res.status===429) return { error:'Lichess is busy, try again in a minute' };
     if(!res.ok) return { error:`Lichess didn't answer (error ${res.status})` };
     const text = await res.text(), before = myGames.length;
-    diagMark(`Lichess games received: ${(text.match(/\[Event /g) || []).length}`);
+    diagMark(`Lichess games received: ${(text.match(/\[Event /g) || []).length} (${text.length} characters${text.trim() ? ', starting ' + JSON.stringify(text.trim().slice(0, 40)) : ''})`);
     if(text.trim()) importPgnText(text, true, name);
     diagMark(`Lichess games added: ${myGames.length - before}`);
     return { added: myGames.length - before };
