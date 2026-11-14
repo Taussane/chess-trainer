@@ -48,7 +48,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const VERSION = '2026-10-24';   // shown by /api/health: which version is deployed
+const VERSION = '2026-11-14';   // shown by /api/health: which version is deployed
 const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
@@ -507,7 +507,11 @@ async function metricsNow(env, days) {
   const DB = env.DB, day = n => new Date(Date.now() - n * DAY).toISOString().slice(0, 10), since = day(days - 1);
   const all = async (sql, ...a) => (await DB.prepare(sql).bind(...a).all()).results;
   const one = async (sql, ...a) => await DB.prepare(sql).bind(...a).first();
-  const daily = await all(`SELECT day, COUNT(DISTINCT did) devices, COUNT(DISTINCT sid) visits, SUM(k = 'pos') positions FROM events WHERE day >= ? GROUP BY day ORDER BY day`, since);
+  const daily = await all(`SELECT day, COUNT(DISTINCT did) devices, COUNT(DISTINCT CASE WHEN k = 'pos' THEN did END) players, COUNT(DISTINCT sid) visits, SUM(k = 'pos') positions FROM events WHERE day >= ? GROUP BY day ORDER BY day`, since);
+  // players: devices that played at least one position (a visit alone can be a search engine's browser)
+  const firstPlay = await all(`SELECT first AS day, COUNT(*) n FROM (SELECT did, MIN(day) first FROM events WHERE k = 'pos' GROUP BY did) WHERE first >= ? GROUP BY first`, since);
+  const newPlayersBy = Object.fromEntries(firstPlay.map(r => [r.day, r.n]));
+  const players = async n => (await one(`SELECT COUNT(DISTINCT did) n FROM events WHERE k = 'pos' AND day >= ?`, day(n - 1))).n || 0;
   const fresh = await all(`SELECT first AS day, COUNT(*) n FROM devices WHERE first >= ? GROUP BY first`, since);
   const newBy = Object.fromEntries(fresh.map(r => [r.day, r.n]));
   const acts = await all(`SELECT a, COUNT(*) n, ROUND(AVG(acc), 1) avg, SUM(acc < 50) low, SUM(acc >= 80) high, COUNT(DISTINCT did) devices FROM events WHERE k = 'pos' AND a IS NOT NULL AND day >= ? GROUP BY a ORDER BY n DESC`, since);
@@ -534,8 +538,10 @@ async function metricsNow(env, days) {
   return {
     generated: Date.now(), days,
     daily: Array.from({ length: days }, (_, i) => day(days - 1 - i)).map(d => ({ day: d, devices: byDay[d] ? byDay[d].devices : 0, newDevices: newBy[d] || 0,
+      players: byDay[d] ? byDay[d].players : 0, newPlayers: newPlayersBy[d] || 0,
       visits: byDay[d] ? byDay[d].visits : 0, positions: byDay[d] ? byDay[d].positions : 0, newAccounts: accBy[d] || 0 })),
     active: { day: active(1), week: active(7), month: active(30), period: devs.length },
+    players: { day: await players(1), week: await players(7), month: await players(30) },
     visits: { n: visits.visits || 0, playing: visits.playing || 0, positionsPerVisit: visits.positions || 0, exercisesPerVisit: visits.exercises || 0 },
     exercises: acts, sources: Object.fromEntries(src.map(r => [r.src || '?', r.n])),
     routine: { positions: routine.r || 0, of: routine.n || 0 },

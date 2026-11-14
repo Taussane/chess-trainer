@@ -3120,13 +3120,14 @@ function renderRush(){
 // on Move selection, the most direct exercise; its review then offers the others in place of the Lichess, explorer
 // and share buttons, while Next position goes on with Move selection. Over once the player goes anywhere else.
 let firstVisit = null;
+const BOT_UA = /bot\b|bot\/|crawl|spider|slurp|mediapartners|google-inspectiontool|google-extended|lighthouse|bingpreview|facebookexternalhit|embedly|quora link preview|yandex|baidu|duckduck/i;   // search engines' and link previews' browsers
 function startFirstVisit(){
   const q = new URLSearchParams(location.search);
   if(results.length || signedIn() || myGames.length || q.has('s') || q.has('play') || screen!=='home') return;
   // Search engines' crawlers come as new visitors every time: they keep the home screen (the exercises, their
   // descriptions, the links to the FAQ), which every visitor reaches in one tap anyway. Automated test browsers too,
   // as the tests expect, unless one asks for the first visit.
-  if(/bot\b|bot\/|crawl|spider|slurp|mediapartners|google-inspectiontool|google-extended|lighthouse|bingpreview|facebookexternalhit|embedly|quora link preview|yandex|baidu|duckduck/i.test(navigator.userAgent || '')) return;
+  if(BOT_UA.test(navigator.userAgent || '')) return;
   try{ if(navigator.webdriver && !localStorage.getItem('cst.testFirstVisit')) return; }catch(e){}
   let n = 0;
   const go = ()=>{ if(screen!=='home') return; if(canOpen('final', false)){ firstVisit = 'on'; routine = false; openActivity('final'); } else if(n++ < 80) setTimeout(go, 250); };
@@ -9137,7 +9138,11 @@ function renderSettings(){
 // in small batches: a visit opened, a position finished (exercise, score, masters or own game, in the
 // routine or not), and the own games found. With a random device id kept in this browser and a random
 // id for this visit; never the account or a name. See privacy.html and GET /api/metrics.
-const STATS_ON = ()=>/(github\.io|chessstrategy\.org)$/.test(location.hostname) && !!API_BASE && !isOwner();
+// Not counted either: the owner's devices (any device the owner ever logged in on, remembered, so its visits before the
+// login is known count neither), search engines' crawlers and automated browsers (they run the page like a visitor).
+const statOwnerDevice = ()=>{ try{ if(isOwner()) localStorage.setItem('cst.ownerDevice', '1'); return isOwner() || !!localStorage.getItem('cst.ownerDevice'); }catch(e){ return isOwner(); } };
+const statRobot = ()=>{ try{ return !!navigator.webdriver || BOT_UA.test(navigator.userAgent || ''); }catch(e){ return false; } };
+const STATS_ON = ()=>/(github\.io|chessstrategy\.org)$/.test(location.hostname) && !!API_BASE && !statOwnerDevice() && !statRobot();
 const statId = ()=>Array.from(crypto.getRandomValues(new Uint8Array(12)), b=>b.toString(36).padStart(2, '0')).join('').slice(0, 20);
 const statDid = (()=>{ try{ let d = localStorage.getItem('cst.did'); if(!d){ d = statId(); localStorage.setItem('cst.did', d); } return d; }catch(e){ return statId(); } })();
 const statSid = statId();
@@ -9145,6 +9150,7 @@ let statQueue = [], statTimer = null, statGamesTimer = null;
 function statCtx(){ const a = signedIn(); return { auth: !a ? 'guest' : a.site==='lichess' ? 'lichess' : 'google', cc: chesscomName ? 1 : 0, lang: LANG, app: runningAsApp() ? 1 : 0 }; }
 function statFlush(){
   clearTimeout(statTimer); statTimer = null;
+  if(!STATS_ON()) statQueue = [];   // (the owner logged in since they were counted)
   if(!statQueue.length) return;
   const body = JSON.stringify({ did: statDid, sid: statSid, ctx: statCtx(), ev: statQueue.splice(0) });
   try{ if(!(navigator.sendBeacon && navigator.sendBeacon(API_BASE + '/api/ev', new Blob([body], { type:'text/plain' })))) fetch(API_BASE + '/api/ev', { method:'POST', body, keepalive:true }).catch(()=>{}); }catch(e){}
@@ -9190,8 +9196,8 @@ function renderMetrics(){
     const shares = o=>Object.entries(o).sort((a, b)=>b[1] - a[1]).map(([k, n])=>`${escHtml(k)} ${pc(n, dev)}`).join(' · ') || '—';
     body = `
       <section class="pf-card"><div class="mx-tiles">
-        ${tile(d.active.day, 'active today')}${tile(d.active.week, 'active 7 days')}${tile(d.active.month, 'active 30 days')}
-        ${tile(sum('newDevices'), 'new devices')}${tile(sum('visits'), 'visits')}${tile(sum('positions'), 'positions')}
+        ${d.players ? tile(d.players.day, 'players today') + tile(d.players.week, 'players 7 days') + tile(d.players.month, 'players 30 days') + tile(sum('newPlayers'), 'new players')
+          : tile(d.active.day, 'active today') + tile(d.active.week, 'active 7 days') + tile(d.active.month, 'active 30 days') + tile(sum('newDevices'), 'new devices')}${tile(sum('visits'), 'visits')}${tile(sum('positions'), 'positions')}
       </div></section>
       <div class="mx-grp mx-wide"><h2 class="pf-h">Reported positions (${(d.reports || []).length})</h2>
       <section class="pf-card">${(d.reports || []).length ? `<div class="mx-reports">${d.reports.map((r, i)=>`<div class="mx-rep">
@@ -9201,7 +9207,7 @@ function renderMetrics(){
         : `<p class="mx-note">None: a player reports a position from a review's help (?).</p>`}</section>
       </div>
       <div class="mx-grp mx-wide"><h2 class="pf-h">Every day</h2>
-      <section class="pf-card">${metricsChart(d.daily, [['devices', 'var(--accent)', 'Active devices'], ['newDevices', 'var(--cyan-arrow)', 'New devices'], ['newAccounts', 'var(--pick1)', 'New accounts']])}</section>
+      <section class="pf-card">${metricsChart(d.daily, d.players ? [['players', 'var(--accent)', 'Players'], ['newPlayers', 'var(--cyan-arrow)', 'New players'], ['newAccounts', 'var(--pick1)', 'New accounts']] : [['devices', 'var(--accent)', 'Active devices'], ['newDevices', 'var(--cyan-arrow)', 'New devices'], ['newAccounts', 'var(--pick1)', 'New accounts']])}</section>
       <section class="pf-card">${metricsChart(d.daily, [['positions', 'var(--accent)', 'Positions'], ['visits', 'var(--cyan-arrow)', 'Visits']])}</section>
       </div><div class="mx-grp mx-2"><h2 class="pf-h">Exercises</h2>
       <section class="pf-card"><table class="mx-table"><thead><tr><th></th><th>Played</th><th>Share</th><th>Avg</th><th>&lt;50</th><th>≥80</th></tr></thead><tbody>
