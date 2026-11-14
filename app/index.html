@@ -5734,7 +5734,7 @@ function divideGame(fens){
 // --- Background work: scan the games Lichess hasn't analysed ---
 const ownPositionsOf = g=>(g.positions||[]).filter(p=>Array.isArray(p.acts)).map(p=>({ ...p, last: p.last ? { squares:p.last } : null }));
 // A game whose checks are all done: in this visit (myBackground), or kept with it from before (no engine needed to show it)
-const gameFinished = g=>myDone.has(g.id) || (g.status!=='queued' && Array.isArray(g.positions)
+const gameFinished = g=>myDone.has(g.id) || (g.status!=='queued' && positionsUpToDate(g)   // (positions from older rules: found again first)
   && !g.positions.some(p=>p.pending || (p.open && p.open.length) || (Array.isArray(p.acts) && p.acts.includes('analysis'))));   // ('analysis': saved before; found again first)
 function onOwnPositionsChanged(){
   myPositions = myGames.filter(g=>myReached.has(g.id) || gameFinished(g) || g.shown).flatMap(ownPositionsOf);   // (a game's positions come in from its turn on, each as it's validated: myBackground; g.shown: once all were in, they stay while new ones come)
@@ -5760,27 +5760,46 @@ const currentGame = id=>myGames.find(x=>x.id===id);   // games can be reloaded m
 // mistake (Candidate moves), Move selection's searches, Imbalance reading's check and the Plan finder's (with its
 // short search for the best move when the game doesn't have it). Positions come in game by game, in every exercise.
 const myReached = new Set(), myDone = new Set();
+// The time left for your games, updated after each game fully analysed: the median time per game in this visit (so a
+// pause while the page was in the background counts little) times the games left. null before the first game.
+const myGameMs = []; let myEta = null;
+function updateMyEta(){
+  if(!myGameMs.length) return;
+  const ms = myGameMs.slice().sort((a, b)=>a - b)[myGameMs.length >> 1], left = myGames.filter(g=>!(myDone.has(g.id) || gameFinished(g))).length;
+  const min = Math.max(1, Math.round(ms * left / 60000));
+  myEta = left ? (min < 60 ? `${min} min` : `${Math.floor(min / 60)} h${min % 60 ? ' ' + (min % 60) + ' min' : ''}`) : null;
+}
+// The screen stays on while your games are being analysed with the page in view (the browser slows a hidden page
+// down, and a sleeping screen stops it): released when it's done.
+let myWakeLock = null;
+async function keepAwake(on){
+  try{
+    if(on && !myWakeLock && !document.hidden && navigator.wakeLock){ myWakeLock = await navigator.wakeLock.request('screen'); myWakeLock.addEventListener('release', ()=>{ myWakeLock = null; }); }
+    else if(!on && myWakeLock){ const l = myWakeLock; myWakeLock = null; await l.release(); }
+  }catch(e){ myWakeLock = null; }
+}
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && myBgRunning) keepAwake(true); });
 const gameRank = g=>g.retired ? 3 : siteOf(g)==='chesscom' ? 2 : lichessEvals(g) ? 0 : 1;
 const tick = ()=>new Promise(r=>setTimeout(r, 0));
 async function myBackground(){
   if(myBgRunning || sfState!=='ready' || !myGamesLoaded || toPrepare.size) return;   // positions being found: it starts again after
-  myBgRunning = true;
+  myBgRunning = true; keepAwake(true);
   let retry = false;
   try{
     while(sfState==='ready'){
       const g = myGames.map((x, i)=>[x, i]).sort((a, b)=>gameRank(a[0]) - gameRank(b[0]) || a[1] - b[1]).map(x=>x[0]).find(x=>!myDone.has(x.id));
       if(!g) break;
       myTurnId = g.id; myTurnDirty = false;
-      let r;
+      let r; const t0 = Date.now();
       try{ r = await myGameTurn(g); }
       finally{ const g1 = currentGame(g.id); myTurnId = null; if(myTurnDirty && g1) saveMyGame(g1); myTurnDirty = false; }
       if(r==='retry'){ retry = true; break; }
-      myDone.add(g.id);
+      myDone.add(g.id); myGameMs.push(Date.now() - t0); updateMyEta();
       if(myDone.size >= myGames.length) diagMark('all games done');
       myPosVersion++; refreshPools(true); onOwnPositionsChanged(); render();
     }
   } finally {
-    myBgRunning = false; pumpEngineQueue();
+    myBgRunning = false; pumpEngineQueue(); if(!retry) keepAwake(false);
     if(onProfile()) render();
     if(retry) setTimeout(myBackground, 5000);   // the engine was briefly unavailable: try again
   }
@@ -6075,7 +6094,7 @@ function positionsSection(){
   const status = DIRECT_LICHESS && accountLoading() ? 'Loading your games…'
     : !myGames.length ? ''
     : sfState==='error' ? 'The engine is unavailable, so analysis is paused.'
-    : done < myGames.length ? `Analysing your games: ${done} of ${myGames.length} done…`
+    : done < myGames.length ? `Analysing your games: ${myGames.length - done} left` + (myEta ? `, about ${myEta}` : '') + '…'   // (what's left: a returning player has only the new games)
     : '';
   // One column per site (Lichess when logged in, Chess.com when connected); inside Claude, one "My games".
   const core = myGames.filter(g=>!g.retired), ofSite = site=>core.filter(g=>siteOf(g)===site);
@@ -7316,7 +7335,8 @@ const I18N_FR_RE = [
   [/^\+ from (\S+) (point|piece)s? apart, \+\+ from ([^\s.]+)(\.?)$/, (m, a, u, b, dot)=>`+ dès ${a.replace('.', ',')} ${u==='piece' ? 'pièce' : 'point'}${a==='1' || a==='½' ? '' : 's'} d'écart, ++ dès ${b.replace('.', ',')}${dot}`],
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'position jouée' : 'positions jouées') + ' depuis le ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],   // decimal comma on the board's numbers
-  [/^Analysing your games: (\d+) of (\d+) done…$/, 'Analyse de vos parties : $1 sur $2 faites…'],
+  [/^Analysing your games: (\d+) left…$/, 'Vos parties : encore $1 à analyser…'],
+  [/^Analysing your games: (\d+) left, about (.+)…$/, 'Vos parties : encore $1, environ $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess connecté : vos $1 dernières parties Lichess se synchroniseront automatiquement.'],
   [/^No Chess\.com player named (.+)\.$/, 'Aucun joueur Chess.com nommé $1.'],
   [/^Couldn't check Chess\.com: (.+)\.$/, 'Impossible de vérifier Chess.com : $1.'],
@@ -8735,7 +8755,8 @@ const I18N_DE_RE = [
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'Stellung gespielt' : 'Stellungen gespielt') + ' seit dem ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t ? 'Gesamt ' : '') + s + a + ',' + b],
   [/^Total ([+−]?\d+)$/, 'Gesamt $1'],
-  [/^Analysing your games: (\d+) of (\d+) done…$/, 'Deine Partien werden analysiert: $1 von $2 erledigt…'],
+  [/^Analysing your games: (\d+) left…$/, 'Analyse deiner Partien: noch $1…'],
+  [/^Analysing your games: (\d+) left, about (.+)…$/, 'Analyse deiner Partien: noch $1, etwa $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess verbunden: Deine letzten $1 Lichess-Partien werden automatisch synchronisiert.'],
   [/^No Chess\.com player named (.+)\.$/, 'Kein Chess.com-Spieler namens $1.'],
   [/^Couldn't check Chess\.com: (.+)\.$/, 'Chess.com konnte nicht geprüft werden: $1.'],
@@ -8798,7 +8819,8 @@ const I18N_ES_RE = [
   [/^\+ from (\S+) (point|piece)s? apart, \+\+ from ([^\s.]+)(\.?)$/, (m, a, u, b, dot)=>`+ desde ${decComma(a)} ${u==='piece' ? (a==='1' ? 'pieza' : 'piezas') : (a==='1' || a==='½' ? 'punto' : 'puntos')} de diferencia, ++ desde ${decComma(b)}${dot}`],
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'posición jugada' : 'posiciones jugadas') + ' desde el ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],
-  [/^Analysing your games: (\d+) of (\d+) done…$/, 'Analizando tus partidas: $1 de $2 hechas…'],
+  [/^Analysing your games: (\d+) left…$/, 'Tus partidas: $1 por analizar…'],
+  [/^Analysing your games: (\d+) left, about (.+)…$/, 'Tus partidas: $1 por analizar, unos $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess conectado: tus últimas $1 partidas de Lichess se sincronizarán automáticamente.'],
   [/^No Chess\.com player named (.+)\.$/, 'No hay ningún jugador de Chess.com llamado $1.'],
   [/^Couldn't check Chess\.com: (.+)\.$/, 'No se pudo comprobar Chess.com: $1.'],
@@ -8862,7 +8884,8 @@ const I18N_IT_RE = [
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'posizione giocata' : 'posizioni giocate') + ' dal ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t ? 'Totale ' : '') + s + a + ',' + b],
   [/^Total ([+−]?\d+)$/, 'Totale $1'],
-  [/^Analysing your games: (\d+) of (\d+) done…$/, 'Analisi delle tue partite: $1 su $2 fatte…'],
+  [/^Analysing your games: (\d+) left…$/, 'Analisi delle tue partite: ancora $1…'],
+  [/^Analysing your games: (\d+) left, about (.+)…$/, 'Analisi delle tue partite: ancora $1, circa $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess collegato: le tue ultime $1 partite di Lichess si sincronizzeranno automaticamente.'],
   [/^No Chess\.com player named (.+)\.$/, 'Nessun giocatore di Chess.com di nome $1.'],
   [/^Couldn't check Chess\.com: (.+)\.$/, 'Impossibile verificare Chess.com: $1.'],

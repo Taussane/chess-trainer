@@ -63,9 +63,9 @@ async def main():
             await pg.wait_for_timeout(500)
         import re as _re
         await pg.wait_for_timeout(300); seen.append(await pg.evaluate("(document.querySelector('.mg-status')||{}).innerText || ''"))
-        nums = [int(m.group(1)) for t in seen for m in [_re.match(r'Analysing your games: (\d+) of 10 done', t)] if m]
+        nums = [-int(m.group(1)) for t in seen for m in [_re.match(r'Analysing your games: (\d+) left', t)] if m]   # (games left: going down)
         print('status lines:', sorted(set(seen))[:4], '…', seen[-1])
-        if any(t and not (_re.match(r'Analysing your games: \d+ of 10 done', t) ) for t in seen): fails.append(f'unexpected status line: {set(seen)}')
+        if any(t and not (_re.match(r'Analysing your games: \d+ left(, about \d+ (min|h)[^…]*)?…$', t) ) for t in seen): fails.append(f'unexpected status line: {set(seen)}')
         if nums != sorted(nums): fails.append(f'the counter went backwards: {nums}')
         if seen[-1] != '': fails.append('no status line once all games are analysed: ' + seen[-1])
         if any(not (ba_keys[i] <= ba_keys[i+1]) for i in range(len(ba_keys)-1)): fails.append('a quiet position was removed during analysis')
