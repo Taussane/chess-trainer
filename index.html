@@ -627,11 +627,15 @@
   .lang-menu button:hover{background:var(--panel-2, rgba(255,255,255,.06));} .lang-menu button.on{color:var(--accent);} .lang-menu button.on b{color:var(--accent);}
   .modal-box h3.help-h{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:2px 12px;}
   .help-sec{break-inside:avoid;}
-  @media (min-aspect-ratio:6/5){   /* side by side and the desktop: the help wider, in two columns, so it fits without scrolling */
+  @media (min-aspect-ratio:6/5){   /* side by side and the desktop: the help wider, in two columns of whole sections (splitHelp) */
     .modal-box.help-box{max-width:min(860px, 94vw); max-height:94svh;}
-    .help-box .help-body{columns:2; column-gap:28px;}
-    .help-box .help-body > .help-sec:first-child{column-span:all;}   /* (the opening line across) */
-    .help-box .help-sec{break-inside:auto;} .help-box .help-sec p, .help-box .help-sec li{break-inside:avoid;} .help-box .help-sec > p:first-child{break-after:avoid;}   /* (balanced columns: a long list may continue in the next one, never a heading alone) */
+    .help-box .help-body.cols{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:28px; align-items:start;}
+    .help-box .help-body.cols > :not(.help-col){grid-column:1 / -1;}   /* (the opening line across) */
+    .help-box .help-col > :first-child > :first-child{margin-top:0;}   /* (both columns start level) */
+  }
+  @media (min-aspect-ratio:6/5) and (max-height:479.98px){   /* a phone held sideways: a little tighter, so the longest help fits */
+    .modal-box.help-box{padding:12px 18px;} .help-box h3{margin:0 0 6px;} .help-box .help-body p{margin-block:0 6px;} .help-box .help-list{margin-block:0 6px;}
+    .help-box .modal-actions{margin-top:0;}
   }
   .help-side{font-family:var(--font-body); font-size:.82rem; font-weight:400; color:var(--text-mute);}   /* (an imbalance's levels) */
   .modal-box p{font-size:0.88rem; color:var(--text); line-height:1.55; margin:0 0 10px;}
@@ -1731,7 +1735,7 @@ const ASP_HELP = {
   },
 };
 const fmtLvl = v=>String(v).replace('0.5', '½').replace('.5', '½');
-const helpPara = q=>`<div class="help-sec">${Array.isArray(q) ? `${q[1] || !q[2] ? `<p><strong>${q[0]}.</strong> ${q[1]}</p>` : `<p><strong>${q[0]}</strong></p>`}${q[2] ? `<ul class="help-list">${q[2].map(b=>`<li>${b}</li>`).join('')}</ul>` : ''}` : `<p>${q}</p>`}</div>`;   // (one section: kept whole in a column)
+const helpPara = q=>`<div class="help-sec${Array.isArray(q) ? '' : ' help-intro'}">${Array.isArray(q) ? `${q[1] || !q[2] ? `<p><strong>${q[0]}.</strong> ${q[1]}</p>` : `<p><strong>${q[0]}</strong></p>`}${q[2] ? `<ul class="help-list">${q[2].map(b=>`<li>${b}</li>`).join('')}</ul>` : ''}` : `<p>${q}</p>`}</div>`;   // (one section: kept whole in a column)
 function helpBody(helpKey, checked, asp){
   if(asp && ASP_HELP[asp]){
     const x = ASPECTS.find(a=>a.key===asp), eg = asp==='king' && isEndgame(curFen() || ''), dev = asp==='activity' && devActive(curFen() || ''), h = eg ? ASP_HELP.kingEg : dev ? ASP_HELP.dev : ASP_HELP[asp];
@@ -3111,9 +3115,26 @@ function helpModal(app, h, a){
       <div class="modal-actions${left ? ' split' : ''}">${left}<button class="btn" id="closeHelp">Got it</button></div>
     </div></div>`;
   app.appendChild(div);
+  splitHelp(div.querySelector('.help-body'));
   div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')) close(); });
   document.getElementById('closeHelp').onclick = close;
   const r = document.getElementById('reportPos'); if(r) r.onclick = ()=>{ reportOpen = 'confirm'; render(); };
+}
+// On a wide screen, the help in two columns: the opening line across, then its sections, whole, the first ones on the
+// left and the rest on the right, split where the two columns come out the most even (one section: across too)
+function splitHelp(body){
+  if(!body || !isWide()) return;
+  const kids = [...body.children], lead = kids[0] && kids[0].classList.contains('help-intro') ? 1 : 0, secs = kids.slice(lead);
+  if(secs.length < 2) return;
+  const L = document.createElement('div'), R = document.createElement('div');
+  L.className = R.className = 'help-col';
+  body.classList.add('cols'); body.append(L, R);
+  secs.forEach(x=>L.appendChild(x));   // (each measured at the column's width)
+  const h = secs.map(x=>{ const cs = getComputedStyle(x); return x.getBoundingClientRect().height + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom); });
+  const total = h.reduce((a, b)=>a + b, 0);
+  let k = 1, best = Infinity, acc = 0;
+  for(let i = 1; i < secs.length; i++){ acc += h[i - 1]; const worst = Math.max(acc, total - acc); if(worst < best){ best = worst; k = i; } }
+  secs.slice(k).forEach(x=>R.appendChild(x));
 }
 // ---- Feedback: a message to us, no account needed (POST /api/feedback; the owner reads it in the Metrics) ----
 // Its own popup on top of the page (the page's redraws leave it alone): the message, an email if they want an answer,
