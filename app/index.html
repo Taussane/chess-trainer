@@ -364,7 +364,7 @@
   .coord{position:absolute; font-size:3cqw; font-weight:600; line-height:1; pointer-events:none; z-index:1;}
   .coord-f{left:2px; bottom:1px;} .coord-r{right:2px; top:2px;}
   .sq.light .coord{color:var(--board-dark);} .sq.dark .coord{color:var(--board-light);}
-  .set-page .board-outer{max-width:min(360px, max(160px, 100dvh - 478px));}   /* the whole page fits the screen: on Arrows, the tallest tab, Reset lands about where the exercises' buttons are (a few pixels to spare, fonts differ by device) */
+  .set-page .board-outer{max-width:min(420px, max(160px, 100dvh - 436px));}   /* the whole page fits the screen: on Arrows, the tallest tab, Reset lands about where the exercises' buttons are (a few pixels to spare, fonts differ by device) */
   .fig{font-size:1.25em; line-height:0; vertical-align:-0.06em;}
   .set-preview{display:flex; flex-direction:column; gap:8px;}
   .set-chips{display:flex; justify-content:center; gap:16px;}
@@ -384,7 +384,8 @@
   .set-opt small{color:var(--text-mute); font-size:0.74rem;}
   .set-opt.on{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent);}
   .set-opt:disabled{opacity:.45; cursor:default;}
-  .set-reset{align-self:center; margin:6px auto 0; display:block;}
+  .set-reset{align-self:center; margin:6px auto 0; display:block;} .btn.set-reset{padding:5px 16px; font-size:0.84rem; line-height:1.4;}   /* (as tall as the Board / Arrows / Notation tabs) */
+  .set-page .pf-card{gap:4px;} .set-page .set-row{min-height:28px;}
   .set-page{padding-bottom:5px;}
   /* FAQ, privacy, terms (renderDoc): the website's page, as it looks there */
   .doc-page{display:block; line-height:1.6; padding-bottom:40px; max-width:760px;}
@@ -594,6 +595,13 @@
   .lang-menu button b{width:22px; color:var(--text-mute); font-weight:600; font-size:.85rem;}
   .lang-menu button:hover{background:var(--panel-2, rgba(255,255,255,.06));} .lang-menu button.on{color:var(--accent);} .lang-menu button.on b{color:var(--accent);}
   .modal-box h3.help-h{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:2px 12px;}
+  .help-sec{break-inside:avoid;}
+  @media (min-aspect-ratio:6/5){   /* side by side and the desktop: the help wider, in two columns, so it fits without scrolling */
+    .modal-box.help-box{max-width:min(860px, 94vw); max-height:94svh;}
+    .help-box .help-body{columns:2; column-gap:28px;}
+    .help-box .help-body > .help-sec:first-child{column-span:all;}   /* (the opening line across) */
+    .help-box .help-sec{break-inside:auto;} .help-box .help-sec p, .help-box .help-sec li{break-inside:avoid;} .help-box .help-sec > p:first-child{break-after:avoid;}   /* (balanced columns: a long list may continue in the next one, never a heading alone) */
+  }
   .help-side{font-family:var(--font-body); font-size:.82rem; font-weight:400; color:var(--text-mute);}   /* (an imbalance's levels) */
   .modal-box p{font-size:0.88rem; color:var(--text); line-height:1.55; margin:0 0 10px;}
   .modal-box p.eval-note{color:var(--text-mute);}
@@ -725,7 +733,7 @@
     html.desk2 .wrap.ex, html.desk2 .wrap[data-scr=settings]:not(.ex){padding-block:8px;}
     html.desk2 .wrap.ex > #app, html.desk2 .wrap[data-scr=settings] > #app{column-gap:24px;}
     /* the title and the game on top, the panel (with the White / Black buttons) at the bottom, the free room between */
-    html.desk2 .wrap.ex > #app{height:calc(100dvh - 16px); grid-template-rows:auto auto minmax(0, 1fr) auto;}
+    html.desk2 .wrap.ex > #app{height:calc(100svh - 16px); grid-template-rows:auto auto minmax(0, 1fr) auto;}   /* (svh: the height with the browser's bars shown, so nothing hides under them) */
     html.desk2 .wrap.ex > #app > .panel{grid-row:4; align-self:end;}
     /* the panel's rows grow with the window's height (the room under the title and the White / Black buttons), so it
        fills the right side instead of leaving it empty */
@@ -1692,7 +1700,7 @@ const ASP_HELP = {
   },
 };
 const fmtLvl = v=>String(v).replace('0.5', '½').replace('.5', '½');
-const helpPara = q=>Array.isArray(q) ? `${q[1] || !q[2] ? `<p><strong>${q[0]}.</strong> ${q[1]}</p>` : `<p><strong>${q[0]}</strong></p>`}${q[2] ? `<ul class="help-list">${q[2].map(b=>`<li>${b}</li>`).join('')}</ul>` : ''}` : `<p>${q}</p>`;
+const helpPara = q=>`<div class="help-sec">${Array.isArray(q) ? `${q[1] || !q[2] ? `<p><strong>${q[0]}.</strong> ${q[1]}</p>` : `<p><strong>${q[0]}</strong></p>`}${q[2] ? `<ul class="help-list">${q[2].map(b=>`<li>${b}</li>`).join('')}</ul>` : ''}` : `<p>${q}</p>`}</div>`;   // (one section: kept whole in a column)
 function helpBody(helpKey, checked, asp){
   if(asp && ASP_HELP[asp]){
     const x = ASPECTS.find(a=>a.key===asp), eg = asp==='king' && isEndgame(curFen() || ''), dev = asp==='activity' && devActive(curFen() || ''), h = eg ? ASP_HELP.kingEg : dev ? ASP_HELP.dev : ASP_HELP[asp];
@@ -3066,9 +3074,9 @@ function helpModal(app, h, a){
   }
   const done = can && reportedKeys.has(reportId(a, p));
   const left = !can ? '' : done ? `<span class="report-done">Reported</span>` : `<button class="link-btn quiet" id="reportPos">Report this position</button>`;
-  div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box" role="dialog" aria-label="${h.title}">
+  div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box help-box" role="dialog" aria-label="${h.title}">
       <h3${h.side ? ' class="help-h"' : ''}>${h.title}${h.side ? `<span class="help-side">${h.side}</span>` : ''}</h3>
-      ${h.html}
+      <div class="help-body">${h.html}</div>
       <div class="modal-actions${left ? ' split' : ''}">${left}<button class="btn" id="closeHelp">Got it</button></div>
     </div></div>`;
   app.appendChild(div);
