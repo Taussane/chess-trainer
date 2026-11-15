@@ -225,6 +225,8 @@
   .kofi-btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; align-self:center; padding:9px 18px; border-radius:999px; background:var(--accent); color:#fff; font-weight:700; font-size:0.94rem; text-decoration:none; box-shadow:0 2px 6px rgba(0,0,0,.25);}
   .mx-page .seg{margin-bottom:2px;}
   .mx-grp{display:contents;}   /* (groups for the desktop layout) */
+  .mx-page[data-tab="overview"] [data-cat]:not([data-cat="overview"]), .mx-page[data-tab="players"] [data-cat]:not([data-cat="players"]),
+  .mx-page[data-tab="exercises"] [data-cat]:not([data-cat="exercises"]), .mx-page[data-tab="growth"] [data-cat]:not([data-cat="growth"]){display:none !important;}   /* (one category shown) */
   .mx-tiles{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;}
   .mx-tile{display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 0;}
   .mx-tile b{font-size:1.35rem; font-family:var(--font-display);} .mx-tile small{color:var(--text-mute); font-size:0.74rem; text-align:center;}
@@ -9270,6 +9272,9 @@ function searchHtml(d, g, who, note){
     <section class="pf-card">${table('Search', g.queries || [], r=>r.q)}</section>
     ${g.pages ? `<section class="pf-card">${table('Page', g.pages, r=>r.page)}</section>` : ''}<p class="mx-note">${note}${g.stale ? ' (last update failed: ' + escHtml(g.stale) + ')' : ''}.</p>`;
 }
+// The metrics by category (tabs above the period; the one shown is remembered on this device)
+const MX_TABS = [['overview', 'Overview'], ['players', 'Players'], ['exercises', 'Exercises'], ['growth', 'Growth']];
+let mxTab = (()=>{ try{ const v = localStorage.getItem('cst.mxTab'); return MX_TABS.some(t=>t[0]===v) ? v : 'overview'; }catch(e){ return 'overview'; } })();
 function renderMetrics(){
   const app = document.getElementById('app'), d = metricsData, pc = (a, b)=>b ? Math.round(a / b * 100) + '%' : '—';
   const tile = (v, l)=>`<div class="mx-tile"><b>${v}</b><small>${l}</small></div>`;
@@ -9281,14 +9286,14 @@ function renderMetrics(){
     const totPos = d.exercises.reduce((s, x)=>s + x.n, 0), dev = Object.values(d.devices.auth).reduce((s, n)=>s + n, 0);
     const shares = o=>Object.entries(o).sort((a, b)=>b[1] - a[1]).map(([k, n])=>`${escHtml(k)} ${pc(n, dev)}`).join(' · ') || '—';
     body = `
-      <section class="pf-card"><div class="mx-tiles">
+      <section class="pf-card" data-cat="overview"><div class="mx-tiles">
         ${d.players ? tile(d.players.day, 'players today') + tile(d.players.week, 'players 7 days') + tile(d.players.month, 'players 30 days')
             // visitors: devices that came but played nothing (yet), in the same windows
             + tile(d.active.day - d.players.day, 'visitors today') + tile(d.active.week - d.players.week, 'visitors 7 days') + tile(d.active.month - d.players.month, 'visitors 30 days')
             + tile(sum('newPlayers'), 'new players')
           : tile(d.active.day, 'active today') + tile(d.active.week, 'active 7 days') + tile(d.active.month, 'active 30 days') + tile(sum('newDevices'), 'new devices')}${tile(sum('visits'), 'visits')}${tile(sum('positions'), 'positions')}
       </div></section>
-      <div class="mx-grp mx-wide"><h2 class="pf-h">Reported positions (${(d.reports || []).length})</h2>
+      <div class="mx-grp mx-wide" data-cat="exercises"><h2 class="pf-h">Reported positions (${(d.reports || []).length})</h2>
       <section class="pf-card">${(d.reports || []).length ? `<div class="mx-reports">${d.reports.map((r, i)=>`<div class="mx-rep">
           <div><b>${ACT_SHORT[r.a] || escHtml(r.a)}</b> · ${escHtml(r.label || r.key)}${r.ply!=null ? ` · ply ${r.ply}` : ''}<br>
           <small>${r.n} report${r.n > 1 ? 's' : ''}${r.devices > 1 ? ` (${r.devices} devices)` : ''} · last ${new Date(r.last).toLocaleDateString(dateLoc(), { day:'numeric', month:'short' })}${r.acc!=null ? ` · score ${r.acc}%` : ''}</small></div>
@@ -9298,15 +9303,13 @@ function renderMetrics(){
           <div><b>${ACT_SHORT[r.a] || escHtml(r.a)}</b> · ${escHtml(r.label || r.key)}<br><small>since ${new Date(r.ts).toLocaleDateString(dateLoc(), { day:'numeric', month:'short' })}</small></div>
           <div class="mx-rep-acts"><button class="link-btn quiet" data-hid-show="${i}">Show again</button></div></div>`).join('')}</div></section>` : ''}
       </div>
-      ${d.referrers ? `<div class="mx-grp mx-2"><h2 class="pf-h">Came from</h2>
+      ${d.referrers ? `<div class="mx-grp" data-cat="growth"><h2 class="pf-h">Came from</h2>
       <section class="pf-card"><table class="mx-table"><thead><tr><th></th><th>Visits</th><th>Devices</th><th>Players</th></tr></thead><tbody>
         ${d.referrers.map(r=>`<tr><td>${escHtml(r.src || 'direct')}</td><td>${r.visits}</td><td>${r.devices}</td><td>${r.players}</td></tr>`).join('') || '<tr><td colspan="4">No visits yet</td></tr>'}
-      </tbody></table><p class="mx-note">The site a visit came from (direct: typed, a bookmark, the installed app, or a link that hides where it was).</p></section>
-      <section class="pf-card"><table class="mx-table"><thead><tr><th>Rating</th><th>Lichess</th><th>Chess.com</th></tr></thead><tbody>
-        ${[0, 400, 800, 1200, 1600, 2000, 2400, 2800].filter(r=>d.ratings.some(x=>+x.src.split(':')[1]===r)).map(r=>`<tr><td>${r===2800 ? '2800+' : r + '–' + (r + 399)}</td><td>${(d.ratings.find(x=>x.src==='lichess:' + r) || {}).n || ''}</td><td>${(d.ratings.find(x=>x.src==='chesscom:' + r) || {}).n || ''}</td></tr>`).join('') || '<tr><td colspan="3">No linked games yet</td></tr>'}
-      </tbody></table><p class="mx-note">Devices with linked games, by the player's rating in their newest game (Lichess's, else Chess.com's).</p></section></div>` : ''}
-      ${d.gsc ? `<div class="mx-grp mx-2"><h2 class="pf-h">Google search</h2>${searchHtml(d, d.gsc, 'Google', 'From Google Search Console: about 2–3 days behind')}</div>` : ''}
-      ${d.funnel ? `<div class="mx-grp mx-2"><h2 class="pf-h">Newcomers</h2>
+      </tbody></table><p class="mx-note">The site a visit came from (direct: typed, a bookmark, the installed app, or a link that hides where it was).</p></section></div>
+` : ''}
+      ${d.gsc ? `<div class="mx-grp mx-2" data-cat="growth"><h2 class="pf-h">Google search</h2>${searchHtml(d, d.gsc, 'Google', 'From Google Search Console: about 2–3 days behind')}</div>` : ''}
+      ${d.funnel ? `<div class="mx-grp mx-2" data-cat="players"><h2 class="pf-h">Newcomers</h2>
       <section class="pf-card mx-lines">
         <div><span>Opened the site</span><b>${d.funnel.opened}</b></div>
         <div><span>Played a position</span><b>${d.funnel.played} · ${pc(d.funnel.played, d.funnel.opened)}</b></div>
@@ -9317,14 +9320,14 @@ function renderMetrics(){
       <section class="pf-card"><table class="mx-table"><thead><tr><th>Week of</th><th>Players</th><th>Next day</th><th>7 days</th><th>30 days</th></tr></thead><tbody>
         ${(d.comeBack || []).map(w=>`<tr><td>${new Date(w.week + 'T12:00:00Z').toLocaleDateString(dateLoc(), { day:'numeric', month:'short' })}</td><td>${w.players}</td>${['d1', 'd7', 'd30'].map(k=>`<td>${w[k][1] ? pc(w[k][0], w[k][1]) : '…'}</td>`).join('')}</tr>`).join('') || '<tr><td colspan="5">No players yet</td></tr>'}
       </tbody></table><p class="mx-note">Opened the site in the period, and how far they went. Below: players by the week of their first position, and the share who came back the next day, within 7 or 30 days (… not known yet).</p></section></div>` : ''}
-      <div class="mx-grp mx-wide"><h2 class="pf-h">Every day</h2>
+      <div class="mx-grp mx-wide" data-cat="overview"><h2 class="pf-h">Every day</h2>
       <section class="pf-card">${metricsChart(d.daily.map(r=>({ ...r, visitors: Math.max(0, r.devices - (r.players || 0)) })), d.players ? [['players', 'var(--accent)', 'Players'], ['visitors', 'var(--text-mute)', 'Visitors (nothing played)'], ['newPlayers', 'var(--cyan-arrow)', 'New players'], ['newAccounts', 'var(--pick1)', 'New accounts']] : [['devices', 'var(--accent)', 'Active devices'], ['newDevices', 'var(--cyan-arrow)', 'New devices'], ['newAccounts', 'var(--pick1)', 'New accounts']])}</section>
       <section class="pf-card">${metricsChart(d.daily, [['positions', 'var(--accent)', 'Positions'], ['visits', 'var(--cyan-arrow)', 'Visits']])}</section>
-      </div><div class="mx-grp mx-2"><h2 class="pf-h">Exercises</h2>
+      </div><div class="mx-grp mx-2" data-cat="exercises"><h2 class="pf-h">Exercises</h2>
       <section class="pf-card"><table class="mx-table"><thead><tr><th></th><th>Played</th><th>Share</th><th>Avg</th><th>&lt;50</th><th>≥80</th></tr></thead><tbody>
         ${d.exercises.map(x=>`<tr><td>${ACT_SHORT[x.a] || x.a}</td><td>${x.n}</td><td>${pc(x.n, totPos)}</td><td>${x.avg ?? '—'}%</td><td>${pc(x.low, x.n)}</td><td>${pc(x.high, x.n)}</td></tr>`).join('') || '<tr><td colspan="6">No positions yet</td></tr>'}
       </tbody></table><p class="mx-note">Avg: average accuracy. &lt;50 / ≥80: share of positions scored below 50% (hard) or 80% and more (easy).</p></section>
-      </div><div class="mx-grp"><h2 class="pf-h">Visits</h2>
+      </div><div class="mx-grp" data-cat="players"><h2 class="pf-h">Visits</h2>
       <section class="pf-card mx-lines">
         <div><span>Positions per visit</span><b>${d.visits.positionsPerVisit}</b></div>
         <div><span>Exercises per visit</span><b>${d.visits.exercisesPerVisit}</b></div>
@@ -9334,13 +9337,13 @@ function renderMetrics(){
         ${d.session ? `<div><span>Visit length (typical)</span><b>${d.session.minutes!=null ? d.session.minutes + ' min' : '—'}</b></div>
         <div><span>Positions per player (7 days)</span><b>${d.session.perPlayerWeek ?? '—'}</b></div>` : ''}
       </section>
-      </div>${d.kofi ? `<div class="mx-grp"><h2 class="pf-h">Donations</h2>
+      </div>${d.kofi ? `<div class="mx-grp" data-cat="growth"><h2 class="pf-h">Donations</h2>
       <section class="pf-card mx-lines">
         <div><span>Over the period</span><b>${kofiSum(d.kofi.period)}</b></div>
         <div><span>Since the start</span><b>${kofiSum(d.kofi.total)}</b></div>
         <div><span>Newest</span><b>${d.kofi.last ? new Date(d.kofi.last).toLocaleDateString(dateLoc(), { day:'numeric', month:'short', year:'numeric' }) : '—'}</b></div>
       </section>
-      </div>` : ''}<div class="mx-grp"><h2 class="pf-h">Devices (${dev})</h2>
+      </div>` : ''}<div class="mx-grp" data-cat="players"><h2 class="pf-h">Devices (${dev})</h2>
       <section class="pf-card mx-lines">
         <div><span>Logged in</span><b>${shares(d.devices.auth)}</b></div>
         <div><span>Chess.com connected</span><b>${pc(d.devices.chesscom['1'] || 0, dev)}</b></div>
@@ -9348,19 +9351,23 @@ function renderMetrics(){
         <div><span>Installed app</span><b>${pc(d.devices.app['1'] || 0, dev)}</b></div>
         <div><span>Engine failed (visits)</span><b>${d.errors ? `${d.errors.visits} · ${pc(d.errors.visits, d.visits.n)}` : '—'}</b></div>
       </section>
-      </div><div class="mx-grp"><h2 class="pf-h">Own games</h2>
+      </div><div class="mx-grp" data-cat="players"><h2 class="pf-h">Own games</h2>
       <section class="pf-card mx-lines">
         <div><span>Devices with own games</span><b>${d.ownGames.devices}</b></div>
         <div><span>Games / positions found</span><b>${d.ownGames.games} / ${d.ownGames.positions}</b></div>
         <div><span>Positions per game</span><b>${d.ownGames.positionsPerGame}</b></div>
       </section>
-      </div><div class="mx-grp"><h2 class="pf-h">Accounts (all time)</h2>
+      </div><div class="mx-grp" data-cat="players"><h2 class="pf-h">Accounts (all time)</h2>
       <section class="pf-card mx-lines">
         <div><span>Accounts</span><b>${d.accounts.total} (${d.accounts.recent} in ${d.days} days)</b></div>
         <div><span>Lichess / Google</span><b>${d.accounts.bySite.lichess || 0} / ${d.accounts.bySite.google || 0}</b></div>
         <div><span>Chess.com connected</span><b>${d.accounts.chesscom}</b></div>
       </section>
       </div>
+      ${d.ratings ? `<div class="mx-grp" data-cat="players"><h2 class="pf-h">Ratings</h2>
+      <section class="pf-card"><table class="mx-table"><thead><tr><th>Rating</th><th>Lichess</th><th>Chess.com</th></tr></thead><tbody>
+        ${[0, 400, 800, 1200, 1600, 2000, 2400, 2800].filter(r=>d.ratings.some(x=>+x.src.split(':')[1]===r)).map(r=>`<tr><td>${r===2800 ? '2800+' : r + '–' + (r + 399)}</td><td>${(d.ratings.find(x=>x.src==='lichess:' + r) || {}).n || ''}</td><td>${(d.ratings.find(x=>x.src==='chesscom:' + r) || {}).n || ''}</td></tr>`).join('') || '<tr><td colspan="3">No linked games yet</td></tr>'}
+      </tbody></table><p class="mx-note">Devices with linked games, by the player's rating in their newest game (Lichess's, else Chess.com's).</p></section></div>` : ''}
       <p class="mx-note">Updated ${new Date(d.generated).toLocaleString(dateLoc())}. Counts start when this version went live; your own play isn't counted.</p>`;
   }
   app.innerHTML = `
@@ -9369,12 +9376,14 @@ function renderMetrics(){
       <h1>Metrics</h1>
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
-    <div class="pf-scroll mx-page" data-no-i18n>
+    <div class="pf-scroll mx-page" data-no-i18n data-tab="${mxTab}">
+      <div class="seg seg-sm mx-tabs" role="tablist" aria-label="Category">${MX_TABS.map(([k, l])=>`<button class="seg-btn${mxTab===k ? ' active' : ''}" data-mx-tab="${k}">${l}${k==='exercises' && d && (d.reports || []).length ? ` (${d.reports.length})` : ''}</button>`).join('')}</div>
       <div class="seg seg-sm" role="radiogroup" aria-label="Period">${[7, 30, 90].map(n=>`<button class="seg-btn${metricsDays===n ? ' active' : ''}" data-days="${n}">${n} days</button>`).join('')}</div>
       ${body}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
   app.querySelectorAll('[data-days]').forEach(b=>b.onclick = ()=>{ metricsDays = +b.dataset.days; loadMetrics(); });
+  app.querySelectorAll('[data-mx-tab]').forEach(b=>b.onclick = ()=>{ mxTab = b.dataset.mxTab; try{ localStorage.setItem('cst.mxTab', mxTab); }catch(e){} render(); });
   // a reported position: played in its exercise (as a shared position: one position, then on in that exercise), on
   // the explorer's board when it can't be (another player's own game), or dismissed (every report of it goes)
   app.querySelectorAll('[data-rep-play]').forEach(b=>b.onclick = ()=>{
