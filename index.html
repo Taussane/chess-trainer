@@ -755,14 +755,24 @@
     html.desk2 .wrap{padding-inline:16px;}
     html.desk2 .wrap.ex, html.desk2 .wrap[data-scr=settings]:not(.ex){padding-block:8px;}
     html.desk2 .wrap.ex > #app, html.desk2 .wrap[data-scr=settings] > #app{column-gap:24px;}
+    /* the title and the game on top, the panel (with the White / Black buttons) at the bottom, the free room between */
+    html.desk2 .wrap.ex > #app{height:calc(100dvh - 16px); grid-template-rows:auto auto minmax(0, 1fr) auto;}
+    html.desk2 .wrap.ex > #app > .panel{grid-row:4; align-self:end;}
+    html.desk2 .wrap.ex > #app > .stage{grid-row:1 / -1;}
+    html.desk2 .wrap.ex > #app:has(> .xp-sides){grid-template-rows:auto auto minmax(0, 1fr) auto auto;}
+    html.desk2 .wrap.ex > #app > .xp-sides{grid-row:4;}
+    html.desk2 .wrap.ex > #app:has(> .xp-sides) > .panel{grid-row:5;}
+    html.desk2 .wrap.ex > #app:has(> .xp-sides) > .stage{grid-row:1 / -1;}
   }
-  @media (min-aspect-ratio:6/5) and (max-height:479.98px){   /* a phone held sideways: everything beside the board fits its height */
+  @media (min-aspect-ratio:6/5) and (max-height:479.98px){   /* a phone held sideways: smaller title and game line, so the panel keeps its height */
     html.desk2 .wrap.ex h1, html.desk2 .wrap[data-scr=settings] h1{font-size:1.2rem;}
     html.desk2 .wrap.ex > #app > .posbar{margin:2px 0 8px; font-size:0.8rem;}
     html.desk2 .wrap.ex > #app > .xp-sides{margin:0 0 4px;}
-    html.desk2 .wrap.ex .panel{padding:10px 12px; --pn-top:24px; --pn-gap:6px; --pn-row:29px; --pn-btn:36px;}
     html.desk2{--panel-w:clamp(330px, 46vw, 380px);}   /* (the Plan finder's three answers on one line; the board a little smaller) */
     html.desk2 .wrap.ex .pq-side{font-size:0.78rem; padding-inline:5px;} html.desk2 .wrap.ex .pq-text{font-size:0.72rem;}
+  }
+  @media (min-aspect-ratio:6/5) and (max-height:399.98px){   /* the smallest phones held sideways: a tighter panel, so it still fits */
+    html.desk2 .wrap.ex .panel{padding:10px 12px; --pn-top:24px; --pn-gap:6px; --pn-row:30px; --pn-btn:36px;}
   }
   @media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important;} }
 
