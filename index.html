@@ -629,6 +629,7 @@
   .mx-rep > div:first-child{flex:1 1 240px; min-width:0;}
   .mx-rep small{color:var(--text-mute);}
   .mx-rep-acts{display:flex; gap:12px; flex-shrink:0;}
+  .mx-sub{margin:0 0 4px; font-size:0.95rem; font-weight:600;}
   .modal-actions.split{justify-content:space-between; align-items:center;}
   .modal-actions .report-done{font-size:0.85rem; color:var(--text-mute);}
   /* ===== The desktop layout (html.desk2, set by the app): screens 1024 px wide or more and at least 4:3
@@ -2528,7 +2529,7 @@ function planqOnboardList(){
 function planqOnboardNext(seen){
   if(source!=='masters' || testMode || answeredIn('planq') >= FIRST_POSITIONS) return null;
   const done = new Set(results.filter(r=>r.a==='planq').map(r=>r.key)), byKey = new Map(POOLS.planq.map(p=>[p.key, p]));
-  const k = planqOnboardList().find(k=>!done.has(k) && !seen.has(k) && byKey.has(k));
+  const k = planqOnboardList().find(k=>!done.has(k) && !seen.has(k) && byKey.has(k) && !isHidden('planq', k));
   return k ? byKey.get(k) : null;
 }
 function startersFirst(a, seq, prev){   // prev: the position just before this stretch
@@ -2545,13 +2546,14 @@ const tieBreak = new Map();   // a random number per position, fixed for this vi
 const rnd = k=>{ if(!tieBreak.has(k)) tieBreak.set(k, Math.random()); return tieBreak.get(k); };
 const gamePlayedAt = g=>g ? (g.playedAt || g.addedAt || 0) : 0;
 function candidatesFor(a, src){
-  const ck = a + '|' + src + '|' + results.length + '|' + (src==='mine' ? myPosVersion : 0) + '|' + Math.floor(Date.now()/36e5);
+  const ck = a + '|' + src + '|' + results.length + '|' + (src==='mine' ? myPosVersion : 0) + '|' + Math.floor(Date.now()/36e5) + '|' + hiddenVer;
   const cached = lineCache[a + src];
   if(cached && cached.ck===ck) return cached.v;
   const last = new Map(); results.forEach(r=>{ if(r.key && r.a===a) last.set(r.key, r); });
   const games = new Map(myGames.map(g=>[g.id, g])), now = Date.now(), core = [], replay = [];
   const list = src==='mine' ? myPositions.filter(p=>posIn(p, a) && (a!=='imbalances' || quietOwn(p))) : POOLS[a];
   for(const p of list){
+    if(isHidden(a, p.key)) continue;   // (reported here, or hidden for everyone)
     const r = last.get(p.key), g = p.gameId ? games.get(p.gameId) : null;
     if(r && r.miss){ if(now - r.ts >= REPLAY_GAP) replay.push(p); continue; }
     if(src==='mine' && (!g || g.retired)) continue;
@@ -2659,7 +2661,7 @@ function firstAvailable(t, i){
     const p = posAt(t, i);
     if(!p) return -1;
     const s = store[t][p.key];
-    if(!isPlayed(p.key) || (hasProgress(s) && !s.checked)) return i;   // started but not finished: carry on
+    if((!isPlayed(p.key) && !isHidden(exerciseOf(t), p.key)) || (hasProgress(s) && !s.checked)) return i;   // started but not finished: carry on
   }
   return -1;
 }
@@ -3011,6 +3013,20 @@ function wireCommon(helpKey, checked){
 let reportOpen = null;
 const reportedKeys = (()=>{ try{ return new Set(JSON.parse(localStorage.getItem('cst.reported') || '[]')); }catch(e){ return new Set(); } })();
 const reportId = (a, p)=>a + '|' + p.key;
+// Positions left out of an exercise: the ones this device reported there, and the ones hidden for everyone (after a
+// report, from the Metrics; GET /api/hidden, kept here between visits)
+let hiddenKeys = (()=>{ try{ return new Set(JSON.parse(localStorage.getItem('cst.hidden') || '[]')); }catch(e){ return new Set(); } })(), hiddenVer = 0;
+const isHidden = (a, key)=>reportedKeys.has(a + '|' + key) || hiddenKeys.has(a + '|' + key);
+function hiddenChanged(){ hiddenVer++; refreshPools(); if(screen==='home') render(); }
+function setHidden(keys){
+  const same = keys.length===hiddenKeys.size && keys.every(k=>hiddenKeys.has(k));
+  hiddenKeys = new Set(keys); try{ localStorage.setItem('cst.hidden', JSON.stringify(keys)); }catch(e){}
+  if(!same) hiddenChanged();
+}
+async function loadHidden(){
+  if(!API_BASE) return;
+  try{ const r = await fetch(API_BASE + '/api/hidden'); if(r.ok) setHidden(((await r.json()).keys || []).map(String)); }catch(e){}
+}
 function helpModal(app, h, a){
   let p = null; try{ p = pos(); }catch(e){}
   const can = !!(a && p && p.fen && API_BASE && !testMode && !(a==='planq' && planq && planq.test!=null));
@@ -3020,7 +3036,7 @@ function helpModal(app, h, a){
   if(can && reportOpen){
     const html = reportOpen==='confirm' ? `<h3>Report this position</h3>
         <p>Report this position if something here seems wrong, doubtful or misleading.</p>
-        <p>It will be reviewed to see what can be improved.</p>
+        <p>It won't come back for you, and it will be reviewed to see what can be improved.</p>
         <div class="modal-actions"><button class="btn secondary" id="reportCancel">Cancel</button><button class="btn" id="reportOk">Report</button></div>`
       : reportOpen==='sending' ? `<h3>Report this position</h3><p>Sending…</p>`
       : reportOpen==='sent' ? `<h3>Thanks!</h3><p>The position has been reported and will be checked.</p><div class="modal-actions"><button class="btn" id="reportDone">Close</button></div>`
@@ -3057,7 +3073,7 @@ async function sendReport(a, p){
     if(!r.ok) throw new Error(r.status);
     reportedKeys.add(reportId(a, p));
     try{ localStorage.setItem('cst.reported', JSON.stringify([...reportedKeys].slice(-500))); }catch(e){}
-    reportOpen = 'sent';
+    reportOpen = 'sent'; hiddenChanged();   // (it won't come back here)
   }catch(e){ reportOpen = 'failed'; }
   if(helpVisible) render();
 }
@@ -4692,7 +4708,7 @@ const imbalanceLeanWrong = (vals, cp)=>{ if(cp==null || Math.abs(cp) < 50) retur
 // One of your positions in exercise `a`: Imbalance reading and the Plan finder take the quiet ones.
 function posIn(p, a){ return Array.isArray(p.acts) && (p.acts.includes(a) || ((a==='imbalances' || a==='planq') && p.acts.includes('analysis'))); }   // (Imbalance reading and the Plan finder: each its own quiet positions; 'analysis': both, as saved before)
 // Missed positions still in the app; positions played today wait for tomorrow.
-const missedOf = a=>missedList().filter(e=>e.a===a).map(e=>({ ...e, pos: findPosition(e.key, e.a) })).filter(e=>e.pos);
+const missedOf = a=>missedList().filter(e=>e.a===a && !isHidden(e.a, e.key)).map(e=>({ ...e, pos: findPosition(e.key, e.a) })).filter(e=>e.pos);
 const replayable = a=>missedOf(a).filter(e=>!isPlayed(e.key));
 function startReplay(a){
   replayQueue = replayable(a);
@@ -6922,7 +6938,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Report this position": "Signaler cette position",
 "Reported": "Signalée",
 "Report this position if something here seems wrong, doubtful or misleading.": "Signalez cette position si quelque chose vous semble faux, douteux ou trompeur.",
-"It will be reviewed to see what can be improved.": "Elle sera examinée pour voir ce qui peut être amélioré.",
+"It won't come back for you, and it will be reviewed to see what can be improved.": "Elle ne vous sera plus proposée, et elle sera examinée pour voir ce qui peut être amélioré.",
 "Report": "Signaler",
 "Sending…": "Envoi…",
 "Thanks!": "Merci !",
@@ -7443,7 +7459,7 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Report this position": "Diese Stellung melden",
 "Reported": "Gemeldet",
 "Report this position if something here seems wrong, doubtful or misleading.": "Melde diese Stellung, wenn dir hier etwas falsch, zweifelhaft oder irreführend vorkommt.",
-"It will be reviewed to see what can be improved.": "Sie wird geprüft, um zu sehen, was sich verbessern lässt.",
+"It won't come back for you, and it will be reviewed to see what can be improved.": "Sie kommt für dich nicht wieder und wird geprüft, um zu sehen, was sich verbessern lässt.",
 "Report": "Melden",
 "Sending…": "Wird gesendet…",
 "Thanks!": "Danke!",
@@ -7896,7 +7912,7 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Report this position": "Reportar esta posición",
 "Reported": "Reportada",
 "Report this position if something here seems wrong, doubtful or misleading.": "Reporta esta posición si algo te parece incorrecto, dudoso o engañoso.",
-"It will be reviewed to see what can be improved.": "Se revisará para ver qué se puede mejorar.",
+"It won't come back for you, and it will be reviewed to see what can be improved.": "No volverá a aparecerte, y se revisará para ver qué se puede mejorar.",
 "Report": "Reportar",
 "Sending…": "Enviando…",
 "Thanks!": "¡Gracias!",
@@ -8349,7 +8365,7 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Report this position": "Segnala questa posizione",
 "Reported": "Segnalata",
 "Report this position if something here seems wrong, doubtful or misleading.": "Segnala questa posizione se qualcosa ti sembra sbagliato, dubbio o fuorviante.",
-"It will be reviewed to see what can be improved.": "Verrà esaminata per vedere cosa si può migliorare.",
+"It won't come back for you, and it will be reviewed to see what can be improved.": "Non ti verrà più proposta, e verrà esaminata per vedere cosa si può migliorare.",
 "Report": "Segnala",
 "Sending…": "Invio…",
 "Thanks!": "Grazie!",
@@ -9289,8 +9305,11 @@ function renderMetrics(){
       <section class="pf-card">${(d.reports || []).length ? `<div class="mx-reports">${d.reports.map((r, i)=>`<div class="mx-rep">
           <div><b>${ACT_SHORT[r.a] || escHtml(r.a)}</b> · ${escHtml(r.label || r.key)}${r.ply!=null ? ` · ply ${r.ply}` : ''}<br>
           <small>${r.n} report${r.n > 1 ? 's' : ''}${r.devices > 1 ? ` (${r.devices} devices)` : ''} · last ${new Date(r.last).toLocaleDateString(dateLoc(), { day:'numeric', month:'short' })}${r.acc!=null ? ` · score ${r.acc}%` : ''}</small></div>
-          <div class="mx-rep-acts">${reportPos(r) ? `<button class="link-btn" data-rep-play="${i}">Play</button>` : `<button class="link-btn" data-rep-xp="${i}">Explorer</button>`}<button class="link-btn quiet" data-rep-del="${i}">Dismiss</button></div></div>`).join('')}</div>`
+          <div class="mx-rep-acts">${reportPos(r) ? `<button class="link-btn" data-rep-play="${i}">Play</button>` : `<button class="link-btn" data-rep-xp="${i}">Explorer</button>`}<button class="link-btn" data-rep-hide="${i}">Hide for all</button><button class="link-btn quiet" data-rep-del="${i}">Dismiss</button></div></div>`).join('')}</div>`
         : `<p class="mx-note">None: a player reports a position from a review's help (?).</p>`}</section>
+      ${(d.hidden || []).length ? `<section class="pf-card"><h3 class="mx-sub">Hidden for everyone (${d.hidden.length})</h3><div class="mx-reports">${d.hidden.map((r, i)=>`<div class="mx-rep">
+          <div><b>${ACT_SHORT[r.a] || escHtml(r.a)}</b> · ${escHtml(r.label || r.key)}<br><small>since ${new Date(r.ts).toLocaleDateString(dateLoc(), { day:'numeric', month:'short' })}</small></div>
+          <div class="mx-rep-acts"><button class="link-btn quiet" data-hid-show="${i}">Show again</button></div></div>`).join('')}</div></section>` : ''}
       </div>
       ${d.referrers ? `<div class="mx-grp mx-2"><h2 class="pf-h">Came from</h2>
       <section class="pf-card"><table class="mx-table"><thead><tr><th></th><th>Visits</th><th>Devices</th><th>Players</th></tr></thead><tbody>
@@ -9365,6 +9384,20 @@ function renderMetrics(){
   app.querySelectorAll('[data-rep-xp]').forEach(b=>b.onclick = ()=>{
     const r = d.reports[+b.dataset.repXp];
     exploreFrom({ fen: r.fen, ply: r.ply, game: /^g\d+$/.test(r.game || '') ? r.game : null });
+  });
+  // hidden for everyone: out of every player's exercises (their apps ask at each visit), its reports handled
+  app.querySelectorAll('[data-rep-hide]').forEach(b=>b.onclick = async ()=>{
+    const r = d.reports[+b.dataset.repHide]; b.disabled = true;
+    try{ await serverCall(signedIn(), 'POST', '/api/hidden', { a: r.a, key: r.key, fen: r.fen, label: r.label });
+      d.reports = d.reports.filter(x=>x!==r); d.hidden = [{ a: r.a, key: r.key, fen: r.fen, label: r.label, ts: Date.now() }].concat(d.hidden || []);
+      setHidden([...hiddenKeys, r.a + '|' + r.key]); render(); }
+    catch(e){ b.disabled = false; b.textContent = 'Failed: retry'; }
+  });
+  app.querySelectorAll('[data-hid-show]').forEach(b=>b.onclick = async ()=>{
+    const r = d.hidden[+b.dataset.hidShow]; b.disabled = true;
+    try{ await serverCall(signedIn(), 'DELETE', '/api/hidden?a=' + encodeURIComponent(r.a) + '&key=' + encodeURIComponent(r.key));
+      d.hidden = d.hidden.filter(x=>x!==r); setHidden([...hiddenKeys].filter(k=>k!==r.a + '|' + r.key)); render(); }
+    catch(e){ b.disabled = false; b.textContent = 'Failed: retry'; }
   });
   app.querySelectorAll('[data-rep-del]').forEach(b=>b.onclick = async ()=>{
     const r = d.reports[+b.dataset.repDel]; b.disabled = true;
@@ -9856,8 +9889,9 @@ function planqBest(p){
 // The positions the Plan finder draws from, as the home page's source says: the masters', yours, or both
 function planqPool(){
   const retired = new Set(myGames.filter(g=>g.retired).map(g=>g.id));
-  const mine = source==='masters' ? [] : myPositions.filter(p=>!retired.has(p.gameId) && posIn(p, 'planq'));
-  return source==='mine' ? mine : source==='both' ? POOLS.planq.concat(mine) : POOLS.planq;   // (yours checked as they come: planqFits)
+  const mine = source==='masters' ? [] : myPositions.filter(p=>!retired.has(p.gameId) && posIn(p, 'planq') && !isHidden('planq', p.key));
+  const masters = source==='mine' ? [] : POOLS.planq.filter(p=>!isHidden('planq', p.key));
+  return source==='mine' ? mine : source==='both' ? masters.concat(mine) : masters;   // (yours checked as they come: planqFits)
 }
 // Question 1's answer for the side to move: { kind: 'win' | 'defend' | null, stop, san, looks }
 // - win: something can be won (Other threats + or more) and Stockfish's best move takes it (a poisoned pawn,
@@ -10646,6 +10680,7 @@ function renderScreen(){
 
 render();
 // where the visit comes from: the referring site's domain only (never the page), none when typed or from this site
+loadHidden();
 stat('open', (()=>{ try{ const h = new URL(document.referrer).hostname.toLowerCase().replace(/^(www|m)\./, ''); return h && !/(^|\.)chessstrategy\.org$|github\.io$/.test(h) ? { src: h.slice(0, 60) } : {}; }catch(e){ return {}; } })());
 initEngine();
 (async()=>{

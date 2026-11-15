@@ -31,6 +31,8 @@
 //   GET    /api/metrics?days=           the usage dashboard's figures (the owner's account only)
 //   POST   /api/kofi  (Ko-fi's form: data=…)  a Ko-fi payment, sent by Ko-fi; checked with its verification token
 //                                       (secret KOFI_TOKEN); only the amount, currency, type and date are kept
+//   GET    /api/hidden                  positions hidden for everyone: ["<exercise>|<key>", …] (no sign-in)
+//   POST   /api/hidden {a, key, fen, label}  hide a position for everyone; DELETE /api/hidden?a=&key= shows it again (owner)
 //   POST   /api/report {did, a, key, fen, …}  a position reported as doubtful (no sign-in; from this site only)
 //   DELETE /api/report?a=&key=          dismiss a reported position (the owner's account only)
 //   POST   /api/share {code}            a shared position's link made short -> {id} (no sign-in; from this site only)
@@ -50,7 +52,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const VERSION = '2026-11-15.1';   // shown by /api/health: which version is deployed
+const VERSION = '2026-11-15.2';   // shown by /api/health: which version is deployed
 const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
@@ -106,6 +108,7 @@ async function route(req, env) {
   await limit(req, env, 'RL_ALL');
   if (m === 'POST' && path === '/api/ev') return usageEvents(req, env);
   if (m === 'POST' && path === '/api/kofi') return kofiPayment(req, env);
+  if (m === 'GET' && path === '/api/hidden') return hiddenList(env);
   if (m === 'POST' && path === '/api/report') return reportPosition(req, env);
   if (m === 'POST' && path === '/api/share') return makeShare(req, env);
   if (m === 'GET' && path.startsWith('/api/share/')) return getShare(env, decodeURIComponent(path.slice('/api/share/'.length)));
@@ -209,10 +212,20 @@ async function route(req, env) {
       return json({ ok: true });
     }
   }
-  if ((m === 'GET' && path === '/api/metrics') || (m === 'DELETE' && path === '/api/report')) {
+  if ((m === 'GET' && path === '/api/metrics') || (m === 'DELETE' && path === '/api/report') || ((m === 'POST' || m === 'DELETE') && path === '/api/hidden')) {
     const owners = String(env.OWNERS || 'taussane').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
     const o = await DB.prepare(`SELECT 1 FROM connections WHERE account_id = ? AND site = 'lichess' AND site_user_id IN (${owners.map(() => '?').join(',')})`).bind(account, ...owners).first();
     if (!o) throw fail(403, 'not allowed');
+    if (path === '/api/hidden') {   // hidden for everyone (its reports go: handled), or shown again
+      await ensureReports(env); await ensureEvents(env);
+      if (m === 'POST') {
+        const b = await body(req), a = String(b.a || ''), key = String(b.key || '').slice(0, 120);
+        if (!/^(imbalances|planq|candidates|final)$/.test(a) || !key) throw fail(400, 'bad position');
+        await DB.batch([DB.prepare('INSERT OR REPLACE INTO hidden (a, key, fen, label, ts) VALUES (?, ?, ?, ?, ?)').bind(a, key, String(b.fen || '').slice(0, 100), String(b.label || '').slice(0, 160), Date.now()),
+          DB.prepare('DELETE FROM reports WHERE a = ? AND key = ?').bind(a, key), DB.prepare('DELETE FROM metrics_cache')]);
+      } else await DB.batch([DB.prepare('DELETE FROM hidden WHERE a = ? AND key = ?').bind(String(url.searchParams.get('a') || ''), String(url.searchParams.get('key') || '')), DB.prepare('DELETE FROM metrics_cache')]);
+      return json({ ok: true });
+    }
     if (m === 'DELETE') {   // dismissed: every report of that position in that exercise goes
       await ensureReports(env);
       await ensureEvents(env); await DB.prepare('DELETE FROM metrics_cache').run();   // (the dashboard shows it gone)
@@ -442,8 +455,15 @@ async function ensureReports(env) {
   await env.DB.batch([
     env.DB.prepare('CREATE TABLE IF NOT EXISTS reports (ts INTEGER NOT NULL, did TEXT NOT NULL, a TEXT NOT NULL, key TEXT NOT NULL, fen TEXT NOT NULL, src TEXT, game TEXT, ply INTEGER, label TEXT, acc INTEGER)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS reports_key ON reports(a, key)'),
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS hidden (a TEXT NOT NULL, key TEXT NOT NULL, fen TEXT, label TEXT, ts INTEGER NOT NULL, PRIMARY KEY (a, key)) WITHOUT ROWID'),
   ]);
   reportsReady = true;
+}
+// Positions the owner hid for everyone (after a report): every player's app leaves them out
+async function hiddenList(env) {
+  await ensureReports(env);
+  const rows = (await env.DB.prepare('SELECT a, key FROM hidden').all()).results;
+  const res = json({ keys: rows.map(r => r.a + '|' + r.key) }); res.headers.set('Cache-Control', 'public, max-age=300'); return res;
 }
 const FEN_RE = /^[1-8pnbrqkPNBRQK/]{15,71} [wb] [KQkq-]{1,4} (?:-|[a-h][36])(?: \d{1,3} \d{1,4})?$/;
 // Short links (?s=<id>): a shared position's code (the app's shareCode: exercise, then the position) kept under an
@@ -563,6 +583,7 @@ async function metricsNow(env, days) {
   const byDay = Object.fromEntries(daily.map(r => [r.day, r]));
   await ensureReports(env);   // all of them, not only the period's: they stay until dismissed
   const reports = await all(`SELECT a, key, fen, src, game, ply, label, COUNT(*) n, COUNT(DISTINCT did) devices, MAX(ts) last, ROUND(AVG(acc)) acc FROM reports GROUP BY a, key ORDER BY last DESC LIMIT 200`);
+  const hidden = await all('SELECT a, key, fen, label, ts FROM hidden ORDER BY ts DESC');
   // Ko-fi: over the period and since the start, by currency; the newest payment
   await ensureKofi(env);
   const kofi = { period: await all('SELECT currency, COUNT(*) n, ROUND(SUM(amount), 2) amount FROM kofi WHERE ts >= ? GROUP BY currency', Date.now() - days * DAY),
@@ -582,7 +603,7 @@ async function metricsNow(env, days) {
     errors: { visits: errors.visits || 0, load: errors.load || 0, stopped: errors.stopped || 0 },
     ownGames: { ...g, positionsPerGame: g.games ? Math.round(g.positions / g.games * 100) / 100 : 0 },
     accounts: { total: accounts.n || 0, recent: accounts.recent || 0, bySite, chesscom: cc.n || 0 },
-    reports, kofi,
+    reports, hidden, kofi,
   };
 }
 
