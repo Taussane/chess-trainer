@@ -52,7 +52,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const VERSION = '2026-11-15.4';   // shown by /api/health: which version is deployed
+const VERSION = '2026-11-15.5';   // shown by /api/health: which version is deployed
 const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
@@ -567,7 +567,7 @@ async function gscNow(env, days) {
     queries: queries.map(r => ({ q: r.keys[0], ...row(r) })), pages: pages.map(r => ({ page: r.keys[0].replace(/^https?:\/\/[^/]+/, '') || '/', ...row(r) })) };
 }
 async function gscData(env, days) {
-  if (!env.GSC_KEY) return null;
+  if (!env.GSC_KEY) return { error: 'the server has no GSC_KEY' };   // (says so on the page: not set up, or not deployed)
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS gsc_cache (days INTEGER PRIMARY KEY, ts INTEGER NOT NULL, data TEXT NOT NULL)').run();
   const c = await env.DB.prepare('SELECT ts, data FROM gsc_cache WHERE days = ?').bind(days).first();
   if (c && Date.now() - c.ts < GSC_KEEP) return JSON.parse(c.data);
