@@ -9340,8 +9340,7 @@ function renderMetrics(){
         <div><span>Lichess / Google</span><b>${d.accounts.bySite.lichess || 0} / ${d.accounts.bySite.google || 0}</b></div>
         <div><span>Chess.com connected</span><b>${d.accounts.chesscom}</b></div>
       </section>
-      </div><div class="mx-grp"><h2 class="pf-h">Donations</h2>
-      <section class="pf-card"><p class="mx-note">Not connected yet: Ko-fi donations can be added from Stripe.</p></section></div>
+      </div>
       <p class="mx-note">Updated ${new Date(d.generated).toLocaleString(dateLoc())}. Counts start when this version went live; your own play isn't counted.</p>`;
   }
   app.innerHTML = `
