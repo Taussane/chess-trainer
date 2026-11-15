@@ -787,7 +787,7 @@
     html.desk2 .wrap.home > #app > .source-row{margin:0 0 12px;}
     html.desk2 .wrap.home > #app > .source-row .seg{margin:0;} html.desk2 .wrap.home > #app > .source-row .seg-btn{padding:5px 4px;}
     html.desk2 .wrap.home > #app > .cards{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-    html.desk2 .wrap.home > #app > .cards > :not([data-go]){grid-column:1 / -1;}
+    html.desk2 .wrap.home > #app > .cards > .home-donate{margin:0; flex-direction:column; align-items:flex-end; justify-content:flex-end; gap:8px;}   /* (Support me above Feedback, bottom right, beside the explorer) */
   }
   @media (min-aspect-ratio:6/5) and (max-height:479.98px){   /* a phone held sideways: smaller title and game line, so the panel keeps its height */
     html.desk2 .wrap.ex h1, html.desk2 .wrap[data-scr=settings] h1{font-size:1.2rem;}
@@ -5237,10 +5237,11 @@ function routineChip(){
 }
 function renderHome(){
   const app = document.getElementById('app');
+  const donateHtml = `<div class="home-donate"><button class="donate-badge" id="donateBtn"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>${FEEDBACK_PILL}</div>`;   // (sideways: in the exercises' grid, beside the explorer)
   const acctChip = `<button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span><span class="acct-name">${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</span>${inboxBadge()}</button>`;   // (desktop: beside "Positions from")
   app.innerHTML = `
     <div class="home-head">
-      <div class="home-top"><h1 data-no-i18n>Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span>${isLand() ? ' ' : '<br>'}Strategy<span class="tld">.org</span></h1>${isLand() ? routineChip() : ''}${isDesk() ? '' : acctChip}</div>
+      <div class="home-top"><h1 data-no-i18n>${isLand() ? `ChessStrategy<span class="tld">.org</span><span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span>` : `Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span>`}</h1>${isLand() ? routineChip() : ''}${isDesk() ? '' : acctChip}</div>
       ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isDesk() ? `<p>Train your strategy beyond tactics puzzles: read the imbalances, define your plan, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
     ${isLand() ? '' : routineCard()}
@@ -5263,8 +5264,9 @@ function renderHome(){
           <span class="card-level${dataCls()}">${RUSH_ACTS.some(a=>rushBest(a)!=null) ? `<b>${Math.max(...RUSH_ACTS.map(a=>rushBest(a) || 0))}%</b>` : '<b>—</b>'}<small>Best</small></span></button>` : ''}
       <button class="card xp-entry" id="xpOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.explorer}</span>
           <span><span class="card-title">Strategy explorer</span><span class="card-desc">Check imbalances and plans as you play.</span></span></button>
+      ${isLand() ? donateHtml : ''}
     </div>
-    <div class="home-donate"><button class="donate-badge" id="donateBtn"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>${FEEDBACK_PILL}</div>
+    ${isLand() ? '' : donateHtml}
     ${engineErrorBanner()}
     ${DESK ? `<p class="home-foot ac-foot">${siteLinks()}</p>` : ''}`;
   app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>setSource(b.dataset.src));
