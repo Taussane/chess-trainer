@@ -649,6 +649,10 @@
   .fb-box .cc-field{display:block; width:100%; box-sizing:border-box; margin:0 0 10px;}
   .fb-msg{min-height:160px; resize:vertical;}
   @media (min-aspect-ratio:6/5) and (min-height:600px){ .fb-msg{min-height:240px;} }
+  @media (max-height:479.98px){   /* a phone held sideways: the form fits the screen, the message scrolls inside its box */
+    .modal-box.fb-box{padding:10px 16px;} .fb-box h3{margin:0 0 4px;} .fb-box > p{margin:0 0 8px;}
+    .fb-msg{min-height:0; height:clamp(70px, 100svh - 270px, 130px);} .fb-box .cc-field{margin-bottom:8px;}
+  }
   .fb-hp{position:absolute; left:-9999px; width:1px; height:1px; opacity:0;}
   .fb-err{color:var(--red, #e06c6c); font-size:0.88rem;}
   .mx-rep{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:4px 10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:0.88rem;}
@@ -739,7 +743,7 @@
     html.desk2 .wrap.ex[data-scr=explorer] .board-col{position:relative;}
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar{position:absolute; left:calc(100% + 10px); top:22px; bottom:22px; width:28px; height:auto;}
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar-w{top:auto; right:0; width:auto; height:var(--w, 50%);}   /* (White from the bottom) */
-    html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar.flip .xp-hbar-w{top:0; bottom:auto;}
+    html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar.flip .xp-hbar-w{top:0; bottom:auto; left:0; right:0;}
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar-num{left:0 !important; right:0 !important; transform:none; text-align:center; font-size:0.62rem; letter-spacing:-0.02em;}
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar-num.w{top:auto; bottom:4px;} html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar-num.b{top:4px;}
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar.flip .xp-hbar-num.w{bottom:auto; top:4px;} html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar.flip .xp-hbar-num.b{top:auto; bottom:4px;}
@@ -798,6 +802,11 @@
     html.desk2 .wrap.ex > #app > .xp-sides{grid-row:4;}
     html.desk2 .wrap.ex > #app:has(> .xp-sides) > .panel{grid-row:5;}
     html.desk2 .wrap.ex > #app:has(> .xp-sides) > .stage{grid-row:1 / -1;}
+    html.desk2 .wrap.ex > #app > .xp-sides{margin-bottom:12px;}   /* (the White / Black buttons a little above the panel) */
+    html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar{left:calc(100% + 6px); width:24px;}   /* (the bar nearer the board than the panel) */
+    /* settings: the same height everywhere (svh), and the same small gap under the tabs on every tab */
+    html.desk2 .wrap[data-scr=settings] > #app{height:calc(100svh - 16px); row-gap:8px;}
+    html.desk2 .wrap[data-scr=settings] .set-page > .seg{margin:0;}
   }
   @media (min-aspect-ratio:6/5) and (max-height:479.98px){   /* a phone held sideways: smaller title and game line, so the panel keeps its height */
     html.desk2 .wrap.ex h1, html.desk2 .wrap[data-scr=settings] h1{font-size:1.2rem;}
