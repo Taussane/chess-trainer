@@ -760,6 +760,9 @@
     /* the title and the game on top, the panel (with the White / Black buttons) at the bottom, the free room between */
     html.desk2 .wrap.ex > #app{height:calc(100dvh - 16px); grid-template-rows:auto auto minmax(0, 1fr) auto;}
     html.desk2 .wrap.ex > #app > .panel{grid-row:4; align-self:end;}
+    /* the panel's rows grow with the window's height (the room under the title and the White / Black buttons), so it
+       fills the right side instead of leaving it empty */
+    html.desk2 .wrap.ex .panel{--pn-row:clamp(30px, calc((100dvh - 250px) / 4), 46px); --pn-btn:clamp(36px, calc((100dvh - 250px) / 4 + 4px), 48px);}
     html.desk2 .wrap.ex > #app > .stage{grid-row:1 / -1;}
     html.desk2 .wrap.ex > #app:has(> .xp-sides){grid-template-rows:auto auto minmax(0, 1fr) auto auto;}
     html.desk2 .wrap.ex > #app > .xp-sides{grid-row:4;}
@@ -774,7 +777,7 @@
     html.desk2 .wrap.ex .pq-side{font-size:0.78rem; padding-inline:5px;} html.desk2 .wrap.ex .pq-text{font-size:0.72rem;}
   }
   @media (min-aspect-ratio:6/5) and (max-height:399.98px){   /* the smallest phones held sideways: a tighter panel, so it still fits */
-    html.desk2 .wrap.ex .panel{padding:10px 12px; --pn-top:24px; --pn-gap:6px; --pn-row:30px; --pn-btn:36px;}
+    html.desk2 .wrap.ex .panel{padding:10px 12px; --pn-top:24px; --pn-gap:6px;}
   }
   @media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important;} }
 
