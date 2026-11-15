@@ -52,7 +52,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const VERSION = '2026-11-15.2';   // shown by /api/health: which version is deployed
+const VERSION = '2026-11-15.3';   // shown by /api/health: which version is deployed
 const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
@@ -562,7 +562,7 @@ async function metricsNow(env, days) {
   const ratings = await all(`SELECT src, COUNT(*) n FROM (SELECT did, src, MAX(ts) FROM events WHERE k = 'games' AND src IS NOT NULL AND day >= ? GROUP BY did) GROUP BY src`, since);
   const fresh = await all(`SELECT first AS day, COUNT(*) n FROM devices WHERE first >= ? GROUP BY first`, since);
   const newBy = Object.fromEntries(fresh.map(r => [r.day, r.n]));
-  const acts = await all(`SELECT a, COUNT(*) n, ROUND(AVG(acc), 1) avg, SUM(acc < 50) low, SUM(acc >= 80) high, COUNT(DISTINCT did) devices FROM events WHERE k = 'pos' AND a IS NOT NULL AND day >= ? GROUP BY a ORDER BY n DESC`, since);
+  const acts = await all(`SELECT a, COUNT(*) n, ROUND(AVG(acc), 1) avg, SUM(acc < 50) low, SUM(acc >= 80) high, COUNT(DISTINCT did) devices FROM events WHERE k = 'pos' AND a IN ('imbalances', 'planq', 'candidates', 'final') AND day >= ? GROUP BY a ORDER BY n DESC`, since);
   const src = await all(`SELECT src, COUNT(*) n, SUM(n1 = 1) r FROM events WHERE k = 'pos' AND day >= ? GROUP BY src`, since);
   const routine = src.reduce((o, x) => ({ r: o.r + (x.r || 0), n: o.n + x.n }), { r: 0, n: 0 });
   const visits = await one(`SELECT COUNT(*) visits, ROUND(AVG(p), 2) positions, ROUND(AVG(x), 2) exercises, SUM(p > 0) playing FROM (SELECT sid, SUM(k = 'pos') p, COUNT(DISTINCT a) x FROM events WHERE day >= ? GROUP BY sid)`, since);
