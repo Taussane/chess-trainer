@@ -226,7 +226,9 @@
   .mx-page .seg{margin-bottom:2px;}
   .mx-grp{display:contents;}   /* (groups for the desktop layout) */
   .mx-page[data-tab="overview"] [data-cat]:not([data-cat="overview"]), .mx-page[data-tab="players"] [data-cat]:not([data-cat="players"]),
-  .mx-page[data-tab="exercises"] [data-cat]:not([data-cat="exercises"]), .mx-page[data-tab="growth"] [data-cat]:not([data-cat="growth"]){display:none !important;}   /* (one category shown) */
+  .mx-page[data-tab="exercises"] [data-cat]:not([data-cat="exercises"]), .mx-page[data-tab="growth"] [data-cat]:not([data-cat="growth"]),
+  .mx-page[data-tab="feedback"] [data-cat]:not([data-cat="feedback"]){display:none !important;}
+  .mx-fb-msg{white-space:pre-wrap; overflow-wrap:anywhere; margin:4px 0 0;}   /* (one category shown) */
   .mx-tiles{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;}
   .mx-tile{display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 0;}
   .mx-tile b{font-size:1.35rem; font-family:var(--font-display);} .mx-tile small{color:var(--text-mute); font-size:0.74rem; text-align:center;}
@@ -595,6 +597,11 @@
   .modal-box .help-list{font-size:0.88rem; line-height:1.5; margin:-6px 0 10px; padding-left:18px;}
   .modal-box .help-list li{margin:2px 0;}
   .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:4px;}
+  .fb-box{width:100%;}
+  .fb-box .cc-field{display:block; width:100%; box-sizing:border-box; margin:0 0 10px;}
+  .fb-msg{min-height:130px; resize:vertical;}
+  .fb-hp{position:absolute; left:-9999px; width:1px; height:1px; opacity:0;}
+  .fb-err{color:var(--red, #e06c6c); font-size:0.88rem;}
   .mx-rep{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:4px 10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:0.88rem;}
   .mx-rep:last-child{border-bottom:none;}
   .mx-rep > div:first-child{flex:1 1 240px; min-width:0;}
@@ -3032,6 +3039,44 @@ function helpModal(app, h, a){
   document.getElementById('closeHelp').onclick = close;
   const r = document.getElementById('reportPos'); if(r) r.onclick = ()=>{ reportOpen = 'confirm'; render(); };
 }
+// ---- Feedback: a message to us, no account needed (POST /api/feedback; the owner reads it in the Metrics) ----
+// Its own popup on top of the page (the page's redraws leave it alone): the message, an email if they want an answer,
+// and where it was sent from. A field people don't see catches bots.
+document.addEventListener('click', e=>{ const f = e.target.closest && e.target.closest('[data-feedback]'); if(f){ e.preventDefault(); e.stopPropagation(); openFeedback(); } }, true);   // (first: the page's own link handlers leave it alone)
+function openFeedback(){
+  if(document.getElementById('fbModal')) return;
+  const from = screen, div = document.createElement('div');
+  div.className = 'modal-backdrop'; div.id = 'fbModal';
+  const close = ()=>div.remove();
+  const show = html=>{ div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box fb-box" role="dialog" aria-label="Feedback">${html}</div></div>`; };
+  const form = (msg, email, err)=>{
+    show(`<h3>Feedback</h3><p>Share a problem or an idea. No account needed.</p>
+      <textarea class="cc-field fb-msg" id="fbMsg" maxlength="3000" placeholder="Your message" aria-label="Your message"></textarea>
+      <input class="cc-field fb-email" id="fbEmail" type="email" maxlength="120" autocomplete="email" placeholder="Email (optional, to get an answer)" aria-label="Email (optional, to get an answer)">
+      <input class="fb-hp" id="fbHp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      ${err ? `<p class="fb-err">${err}</p>` : ''}
+      <div class="modal-actions"><button class="btn secondary" id="fbCancel">Cancel</button><button class="btn" id="fbSend">Send</button></div>`);
+    const m = document.getElementById('fbMsg'), em = document.getElementById('fbEmail');
+    m.value = msg || ''; em.value = email || ''; m.focus();
+    document.getElementById('fbCancel').onclick = close;
+    document.getElementById('fbSend').onclick = async ()=>{
+      const msg = m.value.trim(), email = em.value.trim();
+      if(msg.length < 2){ m.focus(); return; }
+      if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ form(msg, email, 'Check the email address.'); return; }
+      show(`<h3>Feedback</h3><p>Sending…</p>`);
+      try{
+        const r = await fetch(API_BASE + '/api/feedback', { method:'POST', headers:{ 'Content-Type':'text/plain' },
+          body: JSON.stringify({ did: statDid, msg, email, hp: (document.getElementById('fbHp') || {}).value || '', screen: from, lang: LANG, desk: isDesk() ? 1 : 0, app: runningAsApp() ? 1 : 0 }) });
+        if(!r.ok) throw new Error(r.status);
+        show(`<h3>Thanks!</h3><p>Your message has been sent.</p><div class="modal-actions"><button class="btn" id="fbDone">Close</button></div>`);
+        document.getElementById('fbDone').onclick = close;
+      }catch(e){ form(msg, email, "Couldn't send the message. Check your connection and try again."); }
+    };
+  };
+  div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')) close(); });
+  document.body.appendChild(div);
+  form();
+}
 async function sendReport(a, p){
   reportOpen = 'sending'; render();
   const res = results.filter(r=>r.a===a && r.key===p.key).pop(), tmp = document.createElement('div');
@@ -4477,7 +4522,7 @@ function sideGo(where){
 }
 function siteLinks(){
   const dd = DIRECT_LICHESS ? ' data-doc' : '';   // (on the website, opened inside the app: openDoc)
-  return `<a href="${DIRECT_LICHESS ? '' : 'https://chessstrategy.org/'}${FAQ_PATH[LANG]}" target="_blank" rel="noopener"${dd} data-no-i18n>FAQ</a> · ${DIRECT_LICHESS ? `<a href="${legalPath('privacy')}" target="_blank" rel="noopener"${dd}>Privacy</a> · <a href="${legalPath('terms')}" target="_blank" rel="noopener"${dd}>Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Taussane/chess-trainer/issues" target="_blank" rel="noopener">Feedback</a>`;
+  return `<a href="${DIRECT_LICHESS ? '' : 'https://chessstrategy.org/'}${FAQ_PATH[LANG]}" target="_blank" rel="noopener"${dd} data-no-i18n>FAQ</a> · ${DIRECT_LICHESS ? `<a href="${legalPath('privacy')}" target="_blank" rel="noopener"${dd}>Privacy</a> · <a href="${legalPath('terms')}" target="_blank" rel="noopener"${dd}>Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="#" data-feedback>Feedback</a>`;
 }
 function renderSide(){
   if(!DESK) return;
@@ -6902,6 +6947,13 @@ function L(o){ return o[LANG]!=null ? o[LANG] : o.en; }
 const FAQ_PATH = { en:'learn/', fr:'fr/guides/', de:'de/anleitungen/', es:'es/guias/', it:'it/guide/' };
 const legalPath = k=>k + (LANG==='en' ? '' : '-' + LANG) + '.html';
 const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
+"Share a problem or an idea. No account needed.": "Un problème, une idée ? Pas besoin de compte.",
+"Your message": "Votre message",
+"Email (optional, to get an answer)": "E-mail (facultatif, pour une réponse)",
+"Send": "Envoyer",
+"Your message has been sent.": "Votre message a été envoyé.",
+"Couldn't send the message. Check your connection and try again.": "Impossible d'envoyer le message. Vérifiez votre connexion et réessayez.",
+"Check the email address.": "Vérifiez l'adresse e-mail.",
 "Back to exercises": "Retour aux exercices",
 "Back to profile": "Retour au profil",
 "How this exercise works": "Comment fonctionne cet exercice",
@@ -7423,6 +7475,13 @@ const I18N_FR_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} partie${n==='1' ? '' : 's'} interrompue${n==='1' ? '' : 's'} la dernière fois, terminée${n==='1' ? '' : 's'}.`)],
 ];
 const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
+"Share a problem or an idea. No account needed.": "Ein Problem oder eine Idee? Kein Konto nötig.",
+"Your message": "Deine Nachricht",
+"Email (optional, to get an answer)": "E-Mail (optional, für eine Antwort)",
+"Send": "Senden",
+"Your message has been sent.": "Deine Nachricht wurde gesendet.",
+"Couldn't send the message. Check your connection and try again.": "Die Nachricht konnte nicht gesendet werden. Prüfe deine Verbindung und versuche es erneut.",
+"Check the email address.": "Prüfe die E-Mail-Adresse.",
 "Back to exercises": "Zurück zu den Übungen",
 "Back to profile": "Zurück zum Profil",
 "How this exercise works": "So funktioniert diese Übung",
@@ -7876,6 +7935,13 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Suggest a strong move for Black.": "Schlage einen starken Zug für Schwarz vor."
 }/*END I18N_DE*/));
 const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
+"Share a problem or an idea. No account needed.": "¿Un problema o una idea? No hace falta cuenta.",
+"Your message": "Tu mensaje",
+"Email (optional, to get an answer)": "Correo (opcional, para recibir respuesta)",
+"Send": "Enviar",
+"Your message has been sent.": "Tu mensaje se ha enviado.",
+"Couldn't send the message. Check your connection and try again.": "No se pudo enviar el mensaje. Comprueba tu conexión e inténtalo de nuevo.",
+"Check the email address.": "Revisa la dirección de correo.",
 "Back to exercises": "Volver a los ejercicios",
 "Back to profile": "Volver al perfil",
 "How this exercise works": "Cómo funciona este ejercicio",
@@ -8329,6 +8395,13 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Suggest a strong move for Black.": "Propón una jugada fuerte para las negras."
 }/*END I18N_ES*/));
 const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
+"Share a problem or an idea. No account needed.": "Un problema o un'idea? Nessun account necessario.",
+"Your message": "Il tuo messaggio",
+"Email (optional, to get an answer)": "Email (facoltativa, per avere una risposta)",
+"Send": "Invia",
+"Your message has been sent.": "Il tuo messaggio è stato inviato.",
+"Couldn't send the message. Check your connection and try again.": "Impossibile inviare il messaggio. Controlla la connessione e riprova.",
+"Check the email address.": "Controlla l'indirizzo email.",
 "Back to exercises": "Torna agli esercizi",
 "Back to profile": "Torna al profilo",
 "How this exercise works": "Come funziona questo esercizio",
@@ -9273,7 +9346,7 @@ function searchHtml(d, g, who, note){
     ${g.pages ? `<section class="pf-card">${table('Page', g.pages, r=>r.page)}</section>` : ''}<p class="mx-note">${note}${g.stale ? ' (last update failed: ' + escHtml(g.stale) + ')' : ''}.</p>`;
 }
 // The metrics by category (tabs above the period; the one shown is remembered on this device)
-const MX_TABS = [['overview', 'Overview'], ['players', 'Players'], ['exercises', 'Exercises'], ['growth', 'Growth']];
+const MX_TABS = [['overview', 'Overview'], ['players', 'Players'], ['exercises', 'Exercises'], ['growth', 'Growth'], ['feedback', 'Feedback']];
 let mxTab = (()=>{ try{ const v = localStorage.getItem('cst.mxTab'); return MX_TABS.some(t=>t[0]===v) ? v : 'overview'; }catch(e){ return 'overview'; } })();
 function renderMetrics(){
   const app = document.getElementById('app'), d = metricsData, pc = (a, b)=>b ? Math.round(a / b * 100) + '%' : '—';
@@ -9368,6 +9441,12 @@ function renderMetrics(){
       <section class="pf-card"><table class="mx-table"><thead><tr><th>Rating</th><th>Lichess</th><th>Chess.com</th></tr></thead><tbody>
         ${[0, 400, 800, 1200, 1600, 2000, 2400, 2800].filter(r=>d.ratings.some(x=>+x.src.split(':')[1]===r)).map(r=>`<tr><td>${r===2800 ? '2800+' : r + '–' + (r + 399)}</td><td>${(d.ratings.find(x=>x.src==='lichess:' + r) || {}).n || ''}</td><td>${(d.ratings.find(x=>x.src==='chesscom:' + r) || {}).n || ''}</td></tr>`).join('') || '<tr><td colspan="3">No linked games yet</td></tr>'}
       </tbody></table><p class="mx-note">Devices with linked games, by the player's rating in their newest game (Lichess's, else Chess.com's).</p></section></div>` : ''}
+      <div class="mx-grp mx-wide" data-cat="feedback"><h2 class="pf-h">Messages (${(d.feedback || []).length})</h2>
+      <section class="pf-card">${(d.feedback || []).length ? `<div class="mx-reports">${d.feedback.map((f, i)=>`<div class="mx-rep">
+          <div><small>${new Date(f.ts).toLocaleString(dateLoc(), { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })} · ${escHtml(f.screen || '?')} · ${escHtml(f.lang || '?')} · ${f.desk ? 'desktop' : 'phone'}${f.app ? ' · app' : ''}${f.email ? ` · ${escHtml(f.email)}` : ''}</small>
+          <p class="mx-fb-msg">${escHtml(f.msg)}</p></div>
+          <div class="mx-rep-acts">${f.email ? `<a class="link-btn" href="mailto:${encodeURIComponent(f.email).replace(/%40/g, '@')}?subject=${encodeURIComponent('Your feedback on ChessStrategy.org')}">Reply</a>` : ''}<button class="link-btn quiet" data-fb-done="${i}">Done</button></div></div>`).join('')}</div>`
+        : `<p class="mx-note">None: players send them from the Feedback link.</p>`}</section></div>
       <p class="mx-note">Updated ${new Date(d.generated).toLocaleString(dateLoc())}. Counts start when this version went live; your own play isn't counted.</p>`;
   }
   app.innerHTML = `
@@ -9377,7 +9456,7 @@ function renderMetrics(){
       <span class="title-spacer" aria-hidden="true"></span>
     </div>
     <div class="pf-scroll mx-page" data-no-i18n data-tab="${mxTab}">
-      <div class="seg seg-sm mx-tabs" role="tablist" aria-label="Category">${MX_TABS.map(([k, l])=>`<button class="seg-btn${mxTab===k ? ' active' : ''}" data-mx-tab="${k}">${l}${k==='exercises' && d && (d.reports || []).length ? ` (${d.reports.length})` : ''}</button>`).join('')}</div>
+      <div class="seg seg-sm mx-tabs" role="tablist" aria-label="Category">${MX_TABS.map(([k, l])=>`<button class="seg-btn${mxTab===k ? ' active' : ''}" data-mx-tab="${k}">${l}${k==='exercises' && d && (d.reports || []).length ? ` (${d.reports.length})` : k==='feedback' && d && (d.feedback || []).length ? ` (${d.feedback.length})` : ''}</button>`).join('')}</div>
       <div class="seg seg-sm" role="radiogroup" aria-label="Period">${[7, 30, 90].map(n=>`<button class="seg-btn${metricsDays===n ? ' active' : ''}" data-days="${n}">${n} days</button>`).join('')}</div>
       ${body}
     </div>`;
@@ -9407,6 +9486,11 @@ function renderMetrics(){
     const r = d.hidden[+b.dataset.hidShow]; b.disabled = true;
     try{ await serverCall(signedIn(), 'DELETE', '/api/hidden?a=' + encodeURIComponent(r.a) + '&key=' + encodeURIComponent(r.key));
       d.hidden = d.hidden.filter(x=>x!==r); setHidden([...hiddenKeys].filter(k=>k!==r.a + '|' + r.key)); render(); }
+    catch(e){ b.disabled = false; b.textContent = 'Failed: retry'; }
+  });
+  app.querySelectorAll('[data-fb-done]').forEach(b=>b.onclick = async ()=>{
+    const f = d.feedback[+b.dataset.fbDone]; b.disabled = true;
+    try{ await serverCall(signedIn(), 'POST', '/api/feedback/done', { id: f.id }); d.feedback = d.feedback.filter(x=>x!==f); render(); }
     catch(e){ b.disabled = false; b.textContent = 'Failed: retry'; }
   });
   app.querySelectorAll('[data-rep-del]').forEach(b=>b.onclick = async ()=>{

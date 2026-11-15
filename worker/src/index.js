@@ -33,6 +33,8 @@
 //                                       (secret KOFI_TOKEN); only the amount, currency, type and date are kept
 //   GET    /api/hidden                  positions hidden for everyone: ["<exercise>|<key>", …] (no sign-in)
 //   POST   /api/hidden {a, key, fen, label}  hide a position for everyone; DELETE /api/hidden?a=&key= shows it again (owner)
+//   POST   /api/feedback {did, msg, email, screen, lang, desk, app}  a message from the Feedback form (no sign-in; from
+//                                       this site only; a few per device a day); POST /api/feedback/done {id} files it (owner)
 //   POST   /api/report {did, a, key, fen, …}  a position reported as doubtful (no sign-in; from this site only)
 //   DELETE /api/report?a=&key=          dismiss a reported position (the owner's account only)
 //   POST   /api/share {code}            a shared position's link made short -> {id} (no sign-in; from this site only)
@@ -52,7 +54,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const VERSION = '2026-11-15.7';   // shown by /api/health: which version is deployed
+const VERSION = '2026-11-15.8';   // shown by /api/health: which version is deployed
 const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
@@ -109,6 +111,7 @@ async function route(req, env) {
   if (m === 'POST' && path === '/api/ev') return usageEvents(req, env);
   if (m === 'POST' && path === '/api/kofi') return kofiPayment(req, env);
   if (m === 'GET' && path === '/api/hidden') return hiddenList(env);
+  if (m === 'POST' && path === '/api/feedback') return sendFeedback(req, env);
   if (m === 'POST' && path === '/api/report') return reportPosition(req, env);
   if (m === 'POST' && path === '/api/share') return makeShare(req, env);
   if (m === 'GET' && path.startsWith('/api/share/')) return getShare(env, decodeURIComponent(path.slice('/api/share/'.length)));
@@ -212,10 +215,15 @@ async function route(req, env) {
       return json({ ok: true });
     }
   }
-  if ((m === 'GET' && path === '/api/metrics') || (m === 'DELETE' && path === '/api/report') || ((m === 'POST' || m === 'DELETE') && path === '/api/hidden')) {
+  if ((m === 'GET' && path === '/api/metrics') || (m === 'DELETE' && path === '/api/report') || ((m === 'POST' || m === 'DELETE') && path === '/api/hidden') || (m === 'POST' && path === '/api/feedback/done')) {
     const owners = String(env.OWNERS || 'taussane').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
     const o = await DB.prepare(`SELECT 1 FROM connections WHERE account_id = ? AND site = 'lichess' AND site_user_id IN (${owners.map(() => '?').join(',')})`).bind(account, ...owners).first();
     if (!o) throw fail(403, 'not allowed');
+    if (path === '/api/feedback/done') {   // filed: off the list
+      await ensureFeedback(env); await ensureEvents(env);
+      await DB.batch([DB.prepare('UPDATE feedback SET done = 1 WHERE id = ?').bind(Number((await body(req)).id) || 0), DB.prepare('DELETE FROM metrics_cache')]);
+      return json({ ok: true });
+    }
     if (path === '/api/hidden') {   // hidden for everyone (its reports go: handled), or shown again
       await ensureReports(env); await ensureEvents(env);
       if (m === 'POST') {
@@ -459,6 +467,27 @@ async function ensureReports(env) {
   ]);
   reportsReady = true;
 }
+// ---- Feedback (anonymous) ----
+// The app's Feedback form: the message, an email only if the player gives one (to be answered), and where it was sent
+// from (screen, language, phone or desktop, installed app). A field people don't see catches bots; a few per device a day.
+async function ensureFeedback(env) {
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS feedback (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, did TEXT NOT NULL, msg TEXT NOT NULL, email TEXT, screen TEXT, lang TEXT, desk INTEGER, app INTEGER, done INTEGER NOT NULL DEFAULT 0)').run();
+}
+async function sendFeedback(req, env) {
+  const allowed = String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (!allowed.includes(req.headers.get('Origin') || '')) throw fail(403, 'not from this site');
+  const b = await body(req), did = String(b.did || '').slice(0, 40), msg = String(b.msg || '').trim().slice(0, 3000), email = String(b.email || '').trim().slice(0, 120);
+  if (b.hp) return json({ ok: true });   // (a bot filled the hidden field: dropped)
+  if (!did || msg.length < 2) throw fail(400, 'empty message');
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw fail(400, 'bad email');
+  await ensureFeedback(env);
+  const n = await env.DB.prepare('SELECT COUNT(*) n FROM feedback WHERE did = ? AND ts > ?').bind(did, Date.now() - DAY).first();
+  if (n && n.n >= 5) throw fail(429, 'too many messages today');
+  await env.DB.prepare('INSERT INTO feedback (ts, did, msg, email, screen, lang, desk, app) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(Date.now(), did, msg, email || null, String(b.screen || '').slice(0, 30), String(b.lang || '').slice(0, 5), b.desk ? 1 : 0, b.app ? 1 : 0).run();
+  await ensureEvents(env); await env.DB.prepare('DELETE FROM metrics_cache').run();
+  return json({ ok: true });
+}
 // Positions the owner hid for everyone (after a report): every player's app leaves them out
 async function hiddenList(env) {
   await ensureReports(env);
@@ -622,6 +651,8 @@ async function metricsNow(env, days) {
   await ensureReports(env);   // all of them, not only the period's: they stay until dismissed
   const reports = await all(`SELECT a, key, fen, src, game, ply, label, COUNT(*) n, COUNT(DISTINCT did) devices, MAX(ts) last, ROUND(AVG(acc)) acc FROM reports GROUP BY a, key ORDER BY last DESC LIMIT 200`);
   const hidden = await all('SELECT a, key, fen, label, ts FROM hidden ORDER BY ts DESC');
+  await ensureFeedback(env);
+  const feedback = await all('SELECT id, ts, msg, email, screen, lang, desk, app FROM feedback WHERE done = 0 ORDER BY ts DESC LIMIT 200');
   // Newcomers: devices first seen in the period, and how far they got
   const funnel = await one(`SELECT COUNT(*) opened, SUM(p >= 1) played, SUM(p >= 10) ten, SUM(acc) account, SUM(g) games FROM (SELECT did, MIN(day) d0, SUM(k = 'pos') p,
     MAX(auth IS NOT NULL AND auth != 'guest') acc, MAX(k = 'games') g FROM events GROUP BY did) WHERE d0 >= ?`, since);
@@ -655,7 +686,7 @@ async function metricsNow(env, days) {
     errors: { visits: errors.visits || 0, load: errors.load || 0, stopped: errors.stopped || 0 },
     ownGames: { ...g, positionsPerGame: g.games ? Math.round(g.positions / g.games * 100) / 100 : 0 },
     accounts: { total: accounts.n || 0, recent: accounts.recent || 0, bySite, chesscom: cc.n || 0 },
-    reports, hidden, kofi, gsc: await gscData(env, days),
+    reports, hidden, feedback, kofi, gsc: await gscData(env, days),
     funnel: { opened: funnel.opened || 0, played: funnel.played || 0, ten: funnel.ten || 0, account: funnel.account || 0, games: funnel.games || 0 },
     comeBack: Object.values(weeks).sort((x, y) => x.week < y.week ? 1 : -1),
     session: { minutes: lens.length ? Math.round(lens[Math.floor(lens.length / 2)] / 6000) / 10 : null, perPlayerWeek: week.players ? Math.round(week.n / week.players * 10) / 10 : null },
