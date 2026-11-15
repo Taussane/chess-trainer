@@ -3082,7 +3082,7 @@ function openFeedback(){
   const close = ()=>div.remove();
   const show = html=>{ div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box fb-box" role="dialog" aria-label="Feedback">${html}</div></div>`; };
   const form = (msg, email, err)=>{
-    show(`<h3>Feedback</h3><p>Share a problem or an idea. No account needed.</p>
+    show(`<h3>Feedback</h3><p>Share a problem or an idea.</p>
       <textarea class="cc-field fb-msg" id="fbMsg" maxlength="3000" placeholder="Your message" aria-label="Your message"></textarea>
       <input class="cc-field fb-email" id="fbEmail" type="email" maxlength="120" autocomplete="email" placeholder="Email (optional, to get an answer)" aria-label="Email (optional, to get an answer)">
       <input class="fb-hp" id="fbHp" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -6981,7 +6981,7 @@ function L(o){ return o[LANG]!=null ? o[LANG] : o.en; }
 const FAQ_PATH = { en:'learn/', fr:'fr/guides/', de:'de/anleitungen/', es:'es/guias/', it:'it/guide/' };
 const legalPath = k=>k + (LANG==='en' ? '' : '-' + LANG) + '.html';
 const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
-"Share a problem or an idea. No account needed.": "Un problème, une idée ? Pas besoin de compte.",
+"Share a problem or an idea.": "Partagez un problème ou une idée.",
 "Your message": "Votre message",
 "Email (optional, to get an answer)": "E-mail (facultatif, pour une réponse)",
 "Send": "Envoyer",
@@ -7509,7 +7509,7 @@ const I18N_FR_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} partie${n==='1' ? '' : 's'} interrompue${n==='1' ? '' : 's'} la dernière fois, terminée${n==='1' ? '' : 's'}.`)],
 ];
 const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
-"Share a problem or an idea. No account needed.": "Ein Problem oder eine Idee? Kein Konto nötig.",
+"Share a problem or an idea.": "Teile ein Problem oder eine Idee.",
 "Your message": "Deine Nachricht",
 "Email (optional, to get an answer)": "E-Mail (optional, für eine Antwort)",
 "Send": "Senden",
@@ -7969,7 +7969,7 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Suggest a strong move for Black.": "Schlage einen starken Zug für Schwarz vor."
 }/*END I18N_DE*/));
 const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
-"Share a problem or an idea. No account needed.": "¿Un problema o una idea? No hace falta cuenta.",
+"Share a problem or an idea.": "Comparte un problema o una idea.",
 "Your message": "Tu mensaje",
 "Email (optional, to get an answer)": "Correo (opcional, para recibir respuesta)",
 "Send": "Enviar",
@@ -8429,7 +8429,7 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Suggest a strong move for Black.": "Propón una jugada fuerte para las negras."
 }/*END I18N_ES*/));
 const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
-"Share a problem or an idea. No account needed.": "Un problema o un'idea? Nessun account necessario.",
+"Share a problem or an idea.": "Condividi un problema o un'idea.",
 "Your message": "Il tuo messaggio",
 "Email (optional, to get an answer)": "Email (facoltativa, per avere una risposta)",
 "Send": "Invia",
