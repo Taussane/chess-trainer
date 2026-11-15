@@ -490,6 +490,7 @@ async function ensureKofi(env) {
 async function kofiPayment(req, env) {
   let d; try { d = JSON.parse(String((await req.formData()).get('data') || '')); } catch (e) { throw fail(400, 'bad data'); }
   if (!env.KOFI_TOKEN || !d || d.verification_token !== env.KOFI_TOKEN) throw fail(403, 'not allowed');
+  if (String(d.kofi_transaction_id || '').startsWith('00000000-1111-2222')) return json({ ok: true, test: true });   // Ko-fi's "Send test": checked, not counted
   const ts = Date.parse(d.timestamp) || Date.now(), amount = Number(d.amount) || 0;
   await ensureKofi(env);
   await env.DB.prepare('INSERT OR IGNORE INTO kofi (id, ts, type, amount, currency, sub) VALUES (?, ?, ?, ?, ?, ?)')
