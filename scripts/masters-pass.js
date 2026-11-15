@@ -9,10 +9,10 @@
 // can simply be taken back, not in a mate already under way; a position found in several games is kept once):
 //  - Candidate moves and Move selection: the game's mistakes first (a move that lost 10+ points, either side), when
 //    they pass the exercise's rule, then the other positions by the same rule: Candidate moves a trap among the top 5
-//    and at most 3 decent moves, 10 half-moves apart; Move selection its four moves spread enough (the game move judged
+//    and at most 3 decent moves, 14 half-moves apart; Move selection its four moves spread enough (the game move judged
 //    from the next position), 2 apart.
 //  - Imbalance reading and the Plan finder: as scripts/strategy-pass.js (from the middlegame's start to just past the
-//    endgame's start, 7 apart, the same rules), with the pass's evaluation and best line.
+//    endgame's start, Imbalance reading 5 apart, the Plan finder 7, the same rules), with the pass's evaluation and best line.
 // Writes app/index.html (/*POOLS*/), data/pools.json (Candidate moves and Move selection with their measurements, for
 // starters.py) and master-evals.json (each kept position's top 3 moves). Then: python3 scripts/build-site.py,
 // python3 scripts/starters.py, python3 scripts/planq-starters.py.
@@ -53,9 +53,11 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
   const missing = games.filter(g => !fs.existsSync(file(g)));
   if (missing.length) { console.log('pass missing for', missing.length, 'games, e.g.', missing.slice(0, 5)); await b.close(); server.kill(); return; }
   const out = { imbalances: [], planq: [], candidates: [], final: [] }, evals = {}, seen = { imbalances: new Set(), planq: new Set(), candidates: new Set(), final: new Set() };
+  // spacings (half-moves): Imbalance reading, Plan finder, Candidate moves positions that aren't mistakes
+  const KNOBS = { imbSp: +(process.env.IMB_SP || 5), planSp: +(process.env.PLAN_SP || 7), cSp: +(process.env.C_SP || 14), noPlan: !!process.env.NO_PLAN };
   let n = 0;
   for (const gid of games) {
-    const r = await p.evaluate(async ([gid, pass]) => {
+    const r = await p.evaluate(async ([gid, pass, K]) => {
       const run = (fen, multipv, ms) => new Promise(res => { bgQueue.push({ fen, multipv, movetime: ms, resolve: res }); pumpEngineQueue(); });
       const g = { id: gid, site: 'master', evalBy: 'none', status: 'queued', me: 'w', sans: GAME_MOVES[gid].split(' ').filter(Boolean), pass };
       const c = new Chess(), fens = [c.fen()], hist = [];
@@ -90,17 +92,17 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
       const near = (k, x, gap) => k.some(y => Math.abs(y - x) < gap), plies = Object.keys(C).map(Number).sort((a, b) => a - b);
       const keptC = mist.filter(m => C[m.ply].dec <= OWN.maxDecent).map(m => m.ply), keptF = mist.filter(m => F[m.ply]).map(m => m.ply);
       const mistDrop = Object.fromEntries(mist.map(m => [m.ply, m.drop]));
-      for (const x of plies) { if (!keptC.includes(x) && C[x].trap && !near(keptC, x, OWN.candidatesSpacing)) keptC.push(x); }
+      for (const x of plies) { if (!keptC.includes(x) && C[x].trap && !near(keptC, x, K.cSp)) keptC.push(x); }
       for (const x of plies) { if (!keptF.includes(x) && F[x] && !near(keptF, x, OWN.finalSpacing)) keptF.push(x); }
       keptC.sort((a, b) => a - b).forEach(x => keep('candidates', x, { metrics: { decentMoves: C[x].dec, ...(mistDrop[x] ? { mistake: mistDrop[x] } : {}) } }));
       keptF.sort((a, b) => a - b).forEach(x => keep('final', x, { metrics: mistDrop[x] ? { mistake: mistDrop[x] } : {} }));
       // Imbalance reading and the Plan finder (as strategy-pass.js, from the pass)
       const div = divideGame(fens), from = div.mid >= 0 ? div.mid : div.end;
       if (from >= 0) {
-        const to = div.end >= 0 ? div.end + 3 : hist.length - 1, SP = 7, wp = cp => Math.max(1, Math.min(99, 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1)));
+        const to = div.end >= 0 ? div.end + 3 : hist.length - 1, wp = cp => Math.max(1, Math.min(99, 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1)));
         let lastImb = -99, lastPlan = -99;
         for (let ply = Math.max(1, from); ply <= Math.min(to, hist.length - 1); ply++) {
-          const imbOk = ply - lastImb >= SP, planOk = ply - lastPlan >= SP; if (!imbOk && !planOk) continue;
+          const imbOk = ply - lastImb >= K.imbSp, planOk = !K.noPlan && ply - lastPlan >= K.planSp; if (!imbOk && !planOk) continue;
           const fen = fens[ply], moveNo = +fen.split(' ')[5]; if (moveNo < 5 || moveNo > 40) continue;
           const q0 = new Chess(fen); if (q0.in_check() || q0.moves().length < 4) continue;
           const prev = hist[ply - 1]; if (prev && prev.captured) continue;
@@ -127,7 +129,7 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
         }
       }
       return res;
-    }, [gid, JSON.parse(fs.readFileSync(file(gid), 'utf8'))]);
+    }, [gid, JSON.parse(fs.readFileSync(file(gid), 'utf8')), KNOBS]);
     const num = +gid.slice(1);
     for (const k of Object.keys(out)) for (const ply of r[k]) {
       const m = r.meta[k + ':' + ply]; if (seen[k].has(m.key)) continue; seen[k].add(m.key);
