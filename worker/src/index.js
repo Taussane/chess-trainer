@@ -35,6 +35,7 @@
 //   POST   /api/hidden {a, key, fen, label}  hide a position for everyone; DELETE /api/hidden?a=&key= shows it again (owner)
 //   POST   /api/feedback {did, msg, email, screen, lang, desk, app}  a message from the Feedback form (no sign-in; from
 //                                       this site only; a few per device a day); POST /api/feedback/done {id} files it (owner)
+//   GET    /api/inbox                   new messages and reported positions waiting (owner): {feedback, reports}
 //   POST   /api/report {did, a, key, fen, …}  a position reported as doubtful (no sign-in; from this site only)
 //   DELETE /api/report?a=&key=          dismiss a reported position (the owner's account only)
 //   POST   /api/share {code}            a shared position's link made short -> {id} (no sign-in; from this site only)
@@ -54,7 +55,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const VERSION = '2026-11-15.8';   // shown by /api/health: which version is deployed
+const VERSION = '2026-11-15.9';   // shown by /api/health: which version is deployed
 const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
@@ -215,10 +216,15 @@ async function route(req, env) {
       return json({ ok: true });
     }
   }
-  if ((m === 'GET' && path === '/api/metrics') || (m === 'DELETE' && path === '/api/report') || ((m === 'POST' || m === 'DELETE') && path === '/api/hidden') || (m === 'POST' && path === '/api/feedback/done')) {
+  if ((m === 'GET' && path === '/api/metrics') || (m === 'DELETE' && path === '/api/report') || ((m === 'POST' || m === 'DELETE') && path === '/api/hidden') || (m === 'POST' && path === '/api/feedback/done') || (m === 'GET' && path === '/api/inbox')) {
     const owners = String(env.OWNERS || 'taussane').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
     const o = await DB.prepare(`SELECT 1 FROM connections WHERE account_id = ? AND site = 'lichess' AND site_user_id IN (${owners.map(() => '?').join(',')})`).bind(account, ...owners).first();
     if (!o) throw fail(403, 'not allowed');
+    if (path === '/api/inbox') {   // what waits for the owner: new messages, reported positions (the app's badge)
+      await ensureFeedback(env); await ensureReports(env);
+      const f = await DB.prepare('SELECT COUNT(*) n FROM feedback WHERE done = 0').first(), r = await DB.prepare('SELECT COUNT(*) n FROM (SELECT 1 FROM reports GROUP BY a, key)').first();
+      return json({ feedback: f.n || 0, reports: r.n || 0 });
+    }
     if (path === '/api/feedback/done') {   // filed: off the list
       await ensureFeedback(env); await ensureEvents(env);
       await DB.batch([DB.prepare('UPDATE feedback SET done = 1 WHERE id = ?').bind(Number((await body(req)).id) || 0), DB.prepare('DELETE FROM metrics_cache')]);

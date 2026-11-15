@@ -48,6 +48,7 @@
   h1{font-size:1.45rem;}
   .title-row{display:flex; align-items:center; gap:10px;}
   .title-row h1{flex:1; min-width:0; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .ow-badge{display:inline-block; min-width:18px; height:18px; padding:0 5px; margin-left:6px; border-radius:9px; background:var(--accent); color:var(--on-accent); font:700 0.72rem/18px var(--font-body); text-align:center; vertical-align:1px; box-sizing:border-box;}
   .title-badge{font-family:var(--font-body); font-size:0.78rem; font-weight:600; color:var(--accent); border:1px solid var(--accent); border-radius:10px; padding:2px 9px; white-space:nowrap;}
   .icon-btn{
     width:28px; height:28px; min-width:28px; border-radius:50%; border:1px solid var(--border);
@@ -4540,7 +4541,7 @@ function renderSide(){
     <div class="side-sec">You</div>
     ${item('account', '<img class="side-app-icon" src="icons/icon.svg" alt="" aria-hidden="true">', displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
-    ${isOwner() ? item('metrics', SIDE_ICONS.metrics, 'Metrics') : ''}
+    ${isOwner() ? item('metrics', SIDE_ICONS.metrics, 'Metrics') .replace('</button>', inboxBadge() + '</button>') : ''}
     <div class="side-foot">
       <button class="title-chip" id="sideLang" data-no-i18n aria-label="Language" aria-haspopup="true">${LANG.toUpperCase()} · ${LANG_NAMES[LANG]}</button>
       <button class="donate-badge${at==='support' ? ' on' : ''}" data-side="support"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>
@@ -4983,6 +4984,8 @@ async function copyAppLink(){
 }
 // The test positions (the app's own checks) are offered to its author only: Taussane on Lichess.
 const isOwner = ()=>/^taussane$/i.test(lichessName() || '');
+let ownerInbox = 0;   // (see loadInbox)
+const inboxBadge = ()=>ownerInbox && isOwner() ? `<span class="ow-badge" aria-label="${ownerInbox} to check">${ownerInbox}</span>` : '';
 // Installing the website as an app: Chrome and Edge hand us their install prompt (beforeinstallprompt),
 // opened by the profile's button; on an iPhone or iPad (no prompt there) the button shows the two steps
 // in Safari. Nothing is offered once installed (opened as the app), nor inside Claude.
@@ -5039,7 +5042,7 @@ function renderAccount(){
   const head = `<div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to exercises">${BACK_ARROW}</button>
       <h1>Profile</h1>
-      ${isOwner() ? `<button class="title-chip" id="testsBtn">Test</button>` : ''}${isOwner() ? `<button class="title-chip" id="metricsBtn">Metrics</button>` : ''}<button class="title-chip" id="settingsBtn">Settings</button>
+      ${isOwner() ? `<button class="title-chip" id="testsBtn">Test</button>` : ''}${isOwner() ? `<button class="title-chip" id="metricsBtn">Metrics${inboxBadge()}</button>` : ''}<button class="title-chip" id="settingsBtn">Settings</button>
     </div>`;
   app.innerHTML = `
     ${isDesk() ? '' : head}
@@ -5132,7 +5135,7 @@ function wireChartHover(sr){
 // ================= Home =================
 function renderHome(){
   const app = document.getElementById('app');
-  const acctChip = `<button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span><span class="acct-name">${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</span></button>`;   // (desktop: beside "Positions from")
+  const acctChip = `<button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span><span class="acct-name">${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</span>${inboxBadge()}</button>`;   // (desktop: beside "Positions from")
   app.innerHTML = `
     <div class="home-head">
       <div class="home-top"><h1 data-no-i18n>Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span></h1>${isDesk() ? '' : acctChip}</div>
@@ -9311,9 +9314,18 @@ function statOwnGames(){
 
 // The dashboard (the owner's only: Test positions' neighbour in the profile).
 let metricsData = null, metricsErr = '', metricsDays = 30;
+// The owner's badge (Metrics, and the profile button on the home page): new messages and reported positions waiting.
+// Asked at start and every 5 minutes; the Metrics page keeps it in step as items are handled.
+function setInbox(n){ if(n!==ownerInbox){ ownerInbox = n; render(); } }
+async function loadInbox(){
+  if(!isOwner() || !signedIn()) return;
+  try{ const r = await serverCall(signedIn(), 'GET', '/api/inbox'); setInbox((r.feedback || 0) + (r.reports || 0)); }catch(e){}
+}
+setTimeout(loadInbox, 4000); setInterval(loadInbox, 5 * 60000);
 async function loadMetrics(){
   metricsErr = ''; metricsData = null; render();
   try{ metricsData = await serverCall(signedIn(), 'GET', '/api/metrics?days=' + metricsDays); }catch(e){ metricsErr = e.message; }
+  if(metricsData) setInbox((metricsData.feedback || []).length + (metricsData.reports || []).length);
   if(screen==='metrics') render();
 }
 function metricsChart(rows, series){   // small line chart: one line per series [key, colour, label]
@@ -9349,6 +9361,7 @@ function searchHtml(d, g, who, note){
 const MX_TABS = [['overview', 'Overview'], ['players', 'Players'], ['exercises', 'Exercises'], ['growth', 'Growth'], ['feedback', 'Feedback']];
 let mxTab = (()=>{ try{ const v = localStorage.getItem('cst.mxTab'); return MX_TABS.some(t=>t[0]===v) ? v : 'overview'; }catch(e){ return 'overview'; } })();
 function renderMetrics(){
+  if(metricsData) ownerInbox = (metricsData.feedback || []).length + (metricsData.reports || []).length;   // (items handled here: the badge follows)
   const app = document.getElementById('app'), d = metricsData, pc = (a, b)=>b ? Math.round(a / b * 100) + '%' : '—';
   const tile = (v, l)=>`<div class="mx-tile"><b>${v}</b><small>${l}</small></div>`;
   const sum = k=>d ? d.daily.reduce((s, r)=>s + r[k], 0) : 0;
