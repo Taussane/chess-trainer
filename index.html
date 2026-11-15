@@ -105,6 +105,8 @@
   .home-top h1 .beta{display:inline-block; margin-left:8px; padding:2px 6px; border:1px solid var(--accent); border-radius:5px; color:var(--accent); font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; line-height:1.2; vertical-align:middle; position:relative; top:-3px;}   /* not final yet */
   .home-top h1 .tld{color:var(--accent); font-size:0.6em; font-weight:600;}
   .home-top .acct-chip{flex:0 1 auto; min-width:0; max-width:none; gap:6px; padding:4px 10px 4px 4px;}
+  .routine-chip{padding:4px 12px 4px 8px !important;} .routine-chip svg{width:18px; height:18px; color:var(--accent);} .routine-chip .routine-n{color:var(--text-mute); font-variant-numeric:tabular-nums;}
+  .routine-chip:disabled{opacity:.45;}
   .acct-name{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .acct-chip{display:inline-flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:5px 12px 5px 6px; font:inherit; font-size:0.86rem; font-weight:600; cursor:pointer; max-width:60%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .acct-dot .pc{width:86%; height:86%; flex:none; margin-top:2%;}   /* the white king of the board, in the yellow circle */
@@ -790,7 +792,7 @@
     html.desk2 .wrap.ex, html.desk2 .wrap[data-scr=settings]:not(.ex){padding-block:8px;}
     html.desk2 .wrap.ex > #app, html.desk2 .wrap[data-scr=settings] > #app{column-gap:44px;}   /* (the explorer's upright bar between: the board in the same place everywhere) */
     /* the title and the game on top, the panel (with the White / Black buttons) at the bottom, the free room between */
-    html.desk2 .wrap.ex > #app{height:calc(100svh - 16px); grid-template-rows:auto auto minmax(0, 1fr) auto;}   /* (svh: the height with the browser's bars shown, so nothing hides under them) */
+    html.desk2 .wrap.ex > #app{height:calc(100svh - 16px); max-width:calc(100svh - 60px + 44px + var(--panel-w)); grid-template-rows:auto auto minmax(0, 1fr) auto;}   /* (the board's column as wide as the height allows it: the board as big as it can be) */   /* (svh: the height with the browser's bars shown, so nothing hides under them) */
     html.desk2 .wrap.ex > #app > .panel{grid-row:4; align-self:end;}
     /* the panel's rows grow with the window's height (the room under the title and the White / Black buttons), so it
        fills the right side instead of leaving it empty */
@@ -800,11 +802,23 @@
     html.desk2 .wrap.ex > #app > .xp-sides{grid-row:4;}
     html.desk2 .wrap.ex > #app:has(> .xp-sides) > .panel{grid-row:5;}
     html.desk2 .wrap.ex > #app:has(> .xp-sides) > .stage{grid-row:1 / -1;}
-    html.desk2 .wrap.ex > #app > .xp-sides{margin-bottom:12px;}   /* (the White / Black buttons a little above the panel) */
+    html.desk2 .wrap.ex > #app > .xp-sides{margin-bottom:6px;} html.desk2 .wrap.ex > #app > .xp-sides .xp-side{height:24px; padding:0 9px; font-size:.78rem;}   /* (the White / Black buttons as in portrait: their size, 6 px from the panel) */
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar{left:calc(100% + 6px); width:24px;}   /* (the bar nearer the board than the panel) */
     /* settings: the same height everywhere (svh), and the same small gap under the tabs on every tab */
     html.desk2 .wrap[data-scr=settings] > #app{height:calc(100svh - 16px); row-gap:8px;}
     html.desk2 .wrap[data-scr=settings] .set-page > .seg{margin:0;}
+    /* home: the title on one line, the routine and profile buttons on its right; the source just under; the four
+       exercises two by two, the explorer across */
+    html.desk2 .wrap.home{padding-block:12px;}
+    html.desk2 .wrap.home > #app{display:block; max-width:900px;}
+    html.desk2 .wrap.home > #app > .home-head{margin:0 0 10px; display:block;}
+    html.desk2 .wrap.home .home-top{align-items:center; gap:10px; margin:0;}
+    html.desk2 .wrap.home .home-top h1{flex:1; font-size:1.6rem;}
+    html.desk2 .wrap.home .home-head p{margin-top:6px; font-size:0.9rem;}
+    html.desk2 .wrap.home > #app > .source-row{margin:0 0 12px;}
+    html.desk2 .wrap.home > #app > .source-row .seg{margin:0;} html.desk2 .wrap.home > #app > .source-row .seg-btn{padding:5px 4px;}
+    html.desk2 .wrap.home > #app > .cards{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    html.desk2 .wrap.home > #app > .cards > :not([data-go]){grid-column:1 / -1;}
   }
   @media (min-aspect-ratio:6/5) and (max-height:479.98px){   /* a phone held sideways: smaller title and game line, so the panel keeps its height */
     html.desk2 .wrap.ex h1, html.desk2 .wrap[data-scr=settings] h1{font-size:1.2rem;}
@@ -4601,6 +4615,7 @@ const isDesk = ()=>DESK && !!deskMQ && deskMQ.matches;
 // side by side (and the desktop): a window wider than tall by a fifth or more (see the CSS: "Three layouts")
 const wideMQ = window.matchMedia ? matchMedia('(min-aspect-ratio:6/5)') : null;
 const isWide = ()=>DESK && !!wideMQ && wideMQ.matches;
+const isLand = ()=>isWide() && !isDesk();   // side by side without the menu (a phone held sideways, a small window)
 if(DESK && deskMQ && deskMQ.addEventListener) deskMQ.addEventListener('change', ()=>render());
 if(DESK && wideMQ && wideMQ.addEventListener) wideMQ.addEventListener('change', ()=>render());
 const SIDE_ICONS = {
@@ -5246,15 +5261,20 @@ function wireChartHover(sr){
 }
 
 // ================= Home =================
+// A phone held sideways: the routine as one button beside the profile's, with today's count (as in the desktop menu)
+function routineChip(){
+  const c = todayBy(), total = ACTS.reduce((t, a)=>t + Math.min(c[a], DAILY_GOAL), 0);
+  return `<button class="acct-chip routine-chip" id="routineBtn" ${canOpen(routineFrom(routineNext), true) ? '' : 'disabled'}>${SIDE_ICONS.routine}<span>Routine</span>${progressLoaded ? `<span class="routine-n">${total}/${DAILY_GOAL*ACTS.length}</span>` : ''}</button>`;
+}
 function renderHome(){
   const app = document.getElementById('app');
   const acctChip = `<button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span><span class="acct-name">${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</span>${inboxBadge()}</button>`;   // (desktop: beside "Positions from")
   app.innerHTML = `
     <div class="home-head">
-      <div class="home-top"><h1 data-no-i18n>Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span></h1>${isDesk() ? '' : acctChip}</div>
+      <div class="home-top"><h1 data-no-i18n>Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span>${isLand() ? ' ' : '<br>'}Strategy<span class="tld">.org</span></h1>${isLand() ? routineChip() : ''}${isDesk() ? '' : acctChip}</div>
       ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isDesk() ? `<p>Train your strategy beyond tactics puzzles: read the imbalances, define your plan, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
-    ${routineCard()}
+    ${isLand() ? '' : routineCard()}
     <div class="source-row">${isDesk() ? acctChip : ''}<span class="source-label">Positions from</span>
       <div class="seg seg-sm" role="radiogroup" aria-label="Positions from">${Object.entries(SOURCES).map(([k,v])=>{
         const off = k!=='masters' && !myPositions.length;
@@ -5284,7 +5304,7 @@ function renderHome(){
   document.getElementById('accountBtn').onclick = ()=>{ screen = 'account'; render(); };
   const xpOpen = document.getElementById('xpOpen'); if(xpOpen) xpOpen.onclick = ()=>{ screen = 'explorer'; render(); };
   const rushOpen = document.getElementById('rushOpen'); if(rushOpen) rushOpen.onclick = ()=>{ rush = null; screen = 'rush'; render(); };
-  document.getElementById('routineBtn').onclick = startRoutine;
+  const rb = document.getElementById('routineBtn'); if(rb) rb.onclick = startRoutine;
   prefetchHome();
   progressJustLoaded = false;
 }
