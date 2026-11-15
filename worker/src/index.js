@@ -29,6 +29,8 @@
 //                                       live games only (no daily, no variants), newest first
 //   POST   /api/ev  {did, sid, ctx, ev:[…]}  anonymous usage counts from this site (no sign-in; see events)
 //   GET    /api/metrics?days=           the usage dashboard's figures (the owner's account only)
+//   POST   /api/kofi  (Ko-fi's form: data=…)  a Ko-fi payment, sent by Ko-fi; checked with its verification token
+//                                       (secret KOFI_TOKEN); only the amount, currency, type and date are kept
 //   POST   /api/report {did, a, key, fen, …}  a position reported as doubtful (no sign-in; from this site only)
 //   DELETE /api/report?a=&key=          dismiss a reported position (the owner's account only)
 //   POST   /api/share {code}            a shared position's link made short -> {id} (no sign-in; from this site only)
@@ -48,7 +50,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const VERSION = '2026-11-14.2';   // shown by /api/health: which version is deployed
+const VERSION = '2026-11-15.1';   // shown by /api/health: which version is deployed
 const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
@@ -103,6 +105,7 @@ async function route(req, env) {
   if (path === '/api/health') return json({ ok: true, version: VERSION });
   await limit(req, env, 'RL_ALL');
   if (m === 'POST' && path === '/api/ev') return usageEvents(req, env);
+  if (m === 'POST' && path === '/api/kofi') return kofiPayment(req, env);
   if (m === 'POST' && path === '/api/report') return reportPosition(req, env);
   if (m === 'POST' && path === '/api/share') return makeShare(req, env);
   if (m === 'GET' && path.startsWith('/api/share/')) return getShare(env, decodeURIComponent(path.slice('/api/share/'.length)));
@@ -479,6 +482,22 @@ async function getShare(env, id) {
   const res = json({ code: row.code }); res.headers.set('Cache-Control', 'public, max-age=86400'); return res;
 }
 
+// Ko-fi payments (donations, memberships, shop orders): Ko-fi posts a form whose "data" field is JSON, with the token
+// set in Ko-fi's API settings. No name, email or message is kept.
+async function ensureKofi(env) {
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS kofi (id TEXT PRIMARY KEY, ts INTEGER NOT NULL, type TEXT, amount REAL, currency TEXT, sub INTEGER) WITHOUT ROWID').run();
+}
+async function kofiPayment(req, env) {
+  let d; try { d = JSON.parse(String((await req.formData()).get('data') || '')); } catch (e) { throw fail(400, 'bad data'); }
+  if (!env.KOFI_TOKEN || !d || d.verification_token !== env.KOFI_TOKEN) throw fail(403, 'not allowed');
+  const ts = Date.parse(d.timestamp) || Date.now(), amount = Number(d.amount) || 0;
+  await ensureKofi(env);
+  await env.DB.prepare('INSERT OR IGNORE INTO kofi (id, ts, type, amount, currency, sub) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(String(d.kofi_transaction_id || d.message_id || ts), ts, String(d.type || '').slice(0, 30), amount, String(d.currency || '').slice(0, 5), d.is_subscription_payment ? 1 : 0).run();
+  await ensureEvents(env); await env.DB.prepare('DELETE FROM metrics_cache').run();
+  return json({ ok: true });
+}
+
 async function reportPosition(req, env) {
   const allowed = String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
   if (!allowed.includes(req.headers.get('Origin') || '')) throw fail(403, 'not from this site');
@@ -543,6 +562,10 @@ async function metricsNow(env, days) {
   const byDay = Object.fromEntries(daily.map(r => [r.day, r]));
   await ensureReports(env);   // all of them, not only the period's: they stay until dismissed
   const reports = await all(`SELECT a, key, fen, src, game, ply, label, COUNT(*) n, COUNT(DISTINCT did) devices, MAX(ts) last, ROUND(AVG(acc)) acc FROM reports GROUP BY a, key ORDER BY last DESC LIMIT 200`);
+  // Ko-fi: over the period and since the start, by currency; the newest payment
+  await ensureKofi(env);
+  const kofi = { period: await all('SELECT currency, COUNT(*) n, ROUND(SUM(amount), 2) amount FROM kofi WHERE ts >= ? GROUP BY currency', Date.now() - days * DAY),
+    total: await all('SELECT currency, COUNT(*) n, ROUND(SUM(amount), 2) amount FROM kofi GROUP BY currency'), last: ((await one('SELECT MAX(ts) ts FROM kofi')) || {}).ts || null };
   return {
     generated: Date.now(), days,
     daily: Array.from({ length: days }, (_, i) => day(days - 1 - i)).map(d => ({ day: d, devices: byDay[d] ? byDay[d].devices : 0, newDevices: newBy[d] || 0,
@@ -558,7 +581,7 @@ async function metricsNow(env, days) {
     errors: { visits: errors.visits || 0, load: errors.load || 0, stopped: errors.stopped || 0 },
     ownGames: { ...g, positionsPerGame: g.games ? Math.round(g.positions / g.games * 100) / 100 : 0 },
     accounts: { total: accounts.n || 0, recent: accounts.recent || 0, bySite, chesscom: cc.n || 0 },
-    reports,
+    reports, kofi,
   };
 }
 
