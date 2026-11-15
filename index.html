@@ -4578,7 +4578,7 @@ function renderSide(){
     <div class="side-foot">
       <button class="title-chip" id="sideLang" data-no-i18n aria-label="Language" aria-haspopup="true">${LANG.toUpperCase()} · ${LANG_NAMES[LANG]}</button>
       <div class="pill-row"><button class="donate-badge${at==='support' ? ' on' : ''}" data-side="support"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>${FEEDBACK_PILL}</div>
-      <p class="side-links">${siteLinks().replace(/ · /g, '<br>')}${installOffered() ? `<br><button class="link-plain install-link" id="sideInstall">Install the app</button>` : ''}</p>
+      <p class="side-links">${siteLinks().replace(' · <a href="#" data-feedback>Feedback</a>', '').replace(/ · /g, '<br>')}${installOffered() ? `<br><button class="link-plain install-link" id="sideInstall">Install the app</button>` : ''}</p>
     </div>`;
   // Rebuilt only when something in it changed: the page redraws often (games syncing, an evaluation
   // arriving), and a menu rebuilt under the mouse would lose the click.
