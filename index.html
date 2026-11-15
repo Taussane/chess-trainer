@@ -5282,7 +5282,7 @@ function renderHome(){
   app.innerHTML = `
     <div class="home-head">
       <div class="home-top"><h1 data-no-i18n>${isLand() ? `ChessStrategy<span class="tld">.org</span><span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span>` : `Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span>`}</h1>${isLand() ? routineChip() : ''}${isDesk() ? '' : acctChip}</div>
-      ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isDesk() ? `<p>Train your strategy beyond tactics puzzles: read the imbalances, define your plan, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
+      ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isWide() ? `<p>Train your strategy beyond tactics puzzles: read the imbalances, define your plan, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
     ${isLand() ? '' : routineCard()}
     <div class="source-row">${isDesk() ? acctChip : ''}<span class="source-label">Positions from</span>
