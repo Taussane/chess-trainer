@@ -13,6 +13,7 @@ SETUP = """(()=>{
   // 101 games, game i played i days ago, one Candidate moves position each.
   myGames = Array.from({length:101}, (_, i)=>({ id:'g'+i, sans:['e4'], me:'b', playedAt: now - i*day, status:'evaluated',
     positions:[{ key:'own:g'+i+':1', fen, side:'b', moveNo:1, title:'t', year:'', last:null, hist:{uci:'e7e5', san:'e5', from:'e7', to:'e5'}, acts:['candidates'], gameId:'g'+i, ply:1 }] }));
+  myGames.forEach(g=>{ g.posSig = posSig(g); });   // (their positions count as found under the current rules)
   myGamesLoaded = true; progressReady();
   results = [
     { a:'candidates', acc:90, ts: now - 1*day,  key:'own:g3:1',  miss:false },   // got right yesterday

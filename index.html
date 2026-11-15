@@ -1736,11 +1736,13 @@ let sfCurrentFen = null; // the position being searched (a review shows its dept
 //  - Candidate moves: the top-5 search stops as the review opens (after 1.2 s, or at once when the finder's
 //    top 3 came with the app, master-evals.json); then ONE search of your picks + the game move + the top
 //    moves, 3 s at most; none when the top 5 ran 3 s (or reached depth 20) and has them all (candidatesEval);
-//  - Move selection: the four moves come from the top 5; their one search runs while you rank;
+//  - Move selection: the four moves come from a top 5 already searched (your game's pass, the master pass's in
+//    master-evals.json; else the position's own search); their one search runs while you rank;
 //  - Imbalance reading: a 0.4 s mate check only (mateSearch), ahead of any long search;
 //  - order (pumpEngineQueue): the open position's searches; quick ones; an exercise's NEXT position (asked
-//    for as soon as its review is in: prefetchNext); the rest; what the home page prepared last (it gives
-//    way: preemptForOpen). A search stopped to give way is searched again, unless it had run 3 s.
+//    for once the open position's searches are done: prefetchNext); the rest; what the home page prepared last
+//    (it gives way: preemptForOpen). Your games' analysis takes turns with all but the open position's searches.
+//    A search stopped to give way is searched again, unless it had run 3 s.
 const LIVE_DEPTH = 20, LIVE_CAP_MS = 10000, REVIEW_CAP_MS = 3000;
 let reviewFen = null, pickFen = null, pickAt = 0;   // the position whose review is open; Move selection's question waiting for its moves, since when
 let sfStartedAt = 0, sfCurrentJob = null;
@@ -1948,6 +1950,12 @@ function failEngine(reason){
   render();
 }
 const evalFailed = d => !!(d && d.failed);
+// The open position's own searches done (Move selection: its four moves' search; Candidate moves: its top 5): the
+// exercise's next position is prepared then, while you answer, not only after your Check
+let prefetchedAfter = null;
+function prefetchAfterOpen(fen){
+  setTimeout(()=>{ if(typeof curPos!=='undefined' && curPos && curPos.fen===fen && ACTIVITIES.includes(screen) && !(rush && rush.phase!=='end') && prefetchedAfter!==fen){ prefetchedAfter = fen; prefetchNext(); } }, 0);
+}
 function pumpEngineQueue(){
   if(sfBusy){ preemptForOpen(); return; }
   if(sfState!=='ready' || !sfWorker) return;
@@ -1961,7 +1969,7 @@ function pumpEngineQueue(){
   // 1.2 s at most, after each other one), so your exercises fill up while you play instead of only when the engine is idle.
   const pick = [j=>!!cur && j.fen===cur && !!j.movetime, j=>!!cur && j.fen===cur, j=>!!j.movetime, j=>!j.low, ()=>true];
   let at = -1;
-  for(const [i, f] of pick.entries()){ if(i===2 && bgQueue.length && !sfLastWasBg) break; if(i===4 && (bgQueue.length || myBgRunning)) break; at = sfQueue.findIndex(f); if(at >= 0) break; }   // (what the home page prepared waits while your games are worked on: it may never be opened)
+  for(const [i, f] of pick.entries()){ if(i===2 && bgQueue.length && !sfLastWasBg) break; if(i===4 && bgQueue.length && !sfLastWasBg) break; at = sfQueue.findIndex(f); if(at >= 0) break; }   // (what the home page prepared takes turns with your games' analysis, like the rest)
   const job = at >= 0 ? sfQueue.splice(at, 1)[0] : bgQueue.length ? bgQueue.shift() : null;
   if(job) sfLastWasBg = at < 0;
   if(!job) return;
@@ -2058,7 +2066,7 @@ function fenEvalEntry(fen){
   if(!entry){
     entry = { status:'pending', data:null };
     fenEvalStore[fen] = entry;
-    entry.promise = engineEval(fen).then(data=>{ entry.status='done'; entry.data=data; render(); return data; });
+    entry.promise = engineEval(fen).then(data=>{ entry.status='done'; entry.data=data; render(); if(screen==='candidates') prefetchAfterOpen(fen); return data; });
   } else if(entry.status==='pending') bumpJob(fen);
   return entry;
 }
@@ -2085,7 +2093,7 @@ function poolEval(baseFen, ucis, four){
   if(!entry){
     entry = { status:'pending', data:null, sm: ucis.join(' ') };
     poolEvalStore[key] = entry;
-    engineEval(baseFen, entry.sm, four).then(data=>{ entry.status='done'; entry.data=data; render(); });
+    engineEval(baseFen, entry.sm, four).then(data=>{ entry.status='done'; entry.data=data; render(); if(four && screen==='final') prefetchAfterOpen(baseFen); });
   } else if(entry.status==='pending') bumpJob(baseFen, entry.sm);
   return entry.status==='done' ? entry.data : null;
 }
@@ -2849,11 +2857,15 @@ function candidatesEval(p, picks){
 function finalMoves(p){
   // a shared position with its own moves (?s=…, field m): those, in that order (their colours as the link has them)
   if(p.fixed) return p.fixed.map((u, i)=>({ id:u, uci:u, from:u.slice(0,2), to:u.slice(2,4), san:sanForUci(p.fen, u), historical: false, color: allCols[i] }));
-  const disc = fenEval(p.fen);
+  // the top 5 already searched (your game's pass; a master position's, shipped in master-evals.json): the four moves
+  // at once, no search before the one that grades them
+  const quick = quickTop(p);
+  let src = quick;
+  const disc = quick || fenEval(p.fen);
   if(!disc) return null;
   if(evalFailed(disc)) return FAILED;
-  let src = disc;
-  if(!disc.lines.some(l=>l.uci===p.hist.uci)){
+  if(!src) src = disc;
+  if(!src.lines.some(l=>l.uci===p.hist.uci)){
     const ucis = Array.from(new Set(disc.lines.slice(0, DISCOVERY_MULTIPV).map(l=>l.uci).filter(Boolean).concat(p.hist.uci)));
     src = poolEval(p.fen, ucis);
     if(!src) return null;
@@ -2874,6 +2886,26 @@ function finalMoves(p){
 // (Dubious, Mistake, Blunder), so bad moves can be told apart; only if the top 5 leave no other
 // choice is a bad grade repeated.
 const BAD_GRADES = ['Dubious','Mistake','Blunder'];
+// A position's top 5 (side to move's view) and the game move's value, from searches made before: your game's pass (the
+// game move from the next position's search), or the master pass's, shipped in master-evals.json (fields 3 and 4).
+// null when there's none (the app searches then).
+function quickTop(p){
+  const parse = s=>s ? s.split(',').map(x=>{ const i = x.indexOf(':'), uci = x.slice(0, i), v = x.slice(i + 1); return v[0]==='m' ? { uci, cp:null, mate:+v.slice(1) } : { uci, cp:+v, mate:null }; }) : [];
+  let top = null, gm = null;
+  const g = p.gameId && myGames.find(x=>x.id===p.gameId);
+  if(g){
+    top = passLines(g, p.ply);
+    const nx = passLines(g, p.ply + 1);
+    if(nx && nx.length) gm = { uci:p.hist.uci, cp: nx[0].cp==null ? null : -nx[0].cp, mate: nx[0].mate==null ? null : -nx[0].mate };
+  } else {
+    const m = masterEvals && masterEvals[p.key];
+    if(m && m[3]){ top = parse(m[3]); if(m[4]) gm = { uci:p.hist.uci, ...parse('x:' + m[4])[0] }; }
+  }
+  if(!top || top.length < 2 || !p.hist) return null;
+  const lines = top.slice();
+  if(!lines.some(l=>l.uci===p.hist.uci)){ if(!gm) return null; lines.push(gm); }
+  return { lines: lines.sort((a, b)=>winPercent(b.cp, b.mate) - winPercent(a.cp, a.mate)) };
+}
 function pickFinalUcis(p, disc){
   const lines = disc.lines.filter(l=>l.uci);
   if(!lines.length) return [];
