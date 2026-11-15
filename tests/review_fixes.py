@@ -92,7 +92,7 @@ async def main():
         if await pg.evaluate("pos().key") == k: fails.append('an untouched Final choice kept a position played today')
         print('3. untouched Final choice gives way:', await pg.evaluate("pos().key") != k)
 
-        # 4. Game move outside the top 5: picked from one search with the top 5 and the game move.
+        # 4. Game move outside the top 5: judged with the top 5 before picking (from the pass's shipped values, else one search).
         await pg.evaluate("""(()=>{ window.__searches = []; const real = engineEval;
           engineEval = (f,s)=>{ __searches.push(s||'top5'); return real(f,s); }; fenEvalStore = {}; poolEvalStore = {}; })()""")
         info = await pg.evaluate("""(async()=>{
@@ -100,13 +100,14 @@ async def main():
           if(!p) return null;
           for(let i=0;i<50 && !Array.isArray(finalMoves(p)); i++) await new Promise(r=>setTimeout(r,50));
           const ms = finalMoves(p);
-          return { gm: p.hist.uci, shown: ms.map(m=>m.uci), searches: __searches.slice() };
+          const q = quickTop(p);   // (a master position: the pass's top 5 and the game move's value, shipped, no search)
+          return { gm: p.hist.uci, shown: ms.map(m=>m.uci), searches: __searches.slice(), shipped: !!(q && q.lines.some(l=>l.uci===p.hist.uci)) };
         })()""")
         print('4.', info)
         if not info: fails.append('no test position with the game move outside the top 5')
         else:
             if info['gm'] not in info['shown']: fails.append('game move missing from the four')
-            if not any(info['gm'] in x and len(x.split()) == 6 for x in info['searches']): fails.append('game move not judged with the top 5 before picking')
+            if not info['shipped'] and not any(info['gm'] in x and len(x.split()) == 6 for x in info['searches']): fails.append('game move not judged with the top 5 before picking')
         await b.close()
 
         # 5. Games removed on another device (after they were added here) stay removed.

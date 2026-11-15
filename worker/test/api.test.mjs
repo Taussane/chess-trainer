@@ -193,8 +193,7 @@ test('usage counts: anonymous events from this site only; the metrics for the ow
   assert.equal(m.body.daily.length, 30);
   assert.equal(m.body.daily[29].positions, 3);
   assert.equal(m.body.daily[29].newDevices, 2);
-  const an = m.body.exercises.find(x => x.a === 'analysis');
-  assert.deepEqual([an.n, an.avg, an.devices], [2, 70, 2]);
+  assert.ok(!m.body.exercises.some(x => x.a === 'analysis'), 'a retired exercise is left out');
   assert.deepEqual(m.body.sources, { masters: 2, mine: 1 });
   assert.deepEqual(m.body.routine, { positions: 1, of: 3 });
   assert.deepEqual(m.body.devices.auth, { lichess: 1, guest: 1 });

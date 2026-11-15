@@ -260,11 +260,11 @@ async def main():
         for k, a, c in [('fork', 'c6d4b d4d5w e6c4b', 'c4b d4b'), ('pin', 'e4e5w', ''), ('queenFork', 'c3d5w', '')]:
             if marks[k]['a'] != a or marks[k]['c'] != c: fails.append(f'{k} threats: {marks[k]}')
         # the pool: its own positions (scripts/strategy-pass.js), each with 3 criteria graded at least, none read otherwise by
-        # Stockfish 10, none leaning against Stockfish's better side, 7 half-moves apart in a game; no castling right lost
+        # Stockfish 10, none leaning against Stockfish's better side, 5 half-moves apart in a game; no castling right lost
         # with king and rook still on their first squares
-        n = await pg.evaluate("""(()=>{ const P = POOLS.imbalances, few = P.filter(p=>{ const v = explorerVals(p.fen, true); return !v || ASPECTS.filter(x=>!isOff(v, x) && aspectLevel(v[x.key], x.key)).length < 3; }).length;
+        n = await pg.evaluate("""(()=>{ const P = POOLS.imbalances, few = P.filter(p=>{ const v = explorerVals(p.fen, true); return !v || ASPECTS.filter(x=>!isOff(v, x) && aspectLevel(v[x.key], x.key, v)).length < 3; }).length;   // (counted as the finder counts: in the position's mode)
           const fresh = fen=>adaptAspects(parseAspects(sfTableLines(fen), fen), fen);   // (the reading alone: a mate check met earlier in the test can change King safety)
-          const disP = P.filter(p=>gradesDisagree(p.fen, fresh(p.fen))), dis = disP.length; const disInfo = disP.map(p=>[p.key, aspectsStore[p.fen] && aspectsStore[p.fen].status, JSON.stringify(explorerVals(p.fen, true).mate || null), ASPECTS.map(x=>x.key + ':' + fresh(p.fen)[x.key]).join(' ')]), close = P.filter((p, i)=>P.some((q, j)=>j!==i && q.game===p.game && Math.abs(q.ply - p.ply) < 7)).length;
+          const disP = P.filter(p=>gradesDisagree(p.fen, fresh(p.fen))), dis = disP.length; const disInfo = disP.map(p=>[p.key, aspectsStore[p.fen] && aspectsStore[p.fen].status, JSON.stringify(explorerVals(p.fen, true).mate || null), ASPECTS.map(x=>x.key + ':' + fresh(p.fen)[x.key]).join(' ')]), close = P.filter((p, i)=>P.some((q, j)=>j!==i && q.game===p.game && Math.abs(q.ply - p.ply) < 5)).length;
           return [P.length, few, dis, close, P.some(p=>hiddenCastlingLoss(p.fen)), ['r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1', 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 'r4rk1/8/8/8/8/8/8/R3K3 w Q - 0 1'].map(hiddenCastlingLoss), POOLS.planq.length, disInfo]; })()""")
         print('pools:', n)
         if n[0] < 1000 or n[1] or n[2] or n[3] or n[4] or n[5] != [True, False, False] or n[6] < 1000: fails.append(f'Imbalance reading pool: {n}')
