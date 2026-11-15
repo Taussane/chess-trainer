@@ -612,9 +612,10 @@
   .modal-box .help-list{font-size:0.88rem; line-height:1.5; margin:-6px 0 10px; padding-left:18px;}
   .modal-box .help-list li{margin:2px 0;}
   .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:4px;}
-  .fb-box{width:100%;}
+  .modal-box.fb-box{width:100%; max-width:min(560px, 94vw);}
   .fb-box .cc-field{display:block; width:100%; box-sizing:border-box; margin:0 0 10px;}
-  .fb-msg{min-height:130px; resize:vertical;}
+  .fb-msg{min-height:160px; resize:vertical;}
+  @media (min-aspect-ratio:6/5) and (min-height:600px){ .fb-msg{min-height:240px;} }
   .fb-hp{position:absolute; left:-9999px; width:1px; height:1px; opacity:0;}
   .fb-err{color:var(--red, #e06c6c); font-size:0.88rem;}
   .mx-rep{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:4px 10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:0.88rem;}
@@ -633,7 +634,6 @@
      - the desktop (1024 px wide or more and at least 4:3): the same, plus the sidebar menu to go anywhere.
      html.desk2 is set by the app; the media queries decide. ===== */
   .side, .home-foot{display:none;}
-  .xp-ret{display:none;}   /* (back to the exercise, from its explorer: on the desktop, where the back arrow gives way to the menu) */
   @media (min-aspect-ratio:6/5){   /* side by side, and the desktop */
     html.desk2{--panel-w:380px;}
     html.desk2 .wrap.ex > #app > .xp-sides.sides-desk{display:flex;} html.desk2 .pl-line > .xp-sides{display:none;}   /* (Imbalance reading: above the panel) */
@@ -710,7 +710,6 @@
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar-num{left:0 !important; right:0 !important; transform:none; text-align:center; font-size:0.62rem; letter-spacing:-0.02em;}
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar-num.w{top:auto; bottom:4px;} html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar-num.b{top:4px;}
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar.flip .xp-hbar-num.w{bottom:auto; top:4px;} html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar.flip .xp-hbar-num.b{top:auto; bottom:4px;}
-    html.desk2 .wrap.ex[data-scr=explorer] > #app{column-gap:48px;}   /* (room for the bar) */
   }
   @media (min-width:1024px) and (min-aspect-ratio:4/3){   /* the desktop: the sidebar menu (it replaces the back arrows, the logo, the links) */
     html.desk2{--side-w:264px;}
@@ -744,7 +743,7 @@
     html.desk2 .wrap:not(.ex) .title-row .back, html.desk2 #settingsBtn, html.desk2 #metricsBtn, html.desk2 #testsBtn{display:none;}   /* (in the sidebar) */
     html.desk2 .wrap[data-scr=doc] .title-row .back.keep{display:inline-flex;}   /* (a guide opened from the FAQ: back to it) */
     html.desk2 #setLang{display:none;}
-    html.desk2 .xp-ret{display:inline-flex; margin-left:auto;}   /* (in the menu) */
+    html.desk2 .wrap.ex .title-row .back.keep{display:inline-flex;}   /* (the explorer opened from an exercise: its back arrow, as on a phone) */   /* (in the menu) */
     html.desk2 .wrap.home .home-top{display:none;}   /* (the logo is in the menu; the profile button beside "Positions from") */
     html.desk2 .wrap.home .source-row .acct-chip{max-width:none; margin-right:16px; font-size:1.29rem; gap:10px; padding:6px 18px 6px 6px;}   /* 1.5 times as big */
     html.desk2 .wrap.home .source-row .acct-dot{width:33px; height:33px; font-size:1.17rem;}
@@ -754,7 +753,7 @@
     html.desk2{--panel-w:clamp(260px, 42vw, 360px);}
     html.desk2 .wrap{padding-inline:16px;}
     html.desk2 .wrap.ex, html.desk2 .wrap[data-scr=settings]:not(.ex){padding-block:8px;}
-    html.desk2 .wrap.ex > #app, html.desk2 .wrap[data-scr=settings] > #app{column-gap:24px;}
+    html.desk2 .wrap.ex > #app, html.desk2 .wrap[data-scr=settings] > #app{column-gap:44px;}   /* (the explorer's upright bar between: the board in the same place everywhere) */
     /* the title and the game on top, the panel (with the White / Black buttons) at the bottom, the free room between */
     html.desk2 .wrap.ex > #app{height:calc(100svh - 16px); grid-template-rows:auto auto minmax(0, 1fr) auto;}   /* (svh: the height with the browser's bars shown, so nothing hides under them) */
     html.desk2 .wrap.ex > #app > .panel{grid-row:4; align-self:end;}
@@ -3114,7 +3113,7 @@ document.addEventListener('click', e=>{ const f = e.target.closest && e.target.c
 function openFeedback(){
   if(document.getElementById('fbModal')) return;
   const from = screen, div = document.createElement('div');
-  div.className = 'modal-backdrop'; div.id = 'fbModal';
+  div.className = 'modal-backdrop'; div.id = 'fbModal'; div.dataset.scr = from;   // (another page opened from the menu closes it: render)
   const close = ()=>div.remove();
   const show = html=>{ div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box fb-box" role="dialog" aria-label="Feedback">${html}</div></div>`; };
   const form = (msg, email, err)=>{
@@ -4609,7 +4608,7 @@ function renderSide(){
     ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     <div class="side-sec">Exercises</div>
     ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
-    <div class="side-sec">Explore</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}
+    <div class="side-sec">More</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}
     <div class="side-sec">You</div>
     ${item('account', '<img class="side-app-icon" src="icons/icon.svg" alt="" aria-hidden="true">', displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
@@ -6815,6 +6814,7 @@ document.addEventListener('pointerdown', e=>{
   holdRender(); clearTimeout(holdRender.safety); holdRender.safety = setTimeout(releaseRender, 2000);
 }, true);
 function render(){
+  { const fb = document.getElementById('fbModal'); if(fb && fb.dataset.scr!==screen) fb.remove(); }
   if(renderHeld){ renderWaiting = true; return; }
   if(firstVisit && screen!=='final') firstVisit = null;   // (the first visit's way in is over once the player goes elsewhere)
   // The page is redrawn often (e.g. while your games are analysed): text being typed, and the
@@ -7024,6 +7024,7 @@ function L(o){ return o[LANG]!=null ? o[LANG] : o.en; }
 const FAQ_PATH = { en:'learn/', fr:'fr/guides/', de:'de/anleitungen/', es:'es/guias/', it:'it/guide/' };
 const legalPath = k=>k + (LANG==='en' ? '' : '-' + LANG) + '.html';
 const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
+"More": "Plus",
 "Share a problem or an idea.": "Partagez un problème ou une idée.",
 "Your message": "Votre message",
 "Email (optional, to get an answer)": "E-mail (facultatif, pour une réponse)",
@@ -7550,6 +7551,7 @@ const I18N_FR_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} partie${n==='1' ? '' : 's'} interrompue${n==='1' ? '' : 's'} la dernière fois, terminée${n==='1' ? '' : 's'}.`)],
 ];
 const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
+"More": "Mehr",
 "Share a problem or an idea.": "Teile ein Problem oder eine Idee.",
 "Your message": "Deine Nachricht",
 "Email (optional, to get an answer)": "E-Mail (optional, für eine Antwort)",
@@ -8008,6 +8010,7 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Suggest a strong move for Black.": "Schlage einen starken Zug für Schwarz vor."
 }/*END I18N_DE*/));
 const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
+"More": "Más",
 "Share a problem or an idea.": "Comparte un problema o una idea.",
 "Your message": "Tu mensaje",
 "Email (optional, to get an answer)": "Correo (opcional, para recibir respuesta)",
@@ -8466,6 +8469,7 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Suggest a strong move for Black.": "Propón una jugada fuerte para las negras."
 }/*END I18N_ES*/));
 const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
+"More": "Altro",
 "Share a problem or an idea.": "Condividi un problema o un'idea.",
 "Your message": "Il tuo messaggio",
 "Email (optional, to get an answer)": "Email (facoltativa, per avere una risposta)",
@@ -9854,9 +9858,9 @@ function renderExplorer(){
     : explorerPlanHtml(pq, x, false);
   app.innerHTML = `
     <div class="title-row">
-      <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
+      <button class="icon-btn back${x.ret && (ACTIVITIES.includes(x.ret.screen) || x.ret.screen==='planq') ? ' keep' : ''}" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
       <h1>Strategy explorer</h1>
-      ${x.ret && (ACTIVITIES.includes(x.ret.screen) || x.ret.screen==='planq') ? `<button class="title-chip xp-ret" id="xpRet">‹ ${ACT_NAMES[x.ret.screen]}</button>` : '<span class="title-spacer" aria-hidden="true"></span>'}
+      <span class="title-spacer" aria-hidden="true"></span>
     </div>
     <div class="posbar" aria-hidden="true" style="visibility:hidden"><div class="pos-title">&nbsp;<br>&nbsp;</div></div>   <!-- (the exercises' two lines' room, empty: the board where it sits in them) -->
     ${sidesInNameLine(boardHtml().replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct, x.flip, !x.engineOn)), explorerSidesHtml(x))}
@@ -9900,7 +9904,6 @@ function renderExplorer(){
   app.querySelectorAll('.panel .layer:not(.ghost) .xp-plan .pq-reason[data-key]').forEach(b=>b.onclick = ()=>{ x.aspView = x.aspView===b.dataset.key ? null : b.dataset.key; x.aspPiece = x.aspKing = null; render(); });
   const li = app.querySelector('.layer:not(.ghost) .xp-li'); if(li && li.offsetHeight) app.style.setProperty('--xp-btn-h', li.offsetHeight + 'px');   // (the review buttons' height for the whole row)
   on('homeBtn', ()=>{ if(!exploreReturn()){ screen = 'home'; render(); } });
-  on('xpRet', exploreReturn);
   on('xpBack', ()=>explorerGo(x.at - 1)); on('xpFwd', ()=>explorerGo(x.at + 1));
   on('xpFlip', ()=>{ x.flip = !x.flip; render(); });
   app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; x.flash = {}; render(); });
