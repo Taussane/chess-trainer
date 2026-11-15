@@ -9234,6 +9234,8 @@ function metricsChart(rows, series){   // small line chart: one line per series 
     <text x="${P}" y="${H-4}" font-size="10" fill="var(--text-mute)">${rows[0] ? rows[0].day.slice(5) : ''}</text><text x="${W-P}" y="${H-4}" font-size="10" fill="var(--text-mute)" text-anchor="end">${rows[n-1] ? rows[n-1].day.slice(5) : ''}</text>
     ${lines}</svg><div class="mx-legend">${series.map(([, c, l])=>`<span><i style="background:${c}"></i>${l}</span>`).join('')}</div>`;
 }
+// Ko-fi payments by currency: "3 · 15 CAD + 5 USD"
+const kofiSum = rows=>rows && rows.length ? rows.reduce((n, r)=>n + r.n, 0) + ' · ' + rows.map(r=>`${r.amount} ${escHtml(r.currency || '')}`).join(' + ') : '—';
 function renderMetrics(){
   const app = document.getElementById('app'), d = metricsData, pc = (a, b)=>b ? Math.round(a / b * 100) + '%' : '—';
   const tile = (v, l)=>`<div class="mx-tile"><b>${v}</b><small>${l}</small></div>`;
@@ -9281,7 +9283,13 @@ function renderMetrics(){
         <div><span>Master / own positions</span><b>${pc(d.sources.masters || 0, totPos)} / ${pc(d.sources.mine || 0, totPos)}</b></div>
         <div><span>In the daily routine</span><b>${pc(d.routine.positions, d.routine.of)}</b></div>
       </section>
-      </div><div class="mx-grp"><h2 class="pf-h">Devices (${dev})</h2>
+      </div>${d.kofi ? `<div class="mx-grp"><h2 class="pf-h">Donations</h2>
+      <section class="pf-card mx-lines">
+        <div><span>Over the period</span><b>${kofiSum(d.kofi.period)}</b></div>
+        <div><span>Since the start</span><b>${kofiSum(d.kofi.total)}</b></div>
+        <div><span>Newest</span><b>${d.kofi.last ? new Date(d.kofi.last).toLocaleDateString(dateLoc(), { day:'numeric', month:'short', year:'numeric' }) : '—'}</b></div>
+      </section>
+      </div>` : ''}<div class="mx-grp"><h2 class="pf-h">Devices (${dev})</h2>
       <section class="pf-card mx-lines">
         <div><span>Logged in</span><b>${shares(d.devices.auth)}</b></div>
         <div><span>Chess.com connected</span><b>${pc(d.devices.chesscom['1'] || 0, dev)}</b></div>
@@ -9301,8 +9309,7 @@ function renderMetrics(){
         <div><span>Lichess / Google</span><b>${d.accounts.bySite.lichess || 0} / ${d.accounts.bySite.google || 0}</b></div>
         <div><span>Chess.com connected</span><b>${d.accounts.chesscom}</b></div>
       </section>
-      </div><div class="mx-grp"><h2 class="pf-h">Donations</h2>
-      <section class="pf-card"><p class="mx-note">Not connected yet: Ko-fi donations can be added from Stripe.</p></section></div>
+      </div>
       <p class="mx-note">Updated ${new Date(d.generated).toLocaleString(dateLoc())}. Counts start when this version went live; your own play isn't counted.</p>`;
   }
   app.innerHTML = `
