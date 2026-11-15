@@ -52,7 +52,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const VERSION = '2026-11-15.6';   // shown by /api/health: which version is deployed
+const VERSION = '2026-11-15.7';   // shown by /api/health: which version is deployed
 const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
@@ -567,28 +567,8 @@ async function gscNow(env, days) {
     queries: queries.map(r => ({ q: r.keys[0], ...row(r) })), pages: pages.map(r => ({ page: r.keys[0].replace(/^https?:\/\/[^/]+/, '') || '/', ...row(r) })) };
 }
 async function gscData(env, days) { return env.GSC_KEY ? cachedSearch(env, 'google', days, () => gscNow(env, days)) : { error: 'the server has no GSC_KEY' }; }
-async function bingData(env, days) { return env.BING_KEY ? cachedSearch(env, 'bing', days, () => bingNow(env, days)) : null; }   // (null: not set up, nothing shown)
 
-// ---- Bing search (Bing Webmaster Tools: Bing, DuckDuckGo, Yahoo), for the metrics ----
-// Secret BING_KEY (its API key), site BING_SITE (default https://chessstrategy.org/). Clicks and shown by day; the searches
-// come in weekly totals (Bing's own), added up over the period. Kept 6 hours, as Google's.
-const msDate = v => { const m = /Date\((-?\d+)/.exec(String(v)); return m ? new Date(+m[1]).toISOString().slice(0, 10) : null; };
-async function bingNow(env, days) {
-  const site = encodeURIComponent(env.BING_SITE || 'https://chessstrategy.org/'), since = new Date(Date.now() - (days - 1) * DAY).toISOString().slice(0, 10);
-  const ask = async m => { const r = await fetch(`https://ssl.bing.com/webmaster/api.svc/json/${m}?siteUrl=${site}&apikey=${encodeURIComponent(env.BING_KEY)}`);
-    const t = await r.text(); let j; try { j = JSON.parse(t); } catch (e) { throw new Error('Bing: ' + r.status); }
-    if (!r.ok) throw new Error('Bing: ' + (j.Message || j.message || r.status)); return j.d || []; };
-  const [traffic, queries] = await Promise.all([ask('GetRankAndTrafficStats'), ask('GetQueryStats')]);
-  const daily = traffic.map(r => ({ day: msDate(r.Date), clicks: r.Clicks || 0, impressions: r.Impressions || 0 })).filter(r => r.day && r.day >= since).sort((x, y) => x.day < y.day ? -1 : 1);
-  const byQ = new Map();
-  for (const r of queries) { const d = msDate(r.Date); if (!d || d < since) continue;
-    const q = byQ.get(r.Query) || { q: r.Query, clicks: 0, impressions: 0, pos: 0 }; q.clicks += r.Clicks || 0; q.impressions += r.Impressions || 0; q.pos += (r.AvgImpressionPosition || 0) * (r.Impressions || 0); byQ.set(r.Query, q); }
-  const qs = [...byQ.values()].map(q => ({ q: q.q, clicks: q.clicks, impressions: q.impressions, position: q.impressions ? Math.round(q.pos / q.impressions * 10) / 10 : null }));
-  const tot = qs.reduce((t, q) => ({ i: t.i + q.impressions, p: t.p + (q.position || 0) * q.impressions }), { i: 0, p: 0 });
-  return { daily, total: { clicks: daily.reduce((n, r) => n + r.clicks, 0), impressions: daily.reduce((n, r) => n + r.impressions, 0), position: tot.i ? Math.round(tot.p / tot.i * 10) / 10 : null },
-    queries: qs.sort((x, y) => y.impressions - x.impressions).slice(0, 15) };
-}
-async function cachedSearch(env, name, days, now) {   // Google's or Bing's figures, kept GSC_KEEP; the last ones if an update fails
+async function cachedSearch(env, name, days, now) {   // Google's figures, kept GSC_KEEP; the last ones if an update fails
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS search_cache (name TEXT NOT NULL, days INTEGER NOT NULL, ts INTEGER NOT NULL, data TEXT NOT NULL, PRIMARY KEY (name, days)) WITHOUT ROWID').run();
   const c = await env.DB.prepare('SELECT ts, data FROM search_cache WHERE name = ? AND days = ?').bind(name, days).first();
   if (c && Date.now() - c.ts < GSC_KEEP) return JSON.parse(c.data);
@@ -675,7 +655,7 @@ async function metricsNow(env, days) {
     errors: { visits: errors.visits || 0, load: errors.load || 0, stopped: errors.stopped || 0 },
     ownGames: { ...g, positionsPerGame: g.games ? Math.round(g.positions / g.games * 100) / 100 : 0 },
     accounts: { total: accounts.n || 0, recent: accounts.recent || 0, bySite, chesscom: cc.n || 0 },
-    reports, hidden, kofi, gsc: await gscData(env, days), bing: await bingData(env, days),
+    reports, hidden, kofi, gsc: await gscData(env, days),
     funnel: { opened: funnel.opened || 0, played: funnel.played || 0, ten: funnel.ten || 0, account: funnel.account || 0, games: funnel.games || 0 },
     comeBack: Object.values(weeks).sort((x, y) => x.week < y.week ? 1 : -1),
     session: { minutes: lens.length ? Math.round(lens[Math.floor(lens.length / 2)] / 6000) / 10 : null, perPlayerWeek: week.players ? Math.round(week.n / week.players * 10) / 10 : null },

@@ -9283,7 +9283,7 @@ function metricsChart(rows, series){   // small line chart: one line per series 
 }
 // Ko-fi payments by currency: "3 · 15 CAD + 5 USD"
 const kofiSum = rows=>rows && rows.length ? rows.reduce((n, r)=>n + r.n, 0) + ' · ' + rows.map(r=>`${r.amount} ${escHtml(r.currency || '')}`).join(' + ') : '—';
-// Google or Bing search (through the server): the period's totals and each day, the top searches (and pages: Google)
+// Google search (through the server): the period's totals and each day, the top searches and pages
 function searchHtml(d, g, who, note){
   if(g.error) return `<section class="pf-card"><p class="mx-note">Couldn't load ${who}'s figures: ${escHtml(g.error)}</p></section>`;
   const by = Object.fromEntries((g.daily || []).map(r=>[r.day, r])), t = g.total || {};
@@ -9337,7 +9337,6 @@ function renderMetrics(){
         ${[0, 400, 800, 1200, 1600, 2000, 2400, 2800].filter(r=>d.ratings.some(x=>+x.src.split(':')[1]===r)).map(r=>`<tr><td>${r===2800 ? '2800+' : r + '–' + (r + 399)}</td><td>${(d.ratings.find(x=>x.src==='lichess:' + r) || {}).n || ''}</td><td>${(d.ratings.find(x=>x.src==='chesscom:' + r) || {}).n || ''}</td></tr>`).join('') || '<tr><td colspan="3">No linked games yet</td></tr>'}
       </tbody></table><p class="mx-note">Devices with linked games, by the player's rating in their newest game (Lichess's, else Chess.com's).</p></section></div>` : ''}
       ${d.gsc ? `<div class="mx-grp mx-2"><h2 class="pf-h">Google search</h2>${searchHtml(d, d.gsc, 'Google', 'From Google Search Console: about 2–3 days behind')}</div>` : ''}
-      ${d.bing ? `<div class="mx-grp mx-2"><h2 class="pf-h">Bing search</h2>${searchHtml(d, d.bing, 'Bing', 'From Bing Webmaster Tools (Bing, DuckDuckGo, Yahoo): searches added up by week, so the period is approximate')}</div>` : ''}
       ${d.funnel ? `<div class="mx-grp mx-2"><h2 class="pf-h">Newcomers</h2>
       <section class="pf-card mx-lines">
         <div><span>Opened the site</span><b>${d.funnel.opened}</b></div>
