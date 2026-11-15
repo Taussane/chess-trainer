@@ -52,7 +52,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const VERSION = '2026-11-15.3';   // shown by /api/health: which version is deployed
+const VERSION = '2026-11-15.4';   // shown by /api/health: which version is deployed
 const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
@@ -539,6 +539,43 @@ async function reportPosition(req, env) {
 // logins, languages, own games; plus the accounts (all time).
 // Each opening reads the period's events a few times over (D1 counts every row a query goes through): the figures
 // are kept 10 minutes (metrics_cache), and new devices come from their own small table.
+// ---- Google search (Search Console), for the metrics ----
+// A service account (secret GSC_KEY: its JSON key) with read access to the Search Console property (GSC_SITE, default
+// the domain property). Its figures, kept 6 hours (they change once a day and run 2-3 days behind).
+const GSC_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly', GSC_KEEP = 6 * 3600e3;
+const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function gscToken(key) {
+  const now = Math.floor(Date.now() / 1000), enc = o => b64url(new TextEncoder().encode(JSON.stringify(o)));
+  const unsigned = enc({ alg: 'RS256', typ: 'JWT' }) + '.' + enc({ iss: key.client_email, scope: GSC_SCOPE, aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600 });
+  const der = Uint8Array.from(atob(String(key.private_key).replace(/-----[^-]+-----|\s/g, '')), c => c.charCodeAt(0));
+  const k = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+  const jwt = unsigned + '.' + b64url(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', k, new TextEncoder().encode(unsigned)));
+  const r = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=' + encodeURIComponent('urn:ietf:params:oauth:grant-type:jwt-bearer') + '&assertion=' + jwt });
+  const j = await r.json(); if (!r.ok || !j.access_token) throw new Error('Google sign-in: ' + (j.error_description || j.error || r.status));
+  return j.access_token;
+}
+async function gscNow(env, days) {
+  const key = JSON.parse(env.GSC_KEY), token = await gscToken(key), site = env.GSC_SITE || 'sc-domain:chessstrategy.org';
+  const d = n => new Date(Date.now() - n * DAY).toISOString().slice(0, 10), range = { startDate: d(days - 1), endDate: d(0) };
+  const ask = async q => { const r = await fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`,
+      { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...range, ...q }) });
+    const j = await r.json(); if (!r.ok) throw new Error('Search Console: ' + ((j.error && j.error.message) || r.status)); return j.rows || []; };
+  const row = r => ({ clicks: r.clicks, impressions: r.impressions, position: Math.round(r.position * 10) / 10 });
+  const [byDay, total, queries, pages] = await Promise.all([ask({ dimensions: ['date'] }), ask({}), ask({ dimensions: ['query'], rowLimit: 15 }), ask({ dimensions: ['page'], rowLimit: 10 })]);
+  return { daily: byDay.map(r => ({ day: r.keys[0], ...row(r) })), total: total[0] ? row(total[0]) : { clicks: 0, impressions: 0, position: null },
+    queries: queries.map(r => ({ q: r.keys[0], ...row(r) })), pages: pages.map(r => ({ page: r.keys[0].replace(/^https?:\/\/[^/]+/, '') || '/', ...row(r) })) };
+}
+async function gscData(env, days) {
+  if (!env.GSC_KEY) return null;
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS gsc_cache (days INTEGER PRIMARY KEY, ts INTEGER NOT NULL, data TEXT NOT NULL)').run();
+  const c = await env.DB.prepare('SELECT ts, data FROM gsc_cache WHERE days = ?').bind(days).first();
+  if (c && Date.now() - c.ts < GSC_KEEP) return JSON.parse(c.data);
+  let g; try { g = await gscNow(env, days); } catch (e) { return c ? { ...JSON.parse(c.data), stale: String(e.message || e) } : { error: String(e.message || e) }; }
+  await env.DB.prepare('INSERT INTO gsc_cache (days, ts, data) VALUES (?, ?, ?) ON CONFLICT (days) DO UPDATE SET ts = excluded.ts, data = excluded.data').bind(days, Date.now(), JSON.stringify(g)).run();
+  return g;
+}
+
 async function metrics(env, days) {
   await ensureEvents(env);
   const cached = await env.DB.prepare('SELECT ts, data FROM metrics_cache WHERE days = ?').bind(days).first();
@@ -603,7 +640,7 @@ async function metricsNow(env, days) {
     errors: { visits: errors.visits || 0, load: errors.load || 0, stopped: errors.stopped || 0 },
     ownGames: { ...g, positionsPerGame: g.games ? Math.round(g.positions / g.games * 100) / 100 : 0 },
     accounts: { total: accounts.n || 0, recent: accounts.recent || 0, bySite, chesscom: cc.n || 0 },
-    reports, hidden, kofi,
+    reports, hidden, kofi, gsc: await gscData(env, days),
   };
 }
 

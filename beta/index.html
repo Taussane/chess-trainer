@@ -9285,6 +9285,25 @@ function metricsChart(rows, series){   // small line chart: one line per series 
 }
 // Ko-fi payments by currency: "3 · 15 CAD + 5 USD"
 const kofiSum = rows=>rows && rows.length ? rows.reduce((n, r)=>n + r.n, 0) + ' · ' + rows.map(r=>`${r.amount} ${escHtml(r.currency || '')}`).join(' + ') : '—';
+// Google search (Search Console, through the server): the period's totals and each day, the top searches and pages
+function gscHtml(d){
+  const g = d.gsc;
+  if(g.error) return `<section class="pf-card"><p class="mx-note">Couldn't load Google's figures: ${escHtml(g.error)}</p></section>`;
+  const by = Object.fromEntries((g.daily || []).map(r=>[r.day, r])), t = g.total || {};
+  const lastDay = (g.daily || []).reduce((m, r)=>r.day > m ? r.day : m, '');   // (Google's newest day: the days after it aren't in yet, not zero)
+  const rows = d.daily.filter(r=>r.day <= lastDay).map(r=>({ day: r.day, clicks: (by[r.day] || {}).clicks || 0, impressions: (by[r.day] || {}).impressions || 0 }));
+  const table = (head, list, name)=>`<table class="mx-table"><thead><tr><th>${head}</th><th>Clicks</th><th>Shown</th><th>Rank</th></tr></thead><tbody>
+    ${list.map(r=>`<tr><td>${escHtml(name(r))}</td><td>${r.clicks}</td><td>${r.impressions}</td><td>${r.position ?? '—'}</td></tr>`).join('') || '<tr><td colspan="4">None yet</td></tr>'}</tbody></table>`;
+  return `<section class="pf-card mx-lines">
+      <div><span>Clicks</span><b>${t.clicks || 0}</b></div>
+      <div><span>Shown in results</span><b>${t.impressions || 0}</b></div>
+      <div><span>Click rate</span><b>${t.impressions ? Math.round(t.clicks / t.impressions * 1000) / 10 + '%' : '—'}</b></div>
+      <div><span>Average rank</span><b>${t.position ?? '—'}</b></div>
+    </section>
+    <section class="pf-card">${metricsChart(rows, [['impressions', 'var(--text-mute)', 'Shown'], ['clicks', 'var(--accent)', 'Clicks']])}</section>
+    <section class="pf-card">${table('Search', g.queries || [], r=>r.q)}</section>
+    <section class="pf-card">${table('Page', g.pages || [], r=>r.page)}<p class="mx-note">From Google Search Console: about 2–3 days behind${g.stale ? ' (last update failed: ' + escHtml(g.stale) + ')' : ''}.</p></section>`;
+}
 function renderMetrics(){
   const app = document.getElementById('app'), d = metricsData, pc = (a, b)=>b ? Math.round(a / b * 100) + '%' : '—';
   const tile = (v, l)=>`<div class="mx-tile"><b>${v}</b><small>${l}</small></div>`;
@@ -9320,6 +9339,7 @@ function renderMetrics(){
       <section class="pf-card"><table class="mx-table"><thead><tr><th>Rating</th><th>Lichess</th><th>Chess.com</th></tr></thead><tbody>
         ${[0, 400, 800, 1200, 1600, 2000, 2400, 2800].filter(r=>d.ratings.some(x=>+x.src.split(':')[1]===r)).map(r=>`<tr><td>${r===2800 ? '2800+' : r + '–' + (r + 399)}</td><td>${(d.ratings.find(x=>x.src==='lichess:' + r) || {}).n || ''}</td><td>${(d.ratings.find(x=>x.src==='chesscom:' + r) || {}).n || ''}</td></tr>`).join('') || '<tr><td colspan="3">No linked games yet</td></tr>'}
       </tbody></table><p class="mx-note">Devices with linked games, by the player's rating in their newest game (Lichess's, else Chess.com's).</p></section></div>` : ''}
+      ${d.gsc ? `<div class="mx-grp mx-2"><h2 class="pf-h">Google search</h2>${gscHtml(d)}</div>` : ''}
       <div class="mx-grp mx-wide"><h2 class="pf-h">Every day</h2>
       <section class="pf-card">${metricsChart(d.daily.map(r=>({ ...r, visitors: Math.max(0, r.devices - (r.players || 0)) })), d.players ? [['players', 'var(--accent)', 'Players'], ['visitors', 'var(--text-mute)', 'Visitors (nothing played)'], ['newPlayers', 'var(--cyan-arrow)', 'New players'], ['newAccounts', 'var(--pick1)', 'New accounts']] : [['devices', 'var(--accent)', 'Active devices'], ['newDevices', 'var(--cyan-arrow)', 'New devices'], ['newAccounts', 'var(--pick1)', 'New accounts']])}</section>
       <section class="pf-card">${metricsChart(d.daily, [['positions', 'var(--accent)', 'Positions'], ['visits', 'var(--cyan-arrow)', 'Visits']])}</section>
