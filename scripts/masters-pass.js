@@ -67,7 +67,12 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
         if (nx) { const e = new Chess(fens[ply + 1]); return e.in_checkmate() ? { cp: null, mate: 1 } : { cp: 0, mate: null }; } return null; };
       const decentOf = top => { const best = winPercent(top[0].cp, top[0].mate); return top.filter(l => best - winPercent(l.cp, l.mate) < OWN.trapMinDrop).length; };
       const res = { imbalances: [], planq: [], candidates: [], final: [], evals: {}, meta: {} };
-      const keep = (list, ply, meta) => { res[list].push(ply); const top = passLines(g, ply); if (top && top.length) res.evals[keyOf(fens[ply])] = [top.slice(0, 3).map(l => l.uci), top[0].mate != null ? null : top[0].cp, top[0].mate];
+      const sc = l => l.mate != null ? 'm' + l.mate : String(Math.round(l.cp));
+      // master-evals.json: the top 3 and best evaluation (as before), then the top 5 with their values and the game move's
+      // value when it isn't among them (from the next position): Move selection picks its four moves from those at once
+      const keep = (list, ply, meta) => { res[list].push(ply); const top = passLines(g, ply);
+        if (top && top.length) { const gmU = uci(hist[ply]), gl = top.some(l => l.uci === gmU) ? null : nextLine(ply);
+          res.evals[keyOf(fens[ply])] = [top.slice(0, 3).map(l => l.uci), top[0].mate != null ? null : top[0].cp, top[0].mate, top.map(l => l.uci + ':' + sc(l)).join(','), gl ? sc(gl) : null]; }
         res.meta[list + ':' + ply] = { key: keyOf(fens[ply]), fen: fens[ply], moveNo: +fens[ply].split(' ')[5], side: fens[ply].split(' ')[1], ...meta }; };
       // Candidate moves and Move selection: mistakes first, then the rest
       const C = {}, F = {}, mist = [];
