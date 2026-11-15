@@ -805,7 +805,7 @@
     html.desk2 .wrap.ex > #app > .xp-sides{grid-row:4;}
     html.desk2 .wrap.ex > #app:has(> .xp-sides) > .panel{grid-row:5;}
     html.desk2 .wrap.ex > #app:has(> .xp-sides) > .stage{grid-row:1 / -1;}
-    html.desk2 .wrap.ex > #app > .xp-sides{margin-bottom:6px;} html.desk2 .wrap.ex > #app > .xp-sides .xp-side{height:24px; padding:0 9px; font-size:.78rem;}   /* (the White / Black buttons as in portrait: their size, 6 px from the panel) */
+    html.desk2 .wrap.ex > #app > .xp-sides{margin-bottom:12px;} html.desk2 .wrap.ex > #app > .xp-sides .xp-side{height:24px; padding:0 9px; font-size:.78rem;}   /* (the White / Black buttons as in portrait: their size, 6 px from the panel) */
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar{left:calc(100% + 6px); width:24px;}   /* (the bar nearer the board than the panel) */
     /* settings: the same height everywhere (svh), and the same small gap under the tabs on every tab */
     html.desk2 .wrap[data-scr=settings] > #app{height:calc(100svh - 16px); row-gap:8px;}
@@ -832,6 +832,7 @@
     html.desk2 .wrap.ex .board-col > .pl-line, html.desk2 .wrap.ex .board-col:has(> .pl-line > .xp-sides) > .pl-line:first-child, html.desk2 .wrap.ex .pl-line:has(> .xp-sides){height:18px; font-size:.78rem;}
     html.desk2 .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 36px);}
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar{top:18px; bottom:18px;}
+    html.desk2 .wrap.ex > #app > .panel{margin-bottom:10px;}   /* (as far from the screen's bottom as the title is from its top) */
     html.desk2 .wrap.ex h1, html.desk2 .wrap[data-scr=settings] h1{font-size:1.2rem;}
     html.desk2 .wrap.ex > #app > .posbar{margin:2px 0 8px; font-size:0.8rem;}
     html.desk2 .wrap.ex > #app > .xp-sides{margin:0 0 4px;}
