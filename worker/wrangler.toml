@@ -3,6 +3,8 @@
 name = "chess-trainer-api"
 main = "src/index.js"
 compatibility_date = "2026-09-01"
+# Keep the variables set in Cloudflare's dashboard (KOFI_TOKEN and the like) when a push deploys.
+keep_vars = true
 
 [vars]
 # Websites allowed to call this server (comma-separated).
