@@ -613,23 +613,84 @@
   .mx-sub{margin:0 0 4px; font-size:0.95rem; font-weight:600;}
   .modal-actions.split{justify-content:space-between; align-items:center;}
   .modal-actions .report-done{font-size:0.85rem; color:var(--text-mute);}
-  /* ===== The desktop layout (html.desk2, set by the app): screens 1024 px wide or more and at least 4:3
-     (wider than tall by a third); every other screen gets the phone layout. Phones never see it:
-     everything below needs such a screen. A sidebar to go anywhere; exercises with the board as big
-     as the window allows; home as a dashboard. ===== */
+  /* ===== Three layouts, by the window's shape (not the device):
+     - a column (every screen taller than wide, or nearly square: phones held upright, tablets upright): the phone layout;
+     - side by side (wider than tall by a fifth or more): the board on the left, as tall as the window, and the page on
+       the right; home, profile, metrics and settings in columns; no menu: the back arrows, as on a phone (a phone held
+       sideways, a tablet, a small window);
+     - the desktop (1024 px wide or more and at least 4:3): the same, plus the sidebar menu to go anywhere.
+     html.desk2 is set by the app; the media queries decide. ===== */
   .side, .home-foot{display:none;}
-  @media (min-width:1024px) and (min-aspect-ratio:4/3){
-    html.desk2{--side-w:264px; --panel-w:380px;}
+  @media (min-aspect-ratio:6/5){   /* side by side, and the desktop */
+    html.desk2{--panel-w:380px;}
     html.desk2 .wrap.ex > #app > .xp-sides.sides-desk{display:flex;} html.desk2 .pl-line > .xp-sides{display:none;}   /* (Imbalance reading: above the panel) */
     html.desk2 .pl-line:has(> .xp-sides), html.desk2 .board-col:has(> .pl-line > .xp-sides) > .pl-line:first-child{height:22px; align-items:center;}
+    html.desk2 .wrap{max-width:none; padding-inline:32px;}
+    html.desk2 .wrap > #app{margin-inline:auto;}   /* every page centred in the space beside the menu */
+    /* exercises: the board fills the height on the left; title, game and panel on the right */
+    html.desk2 .wrap.ex{max-width:none; padding-block:16px;}
+    html.desk2 .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) var(--panel-w); grid-template-rows:auto auto minmax(0, 1fr); column-gap:54px;}
+    html.desk2 .wrap.ex > #app > *{grid-column:2;}
+    html.desk2 .wrap.ex > #app > .title-row{grid-row:1;}
+    html.desk2 .wrap.ex > #app > .stage{grid-column:1; grid-row:1 / span 3; min-height:0; align-items:center; justify-content:center;}
+    html.desk2 .wrap.ex > #app > .posbar{grid-row:2; margin:6px 0 14px;}
+    html.desk2 .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0; max-width:none;}
+    html.desk2 .wrap.ex > #app{width:100%; max-width:calc(100dvh - 76px + 54px + var(--panel-w)); margin-inline:auto;}   /* board and panel together, centred, on very wide screens */
+    html.desk2 .wrap.ex .board-outer{max-width:none;}
+    html.desk2 .coord-f{bottom:1cqw; left:.5cqw;} html.desk2 .coord-r{top:.5cqw; right:.5cqw;}
+    html.desk2 .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px);}
+    /* profile: three columns; settings: the controls beside a large preview board */
+    html.desk2 .wrap:not(.ex):not(.home){padding-block:24px;}
+    html.desk2 .wrap[data-scr=account] > #app{max-width:900px;}   /* (home, profile and metrics: one width) */
+    html.desk2 .wrap[data-scr=support] > #app, html.desk2 .wrap[data-scr=tests] > #app{max-width:560px;}
+    /* metrics: a dashboard as wide as the home page */
+    html.desk2 .wrap[data-scr=metrics] > #app{max-width:900px;}
+    html.desk2 .mx-page{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:20px; align-items:start;}
+    html.desk2 .mx-page > .seg{grid-column:1 / -1; justify-self:start; width:360px;}
+    html.desk2 .mx-page > .pf-card, html.desk2 .mx-page > .mx-note, html.desk2 .mx-page > .mg-status{grid-column:1 / -1;}
+    html.desk2 .mx-tiles{grid-template-columns:repeat(6, 1fr);}
+    html.desk2 .mx-grp{display:flex; flex-direction:column; gap:12px; min-width:0;}
+    html.desk2 .mx-lines span{white-space:nowrap;}
+    html.desk2 .mx-grp.mx-wide{grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:12px 20px;}
+    html.desk2 .mx-grp.mx-wide > .pf-h{grid-column:1 / -1;}
+    html.desk2 .pf-cols{display:grid; grid-template-columns:360px minmax(0, 1fr); gap:28px; align-items:start;}
+    html.desk2 .pf-col > .title-row{margin-bottom:4px;}
+    html.desk2 .pf-col{display:flex; flex-direction:column; gap:12px; min-width:0;}
+    html.desk2 .pf-scroll{overflow:visible;}
+    /* settings: the preview board as big as the window, centred; the settings on the right (as an exercise) */
+    html.desk2 .wrap[data-scr=settings]:not(.ex){padding-block:16px;}   /* (as an exercise: same board, same title place) */
+    html.desk2 .wrap[data-scr=settings] > #app{display:grid; width:100%; height:calc(100dvh - 32px); min-height:0; max-width:calc(100dvh - 76px + 54px + var(--panel-w)); grid-template-columns:minmax(0, 1fr) var(--panel-w); grid-template-rows:auto auto auto auto minmax(0, 1fr); column-gap:54px; row-gap:12px; align-items:start;}
+    html.desk2 .wrap[data-scr=settings] .set-page{display:contents;}
+    html.desk2 .wrap[data-scr=settings] #app > .title-row, html.desk2 .wrap[data-scr=settings] .set-page > *{grid-column:2;}
+    html.desk2 .wrap[data-scr=settings] .set-page > .set-preview{grid-column:1; grid-row:1 / -1; height:calc(100dvh - 32px); justify-content:center; align-items:center; padding-top:28px;}
+    html.desk2 .wrap[data-scr=settings] #app > .title-row{min-height:28px;}
+    html.desk2 .wrap[data-scr=settings] .set-page > .seg{margin:0 0 8px;}   /* (the settings card starts where an exercise's panel does) */   /* (as tall as an exercise's, with its ? button) */
+    html.desk2 .wrap[data-scr=settings] .set-page .board-outer{max-width:none; width:min(100%, 100dvh - 76px);}
+    html.desk2 .wrap[data-scr=settings] .set-reset{justify-self:start; align-self:start; margin:4px 0 0;}
+    /* home: a dashboard */
+    html.desk2 .wrap.home{padding-block:28px;}
+    html.desk2 .wrap.home > #app{max-width:900px;}
+    html.desk2 .wrap.home > #app{display:grid; grid-template-columns:minmax(0, 1fr) 320px; column-gap:28px; align-items:start;}
+    html.desk2 .wrap.home > #app > *{grid-column:1;}
+    html.desk2 .wrap.home > #app > .home-head{grid-column:1 / -1; margin:0 0 22px; display:flex; align-items:center; gap:24px;}
+    html.desk2 .wrap.home .home-head p{margin:0; font-size:1rem; flex:1;}
+    html.desk2 .wrap.home > #app > .routine{grid-column:2; grid-row:3; margin:0;}   /* (level with the exercises) */
+    html.desk2 .wrap.home > #app > .source-row{grid-row:2; grid-column:1 / -1; justify-content:flex-start; gap:14px; margin-bottom:18px;}
+    html.desk2 .wrap.home > #app > .source-row .seg{flex:1;}   /* (to the routine's right edge) */
+    html.desk2 .wrap.home > #app > .source-row .seg-btn{padding:9px 4px; font-size:0.95rem;}
+    html.desk2 .wrap.home > #app > .source-row .source-label{font-size:0.95rem;}
+    html.desk2 .wrap.home > #app > .cards{grid-row:3; display:grid; grid-template-columns:1fr; gap:12px;}
+    html.desk2 .wrap.home .card{min-height:84px; align-items:center;}
+  }
+  @media (min-width:1024px) and (min-aspect-ratio:4/3){   /* the desktop: the sidebar menu (it replaces the back arrows, the logo, the links) */
+    html.desk2{--side-w:264px;}
     @media (max-width:1279.98px){   /* smaller desktops (a 1024x768 tablet held sideways): a narrower menu and panel, for the board */
       html.desk2{--side-w:228px; --panel-w:320px;}
       html.desk2 .wrap{padding-inline:20px !important;}
     }
     html.desk2 .side{display:flex; flex-direction:column; position:fixed; left:0; top:0; bottom:0; width:var(--side-w); z-index:20;
       background:var(--panel); border-right:1px solid var(--border); padding:18px 12px 14px; overflow-y:auto;}
-    html.desk2 .wrap{margin-left:var(--side-w); max-width:none; padding-inline:32px;}
-    html.desk2 .wrap > #app{margin-inline:auto;}   /* every page centred in the space beside the menu */
+    html.desk2 .wrap{margin-left:var(--side-w);}
     .side-logo{display:block; background:none; border:none; color:var(--text); text-align:left; padding:2px 10px 16px; cursor:pointer; font-family:var(--font-title, inherit);}
     .side-logo b{display:block; font-size:1.35rem; line-height:1.1; font-weight:800; letter-spacing:-.01em;}
     .side-logo .tld{color:var(--accent); font-size:.8em;}
@@ -648,69 +709,29 @@
     .side-foot .donate-badge.on{box-shadow:0 0 0 2px var(--panel), 0 0 0 3px var(--accent);}
     .side-links{margin:0; line-height:1.7;} .side-links a{color:var(--text-mute);}
     .side-links .install-link{color:var(--accent); text-decoration-color:var(--accent); text-align:left;}
-    /* exercises: the board fills the height on the left; title, game and panel on the right */
-    html.desk2 .wrap.ex{max-width:none; padding-block:16px;}
-    html.desk2 .wrap.ex > #app{display:grid; grid-template-columns:minmax(0, 1fr) var(--panel-w); grid-template-rows:auto auto minmax(0, 1fr); column-gap:54px;}
-    html.desk2 .wrap.ex > #app > *{grid-column:2;}
-    html.desk2 .wrap.ex > #app > .title-row{grid-row:1;}
-    html.desk2 .wrap.ex > #app > .stage{grid-column:1; grid-row:1 / span 3; min-height:0; align-items:center; justify-content:center;}
-    html.desk2 .wrap.ex > #app > .posbar{grid-row:2; margin:6px 0 14px;}
-    html.desk2 .wrap.ex > #app > .panel{grid-row:3; align-self:start; margin-top:0; max-width:none;}
     html.desk2 .wrap.ex .title-row .back{display:none;}
-    html.desk2 .wrap.ex > #app{width:100%; max-width:calc(100dvh - 76px + 54px + var(--panel-w)); margin-inline:auto;}   /* board and panel together, centred, on very wide screens */
-    html.desk2 .wrap.ex .board-outer{max-width:none;}
-    html.desk2 .coord-f{bottom:1cqw; left:.5cqw;} html.desk2 .coord-r{top:.5cqw; right:.5cqw;}
-    html.desk2 .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px);}
-    /* profile: three columns; settings: the controls beside a large preview board */
-    html.desk2 .wrap:not(.ex):not(.home){padding-block:24px;}
-    html.desk2 .wrap[data-scr=account] > #app{max-width:900px;}   /* (home, profile and metrics: one width) */
     html.desk2 .wrap[data-scr=account] .ac-foot{display:none;}   /* (the links are in the menu) */
-    html.desk2 .wrap[data-scr=support] > #app, html.desk2 .wrap[data-scr=tests] > #app{max-width:560px;}
-    /* metrics: a dashboard as wide as the home page */
-    html.desk2 .wrap[data-scr=metrics] > #app{max-width:900px;}
-    html.desk2 .mx-page{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:20px; align-items:start;}
-    html.desk2 .mx-page > .seg{grid-column:1 / -1; justify-self:start; width:360px;}
-    html.desk2 .mx-page > .pf-card, html.desk2 .mx-page > .mx-note, html.desk2 .mx-page > .mg-status{grid-column:1 / -1;}
-    html.desk2 .mx-tiles{grid-template-columns:repeat(6, 1fr);}
-    html.desk2 .mx-grp{display:flex; flex-direction:column; gap:12px; min-width:0;}
-    html.desk2 .mx-lines span{white-space:nowrap;}
-    html.desk2 .mx-grp.mx-wide{grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:12px 20px;}
-    html.desk2 .mx-grp.mx-wide > .pf-h{grid-column:1 / -1;}
     html.desk2 .wrap:not(.ex) .title-row .back, html.desk2 #settingsBtn, html.desk2 #metricsBtn{display:none;}   /* (in the sidebar) */
     html.desk2 .wrap[data-scr=doc] .title-row .back.keep{display:inline-flex;}   /* (a guide opened from the FAQ: back to it) */
-    html.desk2 .pf-cols{display:grid; grid-template-columns:360px minmax(0, 1fr); gap:28px; align-items:start;}
-    html.desk2 .pf-col > .title-row{margin-bottom:4px;}
-    html.desk2 .pf-col{display:flex; flex-direction:column; gap:12px; min-width:0;}
-    html.desk2 .pf-scroll{overflow:visible;}
-    /* settings: the preview board as big as the window, centred; the settings on the right (as an exercise) */
-    html.desk2 .wrap[data-scr=settings]:not(.ex){padding-block:16px;}   /* (as an exercise: same board, same title place) */
-    html.desk2 .wrap[data-scr=settings] > #app{display:grid; width:100%; height:calc(100dvh - 32px); min-height:0; max-width:calc(100dvh - 76px + 54px + var(--panel-w)); grid-template-columns:minmax(0, 1fr) var(--panel-w); grid-template-rows:auto auto auto auto minmax(0, 1fr); column-gap:54px; row-gap:12px; align-items:start;}
-    html.desk2 .wrap[data-scr=settings] .set-page{display:contents;}
-    html.desk2 .wrap[data-scr=settings] #app > .title-row, html.desk2 .wrap[data-scr=settings] .set-page > *{grid-column:2;}
-    html.desk2 .wrap[data-scr=settings] .set-page > .set-preview{grid-column:1; grid-row:1 / -1; height:calc(100dvh - 32px); justify-content:center; align-items:center; padding-top:28px;}
-    html.desk2 .wrap[data-scr=settings] #app > .title-row{min-height:28px;}
-    html.desk2 .wrap[data-scr=settings] .set-page > .seg{margin:0 0 8px;}   /* (the settings card starts where an exercise's panel does) */   /* (as tall as an exercise's, with its ? button) */
-    html.desk2 .wrap[data-scr=settings] .set-page .board-outer{max-width:none; width:min(100%, 100dvh - 76px);}
-    html.desk2 .wrap[data-scr=settings] .set-reset{justify-self:start; align-self:start; margin:4px 0 0;}
     html.desk2 #setLang{display:none;}   /* (in the menu) */
-    /* home: a dashboard */
-    html.desk2 .wrap.home{padding-block:28px;}
-    html.desk2 .wrap.home > #app{max-width:900px;}
-    html.desk2 .wrap.home > #app{display:grid; grid-template-columns:minmax(0, 1fr) 320px; column-gap:28px; align-items:start;}
-    html.desk2 .wrap.home > #app > *{grid-column:1;}
-    html.desk2 .wrap.home > #app > .home-head{grid-column:1 / -1; margin:0 0 22px; display:flex; align-items:center; gap:24px;}
     html.desk2 .wrap.home .home-top{display:none;}   /* (the logo is in the menu; the profile button beside "Positions from") */
     html.desk2 .wrap.home .source-row .acct-chip{max-width:none; margin-right:16px; font-size:1.29rem; gap:10px; padding:6px 18px 6px 6px;}   /* 1.5 times as big */
     html.desk2 .wrap.home .source-row .acct-dot{width:33px; height:33px; font-size:1.17rem;}
-    html.desk2 .wrap.home .home-head p{margin:0; font-size:1rem; flex:1;}
-    html.desk2 .wrap.home > #app > .routine{grid-column:2; grid-row:3; margin:0;}   /* (level with the exercises) */
     html.desk2 .wrap.home > #app > .home-donate, html.desk2 .wrap.home > #app > .home-foot{display:none;}   /* (in the menu) */
-    html.desk2 .wrap.home > #app > .source-row{grid-row:2; grid-column:1 / -1; justify-content:flex-start; gap:14px; margin-bottom:18px;}
-    html.desk2 .wrap.home > #app > .source-row .seg{flex:1;}   /* (to the routine's right edge) */
-    html.desk2 .wrap.home > #app > .source-row .seg-btn{padding:9px 4px; font-size:0.95rem;}
-    html.desk2 .wrap.home > #app > .source-row .source-label{font-size:0.95rem;}
-    html.desk2 .wrap.home > #app > .cards{grid-row:3; display:grid; grid-template-columns:1fr; gap:12px;}
-    html.desk2 .wrap.home .card{min-height:84px; align-items:center;}
+  }
+  @media (min-aspect-ratio:6/5) and (max-width:1023.98px), (min-aspect-ratio:6/5) and (max-aspect-ratio:4/3){   /* side by side without the menu: tighter */
+    html.desk2{--panel-w:clamp(260px, 42vw, 360px);}
+    html.desk2 .wrap{padding-inline:16px;}
+    html.desk2 .wrap.ex, html.desk2 .wrap[data-scr=settings]:not(.ex){padding-block:8px;}
+    html.desk2 .wrap.ex > #app, html.desk2 .wrap[data-scr=settings] > #app{column-gap:24px;}
+  }
+  @media (min-aspect-ratio:6/5) and (max-height:479.98px){   /* a phone held sideways: everything beside the board fits its height */
+    html.desk2 .wrap.ex h1, html.desk2 .wrap[data-scr=settings] h1{font-size:1.2rem;}
+    html.desk2 .wrap.ex > #app > .posbar{margin:2px 0 8px; font-size:0.8rem;}
+    html.desk2 .wrap.ex > #app > .xp-sides{margin:0 0 4px;}
+    html.desk2 .wrap.ex .panel{padding:10px 12px; --pn-top:24px; --pn-gap:6px; --pn-row:29px; --pn-btn:36px;}
+    html.desk2{--panel-w:clamp(330px, 46vw, 380px);}   /* (the Plan finder's three answers on one line; the board a little smaller) */
+    html.desk2 .wrap.ex .pq-side{font-size:0.78rem; padding-inline:5px;} html.desk2 .wrap.ex .pq-text{font-size:0.72rem;}
   }
   @media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important;} }
 
@@ -4494,7 +4515,11 @@ document.documentElement.classList.add('desk2');   // (its CSS needs a wide, tal
 const DESK = true;
 const deskMQ = window.matchMedia ? matchMedia('(min-width:1024px) and (min-aspect-ratio:4/3)') : null;
 const isDesk = ()=>DESK && !!deskMQ && deskMQ.matches;
+// side by side (and the desktop): a window wider than tall by a fifth or more (see the CSS: "Three layouts")
+const wideMQ = window.matchMedia ? matchMedia('(min-aspect-ratio:6/5)') : null;
+const isWide = ()=>DESK && !!wideMQ && wideMQ.matches;
 if(DESK && deskMQ && deskMQ.addEventListener) deskMQ.addEventListener('change', ()=>render());
+if(DESK && wideMQ && wideMQ.addEventListener) wideMQ.addEventListener('change', ()=>render());
 const SIDE_ICONS = {
   home: actIcon('<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>'),
   routine: actIcon('<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/>'),
@@ -5049,7 +5074,7 @@ function renderAccount(){
       ${isOwner() ? `<button class="title-chip" id="testsBtn">Test</button>` : ''}${isOwner() ? `<button class="title-chip" id="metricsBtn">Metrics${inboxBadge()}</button>` : ''}<button class="title-chip" id="settingsBtn">Settings</button>
     </div>`;
   app.innerHTML = `
-    ${isDesk() ? '' : head}
+    ${isWide() ? '' : head}
     <div class="pf-scroll">
       ${(()=>{ const id = `<section class="pf-card pf-id">
         <div class="pf-who"><span class="acct-dot big" aria-hidden="true"><span class="pc pc-wK"></span></span>
@@ -5059,7 +5084,7 @@ function renderAccount(){
         // desktop: two columns (you, your account, your games and positions; progress)
         const timing = BETA ? timingSection() : '';
         const diag = isOwner() ? `<h2 class="pf-h">Timing log <span class="title-badge">Owner</span></h2><section class="mg-card"><div id="diagBox">${diagHtml()}</div><div class="pf-resets"><button class="link-btn quiet" id="diagCopy">Copy the report</button><button class="link-btn quiet" id="diagGames">Download my games</button></div></section>` : '';
-        return isDesk() ? `<div class="pf-cols"><div class="pf-col">${head}${id}${acct}${positionsSection()}</div><div class="pf-col pf-wide">${prog.html}${timing}${diag}</div></div>`
+        return isWide() ? `<div class="pf-cols"><div class="pf-col">${head}${id}${acct}${positionsSection()}</div><div class="pf-col pf-wide">${prog.html}${timing}${diag}</div></div>`
                         : `${id}${prog.html}${timing}${positionsSection()}${acct}${diag}`; })()}
       <p class="ac-foot">${siteLinks()}${installLink()}</p>
       ${installHelp && installOffered() ? `<p class="install-help">In Safari, tap Share, then Add to Home Screen.</p>` : ''}
