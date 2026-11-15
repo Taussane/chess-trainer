@@ -52,7 +52,7 @@ const SITES = {
     return a && a.id && a.username ? { id: String(a.id), username: String(a.username) } : null;
   },
 };
-const VERSION = '2026-11-15.5';   // shown by /api/health: which version is deployed
+const VERSION = '2026-11-15.6';   // shown by /api/health: which version is deployed
 const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 200000, MAX_RESULT_BYTES = 4000;
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
@@ -566,13 +566,34 @@ async function gscNow(env, days) {
   return { daily: byDay.map(r => ({ day: r.keys[0], ...row(r) })), total: total[0] ? row(total[0]) : { clicks: 0, impressions: 0, position: null },
     queries: queries.map(r => ({ q: r.keys[0], ...row(r) })), pages: pages.map(r => ({ page: r.keys[0].replace(/^https?:\/\/[^/]+/, '') || '/', ...row(r) })) };
 }
-async function gscData(env, days) {
-  if (!env.GSC_KEY) return { error: 'the server has no GSC_KEY' };   // (says so on the page: not set up, or not deployed)
-  await env.DB.prepare('CREATE TABLE IF NOT EXISTS gsc_cache (days INTEGER PRIMARY KEY, ts INTEGER NOT NULL, data TEXT NOT NULL)').run();
-  const c = await env.DB.prepare('SELECT ts, data FROM gsc_cache WHERE days = ?').bind(days).first();
+async function gscData(env, days) { return env.GSC_KEY ? cachedSearch(env, 'google', days, () => gscNow(env, days)) : { error: 'the server has no GSC_KEY' }; }
+async function bingData(env, days) { return env.BING_KEY ? cachedSearch(env, 'bing', days, () => bingNow(env, days)) : null; }   // (null: not set up, nothing shown)
+
+// ---- Bing search (Bing Webmaster Tools: Bing, DuckDuckGo, Yahoo), for the metrics ----
+// Secret BING_KEY (its API key), site BING_SITE (default https://chessstrategy.org/). Clicks and shown by day; the searches
+// come in weekly totals (Bing's own), added up over the period. Kept 6 hours, as Google's.
+const msDate = v => { const m = /Date\((-?\d+)/.exec(String(v)); return m ? new Date(+m[1]).toISOString().slice(0, 10) : null; };
+async function bingNow(env, days) {
+  const site = encodeURIComponent(env.BING_SITE || 'https://chessstrategy.org/'), since = new Date(Date.now() - (days - 1) * DAY).toISOString().slice(0, 10);
+  const ask = async m => { const r = await fetch(`https://ssl.bing.com/webmaster/api.svc/json/${m}?siteUrl=${site}&apikey=${encodeURIComponent(env.BING_KEY)}`);
+    const t = await r.text(); let j; try { j = JSON.parse(t); } catch (e) { throw new Error('Bing: ' + r.status); }
+    if (!r.ok) throw new Error('Bing: ' + (j.Message || j.message || r.status)); return j.d || []; };
+  const [traffic, queries] = await Promise.all([ask('GetRankAndTrafficStats'), ask('GetQueryStats')]);
+  const daily = traffic.map(r => ({ day: msDate(r.Date), clicks: r.Clicks || 0, impressions: r.Impressions || 0 })).filter(r => r.day && r.day >= since).sort((x, y) => x.day < y.day ? -1 : 1);
+  const byQ = new Map();
+  for (const r of queries) { const d = msDate(r.Date); if (!d || d < since) continue;
+    const q = byQ.get(r.Query) || { q: r.Query, clicks: 0, impressions: 0, pos: 0 }; q.clicks += r.Clicks || 0; q.impressions += r.Impressions || 0; q.pos += (r.AvgImpressionPosition || 0) * (r.Impressions || 0); byQ.set(r.Query, q); }
+  const qs = [...byQ.values()].map(q => ({ q: q.q, clicks: q.clicks, impressions: q.impressions, position: q.impressions ? Math.round(q.pos / q.impressions * 10) / 10 : null }));
+  const tot = qs.reduce((t, q) => ({ i: t.i + q.impressions, p: t.p + (q.position || 0) * q.impressions }), { i: 0, p: 0 });
+  return { daily, total: { clicks: daily.reduce((n, r) => n + r.clicks, 0), impressions: daily.reduce((n, r) => n + r.impressions, 0), position: tot.i ? Math.round(tot.p / tot.i * 10) / 10 : null },
+    queries: qs.sort((x, y) => y.impressions - x.impressions).slice(0, 15) };
+}
+async function cachedSearch(env, name, days, now) {   // Google's or Bing's figures, kept GSC_KEEP; the last ones if an update fails
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS search_cache (name TEXT NOT NULL, days INTEGER NOT NULL, ts INTEGER NOT NULL, data TEXT NOT NULL, PRIMARY KEY (name, days)) WITHOUT ROWID').run();
+  const c = await env.DB.prepare('SELECT ts, data FROM search_cache WHERE name = ? AND days = ?').bind(name, days).first();
   if (c && Date.now() - c.ts < GSC_KEEP) return JSON.parse(c.data);
-  let g; try { g = await gscNow(env, days); } catch (e) { return c ? { ...JSON.parse(c.data), stale: String(e.message || e) } : { error: String(e.message || e) }; }
-  await env.DB.prepare('INSERT INTO gsc_cache (days, ts, data) VALUES (?, ?, ?) ON CONFLICT (days) DO UPDATE SET ts = excluded.ts, data = excluded.data').bind(days, Date.now(), JSON.stringify(g)).run();
+  let g; try { g = await now(); } catch (e) { return c ? { ...JSON.parse(c.data), stale: String(e.message || e) } : { error: String(e.message || e) }; }
+  await env.DB.prepare('INSERT INTO search_cache (name, days, ts, data) VALUES (?, ?, ?, ?) ON CONFLICT (name, days) DO UPDATE SET ts = excluded.ts, data = excluded.data').bind(name, days, Date.now(), JSON.stringify(g)).run();
   return g;
 }
 
@@ -621,6 +642,20 @@ async function metricsNow(env, days) {
   await ensureReports(env);   // all of them, not only the period's: they stay until dismissed
   const reports = await all(`SELECT a, key, fen, src, game, ply, label, COUNT(*) n, COUNT(DISTINCT did) devices, MAX(ts) last, ROUND(AVG(acc)) acc FROM reports GROUP BY a, key ORDER BY last DESC LIMIT 200`);
   const hidden = await all('SELECT a, key, fen, label, ts FROM hidden ORDER BY ts DESC');
+  // Newcomers: devices first seen in the period, and how far they got
+  const funnel = await one(`SELECT COUNT(*) opened, SUM(p >= 1) played, SUM(p >= 10) ten, SUM(acc) account, SUM(g) games FROM (SELECT did, MIN(day) d0, SUM(k = 'pos') p,
+    MAX(auth IS NOT NULL AND auth != 'guest') acc, MAX(k = 'games') g FROM events GROUP BY did) WHERE d0 >= ?`, since);
+  // Coming back: players by the week of their first position (the last 12 weeks), and how many came back (any visit) the
+  // next day, within 7 days, within 30
+  const back = await all(`WITH f AS (SELECT did, MIN(day) d0 FROM events WHERE k = 'pos' GROUP BY did HAVING MIN(day) >= ?)
+    SELECT f.did, f.d0, MIN(CAST(julianday(e.day) - julianday(f.d0) AS INTEGER)) gap FROM f LEFT JOIN events e ON e.did = f.did AND e.day > f.d0 AND e.day <= date(f.d0, '+30 days') GROUP BY f.did`, day(12 * 7 + 6));
+  const today = day(0), weekOf = d => { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - (t.getUTCDay() + 6) % 7); return t.toISOString().slice(0, 10); };
+  const age = d => Math.round((Date.parse(today) - Date.parse(d)) / DAY), weeks = {};
+  for (const r of back) { const w = weeks[weekOf(r.d0)] = weeks[weekOf(r.d0)] || { week: weekOf(r.d0), players: 0, d1: [0, 0], d7: [0, 0], d30: [0, 0] };
+    w.players++; for (const [k, n] of [['d1', 1], ['d7', 7], ['d30', 30]]) if (age(r.d0) > n) { w[k][1]++; if (r.gap != null && r.gap <= n) w[k][0]++; } }
+  // Visits with play: their length (first to last event), typical (median) in minutes; positions per player over 7 days
+  const lens = (await all(`SELECT MAX(ts) - MIN(ts) ms FROM events WHERE day >= ? GROUP BY sid HAVING SUM(k = 'pos') > 0`, since)).map(r => r.ms).sort((x, y) => x - y);
+  const week = await one(`SELECT COUNT(*) n, COUNT(DISTINCT did) players FROM events WHERE k = 'pos' AND day >= ?`, day(6));
   // Ko-fi: over the period and since the start, by currency; the newest payment
   await ensureKofi(env);
   const kofi = { period: await all('SELECT currency, COUNT(*) n, ROUND(SUM(amount), 2) amount FROM kofi WHERE ts >= ? GROUP BY currency', Date.now() - days * DAY),
@@ -640,7 +675,10 @@ async function metricsNow(env, days) {
     errors: { visits: errors.visits || 0, load: errors.load || 0, stopped: errors.stopped || 0 },
     ownGames: { ...g, positionsPerGame: g.games ? Math.round(g.positions / g.games * 100) / 100 : 0 },
     accounts: { total: accounts.n || 0, recent: accounts.recent || 0, bySite, chesscom: cc.n || 0 },
-    reports, hidden, kofi, gsc: await gscData(env, days),
+    reports, hidden, kofi, gsc: await gscData(env, days), bing: await bingData(env, days),
+    funnel: { opened: funnel.opened || 0, played: funnel.played || 0, ten: funnel.ten || 0, account: funnel.account || 0, games: funnel.games || 0 },
+    comeBack: Object.values(weeks).sort((x, y) => x.week < y.week ? 1 : -1),
+    session: { minutes: lens.length ? Math.round(lens[Math.floor(lens.length / 2)] / 6000) / 10 : null, perPlayerWeek: week.players ? Math.round(week.n / week.players * 10) / 10 : null },
   };
 }
 
