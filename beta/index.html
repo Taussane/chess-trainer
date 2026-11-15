@@ -3708,7 +3708,6 @@ const kingNumsTap = (mk, fen)=>{ if(!mk || !mk.nums) return mk; const m = boardM
 // one side's marks only (c: 'w', 'b', or 'none'); keepZones: the dashed areas stay whole (Space, King activity: both halves)
 const marksForSide = (mk, c, keepZones)=>{ if(!c) return mk; const out = {}; for(const k in mk) out[k] = Array.isArray(mk[k]) ? mk[k].filter(x=>x.c===c || (keepZones && k==='zones')) : mk[k]; return out; };
 // The White and Black buttons above the panel (the explorer, Imbalance reading's review): each side's marks shown or hidden
-const IMB_SHOW = { w:true, b:true }, PLANQ_SHOW = { w:true, b:true };   // (the Plan finder's: its own, kept the same way)   // Imbalance reading's review: the sides shown, from one position to the next
 const sidesShown = s=>{ const sh = s.show || { w:true, b:true }; return sh.w && sh.b ? null : sh.w ? 'w' : sh.b ? 'b' : 'none'; };
 const sidesHtml = (s, visible)=>{ const sh = s.show || { w:true, b:true };
   return `<div class="xp-sides"${visible ? '' : ' style="visibility:hidden"'}>${['w', 'b'].map(c=>`<button class="xp-side ${c}${sh[c] ? ' on' : ''}" data-c="${c}" aria-pressed="${sh[c]}"${visible ? '' : ' tabindex="-1"'}><span class="xp-dot" aria-hidden="true"></span>${c==='w' ? 'White' : 'Black'}</button>`).join('')}</div>`; };
@@ -6257,7 +6256,7 @@ function renderImbalances(){
         <div class="actions-row" id="imbCheckRow"><span class="pick-left" id="pickLeft">${aspLeftText(s)}</span><button class="btn" id="check" ${sfState==='error' || aspCheckWaits(s) ? 'disabled' : ''}>Check</button></div>`}`, GHOST_IMBALANCES, engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
   if(s.checked) fadeOnce(s, 'score', reviewPart('.score'));   // the accuracy, as the review opens
-  s.show = IMB_SHOW; s.noKingTap = true; s.aspKing = sidesShown(s);   // (each side's marks: the buttons above the panel, kept from one position to the next)
+  s.show = s.show || { w:true, b:true }; s.noKingTap = true; s.aspKing = sidesShown(s);   // (each side's marks: the buttons above the panel, both on at each new position)
   if(done) wireAspectView(p, s);
   wireSides(s);
   if(!s.checked){
@@ -10427,8 +10426,8 @@ function renderPlanq(){
     ${sidesHtml(q, marksOn).replace('class="xp-sides"', 'class="xp-sides sides-desk"')}
     ${stackedPanel(panel, [ghostQ, ghostR])}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(new Chess(p.fen)), p.last);
-  // each side's marks: the White / Black buttons, as in Imbalance reading (kept from one position to the next), not a tap on a king
-  q.show = PLANQ_SHOW; q.noKingTap = true; q.aspKing = sidesShown(q);
+  // each side's marks: the White / Black buttons, as in Imbalance reading, not a tap on a king
+  q.show = q.show || { w:true, b:true }; q.noKingTap = true; q.aspKing = sidesShown(q);   // (both on at each new position)
   if(q.checked && (q.step===0 || isPlan)) wireAspectView(p, q);
   wireSides(q);
   planqPrefetch();   // the next positions, while this one is played
