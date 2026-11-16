@@ -3,6 +3,8 @@
 //  1. node scripts/masters-pass.js                 the pass (SHARD=i/n runs every n-th game, one engine per process:
 //                                                  run n side by side with their own PORT; their results all go to
 //                                                  finder/.cache/pass/, one file per game)
+//     STEP=review node scripts/masters-pass.js     the game review's search of the positions the pass leaves out (after move 40,
+//                                                  the start; 0.4 s each, depth 20 at most; SHARD as above; finder/.cache/rv/)
 //  2. STEP=select node scripts/masters-pass.js     the selection, once every game has its pass (only the Plan finder's
 //                                                  check of the other side searches again: 1 s per candidate)
 // The selection, per exercise (the general rules first: moves 5 to 40, 4+ legal moves, not right after a capture that
@@ -47,6 +49,26 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
       if (done % 5 === 0) console.log(new Date().toISOString().slice(11, 19), done, '/', mine.length, Math.round((Date.now() - t0) / 1000) + 's');
     }
     console.log('pass done for this shard:', mine.filter(g => fs.existsSync(file(g))).length, '/', mine.length, errs.slice(0, 3));
+    await b.close(); server.kill(); return;
+  }
+  if (STEP === 'review') {   // every position the pass left out (after move 40, the start): the review's search, as in the app
+    const RV_DIR = path.join(ROOT, 'finder/.cache/rv'); fs.mkdirSync(RV_DIR, { recursive: true });
+    const mine = games.filter((g, i) => i % SH_N === SH_I), t0 = Date.now(); let done = 0;
+    for (const gid of mine) {
+      const f = path.join(RV_DIR, gid + '.json'); if (fs.existsSync(f)) { done++; continue; }
+      if ((Date.now() - t0) / 60000 > MAX_MIN) { console.log('stopping after', MAX_MIN, 'min'); break; }
+      const pass = fs.existsSync(file(gid)) ? JSON.parse(fs.readFileSync(file(gid), 'utf8')) : { l: {} };
+      const rv = await p.evaluate(async ([gid, l]) => {
+        const c = new Chess(), fens = [c.fen()]; for (const s of GAME_MOVES[gid].split(' ').filter(Boolean)) { if (!c.move(s)) break; fens.push(c.fen()); }
+        const out = {};
+        for (let k = 0; k < fens.length; k++) { if (l[k] !== undefined) continue; const v = await reviewSearch(fens[k]); if (v === null) return null; out[k] = v; }
+        return out;
+      }, [gid, pass.l || {}]);
+      if (rv) fs.writeFileSync(f, JSON.stringify(rv));
+      done++;
+      if (done % 10 === 0) console.log(new Date().toISOString().slice(11, 19), done, '/', mine.length, Math.round((Date.now() - t0) / 1000) + 's');
+    }
+    console.log('review done for this shard:', mine.filter(g => fs.existsSync(path.join(RV_DIR, g + '.json'))).length, '/', mine.length, errs.slice(0, 3));
     await b.close(); server.kill(); return;
   }
   // STEP=select

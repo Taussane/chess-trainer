@@ -5861,6 +5861,27 @@ function passStore(g, ply, res){
   g.pass.l[ply] = ls.map(l=>l.uci + ':' + (l.mate!=null ? 'm' + l.mate : Math.round(l.cp))).join(',');
   if(ls[0] && ls[0].pv) g.pass.pv[ply] = ls[0].pv.slice(0, 8).join(' ');
 }
+// The review's lines for the positions the pass leaves out (before move 5 with Lichess's analysis, after move 40):
+// g.rv = { v, l: { ply: "e2e4:25" } }, kept with the game; every position of the game then has its evaluation and best
+// move, for the game review (reviewFill, after every game's turn)
+const REVIEW_V = 1;
+const reviewLine = (g, ply)=>g.rv && g.rv.v===REVIEW_V && g.rv.l[ply] || null;
+function reviewStore(g, ply, v){ if(!g.rv || g.rv.v!==REVIEW_V) g.rv = { v:REVIEW_V, l:{} }; g.rv.l[ply] = v; }
+const reviewDone = new Set();
+async function reviewFill(id){
+  let g = currentGame(id); if(!g) return 'gone';
+  const c = new Chess(), fens = [c.fen()]; for(const s of g.sans){ if(!c.move(s)) break; fens.push(c.fen()); }
+  let n = 0;
+  for(let ply = 0; ply < fens.length; ply++){
+    g = currentGame(id); if(!g) return 'gone';
+    if(passLines(g, ply)!==null || (g.rv && g.rv.v===REVIEW_V && g.rv.l[ply]!==undefined)) continue;
+    const v = await reviewSearch(fens[ply]); if(v===null) return 'retry';
+    g = currentGame(id); if(!g) return 'gone';
+    reviewStore(g, ply, v); if(++n % 10===0) saveMyLocal();
+  }
+  if(n){ myTurnId = null; saveMyGame(g); }   // (to the account once per game)
+  return 'ok';
+}
 function passPliesOf(g, fens, hist){
   const out = [], lich = lichessEvals(g);
   for(let ply = 1; ply <= hist.length; ply++){
@@ -6133,7 +6154,11 @@ async function myBackground(){
       // page busy for seconds (and wrote each one to the account again)
       myGames.forEach(x=>{ if(!myDone.has(x.id) && gameFinished(x)) myDone.add(x.id); });
       const g = myGames.map((x, i)=>[x, i]).sort((a, b)=>gameRank(a[0]) - gameRank(b[0]) || a[1] - b[1]).map(x=>x[0]).find(x=>!myDone.has(x.id));
-      if(!g) break;
+      if(!g){   // every game's turn done: the review's lines for the positions the pass left out, a game at a time
+        const h = myGames.find(x=>!reviewDone.has(x.id)); if(!h) break;
+        const r = await reviewFill(h.id); if(r==='retry'){ retry = true; break; }
+        reviewDone.add(h.id); await tick(); continue;
+      }
       myTurnId = g.id; myTurnDirty = false;
       let r; const t0 = Date.now();
       try{ r = await myGameTurn(g); }
@@ -9901,10 +9926,12 @@ function explorerLoadGame(src, id, at, opts){
   GAME_EVALS.set(ck, E);
   for(let k = E.length; k < fens.length; k++){
     let e = g && g.evals && g.evals[k - 1] ? { ...g.evals[k - 1] } : null;
-    if(g){ const ls = passLines(g, k); if(ls && ls.length){ const w = fens[k].split(' ')[1]==='w' ? 1 : -1; e = e || (ls[0].mate!=null ? { cp:null, mate:w * ls[0].mate } : { cp:w * ls[0].cp, mate:null }); e.best = ls[0].uci; } }
+    if(g){ const ls = passLines(g, k), rv = reviewLine(g, k);
+      if(ls && ls.length){ const w = fens[k].split(' ')[1]==='w' ? 1 : -1; e = e || (ls[0].mate!=null ? { cp:null, mate:w * ls[0].mate } : { cp:w * ls[0].cp, mate:null }); e.best = ls[0].uci; }
+      else if(rv){ const r = reviewEntry(rv, fens[k]); e = e ? { ...e, best:r.best } : r; } }
     E.push(e);
   }
-  if(g && E[0].best===undefined){ const ls0 = passLines(g, 0); if(ls0 && ls0.length) E[0].best = ls0[0].uci; }
+  if(g && E[0].best===undefined){ const rv = reviewLine(g, 0); if(rv) E[0] = reviewEntry(rv, fens[0]); }
   const keep = opts.ret || explorer && explorer.ret;
   explorer = null; explorerInit();
   const x = explorer;
@@ -9915,6 +9942,24 @@ function explorerLoadGame(src, id, at, opts){
   screen = 'explorer'; render();
 }
 // the positions not evaluated yet, one after the other (the shown game only; stops when another one is loaded)
+// The review's search of one position (the explorer's, your games' after their pass, the master games' offline: one
+// core): its best move and evaluation for the side to play, "e2e4:25" or "f7f8q:m3" ('' when the game is over, null
+// when the search failed). A position met again (openings) isn't searched twice in a visit.
+const REVIEW_SEEN = new Map();
+async function reviewSearch(fen){
+  const key = fen.split(' ').slice(0, 4).join(' ');
+  if(REVIEW_SEEN.has(key)) return REVIEW_SEEN.get(key);
+  if(new Chess(fen).game_over()) return '';
+  const r = await bgEval(fen, { multipv:1, movetime:GAME_MS, depth:LIVE_DEPTH });
+  if(evalFailed(r) || !r || !r.lines || !r.lines.length || (r.lines[0].cp==null && r.lines[0].mate==null)) return null;
+  const l = r.lines[0], v = l.uci + ':' + (l.mate!=null ? 'm' + l.mate : Math.round(l.cp));
+  REVIEW_SEEN.set(key, v); return v;
+}
+// such a line ("e2e4:25") as the review's evaluation of the position (White's view) and its best move
+function reviewEntry(v, fen){
+  const i = v.indexOf(':'), n = v.slice(i + 1), w = fen.split(' ')[1]==='w' ? 1 : -1;
+  return { ...(n[0]==='m' ? { cp:null, mate:w * +n.slice(1) } : { cp:w * +n, mate:null }), best: v.slice(0, i) };
+}
 // A master game: the pass made for the exercises (each position up to move 40, as for your games: master-pass.json,
 // loaded once) gives those positions their evaluation and best move; the rest are searched here
 let masterPass = null;
@@ -9927,8 +9972,7 @@ async function explorerAnalyse(G){
     const mp = await loadMasterPass(), ls = String(mp[G.id] || '').split(' ');
     for(let k = 0; k < G.fens.length && k < ls.length; k++){
       if(!ls[k] || G.E[k] && G.E[k].best!==undefined) continue;
-      const i = ls[k].indexOf(':'), v = ls[k].slice(i + 1), w = G.fens[k].split(' ')[1]==='w' ? 1 : -1;
-      G.E[k] = { ...(v[0]==='m' ? { cp:null, mate:w * +v.slice(1) } : { cp:w * +v, mate:null }), best: ls[k].slice(0, i) };
+      G.E[k] = reviewEntry(ls[k], G.fens[k]);
     }
     if(explorer && explorer.game===G && screen==='explorer' && (explorer.mode==='game' || explorer.mode==='stats') && !document.getElementById('gpModal')) render();
   }
@@ -9937,13 +9981,14 @@ async function explorerAnalyse(G){
     if(G.E[k] && G.E[k].best!==undefined || G.E.failed && G.E.failed.has(k)) continue;
     const c = new Chess(G.fens[k]);
     if(c.game_over()){ const w = G.fens[k].split(' ')[1]==='w' ? 1 : -1; G.E[k] = c.in_checkmate() ? { cp:null, mate:-w, best:null } : { cp:0, mate:null, best:null }; continue; }
-    const r = await bgEval(G.fens[k], { multipv:1, movetime:GAME_MS, depth:LIVE_DEPTH });
+    const v = await reviewSearch(G.fens[k]);
     if(!explorer || explorer.game!==G) return;
-    if(evalFailed(r) || !r || !r.lines || !r.lines.length){ G.E.failed = G.E.failed || new Set(); G.E.failed.add(k); continue; }
-    const info = toWhitePerspective(r.lines[0], G.fens[k]);
-    G.E[k] = { ...(G.E[k] || { cp:info.cp, mate:info.mate }), best: r.lines[0].uci };
+    if(!v){ G.E.failed = G.E.failed || new Set(); G.E.failed.add(k); continue; }
+    const e = reviewEntry(v, G.fens[k]); G.E[k] = { ...(G.E[k] || e), best: e.best };
+    const g = G.src==='mine' && currentGame(G.id); if(g && passLines(g, k)===null){ reviewStore(g, k, v); G.kept = true; }   // (kept with your game: saved at the end)
     if(screen==='explorer' && (explorer.mode==='game' || explorer.mode==='stats') && !document.getElementById('gpModal')) render();
   }
+  const g = G.kept && currentGame(G.id); if(g) saveMyGame(g);
 }
 // move k's grade (from the position before it to the one after), or null while either isn't evaluated
 function gameGrade(G, k){
@@ -10002,7 +10047,8 @@ function gameStatsHtml(x){
   const row = (l, w, b, cls)=>`<span class="w ${cls || ''}">${w}</span><span class="l ${cls || ''}">${l}</span><span class="b ${cls || ''}">${b}</span>`, nm = gameNames(G);
   return `<div class="xpg xpg-stats">
       ${row(gameResult(G), `<span class="nm" data-no-i18n>${escHtml(nm[0] || '?')}</span>`, `<span class="nm" data-no-i18n>${escHtml(nm[1] || '?')}</span>`, 'h')}${row('Accuracy', acc(st.w), acc(st.b), 'acc')}
-      ${GRADE_ORDER.map(l=>row(`<span style="color:${labelColor(l)}">${l}</span>`, st.w.n[l] || 0, st.b.n[l] || 0)).join('')}
+      ${GRADE_ORDER.map(l=>{ const c = n=>`<span style="color:${n ? labelColor(l) : 'var(--text-mute)'}">${n}</span>`;   // (the grade's colour; none: grey)
+        return row(`<span style="color:${labelColor(l)}">${l}</span>`, c(st.w.n[l] || 0), c(st.b.n[l] || 0)); }).join('')}
       ${gameProgHtml(G)}
     </div>`;
 }
