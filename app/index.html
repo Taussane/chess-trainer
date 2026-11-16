@@ -5336,7 +5336,7 @@ const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacing:{ imbal
               candidatesMinLegal:2, finalMinLegal:4, maxGamesPerUpload:200,
               // your other positions (either side to move), after your mistakes: the master rules (finder/rules.js)
               trapMinDrop:12, maxDecent:3, candidatesSpacing:10, finalSpacing:2,
-              passMs:1000,       // the pass: one top-5 search per position (see ownPass)
+              passMs:1000,       // the pass: one top-5 search per position, depth 20 at most (see ownPass)
               checkMs:1200 };    // the app's usual background search
 // Move selection's spread rule (see finalSpreadOk), the same as the master positions' (finder/rules.js).
 const FINAL_RULE = { worstMinDrop:13, maxRandomAccuracy:57 };
@@ -6162,7 +6162,7 @@ async function ownPass(id){
     if(passLines(g, ply)!==null) continue;
     if(new Chess(fens[ply]).perft(1)===0) passStore(g, ply, null);   // (mate or stalemate on the board: nothing to search)
     else {
-      const t0 = Date.now(), res = await diagTimed('pass: one position', bgEval(fens[ply], { multipv:DISCOVERY_MULTIPV, movetime:OWN.passMs }));
+      const t0 = Date.now(), res = await diagTimed('pass: one position', bgEval(fens[ply], { multipv:DISCOVERY_MULTIPV, movetime:OWN.passMs, depth:LIVE_DEPTH }));
       myPassMs.push(Date.now() - t0); if(myPassMs.length > 300) myPassMs.shift();
       if(evalFailed(res)) return 'retry';
       g = currentGame(id); if(!g) return 'gone';
