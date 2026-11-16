@@ -5868,7 +5868,7 @@ const REVIEW_V = 1;
 const reviewLine = (g, ply)=>g.rv && g.rv.v===REVIEW_V && g.rv.l[ply] || null;
 function reviewStore(g, ply, v){ if(!g.rv || g.rv.v!==REVIEW_V) g.rv = { v:REVIEW_V, l:{} }; g.rv.l[ply] = v; }
 const reviewFull = g=>!!(g.rv && g.rv.v===REVIEW_V && g.rv.full);   // (every position has its line: kept with the game)
-async function reviewFill(id){
+async function reviewFill(id, inTurn){
   let g = currentGame(id); if(!g) return 'gone';
   const c = new Chess(), fens = [c.fen()]; for(const s of g.sans){ if(!c.move(s)) break; fens.push(c.fen()); }
   const has = (g, ply)=>passLines(g, ply)!==null || (g.rv && g.rv.v===REVIEW_V && g.rv.l[ply]!==undefined);
@@ -5882,7 +5882,8 @@ async function reviewFill(id){
     reviewStore(g, ply, v); myNow.done++; showNowLine(); if(myNow.done % 10===0) saveMyLocal();
   }
   if(!g.rv || g.rv.v!==REVIEW_V) g.rv = { v:REVIEW_V, l:{} }; g.rv.full = true;
-  myTurnId = null; saveMyGame(g);   // (to the account once per game)
+  if(!inTurn) myTurnId = null;
+  saveMyGame(g);   // (to the account once per game: in its turn, at the turn's end)
   return 'ok';
 }
 function passPliesOf(g, fens, hist){
@@ -6157,7 +6158,7 @@ async function myBackground(){
       // page busy for seconds (and wrote each one to the account again)
       myGames.forEach(x=>{ if(!myDone.has(x.id) && gameFinished(x)) myDone.add(x.id); });
       const g = myGames.map((x, i)=>[x, i]).sort((a, b)=>gameRank(a[0]) - gameRank(b[0]) || a[1] - b[1]).map(x=>x[0]).find(x=>!myDone.has(x.id));
-      if(!g){   // every game's turn done: the review's lines for the positions the pass left out, a game at a time
+      if(!g){   // every game's turn done: the games analysed before the review came (their turn does it now) get its lines
         const h = myGames.find(x=>!reviewFull(x)); if(!h) break;
         const r = await reviewFill(h.id); if(r==='retry'){ retry = true; break; }
         if(onProfile()) render(); await tick(); continue;
@@ -6249,6 +6250,8 @@ async function myGameTurn(g0){
     await tick();   // (the page answers between positions)
   }
   { const g1 = currentGame(id); if(g1 && !g1.shown){ g1.shown = true; saveMyGame(g1); } }   // (its positions stay in from now on, whatever the next visit's turn finds)
+  // 4. the game review: the positions the pass left out (its positions are all in already: they don't wait for this)
+  { const r = await reviewFill(id, true); if(r!=='ok') return r; }
   diagJob('one game, all its checks', performance.now() - t0);
   return 'ok';
 }
@@ -6340,7 +6343,7 @@ async function initMyGames(){
 // analysis is cleared here and in your account; the reset's time is kept too, so a game the account still had with its
 // older analysis (a save unfinished when the page reloaded) is cleared at the next load (clearOldAnalysis).
 function clearAnalysis(g){
-  delete g.pass; delete g.chk; delete g.checks; delete g.finalOk; delete g.decent; delete g.shown; delete g.posSig; g.positions = [];
+  delete g.pass; delete g.rv; delete g.chk; delete g.checks; delete g.finalOk; delete g.decent; delete g.shown; delete g.posSig; g.positions = [];
   if(!lichessEvals(g)){ g.evals = null; delete g.evalBy; delete g.verified; g.status = 'queued'; }   // (evaluations from the app's own analysis go too)
 }
 let myClearedAt = 0;
