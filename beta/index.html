@@ -204,6 +204,8 @@
   .xp-plan-note{font-size:0.8rem; line-height:1.2; color:var(--text-mute); overflow:hidden;}
   /* the evaluation, across the top of the board */
   .xp-hbar-line{padding:3px 0;}
+  .board-col > .pl-line.xp-top:empty{display:none;}   /* (no game: the bar alone above the board, as before) */
+  .stage .board-col:has(> .pl-line.xp-top:not(:empty)) > .board-outer{width:min(100cqw, 100cqh - 66px, 420px);}   /* (a game: the bar, then the names above and below) */
   .xp-hbar{position:relative; width:100%; height:100%; border-radius:4px; overflow:hidden; background:var(--black-fill); border:1px solid var(--border);}
   .xp-hbar-w{position:absolute; left:0; top:0; bottom:0; width:var(--w, 50%); background:var(--white-fill);}
   .xp-hbar-num{position:absolute; top:50%; transform:translateY(-50%); font-size:0.72rem; font-weight:700;}
@@ -635,14 +637,16 @@
   .modal-box h3.help-h{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:2px 12px;}
   .help-sec{break-inside:avoid;}
   /* game review (the explorer's Game tab, beta): its title, the chart (two rows), the move and its grade, in the panel's four rows */
-  .xpg{display:grid; grid-template-rows:var(--pn-row) calc(2 * var(--pn-row)) var(--pn-row); align-items:center; min-width:0;}
+  .xpg{min-width:0;}
+  .xpg.xpg-full{display:block; position:relative; height:calc(4 * var(--pn-row));}
+  .xpg-full .xpg-chart{height:calc(4 * var(--pn-row) - 4px);} .xpg-full .xpg-prog{position:absolute; right:8px; top:6px;}
+  .xpg-area{fill:var(--white-fill);} .xpg-dot{stroke:var(--black-fill); stroke-width:1; vector-effect:non-scaling-stroke;}
   .xpg-empty{margin:0; font-size:0.86rem; color:var(--text-mute); align-self:start; grid-row:1 / span 2;}
-  .xpg-head{display:flex; align-items:center; gap:10px; min-width:0;} .xpg-title{flex:1; min-width:0; font-weight:600; font-size:0.86rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .xpg-chart{width:100%; height:calc(2 * var(--pn-row) - 6px); display:block; cursor:pointer; border-radius:6px; background:var(--black-fill); border:1px solid var(--border);}
-  .xpg-top{fill:color-mix(in srgb, var(--white-fill) 10%, transparent);} .xpg-mid{stroke:var(--border); stroke-width:1;} .xpg-line{fill:none; stroke:var(--white-fill); stroke-width:1.6; vector-effect:non-scaling-stroke;}
+  .xpg-mid{stroke:var(--text-mute); stroke-width:1; stroke-dasharray:3 3; vector-effect:non-scaling-stroke; opacity:.7;} .xpg-line{fill:none; stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke;}
   .xpg-now{stroke:var(--accent); stroke-width:1.5; vector-effect:non-scaling-stroke;}
-  .xpg-move{display:flex; align-items:center; gap:10px; font-size:0.88rem; min-width:0;} .xpg-san{font-weight:600;} .xpg-grade{font-weight:700;} .xpg-ev{color:var(--text-mute); font-variant-numeric:tabular-nums;}
-  .xpg-move > :last-child{margin-left:auto;} .xpg-prog{color:var(--text-mute); font-size:0.8rem;} .xpg-note{color:var(--text-mute); font-size:0.82rem;}
+  .xpg-grade{font-weight:700;} .xpg-ev{color:var(--text-mute); font-variant-numeric:tabular-nums;}
+  .xpg-prog{color:var(--text-mute); font-size:0.8rem;} .xpg-note{color:var(--text-mute); font-size:0.82rem;}
   .modal-box.gp-box{width:100%; max-width:min(560px, 94vw); display:flex; flex-direction:column; max-height:90svh;}
   .gp-box .seg, .gp-box .gp-q, .gp-box h3, .gp-box .modal-actions{flex:none;} .gp-box .seg{margin:0 0 8px;} .gp-q{width:100%; box-sizing:border-box; margin:0 0 8px;}
   .gp-list{overflow-y:auto; min-height:120px; flex:1; display:flex; flex-direction:column; gap:4px; margin-bottom:10px;}
@@ -757,6 +761,8 @@
   }
   @media (min-aspect-ratio:6/5){   /* the explorer's evaluation bar upright, between the board and the panel (its line above the board stays, empty: the board keeps its place) */
     html.desk2 .wrap.ex[data-scr=explorer] .board-col{position:relative;}
+    html.desk2 .wrap.ex[data-scr=explorer] .board-col > .xp-hbar-line{height:0 !important; padding:0; overflow:visible;}   /* (the bar beside the board: its line takes no room) */
+    html.desk2 .wrap.ex[data-scr=explorer] .board-col > .pl-line.xp-top:empty{display:flex;}   /* (the name line's room kept: the board where the exercises' is) */
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar{position:absolute; left:calc(100% + 10px); top:22px; bottom:22px; width:28px; height:auto;}
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar-w{top:auto; right:0; width:auto; height:var(--w, 50%);}   /* (White from the bottom) */
     html.desk2 .wrap.ex[data-scr=explorer] .xp-hbar.flip .xp-hbar-w{top:0; bottom:auto; left:0; right:0;}
@@ -7113,12 +7119,11 @@ function L(o){ return o[LANG]!=null ? o[LANG] : o.en; }
 const FAQ_PATH = { en:'learn/', fr:'fr/guides/', de:'de/anleitungen/', es:'es/guias/', it:'it/guide/' };
 const legalPath = k=>k + (LANG==='en' ? '' : '-' + LANG) + '.html';
 const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
+"Change game": "Changer de partie",
+"Off the game": "Hors de la partie",
+"Start of the game": "Début de la partie",
 "Game": "Partie",
 "Load a game": "Charger une partie",
-"Change": "Changer",
-"Next mistake ›": "Erreur suivante ›",
-"Tap the chart to go to a position.": "Touchez le graphique pour aller à une position.",
-"Off the game: tap the chart to come back.": "Hors de la partie : touchez le graphique pour y revenir.",
 "Search: player, year, event": "Rechercher : joueur, année, événement",
 "No game found.": "Aucune partie trouvée.",
 "No games yet: link Lichess or Chess.com in your profile.": "Pas encore de parties : liez Lichess ou Chess.com dans votre profil.",
@@ -7650,12 +7655,11 @@ const I18N_FR_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} partie${n==='1' ? '' : 's'} interrompue${n==='1' ? '' : 's'} la dernière fois, terminée${n==='1' ? '' : 's'}.`)],
 ];
 const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
+"Change game": "Partie wechseln",
+"Off the game": "Außerhalb der Partie",
+"Start of the game": "Anfang der Partie",
 "Game": "Partie",
 "Load a game": "Partie laden",
-"Change": "Ändern",
-"Next mistake ›": "Nächster Fehler ›",
-"Tap the chart to go to a position.": "Tippe auf die Kurve, um zu einer Stellung zu gehen.",
-"Off the game: tap the chart to come back.": "Außerhalb der Partie: tippe auf die Kurve, um zurückzukehren.",
 "Search: player, year, event": "Suchen: Spieler, Jahr, Turnier",
 "No game found.": "Keine Partie gefunden.",
 "No games yet: link Lichess or Chess.com in your profile.": "Noch keine Partien: verbinde Lichess oder Chess.com in deinem Profil.",
@@ -8119,12 +8123,11 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Suggest a strong move for Black.": "Schlage einen starken Zug für Schwarz vor."
 }/*END I18N_DE*/));
 const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
+"Change game": "Cambiar de partida",
+"Off the game": "Fuera de la partida",
+"Start of the game": "Inicio de la partida",
 "Game": "Partida",
 "Load a game": "Cargar una partida",
-"Change": "Cambiar",
-"Next mistake ›": "Siguiente error ›",
-"Tap the chart to go to a position.": "Toca el gráfico para ir a una posición.",
-"Off the game: tap the chart to come back.": "Fuera de la partida: toca el gráfico para volver.",
 "Search: player, year, event": "Buscar: jugador, año, evento",
 "No game found.": "No se encontró ninguna partida.",
 "No games yet: link Lichess or Chess.com in your profile.": "Aún no hay partidas: vincula Lichess o Chess.com en tu perfil.",
@@ -8588,12 +8591,11 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Suggest a strong move for Black.": "Propón una jugada fuerte para las negras."
 }/*END I18N_ES*/));
 const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
+"Change game": "Cambia partita",
+"Off the game": "Fuori dalla partita",
+"Start of the game": "Inizio della partita",
 "Game": "Partita",
 "Load a game": "Carica una partita",
-"Change": "Cambia",
-"Next mistake ›": "Errore successivo ›",
-"Tap the chart to go to a position.": "Tocca il grafico per andare a una posizione.",
-"Off the game: tap the chart to come back.": "Fuori dalla partita: tocca il grafico per tornare.",
 "Search: player, year, event": "Cerca: giocatore, anno, evento",
 "No game found.": "Nessuna partita trovata.",
 "No games yet: link Lichess or Chess.com in your profile.": "Ancora nessuna partita: collega Lichess o Chess.com nel tuo profilo.",
@@ -9930,32 +9932,54 @@ const onGameLine = x=>!!x.game && x.fens.length===x.game.fens.length && x.fens[x
 function gameBackToLine(x){ const G = x.game; x.fens = G.fens.slice(); x.sans = G.sans.slice(); x.moves = G.moves.slice(); }
 function gameReviewHtml(x){
   const G = x.game;
-  if(!G) return `<div class="xpg"><p class="xpg-empty">Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.</p><div><button class="btn secondary" id="xpLoad">Load a game</button></div></div>`;
-  const n = G.fens.length - 1, W = 300, H = 64, X = k=>n ? k * W / n : 0, Y = e=>e ? H - winPercent(e.cp, e.mate) * H / 100 : null;
-  let path = '', area = '', last = null;
-  for(let k = 0; k <= n; k++){ const y = Y(G.E[k]); if(y==null) continue; path += (last==null ? 'M' : 'L') + X(k).toFixed(1) + ',' + y.toFixed(1) + ' '; last = k; }
-  const marks = []; for(let k = 1; k <= n; k++){ const gr = gameGrade(G, k); if(gr && BAD_GRADES.includes(gr.label)) marks.push(`<circle cx="${X(k).toFixed(1)}" cy="${Y(G.E[k]).toFixed(1)}" r="3.2" fill="${labelColor(gr.label)}"/>`); }
-  const done = G.E.filter(e=>e && e.best!==undefined).length, line = onGameLine(x);
-  const gr = line && x.at ? gameGrade(G, x.at) : null, k = x.at;
-  const moveTxt = line && k ? `${Math.ceil(k / 2)}${k % 2 ? '.' : '...'} ${fmtSan(G.sans[k - 1])}` : '';
-  const evTxt = line && G.E[k] ? fmtBarScore({ cp:G.E[k].cp, mate:G.E[k].mate }) : '';
-  return `<div class="xpg">
-      <div class="xpg-head"><span class="xpg-title">${escHtml(G.title)}</span><button class="link-btn" id="xpLoad">Change</button></div>
+  if(!G) return `<div class="xpg"><p class="xpg-empty">Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.</p></div>`;
+  // the chart: Black's colour behind, White's below the curve (its share of winning chances), a thin line at 0.0,
+  // the errors (Dubious or worse) as dots over it all, the position shown as a gold line
+  const n = G.fens.length - 1, W = 300, H = 100, X = k=>n ? k * W / n : 0, Y = e=>H - winPercent(e.cp, e.mate) * H / 100;
+  let pts = [], last = 0;
+  for(let k = 0; k <= n; k++){ if(G.E[k]){ pts.push([X(k), Y(G.E[k])]); last = k; } }
+  const area = pts.length > 1 ? `M${pts[0][0].toFixed(1)},${H} ` + pts.map(([a, b])=>`L${a.toFixed(1)},${b.toFixed(1)}`).join(' ') + ` L${pts[pts.length - 1][0].toFixed(1)},${H} Z` : '';
+  const curve = pts.length > 1 ? 'M' + pts.map(([a, b])=>`${a.toFixed(1)},${b.toFixed(1)}`).join(' L') : '';
+  const marks = []; for(let k = 1; k <= n; k++){ const gr = gameGrade(G, k); if(gr && BAD_GRADES.includes(gr.label)) marks.push(`<circle cx="${X(k).toFixed(1)}" cy="${Y(G.E[k]).toFixed(1)}" r="3.4" fill="${labelColor(gr.label)}" class="xpg-dot"/>`); }
+  const done = G.E.filter(e=>e && e.best!==undefined).length, line = onGameLine(x), k = x.at;
+  return `<div class="xpg xpg-full">
       <svg class="xpg-chart" id="xpgChart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Evaluation through the game">
-        <rect x="0" y="0" width="${W}" height="${H / 2}" class="xpg-top"/><line x1="0" x2="${W}" y1="${H / 2}" y2="${H / 2}" class="xpg-mid"/>
-        ${path ? `<path d="${path}" class="xpg-line"/>` : ''}${marks.join('')}
-        ${line ? `<line x1="${X(k).toFixed(1)}" x2="${X(k).toFixed(1)}" y1="0" y2="${H}" class="xpg-now"/>` : ''}
+        ${area ? `<path d="${area}" class="xpg-area"/>` : ''}<line x1="0" x2="${W}" y1="${H / 2}" y2="${H / 2}" class="xpg-mid"/>${curve ? `<path d="${curve}" class="xpg-line"/>` : ''}
+        ${line ? `<line x1="${X(k).toFixed(1)}" x2="${X(k).toFixed(1)}" y1="0" y2="${H}" class="xpg-now"/>` : ''}${marks.join('')}
       </svg>
-      <div class="xpg-move">${moveTxt ? `<span class="xpg-san">${moveTxt}</span>${gr ? `<span class="xpg-grade" style="color:${labelColor(gr.label)}">${gr.label}</span>` : '<span class="xpg-grade">…</span>'}<span class="xpg-ev">${evTxt}</span>` : `<span class="xpg-note">${line ? 'Tap the chart to go to a position.' : 'Off the game: tap the chart to come back.'}</span>`}
-        ${marks.length ? `<button class="link-btn" id="xpgNext">Next mistake ›</button>` : ''}${done <= n ? `<span class="xpg-prog">${Math.round(100 * done / (n + 1))}%</span>` : ''}</div>
+      ${done <= n ? `<span class="xpg-prog">${Math.round(100 * done / (n + 1))}%</span>` : ''}
     </div>`;
+}
+// A game loaded: where it comes from, then the move just played with its grade and how much it changed the
+// evaluation (for the side that played it), as an exercise shows its position; no game: the same room, empty
+function gamePosBar(x){
+  const G = x.game;
+  if(!G) return `<div class="posbar" aria-hidden="true" style="visibility:hidden"><div class="pos-title">&nbsp;<br>&nbsp;</div></div>`;   // (the exercises' two lines' room: the board where it sits in them)
+  const src = posSource(G.src==='mine' ? { gameId:G.id } : { game:G.id }), k = x.at, line = onGameLine(x);
+  let mv = '';
+  if(!line) mv = 'Off the game';
+  else if(!k) mv = 'Start of the game';
+  else {
+    const gr = gameGrade(G, k), b = G.E[k - 1], a = G.E[k], s = G.fens[k - 1].split(' ')[1]==='w' ? 1 : -1;
+    const d = gr && b.mate==null && a.mate==null ? s * (a.cp - b.cp) / 100 : null;
+    mv = `${Math.ceil(k / 2)}${k % 2 ? '.' : '...'} ${fmtSan(G.sans[k - 1])}${gr ? ` <span class="xpg-grade" style="color:${labelColor(gr.label)}">${gr.label}</span>${d!=null ? ` <span class="xpg-ev">${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d).toFixed(1)}</span>` : ''}` : ' <span class="xpg-ev">…</span>'}`;
+  }
+  return `<div class="posbar"><div class="pos-title">${src}<br>${mv}</div></div>`;
+}
+// The board's column: the evaluation bar, the players' names (a game loaded) above and below the board
+function explorerBoardHtml(x, hbar){
+  const G = x.game, gm = G && G.src==='mine' ? myGames.find(y=>y.id===G.id) : null;
+  const names = G ? (gm ? [gm.white || '?', gm.black || '?'] : String((GAME_INFO[G.id] || {}).title || '?').split(' – ')) : null;
+  const elo = c=>gm ? (c==='w' ? gm.whiteElo : gm.blackElo) : null, bottom = x.flip ? 'b' : 'w', top = bottom==='w' ? 'b' : 'w';
+  const line = (c, cls)=>names ? `<div class="pl-line ${cls}">${escHtml(names[c==='w' ? 0 : 1] || '?')}${elo(c) ? `<span class="pl-elo">${elo(c)}</span>` : ''}</div>` : `<div class="pl-line ${cls}" aria-hidden="true"></div>`;
+  const b = `<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>`;
+  return `<div class="stage"><div class="board-col">${hbar}${line(top, 'xp-top')}${b}${line(bottom, 'xp-bottom')}</div></div>`;
 }
 function wireGameReview(x){
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('xpLoad', openGamePicker);
   const ch = document.getElementById('xpgChart'), G = x.game;
   if(ch && G) ch.onclick = e=>{ const r = ch.getBoundingClientRect(), k = Math.round((e.clientX - r.left) / r.width * (G.fens.length - 1)); if(!onGameLine(x)) gameBackToLine(x); x.at = -1; explorerGo(k); };
-  on('xpgNext', ()=>{ if(!G) return; const n = G.fens.length - 1; for(let i = 1; i <= n; i++){ const k = (x.at + i - 1) % n + 1, gr = gameGrade(G, k); if(gr && BAD_GRADES.includes(gr.label)){ if(!onGameLine(x)) gameBackToLine(x); x.at = -1; explorerGo(k); return; } } });
 }
 // The game list: Masters or My games, a search (players, year, event); a game opens at its start (yours: at your first mistake)
 const gp = { tab:'mine', q:'' };
@@ -10116,10 +10140,10 @@ function renderExplorer(){
     <div class="title-row">
       <button class="icon-btn back${x.ret && (ACTIVITIES.includes(x.ret.screen) || x.ret.screen==='planq') ? ' keep' : ''}" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
       <h1>Strategy explorer</h1>
-      <span class="title-spacer" aria-hidden="true"></span>
+      ${BETA ? `<button class="title-chip" id="xpLoad">${x.game ? 'Change game' : 'Load a game'}</button>` : '<span class="title-spacer" aria-hidden="true"></span>'}
     </div>
-    <div class="posbar" aria-hidden="true" style="visibility:hidden"><div class="pos-title">&nbsp;<br>&nbsp;</div></div>   <!-- (the exercises' two lines' room, empty: the board where it sits in them) -->
-    ${sidesInNameLine(boardHtml().replace('<div class="pl-line" aria-hidden="true"></div>', explorerHbarHtml(info || x.lastInfo, pct, x.flip, !x.engineOn)), explorerSidesHtml(x))}
+    ${gamePosBar(x)}
+    ${sidesInNameLine(explorerBoardHtml(x, explorerHbarHtml(info || x.lastInfo, pct, x.flip, !x.engineOn)), explorerSidesHtml(x))}
     ${explorerSidesHtml(x).replace('class="xp-sides"', 'class="xp-sides sides-desk"')}
     ${stackedPanel(`${explorerModesHtml(x)}${body}${explorerNavHtml(x, depth)}`,
       [`${explorerModesHtml(x)}${aspectsGridHtml(null, null, 0, true)}${explorerNavHtml(x)}`,
@@ -10163,7 +10187,7 @@ function renderExplorer(){
   on('xpBack', ()=>explorerGo(x.at - 1)); on('xpFwd', ()=>explorerGo(x.at + 1));
   on('xpFlip', ()=>{ x.flip = !x.flip; render(); });
   app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; x.flash = {}; render(); });
-  if(x.mode==='game') wireGameReview(x);
+  wireGameReview(x);
 }
 // ================= Plan finder =================
 // Two phases on a position, in the order the books teach (each of the four rows a quarter of the score).
