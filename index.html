@@ -64,9 +64,9 @@
   .stage .board-col > .board-outer{flex:none; width:min(100cqw, 100cqh - 44px, 420px); margin:0;}
   .pl-line{height:22px; display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .pl-elo{color:var(--text-mute); font-weight:500;}
-  .mat{display:inline-flex; align-items:center; gap:3px; margin-left:2px;} .mat-g{display:inline-flex;}   /* (the material difference: same pieces overlapping) */
-  .mat .pc{width:16px; height:16px; flex:none;} .mat-g .pc + .pc{margin-left:-7px;}
-  .mat-lead{color:var(--text-mute); font-weight:500; font-size:0.78rem; margin-left:2px;}
+  .mat{display:inline-flex; align-items:center; height:16px; gap:0; margin-left:2px;} .mat-g{display:inline-flex; height:16px;}   /* (the material difference: same pieces overlapping) */
+  .mat .pc{width:13px; height:16px; flex:none; background-size:auto 100%;} .mat-g .pc + .pc{margin-left:-6px;}
+  .mat-lead{color:var(--text-mute); font-weight:500; font-size:0.78rem; line-height:16px; margin-left:3px;}
   .wrap.ex .posbar{margin:8px 0 10px;}
   .wrap.ex .panel{flex:none; margin-top:10px; display:flex; flex-direction:column; padding:12px 14px;}
   /* Every exercise keeps one panel height from question to review (see .panel-stack). */
@@ -406,7 +406,7 @@
   .coord-f{left:2px; bottom:1px;} .coord-r{right:2px; top:2px;}
   .sq.light .coord{color:var(--board-dark);} .sq.dark .coord{color:var(--board-light);}
   .set-page .board-outer{max-width:min(420px, max(160px, 100dvh - 436px));}   /* the whole page fits the screen: on Arrows, the tallest tab, Reset lands about where the exercises' buttons are (a few pixels to spare, fonts differ by device) */
-  .fig.pc{font-size:inherit; display:inline-block; width:1.3em; height:1.3em; vertical-align:-0.3em; margin:-0.2em 0.02em -0.2em -0.1em;}   /* (the board's piece, as a letter) */
+  .fig.pc{font-size:inherit; display:inline-block; width:0.95em; height:1em; vertical-align:-0.12em; margin:-0.1em 0.04em -0.1em 0; background-size:auto 128%;}   /* (the board's piece, as a letter) */
   .set-preview{display:flex; flex-direction:column; gap:8px;}
   .set-chips{display:flex; justify-content:center; gap:16px;}
   .set-side{display:flex; gap:5px;}
