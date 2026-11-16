@@ -66,6 +66,9 @@
   .stage .board-col > .board-outer{flex:none; width:min(100cqw, 100cqh - 44px, 420px); margin:0;}
   .pl-line{height:22px; display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .pl-elo{color:var(--text-mute); font-weight:500;}
+  .mat{display:inline-flex; align-items:center; gap:3px; margin-left:2px;} .mat-g{display:inline-flex;}   /* (the material difference: same pieces overlapping) */
+  .mat .pc{width:16px; height:16px; flex:none;} .mat-g .pc + .pc{margin-left:-7px;}
+  .mat-lead{color:var(--text-mute); font-weight:500; font-size:0.78rem; margin-left:2px;}
   .wrap.ex .posbar{margin:8px 0 10px;}
   .wrap.ex .panel{flex:none; margin-top:10px; display:flex; flex-direction:column; padding:12px 14px;}
   /* Every exercise keeps one panel height from question to review (see .panel-stack). */
@@ -405,7 +408,7 @@
   .coord-f{left:2px; bottom:1px;} .coord-r{right:2px; top:2px;}
   .sq.light .coord{color:var(--board-dark);} .sq.dark .coord{color:var(--board-light);}
   .set-page .board-outer{max-width:min(420px, max(160px, 100dvh - 436px));}   /* the whole page fits the screen: on Arrows, the tallest tab, Reset lands about where the exercises' buttons are (a few pixels to spare, fonts differ by device) */
-  .fig{font-size:1.25em; line-height:0; vertical-align:-0.06em;}
+  .fig.pc{font-size:inherit; display:inline-block; width:1.3em; height:1.3em; vertical-align:-0.3em; margin:-0.2em 0.02em -0.2em -0.1em;}   /* (the board's piece, as a letter) */
   .set-preview{display:flex; flex-direction:column; gap:8px;}
   .set-chips{display:flex; justify-content:center; gap:16px;}
   .set-side{display:flex; gap:5px;}
@@ -3115,6 +3118,19 @@ function posSource(p){
   return testMode ? `Test · ${escHtml(p.title)}` : ['Masters', p.year].filter(Boolean).join(' · ');
 }
 // The players' names beside the board: the side to play at the bottom (the board is seen from it).
+// The material difference beside a player's name: the pieces they have more of (drawn in the opponent's colour, as
+// taken; the same pieces overlapping) and the lead in points, as on Lichess. Nothing when material is level for them.
+const MAT_VAL = { q:9, r:5, b:3, n:3, p:1 };
+function materialHtml(fen, color){
+  const n = {}; for(const ch of String(fen || '').split(' ')[0]) if(/[qrbnpQRBNP]/.test(ch)) n[ch] = (n[ch] || 0) + 1;
+  let lead = 0, out = '';
+  for(const k of 'qrbnp'){
+    const d = (n[k.toUpperCase()] || 0) - (n[k] || 0), mine = color==='w' ? d : -d;
+    lead += mine * MAT_VAL[k];
+    if(mine > 0) out += `<span class="mat-g">${`<span class="pc pc-${color==='w' ? 'b' : 'w'}${k.toUpperCase()}"></span>`.repeat(mine)}</span>`;
+  }
+  return out || lead > 0 ? `<span class="mat" aria-label="Material">${out}${lead > 0 ? `<span class="mat-lead">+${lead}</span>` : ''}</span>` : '';
+}
 function playerLine(where){
   let p = null; try{ p = pos(); }catch(e){}
   const names = p && p.title && p.title.includes(' – ') ? p.title.split(' – ') : null;
@@ -3122,7 +3138,7 @@ function playerLine(where){
   const color = where==='bottom' ? p.side : (p.side==='w' ? 'b' : 'w');
   const g = p.gameId ? currentGame(p.gameId) : null, gi = !g && p.game ? GAME_INFO[p.game] : null;   // (a master game: FIDE's Elo, from 1971)
   const elo = g ? (color==='w' ? g.whiteElo : g.blackElo) : gi ? gi[color==='w' ? 'we' : 'be'] : null;
-  return `<div class="pl-line">${String(names[color==='w' ? 0 : 1]).replace(/</g,'&lt;')}${elo ? `<span class="pl-elo">${elo}</span>` : ''}</div>`;
+  return `<div class="pl-line">${String(names[color==='w' ? 0 : 1]).replace(/</g,'&lt;')}${elo ? `<span class="pl-elo">${elo}</span>` : ''}${materialHtml(p.fen, color)}</div>`;
 }
 function wireCommon(helpKey, checked){
   document.getElementById('homeBtn').onclick = ()=>{
@@ -4605,7 +4621,7 @@ function reviewRowHtml(m){
   const tags = m.historical ? [pos().gameId && (myGames.find(g=>g.id===pos().gameId) || {}).me===pos().side ? 'Your move' : 'Game move'] : [];
   const labelStyle = m.outcome ? `color:${labelColor(label)};` : '';
   return `<div class="review-row${label==='Best' ? ' best-row' : ''}">
-      <div class="move-tag"><span class="num">${m.num}</span><span class="move-chip" style="background:${m.color}">${fmtSan(m.san)}</span>${tags.length ? `<span class="badges">${tags.map(t=>`<span class="badge">${t}</span>`).join('')}</span>` : ''}</div>
+      <div class="move-tag"><span class="num">${m.num}</span><span class="move-chip" style="background:${m.color}">${fmtSan(m.san, true, pos().side)}</span>${tags.length ? `<span class="badges">${tags.map(t=>`<span class="badge">${t}</span>`).join('')}</span>` : ''}</div>
       <div class="move-result"><span class="grade" style="${labelStyle}">${label}</span><span class="move-eval">${m.outcome ? fmtSigned(m.outcome) : m.na ? '—' : '…'}</span></div>
     </div>`;
 }
@@ -4617,7 +4633,7 @@ function miniRowHtml(m, highlight, fadeIn){
   const best = highlight && label==='Best';
   return `<div class="mini-row${best ? ' best-row' : ''}${best && fadeIn ? ' best-in' : ''}${m.muted ? ' muted' : ''}" data-key="${m.from}${m.to}">
       <span class="num">${m.num}</span>
-      <span class="move-chip" style="background:${m.color}">${fmtSan(m.san)}</span>
+      <span class="move-chip" style="background:${m.color}">${fmtSan(m.san, true, pos().side)}</span>
       <span class="mini-result"><span class="mini-label" style="${m.outcome ? 'color:'+labelColor(label) : ''}">${label}</span><span class="move-eval">${m.outcome ? fmtSigned(m.outcome) : m.na ? '' : '…'}</span></span>
     </div>`;
 }
@@ -6450,7 +6466,7 @@ function renderTests(){
     </div>
     <div class="test-list">${TEST_POSITIONS.map((p,i)=>`
       <div class="test-item">
-        <div class="test-name">${p.title}<small>${p.side==='w' ? 'White' : 'Black'} to play · game move ${fmtSan(p.hist.san)}</small></div>
+        <div class="test-name">${p.title}<small>${p.side==='w' ? 'White' : 'Black'} to play · game move ${fmtSan(p.hist.san, true, p.side)}</small></div>
         <div class="test-go">${ACTIVITIES.filter(a=>!(a==='imbalances' && p.noImbalances)).map(a=>`<button class="chip-btn" data-i="${i}" data-a="${a}">${ACT_NAMES[a]}</button>`).join('')}${BETA && p.eval ? `<button class="chip-btn" data-i="${i}" data-pq="1">Plan finder</button>` : ''}</div>
       </div>`).join('')}
     </div>`;
@@ -6659,7 +6675,7 @@ function renderCandidates(){
   s.picks.forEach((m,i)=>{
     const row = document.createElement('div');
     row.className = 'review-row pick-row';
-    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${cols[m.slot]}">${fmtSan(m.san)}</span></div>`;
+    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${cols[m.slot]}">${fmtSan(m.san, true, pos().side)}</span></div>`;
     const rm = document.createElement('button');
     rm.className = 'del-btn'; rm.textContent = '✕';
     rm.setAttribute('aria-label', 'Remove ' + fmtSan(m.san, false));
@@ -6913,7 +6929,7 @@ function renderFinal(){
     const row = document.createElement('div');
     row.className = 'rate-row';
     row.dataset.id = m.id; row.dataset.hint = m.id;
-    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${m.color}">${fmtSan(m.san)}</span></div><span class="drag-handle" aria-hidden="true">⠿</span>`;
+    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${m.color}">${fmtSan(m.san, true, pos().side)}</span></div><span class="drag-handle" aria-hidden="true">⠿</span>`;
     rankedEl.appendChild(row);
     fadeAt(row, INTRO_START + i*INTRO_STEP);
   });
@@ -7135,13 +7151,14 @@ applySettings();
 // Move notation: international letters (K Q R B N), your language's letters, or figurines.
 const LOCAL_PIECES = { fr:'RDTFC', de:'KDTLS', es:'RDTAC', it:'RDTAC', pt:'RDTBC', nl:'KDTLP', pl:'KHWGS', sv:'KDTLS', da:'KDTLS', no:'KDTLS', nb:'KDTLS', cs:'KDVSJ', hu:'KVBFH', ro:'RDTNC', tr:'ŞVKFA', fi:'KDTLR' };
 let localPieces = null;   // your language's piece letters (the app's language: French R D T F C; English has none of its own)
-const FIGURINES = { K:'♚', Q:'♛', R:'♜', B:'♝', N:'♞' };   // the filled glyphs
-// (html: figurines in a span, drawn a little larger than the letters)
-function fmtSan(san, html = true){
+const FIGURINES = { K:'♚', Q:'♛', R:'♜', B:'♝', N:'♞' };   // the filled glyphs (where no picture can go: labels read aloud)
+// (html: the board's own piece, in the colour of the side that moved: side 'w'/'b', White when not given)
+const figHtml = (x, side)=>`<span class="fig pc pc-${side==='b' ? 'b' : 'w'}${x}" aria-hidden="true"></span>`;
+function fmtSan(san, html = true, side){
   if(!san || settings.notation==='intl') return san;
   const sym = settings.notation==='symbols', map = sym ? FIGURINES : localPieces ? Object.fromEntries('KQRBN'.split('').map((k, i)=>[k, localPieces[i]])) : null;
   if(!map) return san;
-  const g = x=>sym ? (html ? `<span class="fig">${map[x]}︎</span>` : map[x] + '︎') : map[x];
+  const g = x=>sym ? (html ? figHtml(x, side) : map[x] + '︎') : map[x];
   return san.replace(/^[KQRBN]/, x=>g(x)).replace(/=([QRBN])/, (_, x)=>'=' + g(x));
 }
 // ================= Language =================
@@ -9468,7 +9485,7 @@ function renderSettingsPreview(){
     renderBoard(b, boardObjFromGame(new Chess(SET_SAMPLE.fen)), SET_SAMPLE.last, { noCheck: true });
     drawArrows(svg, SET_SAMPLE.moves.map(([from, to], i)=>({ from, to, color: `var(--${SET_ARROWS[i][0]})` })), 'setar');
   } finally { settingsPreview = false; }
-  const chip = ([, , san], i)=>`<span class="move-chip" style="background:var(--${SET_ARROWS[i][0]})">${fmtSan(san)}</span>`;
+  const sb = new Chess(SET_SAMPLE.fen), chip = ([from, , san], i)=>`<span class="move-chip" style="background:var(--${SET_ARROWS[i][0]})">${fmtSan(san, true, (sb.get(from) || {}).color)}</span>`;
   document.getElementById('setChips').innerHTML = `<span class="set-side">${SET_SAMPLE.moves.slice(0, 3).map(chip).join('')}</span><span class="set-side">${SET_SAMPLE.moves.slice(3).map((m, i)=>chip(m, i + 3)).join('')}</span>`;
 }
 // The board's hue, saturation and lightness tracks: the dark square's colour around the colour wheel (at the
@@ -9487,7 +9504,7 @@ function renderSettings(){
   const row = (label, ctl, sw)=>`<div class="set-row"><span class="set-label">${sw ? `<span class="set-sw" style="background:${sw}"></span>` : ''}${label}</span>${ctl}</div>`;
   const slider = (id, min, max, val, track)=>`<input type="range" class="set-hue" id="${id}" min="${min}" max="${max}" value="${val}" style="background:${track}">`;
   const local = localPieces ? localPieces.split('').join(' ') : null;
-  const notes = [['intl', 'International', 'K Q R B N'], ['local', 'Local', local || 'same as international'], ['symbols', 'Symbols', '♚\uFE0E ♛\uFE0E ♜\uFE0E ♝\uFE0E ♞\uFE0E']];
+  const notes = [['intl', 'International', 'K Q R B N'], ['local', 'Local', local || 'same as international'], ['symbols', 'Symbols', 'KQRBN'.split('').map(k=>figHtml(k)).join(' ')]];
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back to profile">${BACK_ARROW}</button>
@@ -10127,7 +10144,7 @@ function gamePosBar(x){
   else {
     const gr = gameGrade(G, k), b = G.E[k - 1], a = G.E[k], s = G.fens[k - 1].split(' ')[1]==='w' ? 1 : -1;
     const d = gr && b.mate==null && a.mate==null ? s * (a.cp - b.cp) / 100 : null;
-    mv = `${Math.ceil(k / 2)}${k % 2 ? '.' : '...'} ${fmtSan(G.sans[k - 1])}${gr ? ` <span class="xpg-grade" style="color:${labelColor(gr.label)}">${gr.label}</span>${d!=null ? ` <span class="xpg-ev">${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d).toFixed(1)}</span>` : ''}` : ' <span class="xpg-ev">…</span>'}`;
+    mv = `${Math.ceil(k / 2)}${k % 2 ? '.' : '...'} ${fmtSan(G.sans[k - 1], true, k % 2 ? 'w' : 'b')}${gr ? ` <span class="xpg-grade" style="color:${labelColor(gr.label)}">${gr.label}</span>${d!=null ? ` <span class="xpg-ev">${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d).toFixed(1)}</span>` : ''}` : ' <span class="xpg-ev">…</span>'}`;
   }
   return `<div class="posbar"><div class="pos-title">${src}<br>${mv}</div></div>`;
 }
@@ -10146,7 +10163,7 @@ function explorerBoardHtml(x, hbar){
   const names = G ? gameNames(G) : null;
   const gi = G && G.src==='masters' ? GAME_INFO[G.id] || {} : null;
   const elo = c=>gm ? (c==='w' ? gm.whiteElo : gm.blackElo) : gi ? gi[c==='w' ? 'we' : 'be'] : null, bottom = x.flip ? 'b' : 'w', top = bottom==='w' ? 'b' : 'w';
-  const line = (c, cls)=>names ? `<div class="pl-line ${cls}">${escHtml(names[c==='w' ? 0 : 1] || '?')}${elo(c) ? `<span class="pl-elo">${elo(c)}</span>` : ''}</div>` : `<div class="pl-line ${cls}" aria-hidden="true"></div>`;
+  const line = (c, cls)=>names ? `<div class="pl-line ${cls}">${escHtml(names[c==='w' ? 0 : 1] || '?')}${elo(c) ? `<span class="pl-elo">${elo(c)}</span>` : ''}${materialHtml(x.fens[x.at], c)}</div>` : `<div class="pl-line ${cls}" aria-hidden="true"></div>`;
   const b = `<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>`;
   return `<div class="stage"><div class="board-col">${hbar}${line(top, 'xp-top')}${b}${line(bottom, 'xp-bottom')}</div></div>`;
 }
