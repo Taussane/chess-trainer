@@ -14,8 +14,8 @@
 //  - Imbalance reading and the Plan finder: as scripts/strategy-pass.js (from the middlegame's start to just past the
 //    endgame's start, Imbalance reading 5 apart, the Plan finder 7, the same rules), with the pass's evaluation and best line.
 // Writes app/index.html (/*POOLS*/), data/pools.json (Candidate moves and Move selection with their measurements, for
-// starters.py) and master-evals.json (each kept position's top 3 moves). Then: python3 scripts/build-site.py,
-// python3 scripts/starters.py, python3 scripts/planq-starters.py.
+// starters.py) and master-evals.json (each kept position's top 3 moves). Then: python3 scripts/master-pass-file.py (the
+// game review's evaluations), python3 scripts/build-site.py, python3 scripts/starters.py, python3 scripts/planq-starters.py.
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path'), { spawn } = require('child_process');
 const ROOT = path.join(__dirname, '..'), PASS_DIR = path.join(ROOT, 'finder/.cache/pass'), PORT = +(process.env.PORT || 8821);

@@ -9884,7 +9884,23 @@ function explorerLoadGame(src, id, at, opts){
   screen = 'explorer'; render();
 }
 // the positions not evaluated yet, one after the other (the shown game only; stops when another one is loaded)
+// A master game: the pass made for the exercises (each position up to move 40, as for your games: master-pass.json,
+// loaded once) gives those positions their evaluation and best move; the rest are searched here
+let masterPass = null;
+function loadMasterPass(){
+  if(!masterPass) masterPass = typeof fetch!=='function' ? Promise.resolve({}) : fetch('master-pass.json').then(r=>r.ok ? r.json() : {}).catch(()=>({}));
+  return masterPass;
+}
 async function explorerAnalyse(G){
+  if(G.src==='masters'){
+    const mp = await loadMasterPass(), ls = String(mp[G.id] || '').split(' ');
+    for(let k = 0; k < G.fens.length && k < ls.length; k++){
+      if(!ls[k] || G.E[k] && G.E[k].best!==undefined) continue;
+      const i = ls[k].indexOf(':'), v = ls[k].slice(i + 1), w = G.fens[k].split(' ')[1]==='w' ? 1 : -1;
+      G.E[k] = { ...(v[0]==='m' ? { cp:null, mate:w * +v.slice(1) } : { cp:w * +v, mate:null }), best: ls[k].slice(0, i) };
+    }
+    if(explorer && explorer.game===G && screen==='explorer' && (explorer.mode==='game' || explorer.mode==='stats') && !document.getElementById('gpModal')) render();
+  }
   for(let k = 0; k < G.fens.length; k++){
     if(!explorer || explorer.game!==G) return;
     if(G.E[k] && G.E[k].best!==undefined || G.E.failed && G.E.failed.has(k)) continue;
