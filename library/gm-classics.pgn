@@ -909,8 +909,8 @@
 36.Rf1 Re6 37.Rxf4 Qd1+ 38.Kg2 b6 39.Qd7 Qe2+ 40.Rf2 Qh5 41.Nf3 h6 42.Nd4 Re5
 43.Qd8+ Kh7 44.Qf6  1-0
 
-[Event "World Championship 9th"]
-[EventShort "World Championship match"]
+[Event "Lasker - Janowski Exhibition"]
+[EventShort "Exhibition match"]
 [Added "2026.10.15"]
 [Site "Paris"]
 [Date "1909.??.??"]
@@ -3112,8 +3112,8 @@ Ka7 74. Kg5 Rh8 75. Kf6 1-0
 58.Kd3 Nd5 59.Kc4 Ne7 60.Kc5 a5 61.c7 Kd7 62.Kb6 Nf5 63.Kxa5 Nd4 64.Kxb4 Nxc2+
 65.Kc4  1-0
 
-[Event "World Championship 9th"]
-[EventShort "World Championship match"]
+[Event "Lasker - Janowski Exhibition"]
+[EventShort "Exhibition match"]
 [Added "2026.10.22"]
 [Site "Paris"]
 [Date "1909.10.21"]
@@ -3131,8 +3131,8 @@ Ka7 74. Kg5 Rh8 75. Kf6 1-0
 23.Bd3 Re7 24.c4 Ng7 25.c3 Ne6 26.Bf1 f5 27.R4g2 Rf6 28.Bd3 g5 29.Rh1 g4
 30.Be2 Ng5 31.fxg4 f3 32.Rg3 fxe2  0-1
 
-[Event "World Championship 9th"]
-[EventShort "World Championship match"]
+[Event "Lasker - Janowski Exhibition"]
+[EventShort "Exhibition match"]
 [Added "2026.10.22"]
 [Site "Paris"]
 [Date "1909.??.??"]
@@ -3151,8 +3151,8 @@ Ka7 74. Kg5 Rh8 75. Kf6 1-0
 30.Rxg5 g6 31.fxg6 hxg6 32.Rxg6 Ref8 33.Rg7 Rxg7 34.hxg7 Rg8 35.Rg2 Ne8 36.Be5 Ke6
 37.Kf4 Kf7 38.Kf5  1-0
 
-[Event "World Championship 9th"]
-[EventShort "World Championship match"]
+[Event "Lasker - Janowski Exhibition"]
+[EventShort "Exhibition match"]
 [Added "2026.10.22"]
 [Site "Paris"]
 [Date "1909.??.??"]
@@ -3172,8 +3172,8 @@ Ka7 74. Kg5 Rh8 75. Kf6 1-0
 37.Ke2 Kg6 38.Kd2 Rf8 39.Be6 Qc6 40.Qe3 Re8 41.Qg3+ Kf6 42.Bb3 h6 43.c3 Qh1
 44.Bd1 Qe1+ 45.Kc2 Rc8 46.c4 bxc4 47.d4 c3 48.Qe3 Re8 49.Qxc3 Qxc3+ 50.Kxc3 Re4  0-1
 
-[Event "World Championship 9th"]
-[EventShort "World Championship match"]
+[Event "Lasker - Janowski Exhibition"]
+[EventShort "Exhibition match"]
 [Added "2026.10.22"]
 [Site "Paris"]
 [Date "1909.??.??"]
@@ -3195,8 +3195,8 @@ Ka7 74. Kg5 Rh8 75. Kf6 1-0
 51.Bf8 Bb6 52.Ne4 Rh7 53.Nc5 Bc7 54.Ne6 Be5 55.Rc5+ Kd7 56.Rxa5 Rh3 57.Rd5+ Kc6
 58.Nf4 Bxf4 59.Kxf4 Nb6 60.Rd6+ Kc7 61.Rd3  1-0
 
-[Event "World Championship 9th"]
-[EventShort "World Championship match"]
+[Event "Lasker - Janowski Exhibition"]
+[EventShort "Exhibition match"]
 [Added "2026.10.22"]
 [Site "Paris"]
 [Date "1909.??.??"]
@@ -3218,8 +3218,8 @@ Ka7 74. Kg5 Rh8 75. Kf6 1-0
 51.bxc4 Rc5 52.Rg1 Bxc4 53.Rg5 Rc6 54.Nf5+ Kf7 55.Rxg6 Ba2 56.Rg2 Bb1 57.Ne3 Rc5
 58.Rd2 Ke6 59.c4 Rc6 60.Kg5 Rb6 61.Rh2 Rb3 62.Kf4 Ra3 63.Rh7  1-0
 
-[Event "World Championship 9th"]
-[EventShort "World Championship match"]
+[Event "Lasker - Janowski Exhibition"]
+[EventShort "Exhibition match"]
 [Added "2026.10.22"]
 [Site "Paris"]
 [Date "1909.??.??"]
@@ -7639,11 +7639,11 @@ Kg7 47. e7 Qxe7 48. Qxb6 Nd3 49. Qa5 Qc5 50. Qa6 Ne5 51. Qe6 h5 52. h4 a2 0-1
 51.Rb4 Be6 52.Ra4 Rb2 53.Ba8 Kf6 54.Rf4 Ke5 55.Rf2 Rxf2 56.Kxf2 Bd5 57.Bxd5 Kxd5
 58.Ke3 Ke5  0-1
 
-[Event "World Championship 9th"]
-[EventShort "World Championship match"]
+[Event "Lasker - Janowski Exhibition"]
+[EventShort "Exhibition match"]
 [Added "2026.10.24"]
 [Site "Paris"]
-[Date "1909.??.??"]
+[Date "1909.10.19"]
 [Round "1"]
 [White "Lasker, Emanuel"]
 [Black "Janowsky, Dawid Markelowicz"]
@@ -7654,8 +7654,8 @@ Kg7 47. e7 Qxe7 48. Qxb6 Nd3 49. Qa5 Qc5 50. Qa6 Ne5 51. Qe6 h5 52. h4 a2 0-1
 
 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 d6 7.Bxc6+ bxc6 8.d4 Nd7 9.dxe5 dxe5 10.Nbd2 f6 11.Nc4 a5 12.Bd2 a4 13.Na5 Ra6 14.Qe2 Nc5 15.Red1 Be6 16.b4 axb3 17.axb3 Qa8 18.Bc3 Kf7 19.Nh4 g6 20.Rf1 Kg7 21.f4 exf4 22.Nf5+ Bxf5 23.exf5 Bd6 24.Nc4 Rxa1 25.Rxa1 Re8 26.Qf3 Qd8 27.Qxc6 Ne4 28.Nxd6 Qxd6 29.Qxd6 cxd6 30.Bd4 gxf5 31.Ra2 Kf7 32.c3 Ke6 33.Kf1 Rc8 34.Ke1 Rb8 35.b4 Kd5 36.Ke2 Kc4 37.Ra6 Rg8 38.Kf3 Rg4 39.Ra5 Nd2+ 40.Kf2 Ne4+ 41.Kf3 Ng5+ 42.Kf2 Ne4+ 43.Kf3 1/2-1/2
 
-[Event "World Championship 9th"]
-[EventShort "World Championship match"]
+[Event "Lasker - Janowski Exhibition"]
+[EventShort "Exhibition match"]
 [Added "2026.10.24"]
 [Site "Paris"]
 [Date "1909.??.??"]
