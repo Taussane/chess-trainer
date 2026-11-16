@@ -201,12 +201,13 @@
   .xp-plan .asp-badge.xp-ans{min-width:7.5em; font-weight:600; font-size:0.8rem; letter-spacing:0; padding:2px 6px;}
   .xp-plan-note{font-size:0.8rem; line-height:1.2; color:var(--text-mute); overflow:hidden;}
   /* the evaluation, across the top of the board */
-  .xp-hbar-line{padding:3px 0;}
+  .xp-hbar-line, .board-col:has(> .pl-line > .xp-sides) > .pl-line.xp-hbar-line:first-child{height:16px; padding:1px 0; align-items:stretch;}   /* (thin: the board the bigger) */
+  .stage .board-col:has(> .xp-hbar-line) > .board-outer{width:min(100cqw, 100cqh - 28px, 420px);}
   .board-col > .pl-line.xp-top:empty{display:none;}   /* (no game: the bar alone above the board, as before) */
-  .stage .board-col:has(> .pl-line.xp-top:not(:empty)) > .board-outer{width:min(100cqw, 100cqh - 66px, 420px);}   /* (a game: the bar, then the names above and below) */
+  .stage .board-col:has(> .pl-line.xp-top:not(:empty)) > .board-outer{width:min(100cqw, 100cqh - 50px, 420px);}   /* (a game: the bar, then the names above and below) */
   .xp-hbar{position:relative; width:100%; height:100%; border-radius:4px; overflow:hidden; background:var(--black-fill); border:1px solid var(--border);}
   .xp-hbar-w{position:absolute; left:0; top:0; bottom:0; width:var(--w, 50%); background:var(--white-fill);}
-  .xp-hbar-num{position:absolute; top:50%; transform:translateY(-50%); font-size:0.72rem; font-weight:700;}
+  .xp-hbar-num{position:absolute; top:50%; transform:translateY(-50%); font-size:0.66rem; font-weight:700; line-height:1;}
   .xp-hbar-num.w{left:6px; color:var(--black-fill);} .xp-hbar-num.b{right:6px; color:var(--white-fill);}
   .xp-hbar.flip .xp-hbar-w{left:auto; right:0;}
   .xp-hbar.flip .xp-hbar-num.w{left:auto; right:6px;} .xp-hbar.flip .xp-hbar-num.b{right:auto; left:6px;}
@@ -637,13 +638,18 @@
   /* game review (the explorer's Game tab, beta): its title, the chart (two rows), the move and its grade, in the panel's four rows */
   .xpg{min-width:0;}
   .xpg.xpg-full{display:block; position:relative; height:calc(4 * var(--pn-row));}
-  .xpg-full .xpg-chart{height:calc(4 * var(--pn-row) - 4px);} .xpg-full .xpg-prog{position:absolute; right:8px; top:6px;}
-  .xpg-area{fill:var(--white-fill);} .xpg-dot{stroke:var(--black-fill); stroke-width:1; vector-effect:non-scaling-stroke;}
+  .xpg-full .xpg-chart{height:calc(4 * var(--pn-row) - 4px);} .xpg-chart svg{display:block; width:100%; height:100%;} .xpg-full .xpg-prog{position:absolute; right:8px; top:6px;}
+  .xpg-area{fill:var(--white-fill);} .xpg-dot{position:absolute; width:7px; height:7px; border-radius:50%; border:1px solid var(--black-fill); transform:translate(-50%, -50%); pointer-events:none;}
   .xpg-empty{margin:0; font-size:0.86rem; color:var(--text-mute); align-self:start; grid-row:1 / span 2;}
-  .xpg-chart{width:100%; height:calc(2 * var(--pn-row) - 6px); display:block; cursor:pointer; border-radius:6px; background:var(--black-fill); border:1px solid var(--border);}
-  .xpg-mid{stroke:var(--text-mute); stroke-width:1; stroke-dasharray:3 3; vector-effect:non-scaling-stroke; opacity:.7;} .xpg-line{fill:none; stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke;}
+  .xpg-chart{position:relative; overflow:hidden; box-sizing:border-box; width:100%; height:calc(2 * var(--pn-row) - 6px); display:block; cursor:pointer; border-radius:6px; background:var(--black-fill); border:1px solid var(--border);}
+  .xpg-mid{stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke;} .xpg-line{fill:none; stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke;}
   .xpg-now{stroke:var(--accent); stroke-width:1.5; vector-effect:non-scaling-stroke;}
   .xpg-grade{font-weight:700;} .xpg-ev{color:var(--text-mute); font-variant-numeric:tabular-nums;}
+  .xpg-badge{position:absolute; z-index:3; width:5.6%; aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; transform:translate(-70%, -30%); color:#fff; font-weight:800; letter-spacing:-0.04em; box-shadow:0 1px 3px rgba(0,0,0,.45); pointer-events:none;}
+  .xpg-stats{display:grid; grid-template-columns:1fr auto auto; column-gap:18px; align-content:space-between; height:calc(4 * var(--pn-row) - 4px); font-size:0.82rem; position:relative;}
+  .xpg-stats > *{display:flex; align-items:center; white-space:nowrap;} .xpg-stats .n{justify-content:flex-end; font-variant-numeric:tabular-nums; min-width:3.2em;}
+  .xpg-stats .h{color:var(--text-mute); font-size:0.78rem;} .xpg-stats .acc{font-weight:700;}
+  .xpg-stats .xpg-prog{position:absolute; right:0; bottom:100%;}
   .xpg-prog{color:var(--text-mute); font-size:0.8rem;} .xpg-note{color:var(--text-mute); font-size:0.82rem;}
   .modal-box.gp-box{width:100%; max-width:min(560px, 94vw); display:flex; flex-direction:column; max-height:90svh;}
   .gp-box .seg, .gp-box .gp-q, .gp-box h3, .gp-box .modal-actions{flex:none;} .gp-box .seg{margin:0 0 8px;} .gp-q{width:100%; box-sizing:border-box; margin:0 0 8px;}
@@ -3405,7 +3411,7 @@ function exploreFrom(p, back){
   if(!ok) x.fens = [p.fen];
   x.flip = p.fen.split(' ')[1]==='b';
   x.ret = { screen, saved: prev, back };
-  if(BETA && ok && (p.gameId || p.game)){ helpVisible = false; selSquare = null; promoPending = null; const G = { src: p.gameId ? 'mine' : 'masters', id: p.gameId || p.game }; const r = x.ret; explorerLoadGame(G.src, G.id, p.ply); explorer.ret = r; explorer.mode = 'imbalances'; explorer.flip = p.fen.split(' ')[1]==='b'; return; }
+  if(BETA && ok && (p.gameId || p.game)){ helpVisible = false; selSquare = null; promoPending = null; explorerLoadGame(p.gameId ? 'mine' : 'masters', p.gameId || p.game, p.ply, { ret: x.ret, mode:'imbalances', flip: x.flip }); return; }
   helpVisible = false; selSquare = null; promoPending = null;
   screen = 'explorer'; render();
 }
@@ -7121,6 +7127,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Off the game": "Hors de la partie",
 "Start of the game": "Début de la partie",
 "Game": "Partie",
+"Statistics": "Statistiques",
 "Load a game": "Charger une partie",
 "Search: player, year, event": "Rechercher : joueur, année, événement",
 "No game found.": "Aucune partie trouvée.",
@@ -7657,6 +7664,7 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Off the game": "Außerhalb der Partie",
 "Start of the game": "Anfang der Partie",
 "Game": "Partie",
+"Statistics": "Statistik",
 "Load a game": "Partie laden",
 "Search: player, year, event": "Suchen: Spieler, Jahr, Turnier",
 "No game found.": "Keine Partie gefunden.",
@@ -8125,6 +8133,7 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Off the game": "Fuera de la partida",
 "Start of the game": "Inicio de la partida",
 "Game": "Partida",
+"Statistics": "Estadísticas",
 "Load a game": "Cargar una partida",
 "Search: player, year, event": "Buscar: jugador, año, evento",
 "No game found.": "No se encontró ninguna partida.",
@@ -8593,6 +8602,7 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Off the game": "Fuori dalla partita",
 "Start of the game": "Inizio della partita",
 "Game": "Partita",
+"Statistics": "Statistiche",
 "Load a game": "Carica una partita",
 "Search: player, year, event": "Cerca: giocatore, anno, evento",
 "No game found.": "Nessuna partita trovata.",
@@ -9870,14 +9880,15 @@ const explorerSidesHtml = x=>sidesHtml(x, !!x.aspView);
 const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
     <button class="seg-btn${x.mode==='imbalances' ? ' active' : ''}" data-mode="imbalances" role="radio" aria-checked="${x.mode==='imbalances'}">Imbalances</button>
     <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plans for ${explorerPos().side==='b' ? 'Black' : 'White'}</button>
-    ${BETA ? `<button class="seg-btn${x.mode==='game' ? ' active' : ''}" data-mode="game" role="radio" aria-checked="${x.mode==='game'}">Game</button>` : ''}
+    ${BETA ? ['game', 'stats'].map((m, i)=>`<button class="seg-btn${x.mode===m ? ' active' : ''}" data-mode="${m}" role="radio" aria-checked="${x.mode===m}">${['Game', 'Statistics'][i]}</button>`).join('') : ''}
   </div>`;
 // ---- Game review (beta): a whole game in the explorer, a master's or one of yours. Each position gets an evaluation
 // (yours: Lichess's analysis or the pass; the rest searched here, 0.4 s each, in the background), each move its grade
 // (the reviews' own: Best, Good, Ok, Dubious, Mistake, Blunder), and a chart of the game shows where it turned: tap
 // it to go there. x.game: { src: 'masters' | 'mine', id, title, fens, sans, moves, E: [evaluations, White's view] }.
-const GAME_MS = 400;
-function explorerLoadGame(src, id, at){
+const GAME_MS = 400, GAME_EVALS = new Map();   // (each game's evaluations, kept for the visit: reopened, it isn't searched again)
+function explorerLoadGame(src, id, at, opts){
+  opts = opts || {};
   const p = src==='mine' ? { gameId:id } : { game:id }, sans = gameSans(p); if(!sans) return;
   const c = new Chess(), fens = [c.fen()], moves = [], played = [];
   for(const san of sans){
@@ -9888,18 +9899,19 @@ function explorerLoadGame(src, id, at){
   }
   const g = src==='mine' ? myGames.find(y=>y.id===id) : null, info = src==='masters' ? GAME_INFO[id] || {} : null;
   const title = g ? `${g.white || '?'} – ${g.black || '?'}${g.year ? ' · ' + g.year : ''}` : `${info.title || id}${info.date ? ' · ' + String(info.date).slice(0, 4) : ''}`;
-  const E = [{ cp:20, mate:null }];   // (the start: White a little better)
-  for(let k = 1; k < fens.length; k++){
+  const ck = src + ':' + id, E = GAME_EVALS.get(ck) || [{ cp:20, mate:null }];   // (the start: White a little better)
+  GAME_EVALS.set(ck, E);
+  for(let k = E.length; k < fens.length; k++){
     let e = g && g.evals && g.evals[k - 1] ? { ...g.evals[k - 1] } : null;
     if(g){ const ls = passLines(g, k); if(ls && ls.length){ const w = fens[k].split(' ')[1]==='w' ? 1 : -1; e = e || (ls[0].mate!=null ? { cp:null, mate:w * ls[0].mate } : { cp:w * ls[0].cp, mate:null }); e.best = ls[0].uci; } }
     E.push(e);
   }
-  if(g){ const ls0 = passLines(g, 0); if(ls0 && ls0.length) E[0].best = ls0[0].uci; }
-  const keep = explorer && explorer.ret;
+  if(g && E[0].best===undefined){ const ls0 = passLines(g, 0); if(ls0 && ls0.length) E[0].best = ls0[0].uci; }
+  const keep = opts.ret || explorer && explorer.ret;
   explorer = null; explorerInit();
   const x = explorer;
-  Object.assign(x, { fens: fens.slice(), sans: played.slice(), moves: moves.slice(), at: Math.max(0, Math.min(fens.length - 1, at || 0)), mode:'game', ret: keep || null });
-  x.flip = !!(g && g.me==='b');
+  Object.assign(x, { fens: fens.slice(), sans: played.slice(), moves: moves.slice(), at: Math.max(0, Math.min(fens.length - 1, at || 0)), mode: opts.mode || 'game', ret: keep || null });
+  x.flip = opts.flip!=null ? opts.flip : !!(g && g.me==='b');
   x.game = { src, id, title, fens, sans: played, moves, E, me: g ? g.me : null };
   explorerAnalyse(x.game);
   screen = 'explorer'; render();
@@ -9908,15 +9920,15 @@ function explorerLoadGame(src, id, at){
 async function explorerAnalyse(G){
   for(let k = 0; k < G.fens.length; k++){
     if(!explorer || explorer.game!==G) return;
-    if(G.E[k] && G.E[k].best!==undefined) continue;
+    if(G.E[k] && G.E[k].best!==undefined || G.E.failed && G.E.failed.has(k)) continue;
     const c = new Chess(G.fens[k]);
     if(c.game_over()){ const w = G.fens[k].split(' ')[1]==='w' ? 1 : -1; G.E[k] = c.in_checkmate() ? { cp:null, mate:-w, best:null } : { cp:0, mate:null, best:null }; continue; }
     const r = await bgEval(G.fens[k], { multipv:1, movetime:GAME_MS });
     if(!explorer || explorer.game!==G) return;
-    if(evalFailed(r) || !r || !r.lines || !r.lines.length) continue;
+    if(evalFailed(r) || !r || !r.lines || !r.lines.length){ G.E.failed = G.E.failed || new Set(); G.E.failed.add(k); continue; }
     const info = toWhitePerspective(r.lines[0], G.fens[k]);
     G.E[k] = { ...(G.E[k] || { cp:info.cp, mate:info.mate }), best: r.lines[0].uci };
-    if(screen==='explorer' && explorer.mode==='game' && !document.getElementById('gpModal')) render();
+    if(screen==='explorer' && (explorer.mode==='game' || explorer.mode==='stats') && !document.getElementById('gpModal')) render();
   }
 }
 // move k's grade (from the position before it to the one after), or null while either isn't evaluated
@@ -9938,15 +9950,51 @@ function gameReviewHtml(x){
   for(let k = 0; k <= n; k++){ if(G.E[k]){ pts.push([X(k), Y(G.E[k])]); last = k; } }
   const area = pts.length > 1 ? `M${pts[0][0].toFixed(1)},${H} ` + pts.map(([a, b])=>`L${a.toFixed(1)},${b.toFixed(1)}`).join(' ') + ` L${pts[pts.length - 1][0].toFixed(1)},${H} Z` : '';
   const curve = pts.length > 1 ? 'M' + pts.map(([a, b])=>`${a.toFixed(1)},${b.toFixed(1)}`).join(' L') : '';
-  const marks = []; for(let k = 1; k <= n; k++){ const gr = gameGrade(G, k); if(gr && BAD_GRADES.includes(gr.label)) marks.push(`<circle cx="${X(k).toFixed(1)}" cy="${Y(G.E[k]).toFixed(1)}" r="3.4" fill="${labelColor(gr.label)}" class="xpg-dot"/>`); }
-  const done = G.E.filter(e=>e && e.best!==undefined).length, line = onGameLine(x), k = x.at;
+  const marks = []; for(let k = 1; k <= n; k++){ const gr = gameGrade(G, k); if(gr && BAD_GRADES.includes(gr.label)) marks.push(`<span class="xpg-dot" style="left:${(100 * X(k) / W).toFixed(2)}%; top:${Y(G.E[k]).toFixed(2)}%; background:${labelColor(gr.label)}"></span>`); }
+  const line = onGameLine(x), k = x.at;   // (the dots over the drawing, not in it: stretched with it, they wouldn't stay round)
   return `<div class="xpg xpg-full">
-      <svg class="xpg-chart" id="xpgChart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Evaluation through the game">
+      <div class="xpg-chart" id="xpgChart" role="img" aria-label="Evaluation through the game"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
         ${area ? `<path d="${area}" class="xpg-area"/>` : ''}<line x1="0" x2="${W}" y1="${H / 2}" y2="${H / 2}" class="xpg-mid"/>${curve ? `<path d="${curve}" class="xpg-line"/>` : ''}
-        ${line ? `<line x1="${X(k).toFixed(1)}" x2="${X(k).toFixed(1)}" y1="0" y2="${H}" class="xpg-now"/>` : ''}${marks.join('')}
-      </svg>
-      ${done <= n ? `<span class="xpg-prog">${Math.round(100 * done / (n + 1))}%</span>` : ''}
+        ${line ? `<line x1="${X(k).toFixed(1)}" x2="${X(k).toFixed(1)}" y1="0" y2="${H}" class="xpg-now"/>` : ''}
+      </svg>${marks.join('')}</div>
+      ${gameProgHtml(G)}
     </div>`;
+}
+// the analysis still running: how far it is (each position searched, or given up)
+function gameProgHtml(G){
+  const n = G.fens.length, done = G.E.filter(e=>e && e.best!==undefined).length + (G.E.failed ? G.E.failed.size : 0);
+  return done < n ? `<span class="xpg-prog">${Math.round(100 * done / n)}%</span>` : '';
+}
+// Statistics: each player's accuracy (per move, from the drop in winning chances, as Lichess counts it; averaged)
+// and how many moves got each grade
+const GRADE_ORDER = ['Best', 'Good', 'Ok', 'Dubious', 'Mistake', 'Blunder'];
+function gameStatsHtml(x){
+  const G = x.game;
+  if(!G) return gameReviewHtml(x);
+  const st = { w:{ acc:[], n:{} }, b:{ acc:[], n:{} } };
+  for(let k = 1; k < G.fens.length; k++){
+    const gr = gameGrade(G, k); if(!gr) continue;
+    const s = st[G.fens[k - 1].split(' ')[1]];
+    s.acc.push(Math.max(0, Math.min(100, 103.1668 * Math.exp(-0.04354 * Math.max(0, gr.drop)) - 3.1669)));
+    s.n[gr.label] = (s.n[gr.label] || 0) + 1;
+  }
+  const acc = s=>s.acc.length ? Math.round(s.acc.reduce((a, b)=>a + b, 0) / s.acc.length) + '%' : '…';
+  const row = (l, w, b, cls)=>`<span class="${cls || ''}">${l}</span><span class="n ${cls || ''}">${w}</span><span class="n ${cls || ''}">${b}</span>`;
+  return `<div class="xpg xpg-stats">
+      ${row('', 'White', 'Black', 'h')}${row('Accuracy', acc(st.w), acc(st.b), 'acc')}
+      ${GRADE_ORDER.map(l=>row(`<span style="color:${labelColor(l)}">${l}</span>`, st.w.n[l] || 0, st.b.n[l] || 0)).join('')}
+      ${gameProgHtml(G)}
+    </div>`;
+}
+// the move just played, graded Dubious or worse: its sign at the top right of its square (?!, ?, ??)
+function gameMoveBadge(x){
+  const G = x.game; if(!G || !x.at || !onGameLine(x)) return;
+  const gr = gameGrade(G, x.at), i = gr ? BAD_GRADES.indexOf(gr.label) : -1; if(i < 0) return;
+  const outer = document.querySelector('.board-outer'), to = G.moves[x.at - 1].to; if(!outer) return;
+  const f = to.charCodeAt(0) - 97, r = +to[1], flip = boardFlipped(), col = flip ? 7 - f : f, row = flip ? r - 1 : 8 - r;
+  const b = document.createElement('div'); b.className = 'xpg-badge'; b.textContent = ['?!', '?', '??'][i];
+  b.style.cssText = `left:${(col + 1) * 12.5}%; top:${row * 12.5}%; background:${labelColor(gr.label)}; font-size:${Math.max(10, outer.clientWidth * 0.034).toFixed(1)}px`;
+  outer.appendChild(b);
 }
 // A game loaded: where it comes from, then the move just played with its grade and how much it changed the
 // evaluation (for the side that played it), as an exercise shows its position; no game: the same room, empty
@@ -10130,10 +10178,10 @@ function renderExplorer(){
     : `<button class="depth-btn off" id="depthBtn" aria-pressed="false" aria-label="Engine off"><b>Off</b></button>`;   // the engine's depth; tap: on / off
   const planInfo = x.engineOn ? info || x.lastInfo : { cp:0 };
   const pq = x.mode==='plans' ? explorerPlan(p, p.side, planInfo) : null;   // (the side to play's plan)
-  if(x.mode==='game' && !BETA) x.mode = 'imbalances';
+  if((x.mode==='game' || x.mode==='stats') && !BETA) x.mode = 'imbalances';
   const body = x.mode==='imbalances'
     ? aspectsGridHtml(vals, null, ASPECTS.length, !vals, x.aspView, vals && fen)
-    : x.mode==='game' ? gameReviewHtml(x) : explorerPlanHtml(pq, x, false);
+    : x.mode==='game' ? gameReviewHtml(x) : x.mode==='stats' ? gameStatsHtml(x) : explorerPlanHtml(pq, x, false);
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back${x.ret && (ACTIVITIES.includes(x.ret.screen) || x.ret.screen==='planq') ? ' keep' : ''}" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
@@ -10177,6 +10225,7 @@ function renderExplorer(){
   const outer = document.querySelector('.board-outer'), top = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   top.setAttribute('class', 'arrows'); top.setAttribute('viewBox', '0 0 480 480'); outer.appendChild(top);
   if(best && x.engineOn) drawArrows(top, [{ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }], 'xb_');
+  gameMoveBadge(x);
   on('depthBtn', ()=>explorerEngine(!x.engineOn));
   xpBarEase(pct);
   app.querySelectorAll('.panel .layer:not(.ghost) .xp-plan .pq-reason[data-key]').forEach(b=>b.onclick = ()=>{ x.aspView = x.aspView===b.dataset.key ? null : b.dataset.key; x.aspPiece = x.aspKing = null; render(); });
