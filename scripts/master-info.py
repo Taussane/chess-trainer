@@ -1,4 +1,4 @@
-# Writes each master game's players ("Botvinnik – Tal"), its result ("1-0"), the day it joined the library (Added), its date ("1981-05-12", or "1981" when only the year is known) and short event
+# Writes each master game's players ("Botvinnik – Tal"), its result ("1-0"), their FIDE Elo from 1971 (we, be), the day it joined the library (Added), its date ("1981-05-12", or "1981" when only the year is known) and short event
 # name (the library's EventShort header, written by hand: "USSR Championship", "Leipzig Olympiad"…)
 # into the app (the /*GAME_INFO*/ ... /*END GAME_INFO*/ block of app/index.html), shown above the board.
 # Game ids are the finder's: g0, g1, … in the order of library/gm-classics.pgn (checked against data/stats.json).
@@ -19,6 +19,9 @@ for i, (g, s) in enumerate(zip(games, stats)):
     if h.get('EventShort'): info['event'] = h['EventShort']
     info['title'] = h.get('White', '').split(',')[0].strip() + ' – ' + h.get('Black', '').split(',')[0].strip()
     if h.get('Result') in ('1-0', '0-1', '1/2-1/2'): info['result'] = h['Result']
+    if y.isdigit() and int(y) >= 1971:   # (FIDE's Elo: its first list is from 1971; no rating shown before)
+        for k, c in (('WhiteElo', 'we'), ('BlackElo', 'be')):
+            if h.get(k, '').isdigit(): info[c] = int(h[k])
     ad = re.match(r'^(\d{4})\.(\d{2})\.(\d{2})$', h.get('Added', ''))
     if ad:
         import calendar
