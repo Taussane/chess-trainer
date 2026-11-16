@@ -5867,19 +5867,22 @@ function passStore(g, ply, res){
 const REVIEW_V = 1;
 const reviewLine = (g, ply)=>g.rv && g.rv.v===REVIEW_V && g.rv.l[ply] || null;
 function reviewStore(g, ply, v){ if(!g.rv || g.rv.v!==REVIEW_V) g.rv = { v:REVIEW_V, l:{} }; g.rv.l[ply] = v; }
-const reviewDone = new Set();
+const reviewFull = g=>!!(g.rv && g.rv.v===REVIEW_V && g.rv.full);   // (every position has its line: kept with the game)
 async function reviewFill(id){
   let g = currentGame(id); if(!g) return 'gone';
   const c = new Chess(), fens = [c.fen()]; for(const s of g.sans){ if(!c.move(s)) break; fens.push(c.fen()); }
-  let n = 0;
-  for(let ply = 0; ply < fens.length; ply++){
+  const has = (g, ply)=>passLines(g, ply)!==null || (g.rv && g.rv.v===REVIEW_V && g.rv.l[ply]!==undefined);
+  const todo = fens.map((f, ply)=>ply).filter(ply=>!has(g, ply));
+  myNow = { id, total: fens.length, done: fens.length - todo.length }; showNowLine();
+  for(const ply of todo){
     g = currentGame(id); if(!g) return 'gone';
-    if(passLines(g, ply)!==null || (g.rv && g.rv.v===REVIEW_V && g.rv.l[ply]!==undefined)) continue;
+    if(has(g, ply)){ myNow.done++; continue; }
     const v = await reviewSearch(fens[ply]); if(v===null) return 'retry';
     g = currentGame(id); if(!g) return 'gone';
-    reviewStore(g, ply, v); if(++n % 10===0) saveMyLocal();
+    reviewStore(g, ply, v); myNow.done++; showNowLine(); if(myNow.done % 10===0) saveMyLocal();
   }
-  if(n){ myTurnId = null; saveMyGame(g); }   // (to the account once per game)
+  if(!g.rv || g.rv.v!==REVIEW_V) g.rv = { v:REVIEW_V, l:{} }; g.rv.full = true;
+  myTurnId = null; saveMyGame(g);   // (to the account once per game)
   return 'ok';
 }
 function passPliesOf(g, fens, hist){
@@ -6155,9 +6158,9 @@ async function myBackground(){
       myGames.forEach(x=>{ if(!myDone.has(x.id) && gameFinished(x)) myDone.add(x.id); });
       const g = myGames.map((x, i)=>[x, i]).sort((a, b)=>gameRank(a[0]) - gameRank(b[0]) || a[1] - b[1]).map(x=>x[0]).find(x=>!myDone.has(x.id));
       if(!g){   // every game's turn done: the review's lines for the positions the pass left out, a game at a time
-        const h = myGames.find(x=>!reviewDone.has(x.id)); if(!h) break;
+        const h = myGames.find(x=>!reviewFull(x)); if(!h) break;
         const r = await reviewFill(h.id); if(r==='retry'){ retry = true; break; }
-        reviewDone.add(h.id); await tick(); continue;
+        if(onProfile()) render(); await tick(); continue;
       }
       myTurnId = g.id; myTurnDirty = false;
       let r; const t0 = Date.now();
@@ -6390,6 +6393,7 @@ function positionsSection(){
     : !myGames.length ? ''
     : sfState==='error' ? 'The engine is unavailable, so analysis is paused.'
     : done < myGames.length ? `Analysing your games: ${myGames.length - done} left` + (myEta ? `, about ${myEta}` : '') + '…'   // (what's left: a returning player has only the new games)
+    : BETA && myGames.some(g=>!reviewFull(g)) ? `Preparing game reviews: ${myGames.filter(g=>!reviewFull(g)).length} left…`   // (then every position of each game: reviewFill)
     : '';
   // One column per site (Lichess when logged in, Chess.com when connected); inside Claude, one "My games".
   const core = myGames.filter(g=>!g.retired), ofSite = site=>core.filter(g=>siteOf(g)===site);
@@ -6407,7 +6411,7 @@ function positionsSection(){
           <thead><tr><th></th>${cols.map(([label])=>`<th scope="col">${label}</th>`).join('')}</tr></thead>
           <tbody>${row('Games', ([, games])=>games)}${ACTS.map(a=>row(`<span class="mg-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>${ACT_SHORT[a]}`, ([, , c])=>c[a])).join('')}</tbody>
         </table></div>
-        ${status ? `<p class="mg-status${done < myGames.length && sfState!=='error' ? ' mg-run' : ''}">${status}</p>` : ''}${status && done < myGames.length && nowLine() ? `<p class="mg-status mg-now" id="mgNow">${nowLine()}</p>` : ''}
+        ${status ? `<p class="mg-status${sfState!=='error' && !accountLoading() ? ' mg-run' : ''}">${status}</p>` : ''}${status && sfState!=='error' && nowLine() ? `<p class="mg-status mg-now" id="mgNow">${nowLine()}</p>` : ''}
         ${myConfirmClear==='resetting' ? `<p class="mg-status">Resetting the analysis…</p>`
           : myGames.length ? (myConfirmClear
           ? (DIRECT_LICHESS ? `<div class="mg-confirm"><span>Analyse your games again from scratch?</span><button class="btn small danger" id="resetYes">Reset</button><button class="btn small ghost" id="clearNo">Keep</button></div>`
@@ -7650,6 +7654,7 @@ const I18N_FR_RE = [
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'position jouée' : 'positions jouées') + ' depuis le ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],   // decimal comma on the board's numbers
   [/^Analysing your games: (\d+) left…$/, 'Vos parties : encore $1 à analyser…'],
+  [/^Preparing game reviews: (\d+) left…$/, 'Préparation des analyses de partie : encore $1…'],
   [/^(.+) · (\d+) moves · (\d+)%$/, '$1 · $2 coups · $3 %'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Vos parties : encore $1, environ $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess connecté : vos $1 dernières parties Lichess se synchroniseront automatiquement.'],
@@ -9125,6 +9130,7 @@ const I18N_DE_RE = [
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t ? 'Gesamt ' : '') + s + a + ',' + b],
   [/^Total ([+−]?\d+)$/, 'Gesamt $1'],
   [/^Analysing your games: (\d+) left…$/, 'Analyse deiner Partien: noch $1…'],
+  [/^Preparing game reviews: (\d+) left…$/, 'Partieanalysen werden vorbereitet: noch $1…'],
   [/^(.+) · (\d+) moves · (\d+)%$/, '$1 · $2 Züge · $3 %'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Analyse deiner Partien: noch $1, etwa $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess verbunden: Deine letzten $1 Lichess-Partien werden automatisch synchronisiert.'],
@@ -9190,6 +9196,7 @@ const I18N_ES_RE = [
   [/^(positions?) played since (.+)$/, (m, p, d)=>(p==='position' ? 'posición jugada' : 'posiciones jugadas') + ' desde el ' + d],
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t || '') + s + a + ',' + b],
   [/^Analysing your games: (\d+) left…$/, 'Tus partidas: $1 por analizar…'],
+  [/^Preparing game reviews: (\d+) left…$/, 'Preparando el análisis de partidas: quedan $1…'],
   [/^(.+) · (\d+) moves · (\d+)%$/, '$1 · $2 jugadas · $3 %'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Tus partidas: $1 por analizar, unos $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess conectado: tus últimas $1 partidas de Lichess se sincronizarán automáticamente.'],
@@ -9256,6 +9263,7 @@ const I18N_IT_RE = [
   [/^(Total )?([+−]?)(\d+)\.(\d)$/, (m, t, s, a, b)=>(t ? 'Totale ' : '') + s + a + ',' + b],
   [/^Total ([+−]?\d+)$/, 'Totale $1'],
   [/^Analysing your games: (\d+) left…$/, 'Analisi delle tue partite: ancora $1…'],
+  [/^Preparing game reviews: (\d+) left…$/, 'Preparazione delle analisi di partita: ancora $1…'],
   [/^(.+) · (\d+) moves · (\d+)%$/, '$1 · $2 mosse · $3%'],
   [/^Analysing your games: (\d+) left, about (.+)…$/, 'Analisi delle tue partite: ancora $1, circa $2…'],
   [/^Lichess connected: your last (\d+) Lichess games will sync automatically\.$/, 'Lichess collegato: le tue ultime $1 partite di Lichess si sincronizzeranno automaticamente.'],
