@@ -601,6 +601,20 @@
   .lang-menu button:hover{background:var(--panel-2, rgba(255,255,255,.06));} .lang-menu button.on{color:var(--accent);} .lang-menu button.on b{color:var(--accent);}
   .modal-box h3.help-h{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:2px 12px;}
   .help-sec{break-inside:avoid;}
+  /* game review (the explorer's Game tab, beta): its title, the chart (two rows), the move and its grade, in the panel's four rows */
+  .xpg{display:grid; grid-template-rows:var(--pn-row) calc(2 * var(--pn-row)) var(--pn-row); align-items:center; min-width:0;}
+  .xpg-empty{margin:0; font-size:0.86rem; color:var(--text-mute); align-self:start; grid-row:1 / span 2;}
+  .xpg-head{display:flex; align-items:center; gap:10px; min-width:0;} .xpg-title{flex:1; min-width:0; font-weight:600; font-size:0.86rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .xpg-chart{width:100%; height:calc(2 * var(--pn-row) - 6px); display:block; cursor:pointer; border-radius:6px; background:var(--black-fill); border:1px solid var(--border);}
+  .xpg-top{fill:color-mix(in srgb, var(--white-fill) 10%, transparent);} .xpg-mid{stroke:var(--border); stroke-width:1;} .xpg-line{fill:none; stroke:var(--white-fill); stroke-width:1.6; vector-effect:non-scaling-stroke;}
+  .xpg-now{stroke:var(--accent); stroke-width:1.5; vector-effect:non-scaling-stroke;}
+  .xpg-move{display:flex; align-items:center; gap:10px; font-size:0.88rem; min-width:0;} .xpg-san{font-weight:600;} .xpg-grade{font-weight:700;} .xpg-ev{color:var(--text-mute); font-variant-numeric:tabular-nums;}
+  .xpg-move > :last-child{margin-left:auto;} .xpg-prog{color:var(--text-mute); font-size:0.8rem;} .xpg-note{color:var(--text-mute); font-size:0.82rem;}
+  .modal-box.gp-box{width:100%; max-width:min(560px, 94vw); display:flex; flex-direction:column; max-height:90svh;}
+  .gp-box .seg, .gp-box .gp-q, .gp-box h3, .gp-box .modal-actions{flex:none;} .gp-box .seg{margin:0 0 8px;} .gp-q{width:100%; box-sizing:border-box; margin:0 0 8px;}
+  .gp-list{overflow-y:auto; min-height:120px; flex:1; display:flex; flex-direction:column; gap:4px; margin-bottom:10px;}
+  .gp-row{display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font:inherit; cursor:pointer;}
+  .gp-row:hover{border-color:var(--accent);} .gp-row small{color:var(--text-mute); font-size:0.78rem;}
   @media (min-aspect-ratio:6/5){   /* side by side and the desktop: the help wider, one column, fewer line breaks */
     .modal-box.help-box{max-width:min(700px, 94vw); max-height:94svh;}
   }
@@ -3354,6 +3368,7 @@ function exploreFrom(p, back){
   if(!ok) x.fens = [p.fen];
   x.flip = p.fen.split(' ')[1]==='b';
   x.ret = { screen, saved: prev, back };
+  if(BETA && ok && (p.gameId || p.game)){ helpVisible = false; selSquare = null; promoPending = null; const G = { src: p.gameId ? 'mine' : 'masters', id: p.gameId || p.game }; const r = x.ret; explorerLoadGame(G.src, G.id, p.ply); explorer.ret = r; explorer.mode = 'imbalances'; explorer.flip = p.fen.split(' ')[1]==='b'; return; }
   helpVisible = false; selSquare = null; promoPending = null;
   screen = 'explorer'; render();
 }
@@ -6855,7 +6870,7 @@ document.addEventListener('pointerdown', e=>{
   holdRender(); clearTimeout(holdRender.safety); holdRender.safety = setTimeout(releaseRender, 2000);
 }, true);
 function render(){
-  { const fb = document.getElementById('fbModal'); if(fb && fb.dataset.scr!==screen) fb.remove(); }
+  for(const id of ['fbModal', 'gpModal']){ const m = document.getElementById(id); if(m && m.dataset.scr!==screen) m.remove(); }
   if(renderHeld){ renderWaiting = true; return; }
   if(firstVisit && screen!=='final') firstVisit = null;   // (the first visit's way in is over once the player goes elsewhere)
   // The page is redrawn often (e.g. while your games are analysed): text being typed, and the
@@ -7065,6 +7080,16 @@ function L(o){ return o[LANG]!=null ? o[LANG] : o.en; }
 const FAQ_PATH = { en:'learn/', fr:'fr/guides/', de:'de/anleitungen/', es:'es/guias/', it:'it/guide/' };
 const legalPath = k=>k + (LANG==='en' ? '' : '-' + LANG) + '.html';
 const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
+"Game": "Partie",
+"Load a game": "Charger une partie",
+"Change": "Changer",
+"Next mistake ›": "Erreur suivante ›",
+"Tap the chart to go to a position.": "Touchez le graphique pour aller à une position.",
+"Off the game: tap the chart to come back.": "Hors de la partie : touchez le graphique pour y revenir.",
+"Search: player, year, event": "Rechercher : joueur, année, événement",
+"No game found.": "Aucune partie trouvée.",
+"No games yet: link Lichess or Chess.com in your profile.": "Pas encore de parties : liez Lichess ou Chess.com dans votre profil.",
+"Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.": "Chargez une partie de maître ou l'une des vôtres : chaque coup reçoit sa note, et un graphique montre où la partie a basculé.",
 "More": "Plus",
 "Share a problem or an idea.": "Partagez un problème ou une idée.",
 "Your message": "Votre message",
@@ -7592,6 +7617,16 @@ const I18N_FR_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} partie${n==='1' ? '' : 's'} interrompue${n==='1' ? '' : 's'} la dernière fois, terminée${n==='1' ? '' : 's'}.`)],
 ];
 const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
+"Game": "Partie",
+"Load a game": "Partie laden",
+"Change": "Ändern",
+"Next mistake ›": "Nächster Fehler ›",
+"Tap the chart to go to a position.": "Tippe auf die Kurve, um zu einer Stellung zu gehen.",
+"Off the game: tap the chart to come back.": "Außerhalb der Partie: tippe auf die Kurve, um zurückzukehren.",
+"Search: player, year, event": "Suchen: Spieler, Jahr, Turnier",
+"No game found.": "Keine Partie gefunden.",
+"No games yet: link Lichess or Chess.com in your profile.": "Noch keine Partien: verbinde Lichess oder Chess.com in deinem Profil.",
+"Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.": "Lade eine Meisterpartie oder eine deiner Partien: jeder Zug bekommt seine Note, und eine Kurve zeigt, wo die Partie kippte.",
 "More": "Mehr",
 "Share a problem or an idea.": "Teile ein Problem oder eine Idee.",
 "Your message": "Deine Nachricht",
@@ -8051,6 +8086,16 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Suggest a strong move for Black.": "Schlage einen starken Zug für Schwarz vor."
 }/*END I18N_DE*/));
 const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
+"Game": "Partida",
+"Load a game": "Cargar una partida",
+"Change": "Cambiar",
+"Next mistake ›": "Siguiente error ›",
+"Tap the chart to go to a position.": "Toca el gráfico para ir a una posición.",
+"Off the game: tap the chart to come back.": "Fuera de la partida: toca el gráfico para volver.",
+"Search: player, year, event": "Buscar: jugador, año, evento",
+"No game found.": "No se encontró ninguna partida.",
+"No games yet: link Lichess or Chess.com in your profile.": "Aún no hay partidas: vincula Lichess o Chess.com en tu perfil.",
+"Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.": "Carga una partida de maestros o una tuya: cada jugada recibe su nota y un gráfico muestra dónde cambió la partida.",
 "More": "Más",
 "Share a problem or an idea.": "Comparte un problema o una idea.",
 "Your message": "Tu mensaje",
@@ -8510,6 +8555,16 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Suggest a strong move for Black.": "Propón una jugada fuerte para las negras."
 }/*END I18N_ES*/));
 const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
+"Game": "Partita",
+"Load a game": "Carica una partita",
+"Change": "Cambia",
+"Next mistake ›": "Errore successivo ›",
+"Tap the chart to go to a position.": "Tocca il grafico per andare a una posizione.",
+"Off the game: tap the chart to come back.": "Fuori dalla partita: tocca il grafico per tornare.",
+"Search: player, year, event": "Cerca: giocatore, anno, evento",
+"No game found.": "Nessuna partita trovata.",
+"No games yet: link Lichess or Chess.com in your profile.": "Ancora nessuna partita: collega Lichess o Chess.com nel tuo profilo.",
+"Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.": "Carica una partita di maestri o una tua: ogni mossa riceve il suo giudizio e un grafico mostra dove la partita è cambiata.",
 "More": "Altro",
 "Share a problem or an idea.": "Condividi un problema o un'idea.",
 "Your message": "Il tuo messaggio",
@@ -9782,7 +9837,133 @@ const explorerSidesHtml = x=>sidesHtml(x, !!x.aspView);
 const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
     <button class="seg-btn${x.mode==='imbalances' ? ' active' : ''}" data-mode="imbalances" role="radio" aria-checked="${x.mode==='imbalances'}">Imbalances</button>
     <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plans for ${explorerPos().side==='b' ? 'Black' : 'White'}</button>
+    ${BETA ? `<button class="seg-btn${x.mode==='game' ? ' active' : ''}" data-mode="game" role="radio" aria-checked="${x.mode==='game'}">Game</button>` : ''}
   </div>`;
+// ---- Game review (beta): a whole game in the explorer, a master's or one of yours. Each position gets an evaluation
+// (yours: Lichess's analysis or the pass; the rest searched here, 0.4 s each, in the background), each move its grade
+// (the reviews' own: Best, Good, Ok, Dubious, Mistake, Blunder), and a chart of the game shows where it turned: tap
+// it to go there. x.game: { src: 'masters' | 'mine', id, title, fens, sans, moves, E: [evaluations, White's view] }.
+const GAME_MS = 400;
+function explorerLoadGame(src, id, at){
+  const p = src==='mine' ? { gameId:id } : { game:id }, sans = gameSans(p); if(!sans) return;
+  const c = new Chess(), fens = [c.fen()], moves = [], played = [];
+  for(const san of sans){
+    const m = c.move(san); if(!m) break;
+    const rank = m.color==='w' ? '1' : '8';
+    moves.push({ from:m.from, to:m.to, promo:m.promotion || '', rook: /k/.test(m.flags) ? ['h' + rank, 'f' + rank] : /q/.test(m.flags) ? ['a' + rank, 'd' + rank] : null });
+    played.push(m.san); fens.push(c.fen()); DEV_HIST.set(c.fen(), devTouched(moves, moves.length));
+  }
+  const g = src==='mine' ? myGames.find(y=>y.id===id) : null, info = src==='masters' ? GAME_INFO[id] || {} : null;
+  const title = g ? `${g.white || '?'} – ${g.black || '?'}${g.year ? ' · ' + g.year : ''}` : `${info.title || id}${info.date ? ' · ' + String(info.date).slice(0, 4) : ''}`;
+  const E = [{ cp:20, mate:null }];   // (the start: White a little better)
+  for(let k = 1; k < fens.length; k++){
+    let e = g && g.evals && g.evals[k - 1] ? { ...g.evals[k - 1] } : null;
+    if(g){ const ls = passLines(g, k); if(ls && ls.length){ const w = fens[k].split(' ')[1]==='w' ? 1 : -1; e = e || (ls[0].mate!=null ? { cp:null, mate:w * ls[0].mate } : { cp:w * ls[0].cp, mate:null }); e.best = ls[0].uci; } }
+    E.push(e);
+  }
+  if(g){ const ls0 = passLines(g, 0); if(ls0 && ls0.length) E[0].best = ls0[0].uci; }
+  const keep = explorer && explorer.ret;
+  explorer = null; explorerInit();
+  const x = explorer;
+  Object.assign(x, { fens: fens.slice(), sans: played.slice(), moves: moves.slice(), at: Math.max(0, Math.min(fens.length - 1, at || 0)), mode:'game', ret: keep || null });
+  x.flip = !!(g && g.me==='b');
+  x.game = { src, id, title, fens, sans: played, moves, E, me: g ? g.me : null };
+  explorerAnalyse(x.game);
+  screen = 'explorer'; render();
+}
+// the positions not evaluated yet, one after the other (the shown game only; stops when another one is loaded)
+async function explorerAnalyse(G){
+  for(let k = 0; k < G.fens.length; k++){
+    if(!explorer || explorer.game!==G) return;
+    if(G.E[k] && G.E[k].best!==undefined) continue;
+    const c = new Chess(G.fens[k]);
+    if(c.game_over()){ const w = G.fens[k].split(' ')[1]==='w' ? 1 : -1; G.E[k] = c.in_checkmate() ? { cp:null, mate:-w, best:null } : { cp:0, mate:null, best:null }; continue; }
+    const r = await bgEval(G.fens[k], { multipv:1, movetime:GAME_MS });
+    if(!explorer || explorer.game!==G) return;
+    if(evalFailed(r) || !r || !r.lines || !r.lines.length) continue;
+    const info = toWhitePerspective(r.lines[0], G.fens[k]);
+    G.E[k] = { ...(G.E[k] || { cp:info.cp, mate:info.mate }), best: r.lines[0].uci };
+    if(screen==='explorer' && explorer.mode==='game' && !document.getElementById('gpModal')) render();
+  }
+}
+// move k's grade (from the position before it to the one after), or null while either isn't evaluated
+function gameGrade(G, k){
+  const b = G.E[k - 1], a = G.E[k]; if(!b || !a || k < 1) return null;
+  const turn = G.fens[k - 1].split(' ')[1], m = G.moves[k - 1], uci = m.from + m.to + (m.promo || '');
+  const drop = winForMover(b, turn) - winForMover(a, turn);
+  return { ...labelFromWinDrop(Math.max(0, drop), !!b.best && b.best.slice(0, 4)===uci.slice(0, 4)), drop };
+}
+const onGameLine = x=>!!x.game && x.fens.length===x.game.fens.length && x.fens[x.at]===x.game.fens[x.at];
+function gameBackToLine(x){ const G = x.game; x.fens = G.fens.slice(); x.sans = G.sans.slice(); x.moves = G.moves.slice(); }
+function gameReviewHtml(x){
+  const G = x.game;
+  if(!G) return `<div class="xpg"><p class="xpg-empty">Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.</p><div><button class="btn secondary" id="xpLoad">Load a game</button></div></div>`;
+  const n = G.fens.length - 1, W = 300, H = 64, X = k=>n ? k * W / n : 0, Y = e=>e ? H - winPercent(e.cp, e.mate) * H / 100 : null;
+  let path = '', area = '', last = null;
+  for(let k = 0; k <= n; k++){ const y = Y(G.E[k]); if(y==null) continue; path += (last==null ? 'M' : 'L') + X(k).toFixed(1) + ',' + y.toFixed(1) + ' '; last = k; }
+  const marks = []; for(let k = 1; k <= n; k++){ const gr = gameGrade(G, k); if(gr && BAD_GRADES.includes(gr.label)) marks.push(`<circle cx="${X(k).toFixed(1)}" cy="${Y(G.E[k]).toFixed(1)}" r="3.2" fill="${labelColor(gr.label)}"/>`); }
+  const done = G.E.filter(e=>e && e.best!==undefined).length, line = onGameLine(x);
+  const gr = line && x.at ? gameGrade(G, x.at) : null, k = x.at;
+  const moveTxt = line && k ? `${Math.ceil(k / 2)}${k % 2 ? '.' : '...'} ${fmtSan(G.sans[k - 1])}` : '';
+  const evTxt = line && G.E[k] ? fmtBarScore({ cp:G.E[k].cp, mate:G.E[k].mate }) : '';
+  return `<div class="xpg">
+      <div class="xpg-head"><span class="xpg-title">${escHtml(G.title)}</span><button class="link-btn" id="xpLoad">Change</button></div>
+      <svg class="xpg-chart" id="xpgChart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Evaluation through the game">
+        <rect x="0" y="0" width="${W}" height="${H / 2}" class="xpg-top"/><line x1="0" x2="${W}" y1="${H / 2}" y2="${H / 2}" class="xpg-mid"/>
+        ${path ? `<path d="${path}" class="xpg-line"/>` : ''}${marks.join('')}
+        ${line ? `<line x1="${X(k).toFixed(1)}" x2="${X(k).toFixed(1)}" y1="0" y2="${H}" class="xpg-now"/>` : ''}
+      </svg>
+      <div class="xpg-move">${moveTxt ? `<span class="xpg-san">${moveTxt}</span>${gr ? `<span class="xpg-grade" style="color:${labelColor(gr.label)}">${gr.label}</span>` : '<span class="xpg-grade">…</span>'}<span class="xpg-ev">${evTxt}</span>` : `<span class="xpg-note">${line ? 'Tap the chart to go to a position.' : 'Off the game: tap the chart to come back.'}</span>`}
+        ${marks.length ? `<button class="link-btn" id="xpgNext">Next mistake ›</button>` : ''}${done <= n ? `<span class="xpg-prog">${Math.round(100 * done / (n + 1))}%</span>` : ''}</div>
+    </div>`;
+}
+function wireGameReview(x){
+  const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
+  on('xpLoad', openGamePicker);
+  const ch = document.getElementById('xpgChart'), G = x.game;
+  if(ch && G) ch.onclick = e=>{ const r = ch.getBoundingClientRect(), k = Math.round((e.clientX - r.left) / r.width * (G.fens.length - 1)); if(!onGameLine(x)) gameBackToLine(x); x.at = -1; explorerGo(k); };
+  on('xpgNext', ()=>{ if(!G) return; const n = G.fens.length - 1; for(let i = 1; i <= n; i++){ const k = (x.at + i - 1) % n + 1, gr = gameGrade(G, k); if(gr && BAD_GRADES.includes(gr.label)){ if(!onGameLine(x)) gameBackToLine(x); x.at = -1; explorerGo(k); return; } } });
+}
+// The game list: Masters or My games, a search (players, year, event); a game opens at its start (yours: at your first mistake)
+const gp = { tab:'mine', q:'' };
+function openGamePicker(){
+  if(document.getElementById('gpModal')) return;
+  if(!myGames.length) gp.tab = 'masters';
+  const div = document.createElement('div'); div.className = 'modal-backdrop'; div.id = 'gpModal'; div.dataset.scr = screen;
+  div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box gp-box" role="dialog" aria-label="Load a game"><h3>Load a game</h3>
+    <div class="seg seg-sm" role="tablist">${[['mine', 'My games'], ['masters', 'Masters']].map(([k, l])=>`<button class="seg-btn${gp.tab===k ? ' active' : ''}" data-gp="${k}">${l}</button>`).join('')}</div>
+    <input class="cc-field gp-q" id="gpQ" type="search" placeholder="Search: player, year, event" aria-label="Search" autocomplete="off">
+    <div class="gp-list" id="gpList"></div>
+    <div class="modal-actions"><button class="btn secondary" id="gpClose">Close</button></div></div></div>`;
+  document.body.appendChild(div);
+  const close = ()=>div.remove();
+  div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')) close(); });
+  document.getElementById('gpClose').onclick = close;
+  const q = document.getElementById('gpQ'); q.value = gp.q;
+  const list = ()=>{
+    const words = gp.q.toLowerCase().split(/\s+/).filter(Boolean), hit = t=>words.every(w=>t.toLowerCase().includes(w));
+    let rows;
+    if(gp.tab==='mine') rows = myGames.slice().sort((a, b)=>gamePlayedAt(b) - gamePlayedAt(a)).map(g=>{
+        const mist = (g.positions || []).filter(e=>e.mistake && e.side===g.me).length, when = g.playedAt ? new Date(g.playedAt).toLocaleDateString(dateLoc(), { day:'numeric', month:'short', year:'numeric' }) : g.year || '';
+        const t = `${g.white || '?'} – ${g.black || '?'}`, sub = [when, SPEED_NAMES[g.speed], siteOf(g)==='chesscom' ? 'Chess.com' : 'Lichess', Math.ceil(g.sans.length / 2) + ' moves', mist ? mist + (mist > 1 ? ' mistakes' : ' mistake') : ''].filter(Boolean).join(' · ');
+        return { key:'mine:' + g.id, t, sub }; });
+    else rows = Object.keys(GAME_MOVES).sort((a, b)=>String((GAME_INFO[b] || {}).date || '').localeCompare(String((GAME_INFO[a] || {}).date || '')) || (+b.slice(1) - +a.slice(1))).map(id=>{
+        const i = GAME_INFO[id] || {}, mv = Math.ceil(GAME_MOVES[id].split(' ').length / 2);
+        return { key:'masters:' + id, t:i.title || id, sub:[i.date, i.event, mv + ' moves'].filter(Boolean).join(' · ') }; });
+    rows = rows.filter(r=>!words.length || hit(r.t + ' ' + r.sub));
+    document.getElementById('gpList').innerHTML = rows.slice(0, 150).map(r=>`<button class="gp-row" data-load="${escHtml(r.key)}"><b>${escHtml(r.t)}</b><small>${escHtml(r.sub)}</small></button>`).join('')
+      || `<p class="xpg-note">${gp.tab==='mine' && !myGames.length ? 'No games yet: link Lichess or Chess.com in your profile.' : 'No game found.'}</p>`;
+    div.querySelectorAll('[data-load]').forEach(b=>b.onclick = ()=>{
+      const [src, id] = [b.dataset.load.slice(0, b.dataset.load.indexOf(':')), b.dataset.load.slice(b.dataset.load.indexOf(':') + 1)];
+      let at = 0;
+      if(src==='mine'){ const g = myGames.find(y=>y.id===id), m = g && (g.positions || []).filter(e=>e.mistake && e.side===g.me).map(e=>e.ply).sort((a, b)=>a - b)[0]; if(m!=null) at = m; }
+      close(); explorerLoadGame(src, id, at);
+    });
+  };
+  q.oninput = ()=>{ gp.q = q.value; list(); };
+  div.querySelectorAll('[data-gp]').forEach(b=>b.onclick = ()=>{ gp.tab = b.dataset.gp; div.querySelectorAll('[data-gp]').forEach(y=>y.classList.toggle('active', y===b)); list(); });
+  list();
+}
 // The six imbalances at once, from Stockfish's evaluation table (no search): shown while the short mate
 // check (aspectsEntry) runs, which only changes them when there is a mate.
 const explorerStatic = {};
@@ -9894,9 +10075,10 @@ function renderExplorer(){
     : `<button class="depth-btn off" id="depthBtn" aria-pressed="false" aria-label="Engine off"><b>Off</b></button>`;   // the engine's depth; tap: on / off
   const planInfo = x.engineOn ? info || x.lastInfo : { cp:0 };
   const pq = x.mode==='plans' ? explorerPlan(p, p.side, planInfo) : null;   // (the side to play's plan)
+  if(x.mode==='game' && !BETA) x.mode = 'imbalances';
   const body = x.mode==='imbalances'
     ? aspectsGridHtml(vals, null, ASPECTS.length, !vals, x.aspView, vals && fen)
-    : explorerPlanHtml(pq, x, false);
+    : x.mode==='game' ? gameReviewHtml(x) : explorerPlanHtml(pq, x, false);
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back${x.ret && (ACTIVITIES.includes(x.ret.screen) || x.ret.screen==='planq') ? ' keep' : ''}" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
@@ -9948,6 +10130,7 @@ function renderExplorer(){
   on('xpBack', ()=>explorerGo(x.at - 1)); on('xpFwd', ()=>explorerGo(x.at + 1));
   on('xpFlip', ()=>{ x.flip = !x.flip; render(); });
   app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; x.flash = {}; render(); });
+  if(x.mode==='game') wireGameReview(x);
 }
 // ================= Plan finder =================
 // Two phases on a position, in the order the books teach (each of the four rows a quarter of the score).
