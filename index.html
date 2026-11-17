@@ -64,8 +64,10 @@
   .stage .board-col > .board-outer{flex:none; width:min(100cqw, 100cqh - 44px, 420px); margin:0;}
   .pl-line{height:22px; display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .pl-elo{color:var(--text-mute); font-weight:500;}
-  .mat{display:inline-flex; align-items:center; height:1lh; gap:0; margin-left:2px;} .mat-g{display:inline-flex;}   /* (one text line high: centred as the name is) */   /* (the material difference: same pieces overlapping) */
-  .mat .pc{width:13px; height:16px; flex:none; background-size:auto 100%; filter:drop-shadow(0 0 1px rgba(255,255,255,.6));} .mat-g .pc + .pc{margin-left:-6px;}
+  .mat{display:inline-flex; align-items:center; height:1lh; gap:0; margin-left:2px; position:relative; top:-1.5px;} .mat-g{display:inline-flex;}   /* (one text line high: centred as the name is) */   /* (the material difference: same pieces overlapping) */
+  .mat .pc{width:13px; height:16px; flex:none; background-size:auto 100%; filter:var(--pc-outline);} .mat-g .pc + .pc{margin-left:-8px;}
+  .pos-title .fig.pc{filter:var(--pc-outline);}   /* (a thin white outline: the black pieces read on the dark background) */
+  :root{--pc-outline:drop-shadow(0.6px 0 0 rgba(255,255,255,.85)) drop-shadow(-0.6px 0 0 rgba(255,255,255,.85)) drop-shadow(0 0.6px 0 rgba(255,255,255,.85)) drop-shadow(0 -0.6px 0 rgba(255,255,255,.85));}
   .mat-lead{color:var(--text-mute); font-weight:500; font-size:0.78rem; margin-left:3px;}
   .wrap.ex .posbar{margin:8px 0 10px;}
   .wrap.ex .panel{flex:none; margin-top:10px; display:flex; flex-direction:column; padding:12px 14px;}
@@ -191,9 +193,7 @@
   .board-col:has(> .pl-line > .xp-sides) > .pl-line:first-child{height:36px; align-items:flex-end;}   /* (as much room above the board as under it: the board where it sits in the other exercises) */
   .pl-line > .xp-sides .xp-side{height:24px; padding:0 9px; font-size:.78rem; font-weight:500;}
   .xp-side{display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 11px; border-radius:14px; border:1px solid var(--border); background:transparent; color:var(--text-mute); font:inherit; font-size:.82rem; cursor:pointer;}
-  .xp-side.on{background:var(--panel); color:var(--text); border-color:var(--text-mute);}
-  .xp-dot{width:10px; height:10px; border-radius:50%; border:1px solid var(--text-mute);} .xp-side.w .xp-dot{background:#f2f2f2;} .xp-side.b .xp-dot{background:#1b1b1b;}
-  .xp-side:not(.on) .xp-dot{opacity:.35;}
+  .xp-side.w.on{background:#f2f2f2; color:#1b1b1b; border-color:#f2f2f2;} .xp-side.b.on{background:#1b1b1b; color:#f2f2f2; border-color:var(--text-mute);}   /* (each in its colour; off: an outline) */
   html.desk2 .wrap.ex > #app:has(> .xp-sides){grid-template-rows:auto auto auto minmax(0, 1fr);}
   html.desk2 .wrap.ex > #app > .xp-sides{grid-row:3; margin:0 0 6px;}
   html.desk2 .wrap.ex > #app:has(> .xp-sides) > .panel{grid-row:4;}
@@ -406,7 +406,7 @@
   .coord-f{left:2px; bottom:1px;} .coord-r{right:2px; top:2px;}
   .sq.light .coord{color:var(--board-dark);} .sq.dark .coord{color:var(--board-light);}
   .set-page .board-outer{max-width:min(420px, max(160px, 100dvh - 436px));}   /* the whole page fits the screen: on Arrows, the tallest tab, Reset lands about where the exercises' buttons are (a few pixels to spare, fonts differ by device) */
-  .fig.pc{font-size:inherit; display:inline-block; width:1.1em; height:1.1em; vertical-align:-0.14em; margin:-0.36em -0.06em -0.05em -0.1em; background-size:100% 100%;}   /* (the board's piece, as a letter: whole, its margin trimmed) */
+  .fig.pc{font-size:inherit; display:inline-block; width:1.1em; height:1.1em; vertical-align:-0.14em; margin:-0.36em -0.12em -0.05em -0.15em; background-size:100% 100%;}   /* (the board's piece, as a letter: whole, its margin trimmed) */
   .set-preview{display:flex; flex-direction:column; gap:8px;}
   .set-chips{display:flex; justify-content:center; gap:16px;}
   .set-side{display:flex; gap:5px;}
@@ -646,7 +646,7 @@
   .xpg-area{fill:var(--white-fill);} .xpg-dot{position:absolute; width:7px; height:7px; border-radius:50%; border:1px solid var(--black-fill); transform:translate(-50%, -50%); pointer-events:none;}
   .xpg-empty{margin:0; font-size:0.86rem; color:var(--text-mute); align-self:start; grid-row:1 / span 2;}
   .xpg-chart{position:relative; overflow:hidden; box-sizing:border-box; width:100%; height:calc(2 * var(--pn-row) - 6px); display:block; cursor:pointer; border-radius:6px; background:var(--black-fill); border:1px solid var(--border);}
-  .xpg-mid{stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke;} .xpg-line{fill:none; stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke;}
+  .xpg-mid{stroke:var(--text-mute); stroke-width:1; vector-effect:non-scaling-stroke;} .xpg-line{fill:none; stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke;}
   .xpg-now{stroke:var(--accent); stroke-width:1.5; vector-effect:non-scaling-stroke;}
   .xpg-grade{font-weight:700;} .xpg-ev{color:var(--text-mute); font-variant-numeric:tabular-nums;}
   .xpg-badge{position:absolute; z-index:3; width:5.6%; aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; transform:translate(-70%, -30%); color:#fff; font-weight:800; letter-spacing:-0.04em; box-shadow:0 1px 3px rgba(0,0,0,.45); pointer-events:none;}
@@ -3430,6 +3430,7 @@ function exploreFrom(p, back){
   if(!ok) x.fens = [p.fen];
   x.flip = p.fen.split(' ')[1]==='b';
   x.ret = { screen, saved: prev, back };
+  try{ if(p.game || p.gameId) x.source = posSource(p); }catch(e){}   // (shown above the board, as in the exercises)
   if(BETA && ok && (p.gameId || p.game)){ helpVisible = false; selSquare = null; promoPending = null; explorerLoadGame(p.gameId ? 'mine' : 'masters', p.gameId || p.game, p.ply, { ret: x.ret, mode:'imbalances', flip: x.flip }); return; }
   helpVisible = false; selSquare = null; promoPending = null;
   screen = 'explorer'; render();
@@ -3917,7 +3918,7 @@ const marksForSide = (mk, c, keepZones)=>{ if(!c) return mk; const out = {}; for
 // The White and Black buttons above the panel (the explorer, Imbalance reading's review): each side's marks shown or hidden
 const sidesShown = s=>{ const sh = s.show || { w:true, b:true }; return sh.w && sh.b ? null : sh.w ? 'w' : sh.b ? 'b' : 'none'; };
 const sidesHtml = (s, visible)=>{ const sh = s.show || { w:true, b:true };
-  return `<div class="xp-sides"${visible ? '' : ' style="visibility:hidden"'}>${['w', 'b'].map(c=>`<button class="xp-side ${c}${sh[c] ? ' on' : ''}" data-c="${c}" aria-pressed="${sh[c]}"${visible ? '' : ' tabindex="-1"'}><span class="xp-dot" aria-hidden="true"></span>${c==='w' ? 'White' : 'Black'}</button>`).join('')}</div>`; };
+  return `<div class="xp-sides"${visible ? '' : ' style="visibility:hidden"'}>${['w', 'b'].map(c=>`<button class="xp-side ${c}${sh[c] ? ' on' : ''}" data-c="${c}" aria-pressed="${sh[c]}"${visible ? '' : ' tabindex="-1"'}>${c==='w' ? 'White' : 'Black'}</button>`).join('')}</div>`; };
 // On a phone, Imbalance reading's (and the explorer's) White / Black buttons go on the bottom player's line, at its right (no row of their
 // own); on a desktop they stay above the panel (.sides-desk)
 function sidesInNameLine(board, sides){
@@ -7177,6 +7178,7 @@ const legalPath = k=>k + (LANG==='en' ? '' : '-' + LANG) + '.html';
 const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Off the game": "Hors de la partie",
 "Start of the game": "Début de la partie",
+"Free play": "Jeu libre",
 "Game": "Partie",
 "Statistics": "Statistiques",
 "Reset game": "Réinitialiser la partie",
@@ -7718,6 +7720,7 @@ const I18N_FR_RE = [
 const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Off the game": "Außerhalb der Partie",
 "Start of the game": "Anfang der Partie",
+"Free play": "Freies Spiel",
 "Game": "Partie",
 "Statistics": "Statistik",
 "Reset game": "Partie zurücksetzen",
@@ -8188,6 +8191,7 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Off the game": "Fuera de la partida",
 "Start of the game": "Inicio de la partida",
+"Free play": "Juego libre",
 "Game": "Partida",
 "Statistics": "Estadísticas",
 "Reset game": "Restablecer partida",
@@ -8658,6 +8662,7 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Off the game": "Fuori dalla partita",
 "Start of the game": "Inizio della partita",
+"Free play": "Gioco libero",
 "Game": "Partita",
 "Statistics": "Statistiche",
 "Reset game": "Reimposta partita",
@@ -10121,10 +10126,24 @@ function gameStatsHtml(x){
     </div>`;
 }
 // the move just played, graded Dubious or worse: its sign at the top right of its square (?!, ?, ??)
+// Any move shown (the game's, or one played on the board): its grade from the evaluations before and after it (the
+// game's where the position is the game's, else the explorer's own search, once it's done)
+function xpEvalAt(x, i){
+  const G = x.game, fen = x.fens[i];
+  if(G && G.fens[i]===fen && G.E[i]) return G.E[i];
+  const e = explorerEvals[fen], l = e && e.status==='done' && !evalFailed(e.data) && e.data && e.data.lines && e.data.lines[0];
+  return l && (l.cp!=null || l.mate!=null) ? { ...toWhitePerspective(l, fen), best: l.uci } : null;
+}
+function xpMoveGrade(x, k){
+  if(!k) return null;
+  const b = xpEvalAt(x, k - 1), a = xpEvalAt(x, k); if(!b || !a) return null;
+  const gr = gameGrade({ fens:[x.fens[k - 1], x.fens[k]], moves:[x.moves[k - 1]], E:[b, a] }, 1);
+  return gr && { ...gr, b, a };
+}
 function gameMoveBadge(x){
-  const G = x.game; if(!G || !x.at || !onGameLine(x)) return;
-  const gr = gameGrade(G, x.at), i = gr ? BAD_GRADES.indexOf(gr.label) : -1; if(i < 0) return;
-  const outer = document.querySelector('.board-outer'), to = G.moves[x.at - 1].to; if(!outer) return;
+  if(!x.at) return;
+  const gr = xpMoveGrade(x, x.at), i = gr ? BAD_GRADES.indexOf(gr.label) : -1; if(i < 0) return;
+  const outer = document.querySelector('.board-outer'), to = x.moves[x.at - 1].to; if(!outer) return;
   const f = to.charCodeAt(0) - 97, r = +to[1], flip = boardFlipped(), col = flip ? 7 - f : f, row = flip ? r - 1 : 8 - r;
   const b = document.createElement('div'); b.className = 'xpg-badge'; b.textContent = ['?!', '?', '??'][i];
   b.style.cssText = `left:${(col + 1) * 12.5}%; top:${row * 12.5}%; background:${labelColor(gr.label)}; font-size:${Math.max(10, outer.clientWidth * 0.034).toFixed(1)}px`;
@@ -10132,17 +10151,18 @@ function gameMoveBadge(x){
 }
 // A game loaded: where it comes from, then the move just played with its grade and how much it changed the
 // evaluation (for the side that played it), as an exercise shows its position; no game: the same room, empty
+// Above the board, as an exercise shows its position: where it comes from (the game loaded, the exercise's game, else
+// Free play), then the move just played with its grade and how much it changed the evaluation for the side that played
+// it; "(Off the game)" after a move the game didn't play
 function gamePosBar(x){
-  const G = x.game;
-  if(!G) return `<div class="posbar" aria-hidden="true" style="visibility:hidden"><div class="pos-title">&nbsp;<br>&nbsp;</div></div>`;   // (the exercises' two lines' room: the board where it sits in them)
-  const src = posSource(G.src==='mine' ? { gameId:G.id } : { game:G.id }), k = x.at, line = onGameLine(x);
-  let mv = '';
-  if(!line) mv = 'Off the game';
-  else if(!k) mv = 'Start of the game';
+  const G = x.game, k = x.at, line = G && onGameLine(x);
+  const src = G ? posSource(G.src==='mine' ? { gameId:G.id } : { game:G.id }) : x.source || 'Free play';
+  let mv;
+  if(!k) mv = line ? 'Start of the game' : toPlay(explorerPos());
   else {
-    const gr = gameGrade(G, k), b = G.E[k - 1], a = G.E[k], s = G.fens[k - 1].split(' ')[1]==='w' ? 1 : -1;
-    const d = gr && b.mate==null && a.mate==null ? s * (a.cp - b.cp) / 100 : null;
-    mv = `${Math.ceil(k / 2)}${k % 2 ? '.' : '...'} ${fmtSan(G.sans[k - 1], true, k % 2 ? 'w' : 'b')}${gr ? ` <span class="xpg-grade" style="color:${labelColor(gr.label)}">${gr.label}</span>${d!=null ? ` <span class="xpg-ev">${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d).toFixed(1)}</span>` : ''}` : ' <span class="xpg-ev">…</span>'}`;
+    const f = x.fens[k - 1], side = f.split(' ')[1], n = +f.split(' ')[5] || 1, gr = xpMoveGrade(x, k), s = side==='w' ? 1 : -1;
+    const d = gr && gr.b.mate==null && gr.a.mate==null ? s * (gr.a.cp - gr.b.cp) / 100 : null;
+    mv = `${n}${side==='w' ? '.' : '...'} ${fmtSan(x.sans[k - 1], true, side)}${gr ? ` <span class="xpg-grade" style="color:${labelColor(gr.label)}">${gr.label}</span>${d!=null ? ` <span class="xpg-ev">${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d).toFixed(1)}</span>` : ''}` : x.engineOn ? ' <span class="xpg-ev">…</span>' : ''}${G && !line ? ' (<span>Off the game</span>)' : ''}`;
   }
   return `<div class="posbar"><div class="pos-title">${src}<br>${mv}</div></div>`;
 }
@@ -10158,10 +10178,10 @@ function gameResult(G){
 }
 function explorerBoardHtml(x, hbar){
   const G = x.game, gm = G && G.src==='mine' ? myGames.find(y=>y.id===G.id) : null;
-  const names = G ? gameNames(G) : null;
+  const names = G ? gameNames(G) : ['White', 'Black'];   // (no game: the sides' names, the board where it sits with one)
   const gi = G && G.src==='masters' ? GAME_INFO[G.id] || {} : null;
   const elo = c=>gm ? (c==='w' ? gm.whiteElo : gm.blackElo) : gi ? gi[c==='w' ? 'we' : 'be'] : null, bottom = x.flip ? 'b' : 'w', top = bottom==='w' ? 'b' : 'w';
-  const line = (c, cls)=>names ? `<div class="pl-line ${cls}">${escHtml(names[c==='w' ? 0 : 1] || '?')}${elo(c) ? `<span class="pl-elo">${elo(c)}</span>` : ''}${materialHtml(x.fens[x.at], c)}</div>` : `<div class="pl-line ${cls}" aria-hidden="true"></div>`;
+  const line = (c, cls)=>`<div class="pl-line ${cls}">${escHtml(names[c==='w' ? 0 : 1] || '?')}${elo(c) ? `<span class="pl-elo">${elo(c)}</span>` : ''}${materialHtml(x.fens[x.at], c)}</div>`;
   const b = `<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>`;
   return `<div class="stage"><div class="board-col">${hbar}${line(top, 'xp-top')}${b}${line(bottom, 'xp-bottom')}</div></div>`;
 }
