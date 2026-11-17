@@ -70,7 +70,7 @@
   .mat .pc{width:13px; height:16px; flex:none; background-size:auto 100%; filter:var(--pc-outline);} .mat-g .pc + .pc{margin-left:-8px;}
   .pos-title .fig.pc{filter:var(--pc-outline);}   /* (a thin white outline: the black pieces read on the dark background) */
   :root{--pc-outline:drop-shadow(0.6px 0 0 rgba(255,255,255,.85)) drop-shadow(-0.6px 0 0 rgba(255,255,255,.85)) drop-shadow(0 0.6px 0 rgba(255,255,255,.85)) drop-shadow(0 -0.6px 0 rgba(255,255,255,.85));}
-  .mat-lead{color:var(--text-mute); font-weight:500; font-size:0.78rem; margin-left:3px;}
+  .mat-lead{color:var(--text-mute); font-weight:500; font-size:0.78rem; margin-left:3px; position:relative; top:2px;}   /* (back on the name's line: the pieces sit higher) */
   .wrap.ex .posbar{margin:8px 0 10px;}
   .wrap.ex .panel{flex:none; margin-top:10px; display:flex; flex-direction:column; padding:12px 14px;}
   /* Every exercise keeps one panel height from question to review (see .panel-stack). */
@@ -408,7 +408,7 @@
   .coord-f{left:2px; bottom:1px;} .coord-r{right:2px; top:2px;}
   .sq.light .coord{color:var(--board-dark);} .sq.dark .coord{color:var(--board-light);}
   .set-page .board-outer{max-width:min(420px, max(160px, 100dvh - 436px));}   /* the whole page fits the screen: on Arrows, the tallest tab, Reset lands about where the exercises' buttons are (a few pixels to spare, fonts differ by device) */
-  .fig.pc{font-size:inherit; display:inline-block; width:1.1em; height:1.1em; vertical-align:-0.14em; margin:-0.36em -0.12em -0.05em -0.15em; background-size:100% 100%;}   /* (the board's piece, as a letter: whole, its margin trimmed) */
+  .fig.pc{font-size:inherit; display:inline-block; width:1.1em; height:1.1em; vertical-align:-0.14em; margin:-0.36em -0.06em -0.05em -0.15em; background-size:100% 100%;}   /* (the board's piece, as a letter: whole, its margin trimmed) */
   .set-preview{display:flex; flex-direction:column; gap:8px;}
   .set-chips{display:flex; justify-content:center; gap:16px;}
   .set-side{display:flex; gap:5px;}
@@ -10133,7 +10133,8 @@ function gameStatsHtml(x){
 function xpEvalAt(x, i){
   const G = x.game, fen = x.fens[i];
   if(G && G.fens[i]===fen && G.E[i]) return G.E[i];
-  const e = explorerEvals[fen], l = e && e.status==='done' && !evalFailed(e.data) && e.data && e.data.lines && e.data.lines[0];
+  const e = explorerEvals[fen], l = e && e.status==='done' && !evalFailed(e.data) && e.data && e.data.lines && e.data.lines[0]
+    || (!e || e.status!=='done') && explorerLive[fen];   // (still searching: its latest reading, the grade and badge follow it)
   return l && (l.cp!=null || l.mate!=null) ? { ...toWhitePerspective(l, fen), best: l.uci } : null;
 }
 function xpMoveGrade(x, k){
@@ -10143,7 +10144,7 @@ function xpMoveGrade(x, k){
   return gr && { ...gr, b, a };
 }
 function gameMoveBadge(x){
-  if(!x.at) return;
+  if(!x.at || !x.engineOn) return;   // (the engine off: no badge)
   const gr = xpMoveGrade(x, x.at), i = gr ? BAD_GRADES.indexOf(gr.label) : -1; if(i < 0) return;
   const outer = document.querySelector('.board-outer'), to = x.moves[x.at - 1].to; if(!outer) return;
   const f = to.charCodeAt(0) - 97, r = +to[1], flip = boardFlipped(), col = flip ? 7 - f : f, row = flip ? r - 1 : 8 - r;
@@ -10160,7 +10161,7 @@ function gamePosBar(x){
   const G = x.game, k = x.at, line = G && onGameLine(x);
   const src = G ? posSource(G.src==='mine' ? { gameId:G.id } : { game:G.id }) : x.source || 'Free play';
   let mv;
-  if(!k) mv = line ? 'Start of the game' : toPlay(explorerPos());
+  if(!k) mv = toPlay(explorerPos());
   else {
     const f = x.fens[k - 1], side = f.split(' ')[1], n = +f.split(' ')[5] || 1, gr = xpMoveGrade(x, k), s = side==='w' ? 1 : -1;
     const d = gr && gr.b.mate==null && gr.a.mate==null ? s * (gr.a.cp - gr.b.cp) / 100 : null;
@@ -10234,9 +10235,7 @@ function openGamePicker(){
       || `<p class="xpg-note">${gp.tab==='mine' && !myGames.length ? 'No games yet: link Lichess or Chess.com in your profile.' : 'No game found.'}</p>`;
     div.querySelectorAll('[data-load]').forEach(b=>b.onclick = ()=>{
       const [src, id] = [b.dataset.load.slice(0, b.dataset.load.indexOf(':')), b.dataset.load.slice(b.dataset.load.indexOf(':') + 1)];
-      let at = 0;
-      if(src==='mine'){ const g = myGames.find(y=>y.id===id), m = g && (g.positions || []).filter(e=>e.mistake && e.side===g.me).map(e=>e.ply).sort((a, b)=>a - b)[0]; if(m!=null) at = m; }
-      close(); explorerLoadGame(src, id, at);
+      close(); explorerLoadGame(src, id, 0);   // (at its start)
     });
   };
   q.oninput = ()=>{ gp.q = q.value; list(); };
