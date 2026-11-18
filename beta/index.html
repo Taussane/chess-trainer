@@ -3439,7 +3439,7 @@ function exploreFrom(p, back){
   x.flip = p.fen.split(' ')[1]==='b';
   x.ret = { screen, saved: prev, back };
   try{ if(p.game || p.gameId) x.source = posSource(p); }catch(e){}   // (shown above the board, as in the exercises)
-  if(BETA && ok && (p.gameId || p.game)){ helpVisible = false; selSquare = null; promoPending = null; explorerLoadGame(p.gameId ? 'mine' : 'masters', p.gameId || p.game, p.ply, { ret: x.ret, mode:'imbalances', flip: x.flip }); return; }
+  if(ok && (p.gameId || p.game)){ helpVisible = false; selSquare = null; promoPending = null; explorerLoadGame(p.gameId ? 'mine' : 'masters', p.gameId || p.game, p.ply, { ret: x.ret, mode:'imbalances', flip: x.flip }); return; }
   helpVisible = false; selSquare = null; promoPending = null;
   screen = 'explorer'; render();
 }
@@ -5359,7 +5359,7 @@ function renderHome(){
           <span><span class="card-title">Rush</span><span class="card-desc">3 minutes of positions: your average accuracy.</span></span>
           <span class="card-level${dataCls()}">${RUSH_ACTS.some(a=>rushBest(a)!=null) ? `<b>${Math.max(...RUSH_ACTS.map(a=>rushBest(a) || 0))}%</b>` : '<b>—</b>'}<small>Best</small></span></button>` : ''}
       <button class="card xp-entry" id="xpOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.explorer}</span>
-          <span><span class="card-title">Strategy explorer</span><span class="card-desc">${BETA ? 'Imbalances, plans and game analysis.' : 'Check imbalances and plans as you play.'}</span></span></button>
+          <span><span class="card-title">Strategy explorer</span><span class="card-desc">Imbalances, plans and game analysis.</span></span></button>
       ${isLand() ? donateHtml : ''}
     </div>
     ${isLand() ? '' : donateHtml}
@@ -6422,7 +6422,7 @@ function positionsSection(){
     : !myGames.length ? ''
     : sfState==='error' ? 'The engine is unavailable, so analysis is paused.'
     : done < myGames.length ? `Analysing your games: ${myGames.length - done} left` + (myEta ? `, about ${myEta}` : '') + '…'   // (what's left: a returning player has only the new games)
-    : BETA && myGames.some(g=>!reviewFull(g)) ? `Preparing game reviews: ${myGames.filter(g=>!reviewFull(g)).length} left…`   // (then every position of each game: reviewFill)
+    : myGames.some(g=>!reviewFull(g)) ? `Preparing game reviews: ${myGames.filter(g=>!reviewFull(g)).length} left…`   // (then every position of each game: reviewFill)
     : '';
   // One column per site (Lichess when logged in, Chess.com when connected); inside Claude, one "My games".
   const core = myGames.filter(g=>!g.retired), ofSite = site=>core.filter(g=>siteOf(g)===site);
@@ -7496,7 +7496,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Off": "Arrêt",
 "Exercises": "Exercices",
 "You": "Vous",
-"Check imbalances and plans as you play.": "Vérifiez les déséquilibres et les plans.",
 "Imbalances, plans and game analysis.": "Déséquilibres, plans et analyse de partie.",
 "Score": "Score",
 "Score.": "Score.",
@@ -8039,7 +8038,6 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Off": "Aus",
 "Exercises": "Übungen",
 "You": "Du",
-"Check imbalances and plans as you play.": "Prüfe Ungleichgewichte und Pläne.",
 "Imbalances, plans and game analysis.": "Ungleichgewichte, Pläne, Partieanalyse.",
 "Score": "Wertung",
 "Score.": "Wertung.",
@@ -8513,7 +8511,6 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Off": "Apagado",
 "Exercises": "Ejercicios",
 "You": "Tú",
-"Check imbalances and plans as you play.": "Revisa desequilibrios y planes.",
 "Imbalances, plans and game analysis.": "Desequilibrios, planes y análisis de partidas.",
 "Score": "Puntuación",
 "Score.": "Puntuación.",
@@ -8987,7 +8984,6 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Off": "Spento",
 "Exercises": "Esercizi",
 "You": "Tu",
-"Check imbalances and plans as you play.": "Verifica squilibri e piani.",
 "Imbalances, plans and game analysis.": "Squilibri, piani e analisi delle partite.",
 "Score": "Punteggio",
 "Score.": "Punteggio.",
@@ -9973,7 +9969,7 @@ const explorerSidesHtml = x=>sidesHtml(x, !!x.aspView);
 const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
     <button class="seg-btn${x.mode==='imbalances' ? ' active' : ''}" data-mode="imbalances" role="radio" aria-checked="${x.mode==='imbalances'}">Imbalances</button>
     <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plans</button>
-    ${BETA ? ['game', 'stats'].map((m, i)=>`<button class="seg-btn${x.mode===m ? ' active' : ''}" data-mode="${m}" role="radio" aria-checked="${x.mode===m}">${['Game', 'Statistics'][i]}</button>`).join('') : ''}
+    ${['game', 'stats'].map((m, i)=>`<button class="seg-btn${x.mode===m ? ' active' : ''}" data-mode="${m}" role="radio" aria-checked="${x.mode===m}">${['Game', 'Statistics'][i]}</button>`).join('')}
   </div>`;
 // ---- Game review (beta): a whole game in the explorer, a master's or one of yours. Each position gets an evaluation
 // (yours: Lichess's analysis or the pass; the rest searched here, 0.4 s each, in the background), each move its grade
@@ -10415,7 +10411,6 @@ function renderExplorer(){
     : `<button class="depth-btn off" id="depthBtn" aria-pressed="false" aria-label="Engine off"><b>Off</b></button>`;   // the engine's depth; tap: on / off
   const planInfo = x.engineOn ? info || x.lastInfo : { cp:0 };
   const pq = x.mode==='plans' ? explorerPlan(p, p.side, planInfo) : null;   // (the side to play's plan)
-  if((x.mode==='game' || x.mode==='stats') && !BETA) x.mode = 'imbalances';
   const body = x.mode==='imbalances'
     ? aspectsGridHtml(vals, null, ASPECTS.length, !vals, x.aspView, vals && fen)
     : x.mode==='game' ? gameReviewHtml(x) : x.mode==='stats' ? gameStatsHtml(x) : explorerPlanHtml(pq, x, false);
@@ -10423,7 +10418,7 @@ function renderExplorer(){
     <div class="title-row">
       <button class="icon-btn back${x.ret && (ACTIVITIES.includes(x.ret.screen) || x.ret.screen==='planq') ? ' keep' : ''}" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
       <h1>Strategy explorer</h1>
-      ${BETA ? `<button class="title-chip" id="xpLoad">Load a game</button>` : '<span class="title-spacer" aria-hidden="true"></span>'}
+      <button class="title-chip" id="xpLoad">Load a game</button>
     </div>
     ${gamePosBar(x)}
     ${sidesInNameLine(explorerBoardHtml(x, explorerHbarHtml(info || x.lastInfo, pct, x.flip, !x.engineOn)), explorerSidesHtml(x))}
