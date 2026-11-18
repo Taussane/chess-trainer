@@ -5359,7 +5359,7 @@ function renderHome(){
           <span><span class="card-title">Rush</span><span class="card-desc">3 minutes of positions: your average accuracy.</span></span>
           <span class="card-level${dataCls()}">${RUSH_ACTS.some(a=>rushBest(a)!=null) ? `<b>${Math.max(...RUSH_ACTS.map(a=>rushBest(a) || 0))}%</b>` : '<b>—</b>'}<small>Best</small></span></button>` : ''}
       <button class="card xp-entry" id="xpOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.explorer}</span>
-          <span><span class="card-title">Strategy explorer</span><span class="card-desc">Check imbalances and plans as you play.</span></span></button>
+          <span><span class="card-title">Strategy explorer</span><span class="card-desc">${BETA ? 'Imbalances, plans and game analysis.' : 'Check imbalances and plans as you play.'}</span></span></button>
       ${isLand() ? donateHtml : ''}
     </div>
     ${isLand() ? '' : donateHtml}
@@ -7497,6 +7497,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Exercises": "Exercices",
 "You": "Vous",
 "Check imbalances and plans as you play.": "Vérifiez les déséquilibres et les plans.",
+"Imbalances, plans and game analysis.": "Déséquilibres, plans et analyse de partie.",
 "Score": "Score",
 "Score.": "Score.",
 "The idea.": "L'idée.",
@@ -8039,6 +8040,7 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Exercises": "Übungen",
 "You": "Du",
 "Check imbalances and plans as you play.": "Prüfe Ungleichgewichte und Pläne.",
+"Imbalances, plans and game analysis.": "Ungleichgewichte, Pläne, Partieanalyse.",
 "Score": "Wertung",
 "Score.": "Wertung.",
 "The idea.": "Die Idee.",
@@ -8512,6 +8514,7 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Exercises": "Ejercicios",
 "You": "Tú",
 "Check imbalances and plans as you play.": "Revisa desequilibrios y planes.",
+"Imbalances, plans and game analysis.": "Desequilibrios, planes y análisis de partidas.",
 "Score": "Puntuación",
 "Score.": "Puntuación.",
 "The idea.": "La idea.",
@@ -8985,6 +8988,7 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Exercises": "Esercizi",
 "You": "Tu",
 "Check imbalances and plans as you play.": "Verifica squilibri e piani.",
+"Imbalances, plans and game analysis.": "Squilibri, piani e analisi delle partite.",
 "Score": "Punteggio",
 "Score.": "Punteggio.",
 "The idea.": "L'idea.",
