@@ -646,7 +646,7 @@
   .xpg.xpg-full{display:block; position:relative; height:calc(4 * var(--pn-row));}
   .xpg-full .xpg-chart{height:calc(4 * var(--pn-row) - 4px);} .xpg-chart svg{display:block; width:100%; height:100%;} .xpg-full .xpg-prog{position:absolute; right:8px; top:6px;}
   .xpg-area{fill:var(--white-fill);} .xpg-dot{position:absolute; width:7px; height:7px; border-radius:50%; border:1px solid var(--black-fill); transform:translate(-50%, -50%); pointer-events:none;}
-  .xpg-empty{margin:0; font-size:0.86rem; color:var(--text-mute); align-self:start;} .xpg-load{justify-self:start; align-self:start; margin-top:10px;}
+  .xpg-empty{margin:0; font-size:0.86rem; color:var(--text-mute); align-self:start;} .xpg-none{display:flex; flex-direction:column; height:calc(4 * var(--pn-row) - 4px);} .xpg-load{margin:auto;}   /* (the button in the middle of the room left) */
   .xpg-chart{position:relative; overflow:hidden; touch-action:none; cursor:pointer; box-sizing:border-box; width:100%; height:calc(2 * var(--pn-row) - 6px); display:block; cursor:pointer; border-radius:6px; background:var(--black-fill); border:1px solid var(--border);}
   .xpg-mid, .xpg-phase{stroke:var(--text-mute); stroke-width:1; vector-effect:non-scaling-stroke;} .xpg-phase, .xpg-lbl{opacity:.5;}   /* (the phases see-through; the 0.0 line over the curve) */   /* (the 0.0 line; the middlegame's and the endgame's start) */
   .xpg-lbl{position:absolute; top:4px; margin-left:2px; writing-mode:vertical-rl; font-size:0.68rem; line-height:1; color:var(--text-mute); white-space:nowrap; pointer-events:none;}   /* (turned 90°, beside its line) */ .xpg-line{fill:none; stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke;}
@@ -10123,7 +10123,7 @@ const onGameLine = x=>!!x.game && x.fens.length===x.game.fens.length && x.fens[x
 function gameBackToLine(x){ const G = x.game; x.fens = G.fens.slice(); x.sans = G.sans.slice(); x.moves = G.moves.slice(); }
 function gameReviewHtml(x){
   const G = x.game;
-  if(!G) return `<div class="xpg"><p class="xpg-empty">Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.</p><button class="btn secondary xpg-load" data-load-game>Load a game</button></div>`;   // (the title's button, at hand)
+  if(!G) return `<div class="xpg xpg-none"><p class="xpg-empty">Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.</p><button class="btn secondary xpg-load" data-load-game>Load a game</button></div>`;   // (the title's button, at hand)
   // the chart: Black's colour behind, White's below the curve (its share of winning chances), a thin line at 0.0,
   // the errors (Dubious or worse) as dots over it all, the position shown as a gold line
   const n = G.fens.length - 1, W = 300, H = 100, X = k=>n ? k * W / n : 0, Y = e=>H - winPercent(e.cp, e.mate) * H / 100;
