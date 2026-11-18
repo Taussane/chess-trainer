@@ -648,7 +648,7 @@
   .xpg-area{fill:var(--white-fill);} .xpg-dot{position:absolute; width:7px; height:7px; border-radius:50%; border:1px solid var(--black-fill); transform:translate(-50%, -50%); pointer-events:none;}
   .xpg-empty{margin:0; font-size:0.86rem; color:var(--text-mute); align-self:start; grid-row:1 / span 2;}
   .xpg-chart{position:relative; overflow:hidden; box-sizing:border-box; width:100%; height:calc(2 * var(--pn-row) - 6px); display:block; cursor:pointer; border-radius:6px; background:var(--black-fill); border:1px solid var(--border);}
-  .xpg-mid, .xpg-phase{stroke:var(--text-mute); stroke-width:1; vector-effect:non-scaling-stroke;}   /* (the 0.0 line; the middlegame's and the endgame's start) */
+  .xpg-mid, .xpg-phase{stroke:var(--text-mute); stroke-width:1; vector-effect:non-scaling-stroke;} .xpg-phase, .xpg-lbl{opacity:.5;}   /* (the phases see-through; the 0.0 line over the curve) */   /* (the 0.0 line; the middlegame's and the endgame's start) */
   .xpg-lbl{position:absolute; top:4px; margin-left:2px; writing-mode:vertical-rl; font-size:0.68rem; line-height:1; color:var(--text-mute); white-space:nowrap; pointer-events:none;}   /* (turned 90°, beside its line) */ .xpg-line{fill:none; stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke;}
   .xpg-now{stroke:var(--accent); stroke-width:1.5; vector-effect:non-scaling-stroke;}
   .xpg-grade{font-weight:700;} .xpg-ev{color:var(--text-mute); font-variant-numeric:tabular-nums;}
@@ -10139,7 +10139,7 @@ function gameReviewHtml(x){
   const labels = phases.map(([i, t])=>`<span class="xpg-lbl" style="left:${(100 * X(i) / W).toFixed(2)}%">${t}</span>`).join('');   // (upright, beside its line)
   return `<div class="xpg xpg-full">
       <div class="xpg-chart" id="xpgChart" role="img" aria-label="Evaluation through the game"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-        ${area ? `<path d="${area}" class="xpg-area"/>` : ''}<line x1="0" x2="${W}" y1="${H / 2}" y2="${H / 2}" class="xpg-mid"/>${phase}${curve ? `<path d="${curve}" class="xpg-line"/>` : ''}
+        ${area ? `<path d="${area}" class="xpg-area"/>` : ''}${phase}${curve ? `<path d="${curve}" class="xpg-line"/>` : ''}<line x1="0" x2="${W}" y1="${H / 2}" y2="${H / 2}" class="xpg-mid"/>
         ${line ? `<line x1="${X(k).toFixed(1)}" x2="${X(k).toFixed(1)}" y1="0" y2="${H}" class="xpg-now"/>` : ''}
       </svg>${labels}${marks.join('')}</div>
       ${gameProgHtml(G)}
