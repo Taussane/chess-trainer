@@ -663,7 +663,7 @@
   .gp-box .seg, .gp-box .gp-q, .gp-box h3, .gp-box .modal-actions{flex:none;} .gp-box .seg{margin:0 0 8px;} .gp-q{width:100%; box-sizing:border-box; margin:0 0 8px;}
   .gp-list{overflow-y:auto; min-height:120px; flex:1; display:flex; flex-direction:column; gap:4px; margin-bottom:10px;}
   .gp-row{display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font:inherit; cursor:pointer;}
-  .gp-row:hover{border-color:var(--accent);} .gp-t{display:flex; justify-content:space-between; gap:10px; width:100%;} .gp-res{flex:none; color:var(--text-mute); font-variant-numeric:tabular-nums;} .gp-row small{color:var(--text-mute); font-size:0.78rem;}
+  .gp-row:hover{border-color:var(--accent);} @media not (min-aspect-ratio:6/5){ .gp-sep{display:none;} .gp-mv{display:block;} }   /* (portrait: length and errors on a line of their own) */ .gp-t{display:flex; justify-content:space-between; gap:10px; width:100%;} .gp-res{flex:none; color:var(--text-mute); font-variant-numeric:tabular-nums;} .gp-row small{color:var(--text-mute); font-size:0.78rem;}
   @media (min-aspect-ratio:6/5){   /* side by side and the desktop: the help wider, one column, fewer line breaks */
     .modal-box.help-box{max-width:min(700px, 94vw); max-height:94svh;}
   }
@@ -7658,8 +7658,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Lichess analyses deeper on its servers, so its numbers can differ a little.": "Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer."
 }/*END I18N_FR*/));
 const I18N_FR_RE = [
-  [/^(.+) · (\d+) moves · Errors: (\d+) – (\d+)$/, '$1 · $2 coups · Fautes : $3 – $4'],
-  [/^(.+) · (\d+) moves$/, '$1 · $2 coups'],
+  [/^(\d+) moves · Errors: (\d+) – (\d+)$/, '$1 coups · Fautes : $2 – $3'],
+  [/^(\d+) moves$/, '$1 coups'],
   // the Plan finder's questions and answers (the side's name inside)
   [/^Is anything urgent for (White|Black)\?$/, (m, c)=>`Y a-t-il une urgence pour les ${c==='White' ? 'Blancs' : 'Noirs'} ?`],
   [/^Choose a plan for (White|Black)$/, (m, c)=>`Choisissez un plan pour les ${c==='White' ? 'Blancs' : 'Noirs'}`],
@@ -9151,8 +9151,8 @@ const i18nSide = { de:{ White:'Weiß', Black:'Schwarz' }, es:{ White:'las blanca
 const capFirst = t=>t.charAt(0).toUpperCase() + t.slice(1);
 const decComma = v=>String(v).replace(/(\d)\.(\d)/g, '$1,$2');
 const I18N_DE_RE = [
-  [/^(.+) · (\d+) moves · Errors: (\d+) – (\d+)$/, '$1 · $2 Züge · Fehlgriffe: $3 – $4'],
-  [/^(.+) · (\d+) moves$/, '$1 · $2 Züge'],
+  [/^(\d+) moves · Errors: (\d+) – (\d+)$/, '$1 Züge · Fehlgriffe: $2 – $3'],
+  [/^(\d+) moves$/, '$1 Züge'],
   [/^Is anything urgent for (White|Black)\?$/, (m, c)=>`Gibt es für ${i18nSide.de[c]} etwas Dringendes?`],
   [/^Choose a plan for (White|Black)$/, (m, c)=>`Wähle einen Plan für ${i18nSide.de[c]}`],
   [/^Yes, (White|Black) can win something$/, (m, c)=>`Ja, ${i18nSide.de[c]} kann etwas gewinnen`],
@@ -9220,8 +9220,8 @@ const I18N_DE_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} beim letzten Mal unterbrochene ${n==='1' ? 'Partie' : 'Partien'} abgeschlossen.`)],
 ];
 const I18N_ES_RE = [
-  [/^(.+) · (\d+) moves · Errors: (\d+) – (\d+)$/, '$1 · $2 jugadas · Fallos: $3 – $4'],
-  [/^(.+) · (\d+) moves$/, '$1 · $2 jugadas'],
+  [/^(\d+) moves · Errors: (\d+) – (\d+)$/, '$1 jugadas · Fallos: $2 – $3'],
+  [/^(\d+) moves$/, '$1 jugadas'],
   [/^Is anything urgent for (White|Black)\?$/, (m, c)=>`¿Hay algo urgente para ${i18nSide.es[c]}?`],
   [/^Choose a plan for (White|Black)$/, (m, c)=>`Elige un plan para ${i18nSide.es[c]}`],
   [/^Yes, (White|Black) can win something$/, (m, c)=>`Sí, ${i18nSide.es[c]} pueden ganar algo`],
@@ -9288,8 +9288,8 @@ const I18N_ES_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} ${n==='1' ? 'partida interrumpida' : 'partidas interrumpidas'} la última vez, ${n==='1' ? 'terminada' : 'terminadas'}.`)],
 ];
 const I18N_IT_RE = [
-  [/^(.+) · (\d+) moves · Errors: (\d+) – (\d+)$/, '$1 · $2 mosse · Sbagli: $3 – $4'],
-  [/^(.+) · (\d+) moves$/, '$1 · $2 mosse'],
+  [/^(\d+) moves · Errors: (\d+) – (\d+)$/, '$1 mosse · Sbagli: $2 – $3'],
+  [/^(\d+) moves$/, '$1 mosse'],
   [/^Is anything urgent for (White|Black)\?$/, (m, c)=>`C'è qualcosa di urgente per ${c==='White' ? 'il Bianco' : 'il Nero'}?`],
   [/^Choose a plan for (White|Black)$/, (m, c)=>`Scegli un piano per ${c==='White' ? 'il Bianco' : 'il Nero'}`],
   [/^Yes, (White|Black) can win something$/, (m, c)=>`Sì, ${i18nSide.it[c]} può vincere qualcosa`],
@@ -10276,19 +10276,19 @@ function openGamePicker(){
     const day = t=>{ const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
     if(gp.tab==='mine') rows = myGames.slice().sort((a, b)=>gamePlayedAt(b) - gamePlayedAt(a)).map(g=>({ key:'mine:' + g.id, src:'mine', id:g.id,
         t:`${g.white || '?'} – ${g.black || '?'}`, res:res(g.result),
-        sub:[fmtGameDate(g.playedAt ? day(g.playedAt) : g.year), SPEED_NAMES[g.speed], siteOf(g)==='chesscom' ? 'Chess.com' : 'Lichess', Math.ceil(g.sans.length / 2) + ' moves'].filter(Boolean).join(' · ') }));
+        sub:[fmtGameDate(g.playedAt ? day(g.playedAt) : g.year), SPEED_NAMES[g.speed], siteOf(g)==='chesscom' ? 'Chess.com' : 'Lichess'].filter(Boolean).join(' · '), mv:Math.ceil(g.sans.length / 2) + ' moves' }));
     else rows = Object.keys(GAME_MOVES).sort((a, b)=>String((GAME_INFO[b] || {}).date || '').localeCompare(String((GAME_INFO[a] || {}).date || '')) || (+b.slice(1) - +a.slice(1))).map(id=>{
         const i = GAME_INFO[id] || {}, mv = Math.ceil(GAME_MOVES[id].split(' ').length / 2);
-        return { key:'masters:' + id, src:'masters', id, t:i.title || id, res:res(i.result), sub:[fmtGameDate(i.date), i.event, mv + ' moves'].filter(Boolean).join(' · ') }; });
-    rows = rows.filter(r=>!words.length || hit(r.t + ' ' + r.sub));
+        return { key:'masters:' + id, src:'masters', id, t:i.title || id, res:res(i.result), sub:[fmtGameDate(i.date), i.event].filter(Boolean).join(' · '), mv:mv + ' moves' }; });
+    rows = rows.filter(r=>!words.length || hit(r.t + ' ' + r.sub));   // (where it comes from; then, its own line on a phone: its length and errors)
     // and how many moves each side got Dubious or worse ("errors": not to mix them up with the Mistake grade)
     // (counted after the list shows, a few rows at a time: the page stays responsive)
     const shown = rows.slice(0, 150), run = gp.run = {};
     const fill = i=>{ if(gp.run!==run || !document.getElementById('gpModal')) return;
-      for(const r of shown.slice(i, i + 15)){ const n = gameErrors(r.src, r.id), el = n && div.querySelector(`[data-load="${CSS.escape(r.key)}"] small`); if(el) el.textContent = r.sub + ` · Errors: ${n.w} – ${n.b}`; }
+      for(const r of shown.slice(i, i + 15)){ const n = gameErrors(r.src, r.id), el = n && div.querySelector(`[data-load="${CSS.escape(r.key)}"] .gp-mv`); if(el) el.textContent = r.mv + ` · Errors: ${n.w} – ${n.b}`; }
       if(i + 15 < shown.length) setTimeout(()=>fill(i + 15), 0); };
     setTimeout(()=>fill(0), 0);
-    document.getElementById('gpList').innerHTML = shown.map(r=>`<button class="gp-row" data-load="${escHtml(r.key)}"><span class="gp-t"><b>${escHtml(r.t)}</b>${r.res ? `<span class="gp-res">${r.res}</span>` : ''}</span><small>${escHtml(r.sub)}</small></button>`).join('')
+    document.getElementById('gpList').innerHTML = shown.map(r=>`<button class="gp-row" data-load="${escHtml(r.key)}"><span class="gp-t"><b>${escHtml(r.t)}</b>${r.res ? `<span class="gp-res">${r.res}</span>` : ''}</span><small><span>${escHtml(r.sub)}</span><span class="gp-sep"> · </span><span class="gp-mv">${escHtml(r.mv)}</span></small></button>`).join('')
       || `<p class="xpg-note">${gp.tab==='mine' && !myGames.length ? 'No games yet: link Lichess or Chess.com in your profile.' : 'No game found.'}</p>`;
     div.querySelectorAll('[data-load]').forEach(b=>b.onclick = ()=>{
       const [src, id] = [b.dataset.load.slice(0, b.dataset.load.indexOf(':')), b.dataset.load.slice(b.dataset.load.indexOf(':') + 1)];
