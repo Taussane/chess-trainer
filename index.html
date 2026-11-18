@@ -10241,7 +10241,8 @@ function wireGameReview(x){
   const goAt = cx=>{ const c = document.getElementById('xpgChart'); if(!c || explorer!==x || x.game!==G) return;
     const r = c.getBoundingClientRect(), k = Math.max(0, Math.min(G.fens.length - 1, Math.round((cx - r.left) / r.width * (G.fens.length - 1))));
     if(onGameLine(x) && x.at===k) return;
-    if(!onGameLine(x)) gameBackToLine(x); x.at = -1; explorerGo(k); };
+    if(onGameLine(x) && Math.abs(k - x.at)===1){ explorerGo(k); return; }   // (one move: as the arrows, its slide and sound)
+    if(!onGameLine(x)) gameBackToLine(x); x.at = -1; explorerGo(k); if(k) explorerSound(/x/.test(G.sans[k - 1] || '')); };   // (a jump: the sound of the move landed on)
   ch.onpointerdown = e=>{
     e.preventDefault(); goAt(e.clientX);
     const mv = ev=>goAt(ev.clientX), up = ()=>{ window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
