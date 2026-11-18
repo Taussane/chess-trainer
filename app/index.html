@@ -37,7 +37,6 @@
   .mat .pc{width:13px; height:16px; flex:none; background-size:auto 100%; filter:var(--pc-outline);} .mat-g .pc + .pc{margin-left:-8px;}
   .pos-title .fig.pc{filter:var(--pc-outline); margin-right:0;}   /* (a thin white outline: the black pieces read on the dark background; it brings the piece closer to its square, so a little more room) */
   :root{--pc-outline:drop-shadow(0.6px 0 0 rgba(255,255,255,.85)) drop-shadow(-0.6px 0 0 rgba(255,255,255,.85)) drop-shadow(0 0.6px 0 rgba(255,255,255,.85)) drop-shadow(0 -0.6px 0 rgba(255,255,255,.85));}
-  .mat-lead{color:var(--text-mute); font-weight:500; font-size:0.78rem; margin-left:3px; position:relative; top:2px;}   /* (back on the name's line: the pieces sit higher) */
   .wrap.ex .posbar{margin:8px 0 10px;}
   .wrap.ex .panel{flex:none; margin-top:10px; display:flex; flex-direction:column; padding:12px 14px;}
   /* Every exercise keeps one panel height from question to review (see .panel-stack). */
@@ -615,7 +614,7 @@
   .xpg-area{fill:var(--white-fill);} .xpg-dot{position:absolute; width:7px; height:7px; border-radius:50%; border:1px solid var(--black-fill); transform:translate(-50%, -50%); pointer-events:none;}
   .xpg-empty{margin:0; font-size:0.86rem; color:var(--text-mute); align-self:start; grid-row:1 / span 2;}
   .xpg-chart{position:relative; overflow:hidden; box-sizing:border-box; width:100%; height:calc(2 * var(--pn-row) - 6px); display:block; cursor:pointer; border-radius:6px; background:var(--black-fill); border:1px solid var(--border);}
-  .xpg-mid{stroke:var(--text-mute); stroke-width:1; vector-effect:non-scaling-stroke;} .xpg-line{fill:none; stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke;}
+  .xpg-mid, .xpg-phase{stroke:var(--text-mute); stroke-width:1; vector-effect:non-scaling-stroke;} .xpg-phase{stroke-dasharray:3 3;}   /* (the middlegame's and the endgame's start) */ .xpg-line{fill:none; stroke:var(--border); stroke-width:1; vector-effect:non-scaling-stroke;}
   .xpg-now{stroke:var(--accent); stroke-width:1.5; vector-effect:non-scaling-stroke;}
   .xpg-grade{font-weight:700;} .xpg-ev{color:var(--text-mute); font-variant-numeric:tabular-nums;}
   .xpg-badge{position:absolute; z-index:3; width:5.6%; aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; transform:translate(-70%, -30%); color:#fff; font-weight:800; letter-spacing:-0.04em; box-shadow:0 1px 3px rgba(0,0,0,.45); pointer-events:none;}
@@ -3086,7 +3085,7 @@ function posSource(p){
 }
 // The players' names beside the board: the side to play at the bottom (the board is seen from it).
 // The material difference beside a player's name: the pieces they have more of (drawn in the opponent's colour, as
-// taken; the same pieces overlapping) and the lead in points, as on Lichess. Nothing when material is level for them.
+// taken; the same pieces overlapping). Nothing when material is level for them.
 const MAT_VAL = { q:9, r:5, b:3, n:3, p:1 };
 function materialHtml(fen, color){
   const n = {}; for(const ch of String(fen || '').split(' ')[0]) if(/[qrbnpQRBNP]/.test(ch)) n[ch] = (n[ch] || 0) + 1;
@@ -3096,7 +3095,7 @@ function materialHtml(fen, color){
     lead += mine * MAT_VAL[k];
     if(mine > 0) out += `<span class="mat-g">${`<span class="pc pc-${color==='w' ? 'b' : 'w'}${k.toUpperCase()}"></span>`.repeat(mine)}</span>`;
   }
-  return out || lead > 0 ? `<span class="mat" aria-label="Material">${out}${lead > 0 ? `<span class="mat-lead">+${lead}</span>` : ''}</span>` : '';
+  return out ? `<span class="mat" aria-label="Material">${out}</span>` : '';
 }
 function playerLine(where){
   let p = null; try{ p = pos(); }catch(e){}
@@ -10059,9 +10058,18 @@ function gameReviewHtml(x){
   const curve = pts.length > 1 ? 'M' + pts.map(([a, b])=>`${a.toFixed(1)},${b.toFixed(1)}`).join(' L') : '';
   const marks = []; for(let k = 1; k <= n; k++){ const gr = gameGrade(G, k); if(gr && BAD_GRADES.includes(gr.label)) marks.push(`<span class="xpg-dot" style="left:${(100 * X(k) / W).toFixed(2)}%; top:${Y(G.E[k]).toFixed(2)}%; background:${labelColor(gr.label)}"></span>`); }
   const line = onGameLine(x), k = x.at;   // (the dots over the drawing, not in it: stretched with it, they wouldn't stay round)
+  // where the middlegame and the endgame start, as the imbalances count them: every minor piece moved out (Development
+  // ends), then no queens left (King safety becomes King activity)
+  let mid = null, end = null;
+  for(let i = 1; i <= n && end==null; i++){
+    const f = G.fens[i], u = devUnmoved(f);
+    if(mid==null && !['w','b'].some(c=>u[c].some(sq=>DEV_MINOR[c].includes(sq)))) mid = i;
+    if(isEndgame(f)) end = i;
+  }
+  const phase = [mid!=null && (end==null || mid < end) ? mid : null, end].filter(v=>v!=null).map(i=>`<line x1="${X(i).toFixed(1)}" x2="${X(i).toFixed(1)}" y1="0" y2="${H}" class="xpg-phase"/>`).join('');
   return `<div class="xpg xpg-full">
       <div class="xpg-chart" id="xpgChart" role="img" aria-label="Evaluation through the game"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-        ${area ? `<path d="${area}" class="xpg-area"/>` : ''}<line x1="0" x2="${W}" y1="${H / 2}" y2="${H / 2}" class="xpg-mid"/>${curve ? `<path d="${curve}" class="xpg-line"/>` : ''}
+        ${area ? `<path d="${area}" class="xpg-area"/>` : ''}<line x1="0" x2="${W}" y1="${H / 2}" y2="${H / 2}" class="xpg-mid"/>${phase}${curve ? `<path d="${curve}" class="xpg-line"/>` : ''}
         ${line ? `<line x1="${X(k).toFixed(1)}" x2="${X(k).toFixed(1)}" y1="0" y2="${H}" class="xpg-now"/>` : ''}
       </svg>${marks.join('')}</div>
       ${gameProgHtml(G)}
