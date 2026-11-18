@@ -69,7 +69,7 @@
   .mat{display:inline-flex; align-items:center; height:1lh; gap:0; margin-left:2px; position:relative; top:-1.5px;} .mat-g{display:inline-flex;}   /* (one text line high: centred as the name is) */   /* (the material difference: same pieces overlapping) */
   .mat .pc{width:13px; height:16px; flex:none; background-size:auto 100%; filter:var(--pc-outline);} .mat-g .pc + .pc{margin-left:-8px;}
   .fig.pc.fig-promo{margin-left:0.02em;}
-  .pos-title .fig.pc, .fig.pc.fig-ol{filter:var(--pc-outline);} .pos-title .fig.pc{margin-right:0;}   /* (a thin white outline: the black pieces read on the dark background; it brings the piece closer to its square, so a little more room) */
+  .pos-title .fig.pc, .fig.pc.fig-ol{filter:url(#pcOutlineSoft);}   /* (in the notation: a softer outline) */ .pos-title .fig.pc{margin-right:0;}   /* (a thin white outline: the black pieces read on the dark background; it brings the piece closer to its square, so a little more room) */
   :root{--pc-outline:url(#pcOutline);}
   .wrap.ex .posbar{margin:8px 0 10px;}
   .wrap.ex .panel{flex:none; margin-top:10px; display:flex; flex-direction:column; padding:12px 14px;}
@@ -914,6 +914,10 @@
   <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="pcOutline" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
     <feMorphology in="SourceAlpha" operator="dilate" radius="0.35" result="d"/><feOffset in="d" dx="0.05" dy="0.05" result="o"/>
     <feFlood flood-color="#fff" flood-opacity="0.85"/><feComposite in2="o" operator="in" result="w"/>
+    <feMerge><feMergeNode in="w"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="pcOutlineSoft" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="0.35" result="d"/><feOffset in="d" dx="0.05" dy="0.05" result="o"/>
+    <feFlood flood-color="#fff" flood-opacity="0.45"/><feComposite in2="o" operator="in" result="w"/>
     <feMerge><feMergeNode in="w"/><feMergeNode in="SourceGraphic"/></feMerge></filter></svg>
 </div>
 
