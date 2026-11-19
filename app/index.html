@@ -2769,24 +2769,24 @@ function setSource(v){
   render();
   if(v==='filter') openFilter();
 }
-// The filter's options (beta): which games, which phases, and how many positions each exercise then has. At least one
-// of each group stays on.
+// The filter's options (beta): which games, which phases, and how many positions each exercise then has. Any option can
+// be turned off; with no position left, Done waits for one to come back.
 const FILTER_GROUPS = [['Games', [['masters', 'Masters'], ['mine', 'My games']]], ['Phase', [['opening', 'Opening'], ['middlegame', 'Middlegame'], ['endgame', 'Endgame']]]];
 function openFilter(){
   if(document.getElementById('flModal')) return;
   const div = document.createElement('div'); div.className = 'modal-backdrop'; div.id = 'flModal'; div.dataset.scr = screen;
   document.body.appendChild(div);
-  const counts = ()=>ACTS.map(a=>`<li><span>${ACT_NAMES[a]}</span><b>${(a==='planq' ? planqPool() : sourcePool(a, 'filter.' + filterKey())).length}</b></li>`).join('');
   const draw = ()=>{
+    const n = ACTS.map(a=>(a==='planq' ? planqPool() : sourcePool(a, 'filter.' + filterKey())).length), none = !n.some(Boolean);
+    div.dataset.none = none ? '1' : '';
     div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box fl-box" role="dialog" aria-label="Filter"><h3>Filter</h3>
       ${FILTER_GROUPS.map(([g, ks])=>`<div class="fl-group"><span class="fl-h">${g}</span><div class="fl-chips">${ks.map(([k, l])=>{
         const off = k==='mine' && !myPositions.length;
         return `<button class="chip-btn fl-chip${posFilter[k] && !off ? ' on' : ''}" data-fl="${k}" aria-pressed="${!!posFilter[k]}" ${off ? 'disabled' : ''}>${l}</button>`; }).join('')}</div></div>`).join('')}
-      <div class="fl-group"><span class="fl-h">Positions</span><ul class="fl-counts">${counts()}</ul></div>
-      <div class="modal-actions"><button class="btn" id="flDone">Done</button></div></div></div>`;
+      <div class="fl-group"><span class="fl-h">Positions</span><ul class="fl-counts">${ACTS.map((a, i)=>`<li><span>${ACT_NAMES[a]}</span><b>${n[i]}</b></li>`).join('')}</ul></div>
+      <div class="modal-actions"><button class="btn" id="flDone" ${none ? 'disabled' : ''}>Done</button></div></div></div>`;
     div.querySelectorAll('[data-fl]').forEach(b=>b.onclick = ()=>{
-      const k = b.dataset.fl, grp = FILTER_GROUPS.find(([, ks])=>ks.some(([x])=>x===k))[1].map(([x])=>x);
-      if(posFilter[k] && grp.filter(x=>posFilter[x] && !(x==='mine' && !myPositions.length)).length < 2) return;   // (the last one on stays on)
+      const k = b.dataset.fl;
       posFilter[k] = !posFilter[k];
       try{ localStorage.setItem('cst.filter', JSON.stringify(posFilter)); }catch(e){}
       draw(); render();
@@ -2794,7 +2794,7 @@ function openFilter(){
     div.querySelector('#flDone').onclick = ()=>div.remove();
   };
   draw();
-  div.onclick = e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')) div.remove(); };
+  div.onclick = e=>{ if(!div.dataset.none && (e.target===div || e.target.classList.contains('modal-backdrop-inner'))) div.remove(); };   // (no position: it stays open)
 }
 let curPos = null, side = 'w';   // the open exercise's position and side to play (see syncPos)
 // Positions played today (their review reached), in any exercise: an exercise skips them when it
