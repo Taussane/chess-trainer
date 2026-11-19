@@ -13,7 +13,7 @@
 //    they pass the exercise's rule, then the other positions by the same rule: Candidate moves a trap among the top 5
 //    and at most 3 decent moves, 14 half-moves apart; Move selection its four moves spread enough (the game move judged
 //    from the next position), 2 apart.
-//  - Imbalance reading and the Plan finder: as scripts/strategy-pass.js (from the middlegame's start, or after move 9 if
+//  - Imbalance reading and the Plan finder: as scripts/strategy-pass.js (from the middlegame's start, or after move 10 if
 //    sooner (OWN.openingFrom), to just past the endgame's start, Imbalance reading 5 apart, the Plan finder 7, the same rules), with the pass's evaluation and best line.
 // Writes app/index.html (/*POOLS*/), data/pools.json (Candidate moves and Move selection with their measurements, for
 // starters.py) and master-evals.json (each kept position's top 3 moves). Then: python3 scripts/master-pass-file.py (the
@@ -119,7 +119,7 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
       keptC.sort((a, b) => a - b).forEach(x => keep('candidates', x, { metrics: { decentMoves: C[x].dec, ...(mistDrop[x] ? { mistake: mistDrop[x] } : {}) } }));
       keptF.sort((a, b) => a - b).forEach(x => keep('final', x, { metrics: mistDrop[x] ? { mistake: mistDrop[x] } : {} }));
       // Imbalance reading and the Plan finder (as strategy-pass.js, from the pass)
-      const div = divideGame(fens), from0 = div.mid >= 0 ? div.mid : div.end, from = Math.min(from0 >= 0 ? from0 : Infinity, OWN.openingFrom);   // (or after move 9, the opening's end, if sooner: as your games)
+      const div = divideGame(fens), from0 = div.mid >= 0 ? div.mid : div.end, from = Math.min(from0 >= 0 ? from0 : Infinity, OWN.openingFrom);   // (or after move 10, the opening's end, if sooner: as your games)
       {
         const to = div.end >= 0 ? div.end + 3 : hist.length - 1, wp = cp => Math.max(1, Math.min(99, 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1)));
         let lastImb = -99, lastPlan = -99;
