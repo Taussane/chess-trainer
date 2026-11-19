@@ -11,7 +11,7 @@
 // can simply be taken back, not in a mate already under way; a position found in several games is kept once):
 //  - Candidate moves and Move selection: the game's mistakes first (a move that lost 10+ points, either side), when
 //    they pass the exercise's rule, then the other positions by the same rule: Candidate moves a trap among the top 5
-//    and at most 3 decent moves, 14 half-moves apart; Move selection its four moves spread enough (the game move judged
+//    and at most 3 decent moves, 12 half-moves apart; Move selection its four moves spread enough (the game move judged
 //    from the next position), 2 apart.
 //  - Imbalance reading and the Plan finder: as scripts/strategy-pass.js (from the middlegame's start, or after move 10 if
 //    sooner (OWN.openingFrom), to just past the endgame's start, Imbalance reading 5 apart, the Plan finder 7, the same rules), with the pass's evaluation and best line.
@@ -76,7 +76,7 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
   if (missing.length) { console.log('pass missing for', missing.length, 'games, e.g.', missing.slice(0, 5)); await b.close(); server.kill(); return; }
   const out = { imbalances: [], planq: [], candidates: [], final: [] }, evals = {}, seen = { imbalances: new Set(), planq: new Set(), candidates: new Set(), final: new Set() };
   // spacings (half-moves): Imbalance reading, Plan finder, Candidate moves positions that aren't mistakes
-  const KNOBS = { imbSp: +(process.env.IMB_SP || 5), planSp: +(process.env.PLAN_SP || 7), cSp: +(process.env.C_SP || 14), noPlan: !!process.env.NO_PLAN };
+  const KNOBS = { imbSp: +(process.env.IMB_SP || 5), planSp: +(process.env.PLAN_SP || 7), cSp: +(process.env.C_SP || 12), noPlan: !!process.env.NO_PLAN };
   let n = 0;
   for (const gid of games) {
     const r = await p.evaluate(async ([gid, pass, K]) => {
