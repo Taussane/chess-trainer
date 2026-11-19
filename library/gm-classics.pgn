@@ -19387,6 +19387,8 @@ g3 67.f4 a2 68.Qxa2 Bxf4 0-1
 [White "Khalifman, Alexander"]
 [Black "Barua, Dibyendu"]
 [Result "1-0"]
+[WhiteElo "2628"]
+[BlackElo "2550"]
 [ECO "D43"]
 
 1.d4 d5 2.c4 e6 3.Nc3 Nf6 4.Nf3 c6 5.Bg5 h6 6.Bh4 Nbd7 7.e3 Be7 8.Bd3 O-O 9.O-O
@@ -19410,6 +19412,8 @@ g5 66.e6 fxe6+ 67.Kxe6 1-0
 [White "Khalifman, Alexander"]
 [Black "Barua, Dibyendu"]
 [Result "1-0"]
+[WhiteElo "2628"]
+[BlackElo "2550"]
 [ECO "D43"]
 
 1.d4 d5 2.c4 e6 3.Nc3 Nf6 4.Nf3 c6 5.Bg5 h6 6.Bh4 Nbd7 7.e3 Be7 8.Bd3 O-O 9.O-O
@@ -19428,6 +19432,8 @@ Bb7 17.Qe2 a6 18.Rad1 Bh4 19.Be4 Bxg3 20.hxg3 dxe4 21.Rxd8 Raxd8 22.Rd1 Ne6
 [White "Barua, Dibyendu"]
 [Black "Khalifman, Alexander"]
 [Result "1-0"]
+[WhiteElo "2550"]
+[BlackElo "2628"]
 [ECO "B56"]
 
 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Be2 e5 7.Nf3 h6 8.O-O Be7
@@ -19448,6 +19454,8 @@ Rxc5 37.Ra2 Rb5 38.Qc4 Rc5 39.Qe2 Qc1 40.Qe8+ Kg7 41.Ra8 Kh6 42.Qxf7 Qg5 43.Ra7
 [White "Barua, Dibyendu"]
 [Black "Khalifman, Alexander"]
 [Result "1/2-1/2"]
+[WhiteElo "2550"]
+[BlackElo "2628"]
 [ECO "B58"]
 
 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Be2 e5 7.Nf3 h6 8.O-O Be7 9.h3
@@ -19468,6 +19476,8 @@ Kh7 44.Qg5 g6 45.Qd8 Rff4 46.Qd7+ Kh6 47.Qd2 Kh7 48.Qd7+ Kh6 49.Qd2 Kh7 1/2-1/2
 [White "Khalifman, Alexander"]
 [Black "Barua, Dibyendu"]
 [Result "1-0"]
+[WhiteElo "2628"]
+[BlackElo "2550"]
 [ECO "D37"]
 
 1.d4 d5 2.c4 e6 3.Nc3 Nf6 4.Nf3 Be7 5.Bf4 O-O 6.e3 c6 7.h3 Nbd7 8.Qc2 b6 9.Bd3
@@ -19493,6 +19503,8 @@ Bc8 66.Nf1 Be6 67.Ne3 Kf7 68.Kg3 Kg7 69.f5 gxf5 70.Kf4 Kf6 71.Nc2 Bd7 72.Ne1 Bc8
 [White "Khalifman, Alexander"]
 [Black "Kamsky, Gata"]
 [Result "1-0"]
+[WhiteElo "2628"]
+[BlackElo "2720"]
 [ECO "E15"]
 
 1.Nf3 Nf6 2.c4 e6 3.d4 b6 4.g3 Ba6 5.b3 Bb4+ 6.Bd2 Be7 7.Bg2 c6 8.Bc3 d5 9.Nbd2
@@ -19516,6 +19528,8 @@ axb5 66.a5 Nd5 67.a6 1-0
 [White "Khalifman, Alexander"]
 [Black "Kamsky, Gata"]
 [Result "1-0"]
+[WhiteElo "2628"]
+[BlackElo "2720"]
 [ECO "D37"]
 
 1.Nf3 d5 2.d4 Nf6 3.c4 e6 4.Nc3 Be7 5.Bf4 O-O 6.e3 Nbd7 7.Qc2 a6 8.cxd5 exd5
@@ -19538,6 +19552,8 @@ Rxa5 59.Rxe3 Ra1+ 60.Kxd2 Rb1 61.Rb3 1-0
 [White "Kamsky, Gata"]
 [Black "Khalifman, Alexander"]
 [Result "1/2-1/2"]
+[WhiteElo "2720"]
+[BlackElo "2628"]
 [ECO "C42"]
 
 1.e4 e5 2.Nf3 Nf6 3.Nxe5 d6 4.Nf3 Nxe4 5.d4 d5 6.Bd3 Nc6 7.O-O Be7 8.Re1 Bg4
@@ -19559,6 +19575,8 @@ Nd7 44.Bxd4 Kxd4 45.Ke2 Nc5 46.Kf3 Nd3 47.Bb3 Nxb2 48.Kf4 Nd3+ 49.Kg5 Nxf2
 [White "Khalifman, Alexander"]
 [Black "Asrian, Karen"]
 [Result "1/2-1/2"]
+[WhiteElo "2628"]
+[BlackElo "2575"]
 [ECO "D58"]
 
 1.d4 d5 2.c4 e6 3.Nc3 Nf6 4.Nf3 Be7 5.Bg5 h6 6.Bh4 O-O 7.e3 b6 8.Bd3 Bb7 9.O-O
@@ -19575,6 +19593,8 @@ Nbd7 10.Bg3 c5 11.cxd5 Nxd5 12.Rc1 cxd4 13.Nxd5 Bxd5 14.e4 Bb7 15.Bc7 Qe8
 [White "Asrian, Karen"]
 [Black "Khalifman, Alexander"]
 [Result "0-1"]
+[WhiteElo "2575"]
+[BlackElo "2628"]
 [ECO "B74"]
 
 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Be2 g6 7.Be3 Bg7 8.Nb3 O-O
@@ -19596,6 +19616,8 @@ Rh1 51.Rh8 Kg7 52.Rh4 e5 53.Kc4 f4 54.Rh5 Kg6 55.Rh8 Ra1 56.Kd5 Rxa4 57.Kxd6 e4
 [White "Gelfand, Boris"]
 [Black "Khalifman, Alexander"]
 [Result "1/2-1/2"]
+[WhiteElo "2713"]
+[BlackElo "2628"]
 [ECO "D18"]
 
 1.d4 Nf6 2.Nf3 d5 3.c4 c6 4.Nc3 dxc4 5.a4 Bf5 6.e3 e6 7.Bxc4 Bb4 8.O-O O-O 9.Nh4
@@ -19613,6 +19635,8 @@ Ned7 17.Kh1 Rfe8 18.Nc3 Qc5 19.Qb3 a6 20.Bd2 Rad8 21.Rad1 Ne5 22.Be1 Rxd1
 [White "Khalifman, Alexander"]
 [Black "Gelfand, Boris"]
 [Result "1-0"]
+[WhiteElo "2628"]
+[BlackElo "2713"]
 [ECO "B92"]
 
 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6 6.Be2 e5 7.Nb3 Be7 8.Be3 Be6
@@ -19632,6 +19656,8 @@ Ba3 37.Re1 Bb4 38.Rxf7+ Kh6 39.Rh1 1-0
 [White "Gelfand, Boris"]
 [Black "Khalifman, Alexander"]
 [Result "1/2-1/2"]
+[WhiteElo "2713"]
+[BlackElo "2628"]
 [ECO "A14"]
 
 1.c4 e6 2.g3 d5 3.Bg2 Nf6 4.Nf3 Be7 5.O-O O-O 6.b3 b6 7.Bb2 Bb7 8.e3 c5 9.Nc3
@@ -19651,6 +19677,8 @@ Qe6 38.Rxc5 Qxe3+ 39.Qxe3 Rxe3 40.Rf2 Rc3 41.Rc6 Rd4 42.Rxa6 Rdxc4 43.a3 Kh7
 [White "Khalifman, Alexander"]
 [Black "Polgar, Judit"]
 [Result "1-0"]
+[WhiteElo "2628"]
+[BlackElo "2671"]
 [ECO "D37"]
 
 1.Nf3 Nf6 2.c4 e6 3.d4 d5 4.Nc3 dxc4 5.e4 Bb4 6.Bg5 c5 7.Bxc4 cxd4 8.Nxd4 Bxc3+
@@ -19670,6 +19698,8 @@ Kf5 44.Qh7+ 1-0
 [White "Polgar, Judit"]
 [Black "Khalifman, Alexander"]
 [Result "1/2-1/2"]
+[WhiteElo "2671"]
+[BlackElo "2628"]
 [ECO "B18"]
 
 1.e4 c6 2.d4 d5 3.Nc3 dxe4 4.Nxe4 Bf5 5.Ng3 Bg6 6.f4 e6 7.Nf3 Bd6 8.Be2 Ne7
@@ -19689,6 +19719,8 @@ Rb7 30.Ne4+ Bxe4 31.Kxe4 Rxb3 32.Rxg7 h6 33.Rg6 Rc3 34.Rxh6 Rg3 35.h5 Rxg2
 [White "Khalifman, Alexander"]
 [Black "Nisipeanu, Liviu-Dieter"]
 [Result "1/2-1/2"]
+[WhiteElo "2628"]
+[BlackElo "2584"]
 [ECO "E14"]
 
 1.d4 Nf6 2.Nf3 e6 3.c4 b6 4.e3 Bb7 5.Bd3 Bb4+ 6.Nbd2 O-O 7.O-O d5 8.a3 Bxd2
@@ -19707,6 +19739,8 @@ Rxb3 38.Bc7 Rb2 39.Rd2 Ra8 40.Rcxc2 Rxc2 41.Rxc2 Bxc2 42.b7 Re8 1/2-1/2
 [White "Nisipeanu, Liviu-Dieter"]
 [Black "Khalifman, Alexander"]
 [Result "1/2-1/2"]
+[WhiteElo "2584"]
+[BlackElo "2628"]
 [ECO "C42"]
 
 1.e4 e5 2.Nf3 Nf6 3.Nxe5 d6 4.Nf3 Nxe4 5.d4 d5 6.Bd3 Nc6 7.O-O Be7 8.c4 Nf6 9.h3
@@ -19723,6 +19757,8 @@ cxd6 24.Qd4 Rfe8 25.Bf4 Ne4 26.Bh2 Nxc3 27.bxc3 Qd3 28.Qxd3 1/2-1/2
 [White "Khalifman, Alexander"]
 [Black "Nisipeanu, Liviu-Dieter"]
 [Result "1-0"]
+[WhiteElo "2628"]
+[BlackElo "2584"]
 [ECO "E12"]
 
 1.d4 Nf6 2.Nf3 e6 3.c4 b6 4.a3 Ba6 5.Qc2 Bb7 6.Nc3 c5 7.e4 cxd4 8.Nxd4 Nc6
@@ -19741,6 +19777,8 @@ Rxe5 37.b5 Re3 38.Re2 Rf3 39.b6 Nd5 40.b7 Rxc3+ 41.Kb2 Rc4 42.b8=Q 1-0
 [White "Nisipeanu, Liviu-Dieter"]
 [Black "Khalifman, Alexander"]
 [Result "1-0"]
+[WhiteElo "2584"]
+[BlackElo "2628"]
 [ECO "C45"]
 
 1.e4 e5 2.Nf3 Nc6 3.d4 exd4 4.Nxd4 Bc5 5.Nxc6 Qf6 6.Qd2 dxc6 7.Nc3 Ne7 8.Qf4 Qe6
@@ -19763,6 +19801,8 @@ Rxd7 23.Ke2 Kf8 24.g4 Ne8 25.h4 Nd6 26.h5 Nb5 27.Bd2 f6 28.Rg1 h6 29.Rd1 Ke7
 [White "Khalifman, Alexander"]
 [Black "Nisipeanu, Liviu-Dieter"]
 [Result "1-0"]
+[WhiteElo "2628"]
+[BlackElo "2584"]
 [ECO "E01"]
 
 1.d4 Nf6 2.c4 e6 3.g3 d5 4.Bg2 c6 5.Nf3 Nbd7 6.O-O Be7 7.Nc3 O-O 8.b3 b6 9.Nd2
@@ -19782,6 +19822,8 @@ Rc8 30.Bg2 h6 31.h3 Rc3 32.Qe1 Bd3 33.g4 Bc2 34.Kh2 Kh7 35.Qe6 Rd3 36.Bd5 Rd2+
 [White "Nisipeanu, Liviu-Dieter"]
 [Black "Khalifman, Alexander"]
 [Result "1/2-1/2"]
+[WhiteElo "2584"]
+[BlackElo "2628"]
 [ECO "B36"]
 
 1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 g6 5.c4 Nf6 6.Nc3 d6 7.Be2 Nxd4 8.Qxd4 Bg7
@@ -19803,6 +19845,8 @@ Rc8 30.Bg2 h6 31.h3 Rc3 32.Qe1 Bd3 33.g4 Bc2 34.Kh2 Kh7 35.Qe6 Rd3 36.Bd5 Rd2+
 [White "Akopian, Vladimir"]
 [Black "Khalifman, Alexander"]
 [Result "0-1"]
+[WhiteElo "2646"]
+[BlackElo "2628"]
 [ECO "A15"]
 
 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 d6 6.Bg2 e5 7.d3 Nh5 8.Nc3 f5 9.O-O
@@ -19823,6 +19867,8 @@ h5 31.Qe5 Kh7 32.h3 Ng8 33.Qe4 Nf6 34.Qe5 Ng8 35.Qe4 Rf6 36.Rxf6 Nxf6 37.Qb4 Qe7
 [White "Khalifman, Alexander"]
 [Black "Akopian, Vladimir"]
 [Result "1/2-1/2"]
+[WhiteElo "2628"]
+[BlackElo "2646"]
 [ECO "E38"]
 
 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4 4.Qc2 c5 5.dxc5 Qc7 6.Nf3 Bxc5 7.g3 Qb6 8.e3 Be7
@@ -19838,6 +19884,8 @@ h5 31.Qe5 Kh7 32.h3 Ng8 33.Qe4 Nf6 34.Qe5 Ng8 35.Qe4 Rf6 36.Rxf6 Nxf6 37.Qb4 Qe7
 [White "Akopian, Vladimir"]
 [Black "Khalifman, Alexander"]
 [Result "1-0"]
+[WhiteElo "2646"]
+[BlackElo "2628"]
 [ECO "B30"]
 
 1.e4 c5 2.Nf3 Nc6 3.Bb5 d6 4.O-O Bd7 5.c3 Nf6 6.Re1 a6 7.Ba4 c4 8.d4 cxd3 9.Bg5
@@ -19862,6 +19910,8 @@ Ne5 10.Nbd2 Bxa4 11.Qxa4+ b5 12.Qd4 h6 13.Bxf6 gxf6 14.a4 Rb8 15.Nxe5 dxe5
 [White "Khalifman, Alexander"]
 [Black "Akopian, Vladimir"]
 [Result "1-0"]
+[WhiteElo "2628"]
+[BlackElo "2646"]
 [ECO "E70"]
 
 1.d4 Nf6 2.c4 g6 3.Nc3 Bg7 4.e4 d6 5.Be2 O-O 6.Nf3 e5 7.Be3 exd4 8.Nxd4 Re8 9.f3
@@ -19883,6 +19933,8 @@ c6 10.Bf2 d5 11.exd5 cxd5 12.O-O Nc6 13.c5 Nh5 14.Qd2 Be5 15.g3 Ng7 16.Rfd1 Be6
 [White "Akopian, Vladimir"]
 [Black "Khalifman, Alexander"]
 [Result "1/2-1/2"]
+[WhiteElo "2646"]
+[BlackElo "2628"]
 [ECO "C77"]
 
 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.d3 b5 6.Bb3 Be7 7.O-O d6 8.c3 O-O 9.Re1
@@ -19902,6 +19954,8 @@ Kc4 45.Rb1 b3 46.h5 Kd5 47.h6 Ke6 48.h7 Rh8 49.Rxb3 1/2-1/2
 [White "Khalifman, Alexander"]
 [Black "Akopian, Vladimir"]
 [Result "1/2-1/2"]
+[WhiteElo "2628"]
+[BlackElo "2646"]
 [ECO "E10"]
 
 1.d4 Nf6 2.Nf3 e6 3.c4 c5 4.d5 exd5 5.cxd5 d6 6.Nc3 a6 7.a4 g6 8.Nd2 Nbd7 9.e4
