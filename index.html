@@ -2931,7 +2931,7 @@ function prepareFor(a, p){
 }
 // The exercise's next position (once its review is in): ahead of everything else prepared.
 function prefetchNext(){
-  if(!ACTIVITIES.includes(screen)) return;
+  if(!ACTIVITIES.includes(screen) || rushMode) return;   // (a rush prepares its own)
   withPrep('front', ()=>{
     if(replayMode){ const e = replayQueue[replayIdx+1]; if(e) prepareFor(e.a, e.pos); return; }
     const [t, i] = nextTarget();
@@ -3215,9 +3215,9 @@ function wireCommon(helpKey, checked){
   if(all) all.onclick = ()=>{ firstVisit = null; leaveExercise(); screen = 'home'; selSquare = null; render(); };   // (a first visit: on to the others)
   const next = document.getElementById('nextPos');
   if(next){
-    next.onclick = nextPosition;
+    next.onclick = rushMode ? rushNext : nextPosition;   // (a rush: its own next position)
     // Nothing to go on to yet: say why; the button comes back by itself when positions arrive.
-    if(nextTarget()[1] < 0){ next.disabled = true; next.textContent = waitText(routine ? ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length] : screen, routine, true); }
+    if(!rushMode && nextTarget()[1] < 0){ next.disabled = true; next.textContent = waitText(routine ? ROUTINE[(ROUTINE.indexOf(screen)+1) % ROUTINE.length] : screen, routine, true); }
   }
   if(helpVisible){
     const sv = st(helpKey);
@@ -3355,10 +3355,11 @@ function lichessUrl(p){
 // 3 minutes of positions, in one exercise (for now Move selection). The run's score is its average accuracy (so
 // going fast pays only if the answers hold up); each exercise keeps its best (profile.rushBest). Positions come from the master
 // games, prepared before they're shown (the four moves and their evaluations), so the clock never runs while the
-// engine works: it stops until the next one is ready. Nothing is recorded: averages, the routine, missed and
+// engine works: it stops until the next one is ready. Each answer gets its usual review, the clock paused until Next
+// position. Nothing is recorded: averages, the routine, missed and
 // played positions are untouched. Its own track ('z-'): see ctx.
 const RUSH_MS = 180000, RUSH_AHEAD = 3, RUSH_COUNT_MS = 3000, RUSH_SEARCH_MS = 2000, RUSH_ACTS = ['final'];   // (its searches: 2 s each, so positions keep up)
-let rushMode = false, rush = null;   // rush: { a, phase: 'prep' | 'count' | 'run' | 'wait' | 'end', left, at, score, items, used, queue }
+let rushMode = false, rush = null;   // rush: { a, phase: 'prep' | 'count' | 'run' | 'review' | 'wait' | 'end', left, at, score, items, used, queue }
 const rushBest = a=>(profile.rushBest || {})[a];
 const rushAvg = r=>r.items.length ? Math.round(r.items.reduce((t, x)=>t + x.pts, 0) / r.items.length) : null;   // (the run's score)
 const rushFmt = ms=>{ const t = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
@@ -3389,14 +3390,19 @@ function rushShow(p){
   const t = 'z-' + rush.a; orders[t].push(p); seqBy[t] = orders[t].length - 1;
   rushMode = true; screen = rush.a; selSquare = null; promoPending = null; helpVisible = false; render();
 }
-// After Check: its points, then the next position at once (or, not ready yet, the clock stops until it is)
+// At Check: its points, and the clock paused for the review
 function rushAnswered(p, acc){
   if(!rush || rush.phase!=='run') return;
   const pts = Math.round(acc || 0);
+  rush.left = rushLeft(); rush.phase = 'review';
   rush.items.push({ key: p.key, title: p.title, year: p.year, pts }); rush.score = rushAvg(rush); rush.newAt = performance.now();
+}
+// Next position (from the review): the clock goes on with the next position (or, not ready yet, stays stopped until it is)
+function rushNext(){
+  if(!rush || rush.phase!=='review') return;
   const next = rushHead();
-  if(next) rushShow(next);
-  else { rush.left = rushLeft(); rush.phase = 'wait'; rushMode = false; screen = 'rush'; render(); }
+  if(next){ rush.phase = 'run'; rush.at = performance.now(); rushShow(next); }
+  else { rush.phase = 'wait'; rushMode = false; screen = 'rush'; render(); }
 }
 function rushEnd(){
   rush.left = 0; rush.phase = 'end'; rushMode = false; screen = 'rush';
@@ -3429,7 +3435,7 @@ function renderRush(){
   const app = document.getElementById('app'), r = rush, name = a=>ACT_NAMES[a];
   const top = `<div class="title-row"><button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button><h1>Rush${r ? ` <span class="title-badge">${name(r.a)}</span>` : ''}</h1><span></span></div>`;
   let body;
-  if(!r) body = `<p class="rush-lead">3 minutes of positions, one after another. Your score: your average accuracy.</p>
+  if(!r) body = `<p class="rush-lead">3 minutes of positions, one after another. The clock stops while you look at each answer. Your score: your average accuracy.</p>
     <div class="cards">${RUSH_ACTS.map(a=>`<button class="card" data-rush="${a}"><span class="card-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>
       <span><span class="card-title">${name(a)}</span><span class="card-desc">${rushBest(a)!=null ? `Best: <b>${rushBest(a)}%</b>` : 'No run yet'}</span></span></button>`).join('')}</div>
     <p class="hint rush-soon">Coming next: the other exercises, and a mixed run.</p>`;
@@ -5075,6 +5081,7 @@ function recordResult(s, a, acc){
 function levelChip(s, show, fade){
   if(!s.rec) return '';
   const r = s.rec;
+  if(r.rush) return rush && rush.phase==='review' ? `<span class="level${show ? (fade ? ' fade-in' : '') : ''}" style="${show ? '' : 'visibility:hidden'}">Clock paused <strong>${rushFmt(rush.left)}</strong></span>` : '';   // (a rush: its clock, paused during the review)
   const body = r.test ? 'Not recorded'
     : `Average <strong>${pct(r.level)}</strong>` + (r.delta==null ? '' : ' ' + deltaHtml(r.delta));
   return `<span class="level${show ? (fade ? ' fade-in' : '') : ''}" style="${show ? '' : 'visibility:hidden'}">${body}</span>`;
@@ -6901,10 +6908,9 @@ function renderFinal(){
   const failed = evalFailed(ev0), ev = failed ? null : ev0;
   if(!s.order || s.order.length!==moves.length || !moves.every(m=>s.order.includes(m.id))) s.order = moves.map(m=>m.id);
   const ordered = s.order.map(id=>moves.find(m=>m.id===id));
-  if(rushMode && s.checked){   // a rush: its points, then the next position (its evaluation is in: rushState)
-    if(!s.rushDone){ s.rushDone = true; const cp = {}; moves.forEach(m=>{ const o = moveOutcome(p.fen, m.uci, ev); cp[m.id] = o ? o.moverCp : null; });
-      const acc = ev ? rankAccuracyPct(s.order, cp) : 0; setTimeout(()=>rushAnswered(p, acc), 0); }
-    return;
+  if(rushMode && s.checked && !s.rushDone){   // a rush: its points and the clock paused, then the usual review (its evaluation is in: rushState)
+    s.rushDone = true; const cp = {}; moves.forEach(m=>{ const o = moveOutcome(p.fen, m.uci, ev); cp[m.id] = o ? o.moverCp : null; });
+    rushAnswered(p, ev ? rankAccuracyPct(s.order, cp) : 0);
   }
 
   if(s.checked){
@@ -6931,7 +6937,7 @@ function renderFinal(){
     const scoreText = !counting ? '—' : s.revDone ? pctOrDash(acc) : Math.round(acc * easeOut((e - tCount)/COUNT_MS)) + '%';
     app.innerHTML = `
       ${header('Move selection')}
-      ${posBar()}
+      ${rushMode ? rushBar() : posBar()}
       ${boardHtml()}
       ${stackedPanel(`
         <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'Engine unavailable' : counting ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}${depthBtnHtml(ev0, p.fen)}${depthNoteHtml(s, ev, p.fen)}</div>
