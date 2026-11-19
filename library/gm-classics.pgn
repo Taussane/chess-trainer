@@ -13539,6 +13539,8 @@ Bf6 31.Rc4 Qa6 32.Bxf6 Nxf6 33.Qd2 h6 34.Rd4 Qb6 35.c3 a3 36.bxa3 1/2-1/2
 [White "Timman, Jan"]
 [Black "Karpov, Anatoly"]
 [Result "0-1"]
+[WhiteElo "2620"]
+[BlackElo "2760"]
 
 1.e4 c6 2.d4 d5 3.Nd2 dxe4 4.Nxe4 Nd7 5.Bc4 Ngf6 6.Ng5 e6 7.Qe2 Nb6 8.Bd3 h6
 9.N5f3 c5 10.dxc5 Bxc5 11.Ne5 Nbd7 12.Ngf3 Qc7 13.Bf4 Bb4+ 14.Nd2 Bxd2+ 15.Kxd2
@@ -13559,6 +13561,8 @@ e5 44.Ke2 Be6 45.Kf2 Bxa2 46.Rce1 Rc5 47.hxg5+ hxg5 48.f4 Ng6 49.fxe5+ Nxe5
 [White "Karpov, Anatoly"]
 [Black "Timman, Jan"]
 [Result "0-1"]
+[WhiteElo "2760"]
+[BlackElo "2620"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.g3 Ba6 5.b3 Bb4+ 6.Bd2 Be7 7.Bg2 c6 8.Bc3 d5 9.Ne5
 Nfd7 10.Nxd7 Nxd7 11.Nd2 O-O 12.O-O Rc8 13.e4 b5 14.Re1 dxe4 15.c5 f5 16.f3 b4
@@ -13577,6 +13581,8 @@ Bf6 24.Re1 Re8 25.Bxf6 Rxe4 26.Bxd8 Rxe1+ 27.Nxe1 Rxd8 28.Bxc6 Rd1 29.Kf2 Rd2+
 [White "Timman, Jan"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2620"]
+[BlackElo "2760"]
 
 1.e4 c6 2.d4 d5 3.Nd2 dxe4 4.Nxe4 Nd7 5.Bc4 Ngf6 6.Ng5 e6 7.Qe2 Nb6 8.Bd3 h6
 9.N5f3 c5 10.dxc5 Bxc5 11.Ne5 Nbd7 12.Ngf3 Qc7 13.Bf4 Bb4+ 14.Nd2 Bxd2+ 15.Kxd2
@@ -13595,6 +13601,8 @@ Ke7 45.Kc3 Rd3+ 46.Kb4 Rd6 47.c5 bxc5+ 48.Rxc5 Ke6 49.Rc4 1/2-1/2
 [White "Karpov, Anatoly"]
 [Black "Timman, Jan"]
 [Result "1/2-1/2"]
+[WhiteElo "2760"]
+[BlackElo "2620"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 d5 4.Nc3 dxc4 5.Qa4+ c6 6.Qxc4 b5 7.Qd3 Nbd7 8.Bg5 Bb7
 9.e3 a6 10.Be2 c5 11.O-O Be7 12.Rfd1 O-O 13.dxc5 Nxc5 14.Qd4 Qxd4 15.Rxd4 Rfd8
@@ -13609,6 +13617,8 @@ Ke7 45.Kc3 Rd3+ 46.Kb4 Rd6 47.c5 bxc5+ 48.Rxc5 Ke6 49.Rc4 1/2-1/2
 [White "Timman, Jan"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2620"]
+[BlackElo "2760"]
 
 1.c4 e5 2.Nc3 Nf6 3.Nf3 Nc6 4.g3 Bc5 5.Bg2 O-O 6.O-O d6 7.d3 h6 8.a3 a6 9.b4 Ba7
 10.Bb2 Bg4 11.h3 Be6 12.Kh2 Rb8 13.Nd2 Qd7 14.Nd5 Ne8 15.Qa4 Nd4 16.Qxd7 Bxd7
@@ -13628,6 +13638,8 @@ Bxb7 38.h4 f5 39.Rf4 Nf3+ 40.Kh3 Ne5 41.d4 Nc4 42.a4 Bc8 43.Rc1 b5 44.axb5 axb5
 [White "Karpov, Anatoly"]
 [Black "Timman, Jan"]
 [Result "1-0"]
+[WhiteElo "2760"]
+[BlackElo "2620"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 d5 4.Nc3 dxc4 5.e4 Bb4 6.Bg5 c5 7.Bxc4 cxd4 8.Nxd4 Bxc3+
 9.bxc3 Qa5 10.Nb5 Bd7 11.Nd6+ Ke7 12.Qd2 Bc6 13.f4 Nd7 14.Rd1 Rhd8 15.Qd4 h6
@@ -13644,6 +13656,8 @@ Bxb7 38.h4 f5 39.Rf4 Nf3+ 40.Kh3 Ne5 41.d4 Nc4 42.a4 Bc8 43.Rc1 b5 44.axb5 axb5
 [White "Timman, Jan"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2620"]
+[BlackElo "2760"]
 
 1.e4 c6 2.d4 d5 3.Nd2 dxe4 4.Nxe4 Nd7 5.Bc4 Ngf6 6.Ng5 e6 7.Qe2 Nb6 8.Bd3 h6
 9.N5f3 c5 10.dxc5 Bxc5 11.Ne5 Nbd7 12.Ngf3 Qc7 13.Bf4 Bb4+ 14.Nd2 Bxd2+ 15.Kxd2
@@ -13658,6 +13672,8 @@ O-O 16.Rhd1 Nc5 17.Ke1 Nd5 18.Bg3 Nxd3+ 19.Rxd3 b5 20.c3 Qb7 21.Rad1 1/2-1/2
 [White "Karpov, Anatoly"]
 [Black "Timman, Jan"]
 [Result "1/2-1/2"]
+[WhiteElo "2760"]
+[BlackElo "2620"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 d5 4.Nc3 dxc4 5.e4 Bb4 6.Bg5 c5 7.Bxc4 cxd4 8.Nxd4 Bxc3+
 9.bxc3 Qa5 10.Nb5 Nxe4 11.Qd4 O-O 12.Qxe4 a6 13.Be7 axb5 14.Bb4 Qc7 15.Bxb5 Bd7
@@ -13673,6 +13689,8 @@ O-O 16.Rhd1 Nc5 17.Ke1 Nd5 18.Bg3 Nxd3+ 19.Rxd3 b5 20.c3 Qb7 21.Rad1 1/2-1/2
 [White "Timman, Jan"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2620"]
+[BlackElo "2760"]
 
 1.Nf3 Nf6 2.d4 e6 3.Bg5 h6 4.Bxf6 Qxf6 5.e4 d6 6.Nc3 g5 7.e5 Qe7 8.Bb5+ Bd7
 9.O-O d5 10.Bd3 Nc6 11.Nb5 O-O-O 12.c3 h5 13.a4 Kb8 14.b4 Bg7 15.Na3 Rdf8 16.Qe2
@@ -13691,6 +13709,8 @@ cxb6 45.Ng5 Bb5 46.Rf8+ Ka7 47.Kf1 1/2-1/2
 [White "Karpov, Anatoly"]
 [Black "Timman, Jan"]
 [Result "1-0"]
+[WhiteElo "2760"]
+[BlackElo "2620"]
 
 1.d4 Nf6 2.c4 g6 3.Nc3 d5 4.cxd5 Nxd5 5.e4 Nxc3 6.bxc3 Bg7 7.Be3 c5 8.Qd2 Qa5
 9.Rb1 b6 10.Bb5+ Bd7 11.Be2 O-O 12.Rc1 Bb5 13.d5 Nd7 14.c4 Qxd2+ 15.Kxd2 Ba4
@@ -13710,6 +13730,8 @@ cxb6 45.Ng5 Bb5 46.Rf8+ Ka7 47.Kf1 1/2-1/2
 [White "Timman, Jan"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2620"]
+[BlackElo "2760"]
 
 1.c4 Nf6 2.Nf3 e6 3.d4 b6 4.g3 Ba6 5.b3 Bb4+ 6.Bd2 Be7 7.Bg2 c6 8.Bc3 O-O 9.Nbd2
 d5 10.Ne5 Bb7 11.O-O 1/2-1/2
@@ -13723,6 +13745,8 @@ d5 10.Ne5 Bb7 11.O-O 1/2-1/2
 [White "Karpov, Anatoly"]
 [Black "Timman, Jan"]
 [Result "1/2-1/2"]
+[WhiteElo "2760"]
+[BlackElo "2620"]
 
 1.d4 Nf6 2.c4 g6 3.Nf3 Bg7 4.g3 c6 5.Bg2 d5 6.cxd5 cxd5 7.Nc3 O-O 8.Ne5 e6 9.O-O
 Nfd7 10.f4 Nc6 11.Be3 f6 12.Nd3 Nb6 13.b3 Bd7 14.Bf2 Qe7 15.Rc1 Rad8 16.Rc2 Be8
@@ -13742,6 +13766,8 @@ Kg8 38.Kf2 Kf7 39.Ke1 Bf8 40.Kd2 Be7 41.Bxe7 Kxe7 42.Kc3 a5 43.a3 b6 44.b4 Kd7
 [White "Timman, Jan"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2620"]
+[BlackElo "2760"]
 
 1.Nf3 Nf6 2.g3 d5 3.Bg2 c6 4.O-O Bg4 5.b3 Nbd7 6.Bb2 e6 7.c4 Bd6 8.d3 O-O 9.Nbd2
 Qe7 10.Qc2 e5 11.h3 Bxf3 12.Nxf3 Rfe8 13.e3 Ba3 14.Bxa3 Qxa3 15.cxd5 Nxd5
@@ -13757,6 +13783,8 @@ Nxd1 23.Rxd1 Qe7 24.Rd4 Rd8 25.Qe4 Qf8 26.h4 g6 27.Qe5 1/2-1/2
 [White "Karpov, Anatoly"]
 [Black "Timman, Jan"]
 [Result "1-0"]
+[WhiteElo "2760"]
+[BlackElo "2620"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 d5 4.Nc3 dxc4 5.e4 Bb4 6.Bg5 c5 7.Bxc4 cxd4 8.Nxd4 Bxc3+
 9.bxc3 Qa5 10.Nb5 Nxe4 11.Bf4 O-O 12.O-O Nd7 13.Nc7 e5 14.Nxa8 exf4 15.Bd5 Ndf6
@@ -13776,6 +13804,8 @@ Rh3 45.Ra4 Bc6 46.Rc4 Rh1+ 47.Kf2 Bb5 48.Rc7 Ke8 49.Rd5 Rb1 50.Rh5 Kd8 51.Ra7
 [White "Timman, Jan"]
 [Black "Karpov, Anatoly"]
 [Result "0-1"]
+[WhiteElo "2620"]
+[BlackElo "2760"]
 
 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4 4.Qc2 O-O 5.a3 Bxc3+ 6.Qxc3 b6 7.Bg5 c5 8.dxc5 bxc5
 9.e3 Nc6 10.Nh3 h6 11.Bh4 g5 12.Bg3 Ne4 13.Qc2 Qa5+ 14.Ke2 f5 15.f3 Nxg3+
@@ -13792,6 +13822,8 @@ Rh3 45.Ra4 Bc6 46.Rc4 Rh1+ 47.Kf2 Bb5 48.Rc7 Ke8 49.Rd5 Rb1 50.Rh5 Kd8 51.Ra7
 [White "Karpov, Anatoly"]
 [Black "Timman, Jan"]
 [Result "1-0"]
+[WhiteElo "2760"]
+[BlackElo "2620"]
 
 1.d4 Nf6 2.c4 g6 3.Nc3 Bg7 4.e4 d6 5.f3 O-O 6.Be3 Nbd7 7.Qd2 c5 8.Nh3 Qa5 9.Nf2
 a6 10.dxc5 Nxc5 11.Rb1 Qb4 12.Be2 Ncd7 13.O-O Re8 14.Rfc1 Rb8 15.Nd3 Qa5 16.b4
@@ -13812,6 +13844,8 @@ Nxe5 24.Nxe8 Qxe8 25.Bb5 Qe7 26.Nxe6 Qxe6 27.Bd4 Qf5 28.f4 Nd3 29.Bxd3 Bxd4+
 [White "Timman, Jan"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2620"]
+[BlackElo "2760"]
 
 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nc3 e6 5.g4 Bg6 6.Nge2 c5 7.h4 h5 8.Nf4 Nc6 9.Nxg6
 fxg6 10.Ne2 Nge7 11.Nf4 cxd4 12.Bh3 Nxe5 13.Qe2 N7c6 14.Nxe6 Qa5+ 15.Kf1 hxg4
@@ -13828,6 +13862,8 @@ Kd7 23.Ng5 Be7 24.Rad1+ Kc6 25.Ne6 Bf6 26.Nd4+ Kb6 27.Nf3+ Kc6 28.Nd4+ Kb6
 [White "Karpov, Anatoly"]
 [Black "Timman, Jan"]
 [Result "1/2-1/2"]
+[WhiteElo "2760"]
+[BlackElo "2620"]
 
 1.d4 Nf6 2.c4 g6 3.Nc3 Bg7 4.e4 d6 5.f3 O-O 6.Be3 Nbd7 7.Qd2 c5 8.dxc5 dxc5
 9.O-O-O Qa5 10.Kb1 Ne5 11.Be2 Nc6 12.Nd5 Qxd2 13.Rxd2 b6 14.Nxf6+ Bxf6 15.f4 Bd4
@@ -13845,6 +13881,8 @@ exf4+ 30.Kxf4 h6 31.Nd3 hxg5+ 32.hxg5 Kf7 33.Nf2 Be6 34.b3 Bc8 35.gxf6 Kxf6
 [White "Timman, Jan"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2620"]
+[BlackElo "2760"]
 
 1.c4 Nf6 2.d4 e6 3.Nf3 b6 4.a3 Bb7 5.Nc3 d5 6.cxd5 Nxd5 7.Qc2 Nxc3 8.bxc3 Nd7
 9.e4 c5 10.Bf4 cxd4 11.cxd4 Rc8 12.Qb3 Be7 13.Bd3 Nf6 14.Qb5+ Qd7 15.Ne5 Qxb5
@@ -13863,6 +13901,8 @@ exf4+ 30.Kxf4 h6 31.Nd3 hxg5+ 32.hxg5 Kf7 33.Nf2 Be6 34.b3 Bc8 35.gxf6 Kxf6
 [White "Karpov, Anatoly"]
 [Black "Timman, Jan"]
 [Result "0-1"]
+[WhiteElo "2760"]
+[BlackElo "2620"]
 
 1.Nf3 c5 2.c4 Nc6 3.Nc3 Nf6 4.d4 cxd4 5.Nxd4 e6 6.a3 Nxd4 7.Qxd4 b6 8.Bf4 Bc5
 9.Qd2 O-O 10.Rd1 Bb7 11.Bd6 Bxd6 12.Qxd6 Rc8 13.e3 Re8 14.f3 Rc6 15.Qd4 Ba6
@@ -13880,6 +13920,8 @@ Qe5+ 37.Kh3 Rd2 38.Qh4 Qf5+ 39.Kg3 g5 40.Qxh6 Qf4+ 0-1
 [White "Timman, Jan"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2620"]
+[BlackElo "2760"]
 
 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4 4.Qc2 O-O 5.a3 Bxc3+ 6.Qxc3 b6 7.Nf3 Bb7 8.e3 d6 9.b3
 Nbd7 10.Bb2 Qe7 11.Be2 c5 12.O-O Rac8 13.Rad1 d5 14.dxc5 Nxc5 15.Qe5 Rfd8 16.Nd4
@@ -14230,6 +14272,8 @@ O-O 10.f4 Qc7 11.Kh1 Re8 12.Bf3 1/2-1/2
 [White "Karpov, Anatoly"]
 [Black "Kamsky, Gata"]
 [Result "1-0"]
+[WhiteElo "2770"]
+[BlackElo "2735"]
 
 1.d4 Nf6 2.c4 g6 3.Nc3 d5 4.Nf3 Bg7 5.Qb3 dxc4 6.Qxc4 O-O 7.e4 Nc6 8.Be2 Bg4
 9.Be3 Bxf3 10.Bxf3 e5 11.d5 Nd4 12.Bd1 b5 13.Nxb5 Nxe4 14.O-O a6 15.Nc3 Nd6
@@ -14249,6 +14293,8 @@ O-O 10.f4 Qc7 11.Kh1 Re8 12.Bf3 1/2-1/2
 [White "Kamsky, Gata"]
 [Black "Karpov, Anatoly"]
 [Result "1-0"]
+[WhiteElo "2735"]
+[BlackElo "2770"]
 
 1.e4 c6 2.d4 d5 3.exd5 cxd5 4.c4 Nf6 5.Nc3 e6 6.Nf3 Bb4 7.cxd5 Nxd5 8.Bd2 Nc6
 9.Bd3 Be7 10.O-O O-O 11.Qe2 Nf6 12.Ne4 Bd7 13.Rad1 Rc8 14.Rfe1 Nd5 15.Nc3 Nf6
@@ -14270,6 +14316,8 @@ Ne7 65.Rh7 1-0
 [White "Karpov, Anatoly"]
 [Black "Kamsky, Gata"]
 [Result "1/2-1/2"]
+[WhiteElo "2770"]
+[BlackElo "2735"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.g3 Ba6 5.b3 Bb4+ 6.Bd2 Be7 7.Bg2 c6 8.Bc3 d5 9.Ne5
 Nfd7 10.Nxd7 Nxd7 11.Nd2 O-O 12.O-O Rb8 13.Re1 b5 14.c5 e5 15.dxe5 Nxc5 16.a3
@@ -14288,6 +14336,8 @@ Bb7 24.Rd7 Bxe4 25.Rxe7 Bxg2 26.Kxg2 a5 27.Ra7 Ra8 28.Rxa8 Rxa8 29.Rb3 Rb8
 [White "Kamsky, Gata"]
 [Black "Karpov, Anatoly"]
 [Result "0-1"]
+[WhiteElo "2735"]
+[BlackElo "2770"]
 
 1.e4 c6 2.d4 d5 3.exd5 cxd5 4.c4 Nf6 5.Nc3 e6 6.Nf3 Bb4 7.cxd5 Nxd5 8.Bd2 Nc6
 9.Bd3 O-O 10.O-O Be7 11.Qe2 Nf6 12.Ne4 Qb6 13.a3 Bd7 14.Rfd1 Rad8 15.Nxf6+ Bxf6
@@ -14306,6 +14356,8 @@ Bd6 44.Nf4 Qe5 45.Nh3 Qe7 0-1
 [White "Karpov, Anatoly"]
 [Black "Kamsky, Gata"]
 [Result "1/2-1/2"]
+[WhiteElo "2770"]
+[BlackElo "2735"]
 
 1.d4 Nf6 2.c4 g6 3.Nc3 d5 4.Nf3 Bg7 5.Qb3 dxc4 6.Qxc4 O-O 7.e4 a6 8.e5 b5 9.Qb3
 Nfd7 10.e6 fxe6 11.Qxe6+ Kh8 12.Qe4 Nb6 13.Qh4 Nc6 14.Bd3 Rxf3 15.gxf3 Nxd4
@@ -14321,6 +14373,8 @@ Nfd7 10.e6 fxe6 11.Qxe6+ Kh8 12.Qe4 Nb6 13.Qh4 Nc6 14.Bd3 Rxf3 15.gxf3 Nxd4
 [White "Kamsky, Gata"]
 [Black "Karpov, Anatoly"]
 [Result "0-1"]
+[WhiteElo "2735"]
+[BlackElo "2770"]
 
 1.e4 e5 2.Nf3 Nf6 3.d4 Nxe4 4.Bd3 d5 5.Nxe5 Nd7 6.Nxd7 Bxd7 7.O-O Bd6 8.Nc3 Qh4
 9.g3 Nxc3 10.bxc3 Qg4 11.Re1+ Kd8 12.Be2 Qf5 13.Rb1 b6 14.c4 dxc4 15.Bxc4 Re8
@@ -14336,6 +14390,8 @@ Kf8 24.Rc1 Qf6 25.Bc2 Rae8 26.Qd3 Bg4 27.Bd2 Re2 28.Rxe2 Rxe2 29.Rf1 Rxd2 0-1
 [White "Karpov, Anatoly"]
 [Black "Kamsky, Gata"]
 [Result "1-0"]
+[WhiteElo "2770"]
+[BlackElo "2735"]
 
 1.d4 Nf6 2.c4 g6 3.Nc3 Bg7 4.e4 d6 5.Nf3 O-O 6.Be2 e5 7.O-O Nc6 8.d5 Ne7 9.b4
 Nh5 10.Re1 h6 11.Nd2 Nf4 12.Bf1 a5 13.bxa5 Rxa5 14.Nb3 Ra8 15.c5 f5 16.cxd6 cxd6
@@ -14357,6 +14413,8 @@ Qxg7+ 52.Rg4 Qe7 53.Qh5+ Qh7 54.Rxg8+ Kxg8 55.Qe8+ Kg7 56.Qe7+ Kh8 57.Qxd6 Qg7+
 [White "Kamsky, Gata"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2735"]
+[BlackElo "2770"]
 
 1.e4 c6 2.d4 d5 3.Nd2 dxe4 4.Nxe4 Nd7 5.Ng5 Ngf6 6.Bd3 e6 7.N1f3 Bd6 8.Qe2 h6
 9.Ne4 Nxe4 10.Qxe4 Nf6 11.Qe2 Qc7 12.Bd2 b6 13.O-O-O Bb7 14.Ne5 c5 15.Bb5+ Ke7
@@ -14377,6 +14435,8 @@ Qxg7+ 52.Rg4 Qe7 53.Qh5+ Qh7 54.Rxg8+ Kxg8 55.Qe8+ Kg7 56.Qe7+ Kh8 57.Qxd6 Qg7+
 [White "Karpov, Anatoly"]
 [Black "Kamsky, Gata"]
 [Result "1-0"]
+[WhiteElo "2770"]
+[BlackElo "2735"]
 
 1.d4 Nf6 2.c4 g6 3.Nc3 d5 4.Nf3 Bg7 5.Qb3 dxc4 6.Qxc4 O-O 7.e4 a6 8.e5 b5 9.Qb3
 Nfd7 10.Be3 c5 11.e6 c4 12.exf7+ Rxf7 13.Qd1 Nb6 14.Ne5 Rf8 15.a4 b4 16.a5 bxc3
@@ -14394,6 +14454,8 @@ Kg8 37.h5 Be8 38.h6 R6a7 39.d5 Rb7 40.d6 Rd8 41.Rf3 1-0
 [White "Kamsky, Gata"]
 [Black "Karpov, Anatoly"]
 [Result "1-0"]
+[WhiteElo "2735"]
+[BlackElo "2770"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.a3 Bb7 5.Nc3 d5 6.cxd5 Nxd5 7.Bd2 Nd7 8.Qc2 c5
 9.Nxd5 exd5 10.dxc5 bxc5 11.e3 Be7 12.Bd3 g6 13.h4 Qb6 14.h5 Bf6 15.Rb1 Rc8
@@ -14414,6 +14476,8 @@ Kf6 57.Ra5 Kg6 58.Kf4 Kf7 59.Ra6 1-0
 [White "Karpov, Anatoly"]
 [Black "Kamsky, Gata"]
 [Result "1/2-1/2"]
+[WhiteElo "2770"]
+[BlackElo "2735"]
 
 1.d4 d5 2.c4 c6 3.Nf3 Nf6 4.Nc3 e6 5.e3 Nbd7 6.Qc2 Bd6 7.Be2 O-O 8.O-O Re8 9.Rd1
 Qe7 10.a3 b6 11.e4 Nxe4 12.Nxe4 dxe4 13.Qxe4 Bb7 14.Bf4 Bxf4 15.Qxf4 c5 16.Qc7
@@ -14435,6 +14499,8 @@ Kf5 52.a4 h4 53.a5 Rb7 54.f3 Ke6 55.b6 axb6 56.Rb5 h3+ 57.Kxh3 Rh7+ 58.Kg4 bxa5
 [White "Kamsky, Gata"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2735"]
+[BlackElo "2770"]
 [ECO "B17"]
 
 1.e4 c6 2.d4 d5 3.Nd2 dxe4 4.Nxe4 Nd7 5.Ng5 Ngf6 6.Bd3 e6 7.N1f3 Bd6 8.Qe2 h6
@@ -14455,6 +14521,8 @@ Rc2+ 42.Kd5 Rd2+ 43.Kc4 g5 44.e4 Bc8 45.Kc3 Rd1 46.Rf3+ Kg7 47.Nd3 g4 48.Rg3 Kf6
 [White "Karpov, Anatoly"]
 [Black "Kamsky, Gata"]
 [Result "1/2-1/2"]
+[WhiteElo "2770"]
+[BlackElo "2735"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.g3 Ba6 5.b3 Bb4+ 6.Bd2 Be7 7.Bg2 c6 8.Bc3 d5 9.Ne5
 Nfd7 10.Nxd7 Nxd7 11.Nd2 O-O 12.O-O Rb8 13.Bb2 b5 14.c5 e5 15.dxe5 Nxc5 16.a3
@@ -14479,6 +14547,8 @@ Bb7 17.b4 Na4 18.Bd4 a5 19.Qb3 Nb6 20.Qc3 Na4 21.Qb3 Nb6 22.Rfd1 Nc4 23.Qc3 Ra8
 [White "Kamsky, Gata"]
 [Black "Karpov, Anatoly"]
 [Result "0-1"]
+[WhiteElo "2735"]
+[BlackElo "2770"]
 
 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4 4.e3 c5 5.Bd3 Nc6 6.Ne2 cxd4 7.exd4 d5 8.cxd5 Nxd5
 9.O-O Bd6 10.Ne4 Be7 11.a3 O-O 12.Bc2 Qc7 13.Qd3 Rd8 14.Ng5 g6 15.Bb3 Nf6 16.Rd1
@@ -14499,6 +14569,8 @@ Bxe6 59.Bf6 g4 60.hxg4 h3 61.Be5 Bxg4 0-1
 [White "Karpov, Anatoly"]
 [Black "Kamsky, Gata"]
 [Result "1/2-1/2"]
+[WhiteElo "2770"]
+[BlackElo "2735"]
 
 1.d4 Nf6 2.c4 c5 3.d5 e6 4.Nc3 exd5 5.cxd5 d6 6.e4 g6 7.Nf3 Bg7 8.h3 O-O 9.Bd3
 b5 10.Nxb5 Re8 11.O-O Nxe4 12.Qb3 a6 13.Na3 Nd7 14.Nc4 Rb8 15.Qc2 f5 16.Bf4 Nb6
@@ -14516,6 +14588,8 @@ b5 10.Nxb5 Re8 11.O-O Nxe4 12.Qb3 a6 13.Na3 Nd7 14.Nc4 Rb8 15.Qc2 f5 16.Bf4 Nb6
 [White "Kamsky, Gata"]
 [Black "Karpov, Anatoly"]
 [Result "1-0"]
+[WhiteElo "2735"]
+[BlackElo "2770"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.g3 Ba6 5.b3 Bb4+ 6.Bd2 Be7 7.Bg2 c6 8.Bc3 d5 9.Ne5
 Nfd7 10.Nxd7 Nxd7 11.Nd2 O-O 12.O-O Rc8 13.e4 c5 14.exd5 exd5 15.dxc5 dxc4 16.c6
@@ -14534,6 +14608,8 @@ cxb3 17.Re1 Bb5 18.axb3 Bxc6 19.Bxc6 Rxc6 20.Rxa7 Bf6 21.Nc4 Bxc3 22.Rxd7 Qf6
 [White "Karpov, Anatoly"]
 [Black "Kamsky, Gata"]
 [Result "1/2-1/2"]
+[WhiteElo "2770"]
+[BlackElo "2735"]
 
 1.Nf3 Nf6 2.c4 e6 3.g3 a6 4.Bg2 b5 5.b3 c5 6.O-O Bb7 7.e3 Be7 8.Nc3 Qa5 9.Bb2
 O-O 10.Qe2 Nc6 11.Rfb1 bxc4 12.bxc4 Rab8 13.d3 Ba8 14.a3 Rfc8 15.Qc2 Nd8 16.Bc1
@@ -14554,6 +14630,8 @@ Kc3 58.Ne4+ Kc2 59.g5 Ng6 60.Kd4 1/2-1/2
 [White "Kamsky, Gata"]
 [Black "Karpov, Anatoly"]
 [Result "1/2-1/2"]
+[WhiteElo "2735"]
+[BlackElo "2770"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.g3 Ba6 5.b3 Bb4+ 6.Bd2 Be7 7.Bg2 c6 8.Bc3 d5 9.Ne5
 O-O 10.O-O Bb7 11.Nd2 Na6 12.e4 c5 13.exd5 exd5 14.Re1 cxd4 15.Bxd4 Nc5 16.Ng4
@@ -17950,6 +18028,8 @@ Qe1+ 1/2-1/2
 [White "Morozevich, Alexander"]
 [Black "Topalov, Veselin"]
 [Result "0-1"]
+[WhiteElo "2707"]
+[BlackElo "2788"]
 [ECO "B52"]
 
 1.e4 c5 2.Nf3 d6 3.Bb5+ Bd7 4.Bxd7+ Qxd7 5.O-O Nf6 6.e5 dxe5 7.Nxe5 Qc8 8.Qf3 e6
@@ -17973,6 +18053,8 @@ Qxe3+ 73.Qxe3 Rxe3 74.Kxe3 Nd7 0-1
 [White "Topalov, Veselin"]
 [Black "Adams, Michael"]
 [Result "1-0"]
+[WhiteElo "2788"]
+[BlackElo "2719"]
 [ECO "A30"]
 
 1.Nf3 Nf6 2.c4 e6 3.Nc3 c5 4.g3 b6 5.Bg2 Bb7 6.O-O Be7 7.Re1 Ne4 8.d4 Nxc3
@@ -17991,6 +18073,8 @@ Qh3 31.Rxa7 Rxh5 32.e3 Qh2+ 33.Kf1 Qh3+ 34.Ke2 Re5 35.Rc7 Rc8 36.Bf5 Rxf5
 [White "Svidler, Peter"]
 [Black "Topalov, Veselin"]
 [Result "0-1"]
+[WhiteElo "2738"]
+[BlackElo "2788"]
 [ECO "B90"]
 
 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6 6.Be3 Ng4 7.Bg5 h6 8.Bh4 g5 9.Bg3
@@ -18010,6 +18094,8 @@ Rc3+ 44.Kd2 Rc4 0-1
 [White "Polgar, Judit"]
 [Black "Topalov, Veselin"]
 [Result "0-1"]
+[WhiteElo "2735"]
+[BlackElo "2788"]
 [ECO "C67"]
 
 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.O-O Nxe4 5.d4 Nd6 6.Bxc6 dxc6 7.dxe5 Nf5 8.Qxd8+
@@ -18032,6 +18118,8 @@ Be7 24.Nxe6 fxe6 25.gxh5 Nxh3+ 26.Kf1 Rxh5 27.Ng4 Bg5 28.Bxg5 Rxg5 29.f3 Rf8
 [White "Topalov, Veselin"]
 [Black "Kasimdzhanov, Rustam"]
 [Result "1-0"]
+[WhiteElo "2788"]
+[BlackElo "2670"]
 [ECO "C88"]
 
 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 b5 7.Bb3 O-O 8.h3 Bb7 9.d3
@@ -18055,6 +18143,8 @@ Rxe4+ 73.Kh5 1-0
 [White "Topalov, Veselin"]
 [Black "Leko, Peter"]
 [Result "1/2-1/2"]
+[WhiteElo "2788"]
+[BlackElo "2763"]
 [ECO "E15"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.g3 Ba6 5.b3 Bb4+ 6.Bd2 Be7 7.Bg2 c6 8.Bc3 d5 9.Ne5
@@ -18088,6 +18178,8 @@ Kg7 17.Qg3+ 1/2-1/2
 [White "Topalov, Veselin"]
 [Black "Morozevich, Alexander"]
 [Result "1/2-1/2"]
+[WhiteElo "2788"]
+[BlackElo "2707"]
 [ECO "D37"]
 
 1.d4 Nf6 2.c4 e6 3.Nf3 d5 4.Nc3 Be7 5.Bf4 O-O 6.e3 c5 7.dxc5 Bxc5 8.a3 Nc6
@@ -18130,6 +18222,8 @@ Kg5 44.Qe7+ Kf4 45.Qd6+ 1/2-1/2
 [White "Topalov, Veselin"]
 [Black "Svidler, Peter"]
 [Result "1/2-1/2"]
+[WhiteElo "2788"]
+[BlackElo "2738"]
 [ECO "C88"]
 
 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 b5 7.Bb3 O-O 8.h3 Bb7 9.d3
@@ -18145,6 +18239,8 @@ Rd8 17.Bxe6 fxe6 18.e5 dxe5 19.Qxd7 Rdxd7 20.Rxe5 Rd6 21.Bf4 1/2-1/2
 [White "Kasimdzhanov, Rustam"]
 [Black "Topalov, Veselin"]
 [Result "1/2-1/2"]
+[WhiteElo "2670"]
+[BlackElo "2788"]
 [ECO "C67"]
 
 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.O-O Nxe4 5.d4 Nd6 6.Bxc6 dxc6 7.dxe5 Nf5 8.Qxd8+
@@ -19037,6 +19133,8 @@ Qb6 30.Ne2 e5 31.Qh5 Qf6 32.Rf1 Rh8 0-1
 [White "Karjakin, Sergey"]
 [Black "Carlsen, Magnus"]
 [Result "1/2-1/2"]
+[WhiteElo "2772"]
+[BlackElo "2853"]
 [TimeControl "1500+10"]
 [ECO "C78"]
 
@@ -19057,6 +19155,8 @@ Qc8 18.Qe2 Rd8 19.Bxe6 fxe6 20.d4 bxc3 21.bxc3 cxd4 22.cxd4 exd4 23.Nxd4 Nxd4
 [White "Carlsen, Magnus"]
 [Black "Karjakin, Sergey"]
 [Result "1/2-1/2"]
+[WhiteElo "2853"]
+[BlackElo "2772"]
 [TimeControl "1500+10"]
 [ECO "C50"]
 
@@ -19083,6 +19183,8 @@ Rb5 45.h4 Re5+ 46.Kd4 Ra5 47.Kc4 Re5 48.Bd4 Ra5 49.Bc5 Kg8 50.Kd5 Rb5 51.Kd6 Ra5
 [White "Karjakin, Sergey"]
 [Black "Carlsen, Magnus"]
 [Result "0-1"]
+[WhiteElo "2772"]
+[BlackElo "2853"]
 [TimeControl "1500+10"]
 [ECO "C78"]
 
@@ -19103,6 +19205,8 @@ e4 31.dxe4 Bxc3 32.Rxc3 Qe5 33.Rc1 Ra8 34.h3 h6 35.Kh2 Qd4 36.Qe1 Qb2 37.Bf1 Ra2
 [White "Carlsen, Magnus"]
 [Black "Karjakin, Sergey"]
 [Result "1-0"]
+[WhiteElo "2853"]
+[BlackElo "2772"]
 [TimeControl "1500+10"]
 [ECO "B54"]
 
