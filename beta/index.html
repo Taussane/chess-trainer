@@ -663,7 +663,9 @@
   .xpg-stats .xpg-prog{position:absolute; right:0; bottom:100%;}
   .xpg-prog{color:var(--text-mute); font-size:0.8rem;} .xpg-note{color:var(--text-mute); font-size:0.82rem;}
   .modal-box.gp-box{width:100%; max-width:min(560px, 94vw); display:flex; flex-direction:column; max-height:90svh;}
-  .gp-box .seg, .gp-box .gp-q, .gp-box h3, .gp-box .modal-actions{flex:none;} .gp-box .seg{margin:0 0 8px;} .gp-q{width:100%; box-sizing:border-box; margin:0 0 8px;}
+  .gp-box .seg, .gp-box .gp-filters, .gp-box h3, .gp-box .modal-actions{flex:none;} .gp-box .seg{margin:0 0 8px;}
+  .gp-filters{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; margin:0 0 8px;}   /* (the drop-down lists, side by side) */
+  .gp-sel{min-width:0; width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:6px 2px 6px 6px; font:inherit; font-size:0.8rem;}
   .gp-list{overflow-y:auto; min-height:120px; flex:1; display:flex; flex-direction:column; gap:4px; margin-bottom:10px;}
   .gp-row{display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font:inherit; cursor:pointer;}
   .gp-row:hover{border-color:var(--accent);} @media not (min-aspect-ratio:6/5){ .gp-sep{display:none;} .gp-mv{display:block;} }   /* (portrait: length and errors on a line of their own) */ .gp-t{display:flex; justify-content:space-between; gap:10px; width:100%;} .gp-res{flex:none; color:var(--text-mute); font-variant-numeric:tabular-nums;} .gp-row small{color:var(--text-mute); font-size:0.78rem;}
@@ -7246,6 +7248,15 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Off the game": "Hors de la partie",
 "Start of the game": "Début de la partie",
 "Free play": "Jeu libre",
+"Won": "Gagnées",
+"Drawn": "Nulles",
+"Lost": "Perdues",
+"Player": "Joueur",
+"Event": "Événement",
+"Decade": "Décennie",
+"Speed": "Cadence",
+"Result": "Résultat",
+"Site": "Site",
 "Middlegame": "Milieu de partie",
 "Phase": "Phase",
 "Opening": "Ouverture",
@@ -7256,7 +7267,6 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Statistics": "Statistiques",
 "Reset game": "Réinitialiser la partie",
 "Load a game": "Charger une partie",
-"Search: player, year, event": "Rechercher : joueur, année, événement",
 "No game found.": "Aucune partie trouvée.",
 "No games yet: link Lichess or Chess.com in your profile.": "Pas encore de parties : liez Lichess ou Chess.com dans votre profil.",
 "Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.": "Chargez une partie de maître ou l'une des vôtres : chaque coup reçoit sa note, et un graphique montre où la partie a basculé.",
@@ -7794,6 +7804,15 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Off the game": "Außerhalb der Partie",
 "Start of the game": "Anfang der Partie",
 "Free play": "Freies Spiel",
+"Won": "Gewonnen",
+"Drawn": "Remis",
+"Lost": "Verloren",
+"Player": "Spieler",
+"Event": "Turnier",
+"Decade": "Jahrzehnt",
+"Speed": "Bedenkzeit",
+"Result": "Ergebnis",
+"Site": "Seite",
 "Middlegame": "Mittelspiel",
 "Phase": "Phase",
 "Opening": "Eröffnung",
@@ -7804,7 +7823,6 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Statistics": "Statistik",
 "Reset game": "Partie zurücksetzen",
 "Load a game": "Partie laden",
-"Search: player, year, event": "Suchen: Spieler, Jahr, Turnier",
 "No game found.": "Keine Partie gefunden.",
 "No games yet: link Lichess or Chess.com in your profile.": "Noch keine Partien: verbinde Lichess oder Chess.com in deinem Profil.",
 "Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.": "Lade eine Meisterpartie oder eine deiner Partien: jeder Zug bekommt seine Note, und eine Kurve zeigt, wo die Partie kippte.",
@@ -8273,6 +8291,15 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Off the game": "Fuera de la partida",
 "Start of the game": "Inicio de la partida",
 "Free play": "Juego libre",
+"Won": "Ganadas",
+"Drawn": "Tablas",
+"Lost": "Perdidas",
+"Player": "Jugador",
+"Event": "Evento",
+"Decade": "Década",
+"Speed": "Ritmo",
+"Result": "Resultado",
+"Site": "Sitio",
 "Middlegame": "Medio juego",
 "Phase": "Fase",
 "Opening": "Apertura",
@@ -8283,7 +8310,6 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Statistics": "Estadísticas",
 "Reset game": "Restablecer partida",
 "Load a game": "Cargar una partida",
-"Search: player, year, event": "Buscar: jugador, año, evento",
 "No game found.": "No se encontró ninguna partida.",
 "No games yet: link Lichess or Chess.com in your profile.": "Aún no hay partidas: vincula Lichess o Chess.com en tu perfil.",
 "Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.": "Carga una partida de maestros o una tuya: cada jugada recibe su nota y un gráfico muestra dónde cambió la partida.",
@@ -8752,6 +8778,15 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Off the game": "Fuori dalla partita",
 "Start of the game": "Inizio della partita",
 "Free play": "Gioco libero",
+"Won": "Vinte",
+"Drawn": "Patte",
+"Lost": "Perse",
+"Player": "Giocatore",
+"Event": "Evento",
+"Decade": "Decennio",
+"Speed": "Cadenza",
+"Result": "Risultato",
+"Site": "Sito",
 "Middlegame": "Mediogioco",
 "Phase": "Fase",
 "Opening": "Apertura",
@@ -8762,7 +8797,6 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Statistics": "Statistiche",
 "Reset game": "Reimposta partita",
 "Load a game": "Carica una partita",
-"Search: player, year, event": "Cerca: giocatore, anno, evento",
 "No game found.": "Nessuna partita trovata.",
 "No games yet: link Lichess or Chess.com in your profile.": "Ancora nessuna partita: collega Lichess o Chess.com nel tuo profilo.",
 "Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.": "Carica una partita di maestri o una tua: ogni mossa riceve il suo giudizio e un grafico mostra dove la partita è cambiata.",
@@ -10303,14 +10337,14 @@ function wireGameReview(x){
   };
 }
 // The game list: Masters or My games, a search (players, year, event); a game opens at its start
-const gp = { tab:'mine', q:'' };
+const gp = { tab:'mine', f:{} };   // (f: the lists' choices, per tab: player, event, decade / speed, result, site)
 function openGamePicker(){
   if(document.getElementById('gpModal')) return;
   if(!myGames.length) gp.tab = 'masters';
   const div = document.createElement('div'); div.className = 'modal-backdrop'; div.id = 'gpModal'; div.dataset.scr = screen;
   div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box gp-box" role="dialog" aria-label="Load a game"><h3>Load a game</h3>
     <div class="seg seg-sm" role="tablist">${[['mine', 'My games'], ['masters', 'Masters']].map(([k, l])=>`<button class="seg-btn${gp.tab===k ? ' active' : ''}" data-gp="${k}">${l}</button>`).join('')}</div>
-    <input class="cc-field gp-q" id="gpQ" type="search" placeholder="Search: player, year, event" aria-label="Search" autocomplete="off">
+    <div class="gp-filters" id="gpF"></div>
     <div class="gp-list" id="gpList"></div>
     <div class="modal-actions">${explorer && explorer.game ? '<button class="btn secondary" id="gpReset">Reset game</button>' : ''}<button class="btn secondary" id="gpClose">Close</button></div></div></div>`;
   document.body.appendChild(div);
@@ -10318,20 +10352,34 @@ function openGamePicker(){
   { const r = document.getElementById('gpReset'); if(r) r.onclick = ()=>{ close(); const ret = explorer.ret; explorer = null; explorerInit(); explorer.ret = ret; render(); }; }   // (no game: the explorer's own board, from the start)
   div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')) close(); });
   document.getElementById('gpClose').onclick = close;
-  const q = document.getElementById('gpQ'); q.value = gp.q;
+  // the drop-down lists: Masters by player, event and decade; yours by speed, result and site (each "All" first)
+  const mineRes = g=>!g.result || g.result==='*' ? null : g.result==='1/2-1/2' ? 'draw' : (g.result==='1-0')===(g.me==='w') ? 'win' : 'loss';
+  const FILTERS = {
+    masters: [['player', 'Player', ()=>{ const n = {}; Object.values(GAME_INFO).forEach(i=>String(i.title || '').split(' – ').forEach(x=>{ if(x) n[x] = (n[x] || 0) + 1; })); return Object.keys(n).sort().map(x=>[x, x]); }, (id, v)=>String((GAME_INFO[id] || {}).title || '').split(' – ').includes(v)],
+              ['event', 'Event', ()=>[...new Set(Object.values(GAME_INFO).map(i=>i.event).filter(Boolean))].sort().map(x=>[x, tr(x)]), (id, v)=>(GAME_INFO[id] || {}).event===v],
+              ['decade', 'Decade', ()=>[...new Set(Object.values(GAME_INFO).map(i=>String(i.date || '').slice(0, 3)).filter(Boolean))].sort().reverse().map(d=>[d, d + '0–' + d.slice(2) + '9']), (id, v)=>String((GAME_INFO[id] || {}).date || '').startsWith(v)]],
+    mine: [['speed', 'Speed', ()=>Object.keys(SPEED_NAMES).filter(k=>myGames.some(g=>g.speed===k)).map(k=>[k, SPEED_NAMES[k]]), (g, v)=>g.speed===v],
+           ['result', 'Result', ()=>[['win', 'Won'], ['draw', 'Drawn'], ['loss', 'Lost']], (g, v)=>mineRes(g)===v],
+           ['site', 'Site', ()=>[['lichess', 'Lichess'], ['chesscom', 'Chess.com']].filter(([k])=>myGames.some(g=>siteOf(g)===k)), (g, v)=>siteOf(g)===v]],
+  };
+  const drawFilters = ()=>{
+    const f = gp.f[gp.tab] = gp.f[gp.tab] || {};
+    document.getElementById('gpF').innerHTML = FILTERS[gp.tab].map(([k, l, opts])=>`<select class="gp-sel" data-gf="${k}" aria-label="${l}"><option value="">${l}</option>${opts().map(([v, t])=>`<option value="${escHtml(v)}"${f[k]===v ? ' selected' : ''}>${escHtml(t)}</option>`).join('')}</select>`).join('');
+    div.querySelectorAll('[data-gf]').forEach(el=>el.onchange = ()=>{ f[el.dataset.gf] = el.value || undefined; list(); });
+  };
   const list = ()=>{
-    const words = gp.q.toLowerCase().split(/\s+/).filter(Boolean), hit = t=>words.every(w=>t.toLowerCase().includes(w));
+    const f = gp.f[gp.tab] || {}, keep = x=>FILTERS[gp.tab].every(([k, , , test])=>!f[k] || test(x, f[k]));
     let rows;
     // each game: its players and result, then its date (one format for both lists), where it comes from, its length
     const res = r=>({ '1-0':'1 - 0', '0-1':'0 - 1', '1/2-1/2':'½ - ½' })[r] || '';
     const day = t=>{ const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-    if(gp.tab==='mine') rows = myGames.slice().sort((a, b)=>gamePlayedAt(b) - gamePlayedAt(a)).map(g=>({ key:'mine:' + g.id, src:'mine', id:g.id,
+    if(gp.tab==='mine') rows = myGames.filter(keep).sort((a, b)=>gamePlayedAt(b) - gamePlayedAt(a)).map(g=>({ key:'mine:' + g.id, src:'mine', id:g.id,
         t:`${g.white || '?'} – ${g.black || '?'}`, res:res(g.result),
         sub:[fmtGameDate(g.playedAt ? day(g.playedAt) : g.year), SPEED_NAMES[g.speed], siteOf(g)==='chesscom' ? 'Chess.com' : 'Lichess'].filter(Boolean).join(' · '), mv:Math.ceil(g.sans.length / 2) + ' moves' }));
-    else rows = Object.keys(GAME_MOVES).sort((a, b)=>String((GAME_INFO[b] || {}).date || '').localeCompare(String((GAME_INFO[a] || {}).date || '')) || (+b.slice(1) - +a.slice(1))).map(id=>{
+    else rows = Object.keys(GAME_MOVES).filter(keep).sort((a, b)=>String((GAME_INFO[b] || {}).date || '').localeCompare(String((GAME_INFO[a] || {}).date || '')) || (+b.slice(1) - +a.slice(1))).map(id=>{
         const i = GAME_INFO[id] || {}, mv = Math.ceil(GAME_MOVES[id].split(' ').length / 2);
-        return { key:'masters:' + id, src:'masters', id, t:i.title || id, res:res(i.result), sub:[fmtGameDate(i.date), i.event].filter(Boolean).join(' · '), mv:mv + ' moves' }; });
-    rows = rows.filter(r=>!words.length || hit(r.t + ' ' + r.sub));   // (where it comes from; then, its own line on a phone: its length and errors)
+        return { key:'masters:' + id, src:'masters', id, t:i.title || id, res:res(i.result), sub:[fmtGameDate(i.date), i.event && tr(i.event)].filter(Boolean).join(' · '), mv:mv + ' moves' }; });
+    // (each row: where it comes from; then, its own line on a phone: its length and errors)
     // and how many moves each side got Dubious or worse ("errors": not to mix them up with the Mistake grade)
     // (counted after the list shows, a few rows at a time: the page stays responsive)
     const shown = rows.slice(0, 150), run = gp.run = {};
@@ -10346,10 +10394,9 @@ function openGamePicker(){
       close(); explorerLoadGame(src, id, 0);   // (at its start)
     });
   };
-  q.oninput = ()=>{ gp.q = q.value; list(); };
   if(!masterPassData) loadMasterPass().then(()=>{ if(document.getElementById('gpModal')===div && gp.tab==='masters') list(); });   // (the master games' errors, once their evaluations are in)
-  div.querySelectorAll('[data-gp]').forEach(b=>b.onclick = ()=>{ gp.tab = b.dataset.gp; div.querySelectorAll('[data-gp]').forEach(y=>y.classList.toggle('active', y===b)); list(); });
-  list();
+  div.querySelectorAll('[data-gp]').forEach(b=>b.onclick = ()=>{ gp.tab = b.dataset.gp; div.querySelectorAll('[data-gp]').forEach(y=>y.classList.toggle('active', y===b)); drawFilters(); list(); });
+  drawFilters(); list();
 }
 // The six imbalances at once, from Stockfish's evaluation table (no search): shown while the short mate
 // check (aspectsEntry) runs, which only changes them when there is a mate.
