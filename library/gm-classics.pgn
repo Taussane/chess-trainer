@@ -20209,3 +20209,554 @@ Nxe5 17.Nxe5 Qxe5+ 18.Qe2 Bxh4+ 19.Kd1 Qf6 20.Nf3 Qxc3 21.Bb2 Qb3+ 22.Kc1 e5
 23.Rxh4 Bf5 24.Qd1 e4 25.Qxb3 axb3 26.Nd2 e3 27.Nf3 Rae8 28.Kd1 c4 29.Be2 Be4
 30.Kc1 Re6 31.Bc3 Rg6 32.Rh2 Bd3 33.Bxd3 cxd3 34.Kb2 d2 35.Kxb3 Rg3 36.Kb2 g5
 37.Kc2 Rc8 38.Kd3 g4 39.Be5 Rc1 40.Rh1 Rxg2 41.Nh4 1-0
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.11.27"]
+[Round "1.1"]
+[White "Ponomariov, Ruslan"]
+[Black "Li Wenliang"]
+[Result "1-0"]
+[WhiteElo "2684"]
+[BlackElo "2511"]
+[ECO "B18"]
+
+1.e4 c6 2.d4 d5 3.Nc3 dxe4 4.Nxe4 Bf5 5.Ng3 Bg6 6.h4 h6 7.Nf3 Nd7 8.h5 Bh7 9.Bd3
+Bxd3 10.Qxd3 Qc7 11.Bd2 e6 12.O-O-O Ngf6 13.Kb1 Bd6 14.Ne4 Bf4 15.Be1 O-O-O
+16.Nxf6 Nxf6 17.g3 Bd6 18.c4 c5 19.Bc3 cxd4 20.Nxd4 a6 21.Qe2 Kb8 22.Nf3 Ka8
+23.Ne5 Bxe5 24.Bxe5 Qc6 25.Rxd8+ Rxd8 26.Re1 Qg2 27.Bxf6 gxf6 28.Qe3 f5 29.a3
+Rd7 30.Ka1 Rd8 31.Rc1 Rh8 32.c5 Qe4 33.Qd2 f4 34.gxf4 Rb8 35.Qd6 Qc6 36.Qxc6
+bxc6 37.Rd1 Rg8 38.Rd7 Rg1+ 39.Ka2 Rh1 40.b4 Rxh5 41.Kb3 Rh3+ 42.Ka4 Kb8 43.Rxf7
+Kc8 44.Ka5 Kd8 45.a4 Rf3 46.Kxa6 1-0
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.11.28"]
+[Round "1.2"]
+[White "Li Wenliang"]
+[Black "Ponomariov, Ruslan"]
+[Result "1/2-1/2"]
+[WhiteElo "2511"]
+[BlackElo "2684"]
+[ECO "A01"]
+
+1.b3 e5 2.Bb2 Nc6 3.c4 Nf6 4.e3 d5 5.cxd5 Nxd5 6.a3 Bd6 7.Qc2 O-O 8.Nf3 a6 9.Nc3
+Nxc3 10.Qxc3 Qf6 11.Bd3 Bf5 12.Bxf5 Qxf5 13.O-O Rad8 14.d3 Rfe8 15.Rfd1 Re6
+16.b4 Qh5 17.Qc4 Rg6 18.Ne1 Ne7 19.e4 Rh6 20.h3 Ng6 21.d4 exd4 22.Bxd4 Nf4
+23.Be3 Rf6 24.Bxf4 Rxf4 25.Nd3 Rh4 26.Re1 Re8 27.Re3 Qb5 28.Qxb5 axb5 29.e5 Bf8
+30.f4 Rh6 31.Rc1 Rc6 32.Rxc6 bxc6 33.f5 Ra8 34.Nc5 Bxc5 35.bxc5 Kf8 36.e6 fxe6
+37.Rxe6 Rxa3 38.Rxc6 Ra7 39.Kf2 b4 40.Ke2 b3 41.Kd2 Rb7 42.Kc1 b2+ 43.Kb1 Kf7
+44.Re6 g6 45.g4 gxf5 46.gxf5 h5 47.Rh6 Rb5 48.Rc6 Rb7 49.Rh6 Rb5 50.Rxh5 Rxc5
+51.h4 Rb5 1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.11.29"]
+[Round "2.1"]
+[White "Tiviakov, Sergei"]
+[Black "Ponomariov, Ruslan"]
+[Result "1/2-1/2"]
+[WhiteElo "2599"]
+[BlackElo "2684"]
+[ECO "C77"]
+
+1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.Qe2 b5 6.Bb3 Bc5 7.d3 d6 8.c3 h6 9.O-O
+O-O 10.Be3 Bb6 11.Nbd2 Ne7 12.Bxb6 cxb6 13.d4 Ng6 14.dxe5 dxe5 15.g3 Qc7 16.a3
+Bb7 17.Bc2 Rad8 18.Rad1 Qc6 19.Rfe1 Bc8 20.Nf1 Be6 21.Rxd8 Rxd8 22.N3d2 a5
+23.Ne3 b4 24.axb4 axb4 25.c4 Nf8 26.Bb1 N8d7 27.Nd5 Qd6 28.Rd1 Nc5 29.Bc2 Bc8
+30.Nb3 Nxd5 31.Rxd5 Qe7 32.Nxc5 bxc5 33.Qd3 Rf8 34.Qe3 Bh3 35.Ba4 Rc8 36.b3 Be6
+37.Rd2 1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.11.30"]
+[Round "2.2"]
+[White "Ponomariov, Ruslan"]
+[Black "Tiviakov, Sergei"]
+[Result "1/2-1/2"]
+[WhiteElo "2684"]
+[BlackElo "2599"]
+[ECO "B35"]
+
+1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 g6 5.Nc3 Bg7 6.Be3 Nf6 7.Bc4 O-O 8.Bb3 d6
+9.f3 Bd7 10.h4 h5 11.Qd2 Rc8 12.O-O-O Ne5 13.Bg5 Rc5 14.Kb1 Re8 15.Bh6 Nc4
+16.Bxc4 Rxc4 17.Bxg7 Kxg7 18.Nd5 e5 19.Nxf6 Qxf6 20.Nb3 Re6 21.Qa5 Ra4 22.Qc3
+Qd8 23.Rd2 Qb6 24.Nc1 Bb5 25.b3 Ra6 26.Rhd1 Qd8 27.g3 Rc6 28.Qe3 Qb6 29.Qxb6
+Rxb6 30.Ka1 f5 31.Ne2 fxe4 32.fxe4 Bxe2 33.Rxe2 Rf6 34.Kb2 Rc6 35.Rd3 Kf7 36.Rg2
+1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.11.30"]
+[Round "2.3"]
+[Stage "Tiebreak"]
+[White "Tiviakov, Sergei"]
+[Black "Ponomariov, Ruslan"]
+[Result "0-1"]
+[WhiteElo "2599"]
+[BlackElo "2684"]
+[ECO "C78"]
+
+1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O b5 6.Bb3 Bc5 7.d3 d6 8.c3 O-O 9.Be3
+Bb6 10.Bxb6 cxb6 11.Re1 Ne7 12.Nbd2 Ng6 13.Nf1 Bb7 14.Ne3 Qc7 15.Nf5 Rad8 16.Nd2
+d5 17.Qf3 Nf4 18.exd5 N6xd5 19.Qg3 g6 20.Ne4 Kh8 21.Bxd5 gxf5 22.Bxb7 Qxb7
+23.Qg5 Nh3+ 24.gxh3 Rg8 0-1
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.11.30"]
+[Round "2.4"]
+[Stage "Tiebreak"]
+[White "Ponomariov, Ruslan"]
+[Black "Tiviakov, Sergei"]
+[Result "1-0"]
+[WhiteElo "2684"]
+[BlackElo "2599"]
+[ECO "B35"]
+
+1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 g6 5.Nc3 Bg7 6.Be3 Nf6 7.Bc4 O-O 8.Bb3 d6
+9.f3 Bd7 10.h4 h5 11.Qd2 Rc8 12.O-O-O Ne5 13.Bg5 Rc5 14.Kb1 Re8 15.Bh6 Qa5
+16.Bxg7 Kxg7 17.Rhe1 Rec8 18.f4 Neg4 19.Nf3 Bc6 20.Ng5 Be8 21.Qd4 R8c6 22.f5
+Rxc3 23.bxc3 Ne5 24.fxg6 Nxg6 25.Nf3 Rc5 26.Re3 Qc7 27.Rde1 e5 28.Qd2 a5 29.a4
+b5 30.Ng5 bxa4 31.Ba2 Qb6+ 32.Ka1 a3 33.Qc1 Nxh4 34.Rg3 Ng6 35.Qxa3 Nh7 36.Rb1
+Qc7 37.Nxh7 Kxh7 38.Rf3 Nf4 39.Rh1 Ne2 40.c4 Nd4 41.Rf2 Kg7 42.Rxh5 Kf8 43.Qg3
+Ke7 44.Rh7 Kd8 45.c3 Rxc4 46.cxd4 Rc1+ 47.Kb2 Rd1 48.Qg5+ Kc8 49.Qg4+ Kb8
+50.Qxd1 1-0
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.01"]
+[Round "3.1"]
+[White "Ponomariov, Ruslan"]
+[Black "Georgiev, Kiril"]
+[Result "1-0"]
+[WhiteElo "2684"]
+[BlackElo "2686"]
+[ECO "B90"]
+
+1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6 6.f3 Qb6 7.g4 Nc6 8.Nb3 e6 9.Qe2
+Be7 10.Bg2 Qc7 11.f4 b5 12.a3 Rb8 13.Be3 b4 14.axb4 Rxb4 15.g5 Nd7 16.O-O h6
+17.gxh6 Rxh6 18.f5 Rh7 19.fxe6 fxe6 20.Rf3 Nde5 21.Rh3 Rxh3 22.Bxh3 Bf6 23.Rd1
+Nc4 24.Bc1 N6e5 25.Kh1 Nf7 26.Rd3 Nce5 27.Rd1 Nc4 28.Rd3 Nce5 29.Rd1 Qc4 30.Qg2
+Nc6 31.Rf1 Ne7 32.Nd2 Qc5 33.Nf3 Bd7 34.Ne1 Qc6 35.Nd3 Rc4 36.Qf3 Kd8 37.Qh5 Ne5
+38.Nxe5 dxe5 39.Bg5 Be8 40.Qg4 Nf5 41.Bxf6+ gxf6 42.Qf3 Bd7 43.Bg2 Kc8 44.exf5
+Qxf3 45.Bxf3 exf5 46.Kg1 a5 47.Be2 Rc5 48.h4 f4 49.h5 f5 50.Rf2 Rc6 51.Rg2 Rh6
+52.Rg6 Rh8 53.h6 e4 54.Bc4 Kc7 55.Nd5+ Kb7 56.Nxf4 Be8 57.Rf6 1-0
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.02"]
+[Round "3.2"]
+[White "Georgiev, Kiril"]
+[Black "Ponomariov, Ruslan"]
+[Result "0-1"]
+[WhiteElo "2686"]
+[BlackElo "2684"]
+[ECO "C95"]
+
+1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 b5 7.Bb3 d6 8.c3 O-O 9.h3
+Nb8 10.d4 Nbd7 11.Nbd2 Bb7 12.Bc2 Re8 13.Nf1 Bf8 14.Ng3 g6 15.a4 c5 16.d5 c4
+17.Bg5 h6 18.Be3 Nc5 19.Qd2 h5 20.Bg5 Be7 21.Ra3 Nfd7 22.Be3 Bf6 23.Rea1 Nb6
+24.axb5 axb5 25.Rxa8 Bxa8 26.Ra5 h4 27.Nf1 Nxd5 28.Rxa8 Qxa8 29.Bxc5 dxc5
+30.exd5 e4 31.N3h2 Bg7 32.d6 Qc6 33.Qf4 f5 34.f3 e3 35.Nxe3 Be5 36.Qh6 Qxd6
+37.Nhf1 Bf4 38.Nxf5 gxf5 39.Qh5 Re1 40.g3 Be3+ 0-1
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.03"]
+[Round "4.1"]
+[White "Ponomariov, Ruslan"]
+[Black "Morozevich, Alexander"]
+[Result "1-0"]
+[WhiteElo "2684"]
+[BlackElo "2742"]
+[ECO "C11"]
+
+1.e4 e6 2.d4 d5 3.Nc3 Nf6 4.Bg5 dxe4 5.Nxe4 Be7 6.Bxf6 gxf6 7.Nf3 a6 8.Qe2 b5
+9.g3 Bb7 10.Bg2 Bd5 11.c3 Nd7 12.b3 O-O 13.O-O f5 14.Ned2 c5 15.c4 Bc6 16.Rad1
+Rc8 17.d5 exd5 18.Qd3 bxc4 19.bxc4 Ba4 20.Rb1 dxc4 21.Qxf5 Rc6 22.Nxc4 Rf6
+23.Qh5 Rg6 24.Rfe1 Bf6 25.Ne3 Bc3 26.Rec1 Bd4 27.Nf5 Qf6 28.N5xd4 cxd4 29.Qd5
+Bc6 30.Qxd4 Bxf3 31.Qxd7 Bxg2 32.Kxg2 h5 33.Rb3 Qf4 34.Re3 h4 35.Rc6 hxg3
+36.hxg3 Qh6 37.Rec3 Qh7 38.Rxg6+ fxg6 39.Rc7 Qxd7 40.Rxd7 Rf6 41.a4 Kf8 42.Ra7
+Ke8 43.f4 g5 44.fxg5 Rg6 45.Kf3 Rxg5 46.Rxa6 Kf7 47.Rc6 Rd5 48.Rc4 Rd1 49.g4 Kf6
+50.Ke4 Ke6 51.Rc6+ Kd7 52.Rc5 Kd6 53.Rb5 Kc6 54.Rf5 Kd6 55.a5 Ra1 56.Kf4 Ke6
+57.Kg5 Ra4 58.a6 Ke7 59.Rf6 Rxg4+ 60.Kxg4 1-0
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.05"]
+[Round "4.2"]
+[White "Morozevich, Alexander"]
+[Black "Ponomariov, Ruslan"]
+[Result "1-0"]
+[WhiteElo "2742"]
+[BlackElo "2684"]
+[ECO "C88"]
+
+1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 b5 7.Bb3 d6 8.c3 O-O 9.h3
+Na5 10.Bc2 c5 11.d4 cxd4 12.cxd4 Bb7 13.d5 Rc8 14.b3 Qc7 15.Bd3 Nxe4 16.Bxe4 f5
+17.Bd3 e4 18.Bg5 Bf6 19.Bxf6 Rxf6 20.Be2 exf3 21.Bxf3 b4 22.Nd2 Rff8 23.a3 Qb6
+24.axb4 Qxb4 25.Ra4 Qc3 26.Re3 Qb2 27.Nf1 Rc5 28.Qe1 Rc1 29.Qxa5 Qb1 30.Be2 f4
+31.Rf3 g5 32.Bd3 Qb2 33.Rc4 1-0
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.05"]
+[Round "4.3"]
+[Stage "Tiebreak"]
+[White "Morozevich, Alexander"]
+[Black "Ponomariov, Ruslan"]
+[Result "1/2-1/2"]
+[WhiteElo "2742"]
+[BlackElo "2684"]
+[ECO "C92"]
+
+1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 b5 7.Bb3 d6 8.c3 O-O 9.h3
+Nd7 10.d4 Bf6 11.Be3 Na5 12.Bc2 Nc4 13.Bc1 Bb7 14.a4 exd4 15.cxd4 c5 16.axb5
+cxd4 17.bxa6 Rxa6 18.Rxa6 Bxa6 19.b3 Nce5 20.Nxd4 Nc5 21.Be3 Ned3 22.Bxd3 Nxd3
+23.Re2 d5 24.e5 Bxe5 25.Nc6 Bh2+ 26.Kxh2 Qd6+ 27.Kg1 Qxc6 28.Rd2 Qg6 29.Nc3 Bb7
+30.Qg4 Qxg4 31.hxg4 Ne5 32.f3 Rd8 33.g5 f6 34.gxf6 gxf6 35.Ne4 Kf7 36.Nc5 Bc6
+37.Rd4 Ng6 38.Rb4 Ne7 39.Bf2 Ra8 40.Rb6 Ra1+ 41.Kh2 Ra2 42.Bd4 Rd2 43.Be3
+1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.05"]
+[Round "4.4"]
+[Stage "Tiebreak"]
+[White "Ponomariov, Ruslan"]
+[Black "Morozevich, Alexander"]
+[Result "1-0"]
+[WhiteElo "2684"]
+[BlackElo "2742"]
+[ECO "C78"]
+
+1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Bc5 6.c3 b5 7.Bb3 d6 8.a4 Bg4 9.h3
+Bxf3 10.Qxf3 O-O 11.a5 Rb8 12.d3 Nd7 13.Nd2 Kh8 14.Kh1 Ne7 15.Qe2 h6 16.f4 Ng6
+17.f5 Nf4 18.Qf3 Nf6 19.Bc2 g5 20.fxg6 fxg6 21.Nb3 Nd7 22.Bxf4 Rxf4 23.Qe2 Ba7
+24.Rxf4 exf4 25.Qg4 g5 26.d4 Nf6 27.Qe6 Qf8 28.e5 Nh5 29.exd6 Qxd6 30.Qxd6 cxd6
+31.Re1 Rf8 32.Re7 Bb8 33.Nd2 Ng7 34.Nf3 Re8 35.Rb7 d5 36.Rb6 h5 37.Bg6 Rc8
+38.Nxg5 f3 39.gxf3 Bf4 40.h4 Bc1 41.Rxa6 Bxb2 42.Bf7 Ne8 43.Rg6 Nc7 44.Rc6 Ra8
+1-0
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.06"]
+[Round "5.1"]
+[White "Ponomariov, Ruslan"]
+[Black "Bareev, Evgeny"]
+[Result "1/2-1/2"]
+[WhiteElo "2684"]
+[BlackElo "2719"]
+[ECO "C11"]
+
+1.e4 e6 2.d4 d5 3.Nc3 Nf6 4.Bg5 dxe4 5.Nxe4 Nbd7 6.Nf3 h6 7.Nxf6+ Nxf6 8.Bh4 c5
+9.Bc4 cxd4 10.O-O Be7 11.Nxd4 O-O 12.Re1 Qb6 13.Bb3 a5 14.a4 Rd8 15.c3 Nd5
+16.Bg3 Bf6 17.Re2 Ne7 18.Rd2 Bd7 19.Bc4 Rac8 20.Nb5 Bxb5 21.Bxb5 Nf5 22.Qe2 Rxd2
+23.Qxd2 Rd8 24.Qe2 Nxg3 25.hxg3 Qd6 26.Re1 b6 27.g4 Qd2 28.g3 Qxe2 1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.07"]
+[Round "5.2"]
+[White "Bareev, Evgeny"]
+[Black "Ponomariov, Ruslan"]
+[Result "1/2-1/2"]
+[WhiteElo "2719"]
+[BlackElo "2684"]
+[ECO "D27"]
+
+1.d4 d5 2.Nf3 Nf6 3.c4 dxc4 4.e3 e6 5.Bxc4 a6 6.O-O c5 7.dxc5 Bxc5 8.Bd3 Nc6
+9.a3 Bd6 10.Qe2 O-O 11.Nbd2 b5 12.b4 Ne5 13.Nxe5 Bxe5 14.Ra2 Bb7 15.e4 Bd6
+16.Nf3 e5 17.Rd1 Qe7 18.Nh4 g6 19.Bg5 Qe6 20.Rad2 Be7 21.Bb1 Rfd8 22.Rxd8+ Rxd8
+23.Rxd8+ Bxd8 24.Nf3 Bb6 25.Ba2 Qd6 26.Bxf6 Qxf6 27.g3 Bc8 28.Kg2 Bg4 29.h3
+1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.07"]
+[Round "5.3"]
+[Stage "Tiebreak"]
+[White "Bareev, Evgeny"]
+[Black "Ponomariov, Ruslan"]
+[Result "0-1"]
+[WhiteElo "2719"]
+[BlackElo "2684"]
+[ECO "D27"]
+
+1.d4 d5 2.Nf3 Nf6 3.c4 dxc4 4.e3 e6 5.Bxc4 a6 6.O-O c5 7.dxc5 Bxc5 8.Qxd8+ Kxd8
+9.Be2 Ke7 10.Nbd2 Rd8 11.Ne5 b5 12.a4 Bd6 13.Nef3 bxa4 14.Nc4 Bc7 15.Nfe5 Bb7
+16.Rxa4 Nc6 17.Nd3 Nd7 18.b3 Nb6 19.Ba3+ Ke8 20.Nc5 Nxa4 21.Nxb7 Nc3 22.Bf3 Rd5
+23.Ncd6+ Bxd6 24.Nxd6+ Kd7 25.Bxd5 exd5 26.Nxf7 Rb8 27.Ra1 Rxb3 28.Bf8 Ke8
+29.Ne5 Nxe5 30.Bxg7 Nc4 31.Kf1 a5 32.g4 Kf7 33.Bh8 Ne4 34.Ke2 Ke6 35.Bd4 Nc3+
+36.Ke1 Nb5 37.Bh8 d4 38.exd4 Kd5 39.Ke2 a4 0-1
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.07"]
+[Round "5.4"]
+[Stage "Tiebreak"]
+[White "Ponomariov, Ruslan"]
+[Black "Bareev, Evgeny"]
+[Result "1-0"]
+[WhiteElo "2684"]
+[BlackElo "2719"]
+[ECO "B06"]
+
+1.e4 g6 2.d4 Bg7 3.Nc3 d6 4.f4 a6 5.Nf3 b5 6.Bd3 Nd7 7.e5 e6 8.O-O Ne7 9.Qe1 Bb7
+10.a4 b4 11.Ne4 d5 12.Nc5 Nxc5 13.dxc5 a5 14.Be3 O-O 15.Nd4 Qd7 16.Qh4 f6 17.Qh3
+Nf5 18.Nxf5 exf5 19.Bd4 fxe5 20.fxe5 Rae8 21.Qg3 Re6 22.Rfe1 Qe7 23.c3 bxc3
+24.bxc3 f4 25.Qg4 Bxe5 26.Qxe6+ Qxe6 27.Rxe5 Qg4 28.Re7 Rf7 29.Re8+ Rf8 30.Re7
+Rb8 31.Rf1 Bc6 32.g3 g5 33.Rg7+ Kf8 34.Rxf4+ 1-0
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.08"]
+[Round "6.1"]
+[White "Svidler, Peter"]
+[Black "Ponomariov, Ruslan"]
+[Result "1/2-1/2"]
+[WhiteElo "2686"]
+[BlackElo "2684"]
+[ECO "C42"]
+
+1.e4 e5 2.Nf3 Nf6 3.Nxe5 d6 4.Nf3 Nxe4 5.d4 d5 6.Bd3 Nc6 7.O-O Be7 8.c4 Nb4
+9.Be2 O-O 10.Nc3 Bf5 11.a3 Nxc3 12.bxc3 Nc6 13.Re1 Be6 14.cxd5 Bxd5 15.Be3 Na5
+16.Ne5 Bd6 17.c4 Be6 18.Qc2 c5 19.Bd3 h6 20.Rad1 Qc7 21.Qc3 Rfd8 22.h3 Bxe5
+23.dxe5 Rd7 24.Bf1 b6 25.Bf4 Rad8 26.Rd6 Nb7 27.Qg3 Kf8 28.Qd3 Kg8 29.Qg3 Kh8
+30.Rxd7 Rxd7 31.Qe3 Qd8 32.Bxh6 Rd1 33.Bf4 Na5 34.Rxd1 Qxd1 35.Qd2 1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.10"]
+[Round "6.2"]
+[White "Ponomariov, Ruslan"]
+[Black "Svidler, Peter"]
+[Result "1/2-1/2"]
+[WhiteElo "2684"]
+[BlackElo "2686"]
+[ECO "B90"]
+
+1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6 6.f3 e6 7.Be3 b5 8.g4 Nfd7 9.Qd2
+Nb6 10.O-O-O N8d7 11.Bg5 Qc7 12.Ndxb5 axb5 13.Nxb5 Qc6 14.Nxd6+ Bxd6 15.Qxd6
+Qxd6 16.Rxd6 Ba6 17.Bxa6 Rxa6 18.a3 h5 19.gxh5 Ra5 20.h4 Nc4 21.Rc6 Rc5 22.Rxc5
+Nxc5 23.b3 Nxa3 24.h6 gxh6 25.Be3 Nb7 26.Kb2 Nb5 27.e5 Rg8 28.Bxh6 Nd4 29.h5 Rg2
+30.Kc3 Nxf3 31.Bf4 Kf8 32.Rf1 Ng5 33.Kb4 Ne4 34.c4 Nbc5 35.Rf3 Ra2 36.h6 Kg8
+37.Bc1 Ra7 38.Kb5 Nxb3 39.Kb6 Ra8 40.Be3 Rb8+ 41.Kc7 Rb4 42.Kd8 Rxc4 43.Rf4 Na5
+44.Rg4+ Kh8 45.Ke7 Nc6+ 46.Kf8 1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.11"]
+[Round "6.3"]
+[White "Svidler, Peter"]
+[Black "Ponomariov, Ruslan"]
+[Result "0-1"]
+[WhiteElo "2686"]
+[BlackElo "2684"]
+[ECO "C43"]
+
+1.e4 e5 2.Nf3 Nf6 3.d4 Nxe4 4.Bd3 d5 5.Nxe5 Nd7 6.Nxd7 Bxd7 7.O-O Bd6 8.c4 c6
+9.cxd5 cxd5 10.Nc3 Nxc3 11.bxc3 O-O 12.Qh5 f5 13.Re1 Qc7 14.Bd2 Rae8 15.Bc2 g6
+16.Qf3 Re4 17.g3 Bb5 18.Bf4 Bxf4 19.gxf4 Qd6 20.Bxe4 fxe4 21.Qg3 Rxf4 22.Rab1
+Bd7 23.f3 b6 24.Re3 Qf6 25.Rf1 Bg4 26.Qxg4 Rxg4+ 27.fxg4 Qg5 28.Rg3 b5 29.Rf2
+Kg7 30.Kg2 a5 31.Rb2 b4 32.cxb4 axb4 33.h3 Qc1 34.Rgb3 Kh6 35.Rxb4 Qd1 36.Kf2
+Kg5 37.Re2 Kf4 38.Rb3 Qxd4+ 39.Kg2 Qc4 40.Rf2+ Kg5 41.Rf7 d4 42.h4+ Kxh4
+43.Rxh7+ Kxg4 44.Rg3+ Kf5 0-1
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2001.12.13"]
+[Round "6.4"]
+[White "Ponomariov, Ruslan"]
+[Black "Svidler, Peter"]
+[Result "1/2-1/2"]
+[WhiteElo "2684"]
+[BlackElo "2686"]
+[ECO "B40"]
+
+1.e4 c5 2.Nf3 e6 3.c3 Nf6 4.e5 Nd5 5.Bc4 d6 6.d4 cxd4 7.cxd4 Nc6 8.O-O Be7 9.Qe2
+O-O 10.Qe4 Qa5 11.Nbd2 Bd7 12.Bb3 Qa6 13.Qg4 Rfd8 14.Ne4 Nxd4 15.Nxd4 dxe5
+16.Bh6 Bf8 17.Nc5 Qb6 18.Nxd7 Qxd4 1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2002.01.16"]
+[Round "7.1"]
+[White "Ponomariov, Ruslan"]
+[Black "Ivanchuk, Vassily"]
+[Result "1-0"]
+[WhiteElo "2727"]
+[BlackElo "2717"]
+[ECO "C11"]
+
+1.e4 e6 2.d4 d5 3.Nc3 Nf6 4.Bg5 dxe4 5.Nxe4 Be7 6.Bxf6 Bxf6 7.Nf3 O-O 8.Qd2 Be7
+9.O-O-O Qd5 10.Nc3 Qa5 11.a3 Nd7 12.Kb1 Qb6 13.Qe3 Nf6 14.Ne5 Rd8 15.Bc4 Bd7
+16.Bb3 Be8 17.Rhe1 Bf8 18.g4 Nd5 19.Qf3 c6 20.Ne4 Qc7 21.c4 Ne7 22.Ng5 Nc8 23.c5
+1-0
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2002.01.17"]
+[Round "7.2"]
+[White "Ivanchuk, Vassily"]
+[Black "Ponomariov, Ruslan"]
+[Result "1/2-1/2"]
+[WhiteElo "2717"]
+[BlackElo "2727"]
+[ECO "D20"]
+
+1.d4 d5 2.c4 dxc4 3.e4 Nf6 4.e5 Nd5 5.Bxc4 Nb6 6.Bd3 Nc6 7.Ne2 Bg4 8.f3 Be6
+9.Nbc3 Bc4 10.Bxc4 Nxc4 11.O-O e6 12.a3 Qd7 13.Kh1 Be7 14.Qb3 Nb6 15.Be3 O-O
+16.Rac1 a5 17.Rfd1 a4 18.Qc2 Rfd8 19.Nf4 Ra5 20.Qe4 g6 21.Qc2 Qe8 22.Qe2 Rd7
+23.Rc2 Nd5 24.Ncxd5 exd5 25.Rdc1 f6 26.Nd3 fxe5 27.dxe5 d4 28.Bh6 g5 29.Rxc6
+bxc6 30.Rxc6 Bd6 31.f4 Rf7 32.Rc1 Rxf4 33.Nxf4 Rxe5 34.Qc4+ Qf7 35.Nd3 Rf5
+36.Qxf7+ Kxf7 37.h4 gxh4 38.Kg1 Ke6 39.Rc4 h3 40.gxh3 Kd5 41.Rxa4 Ke4 42.Nf2+
+Kf3 43.Rxd4 Bc5 44.Rd2 Rf6 45.Bg5 Rg6 46.Kf1 Rxg5 47.Rd3+ Kf4 48.Rc3 Bb6 49.b4
+Rd5 50.Rd3 Rf5 51.Nd1 c5 52.Nc3 cxb4 53.axb4 Ke5+ 54.Ke1 Rf4 55.Rd5+ Ke6 56.Rb5
+Bc7 57.Nd5 Re4+ 58.Kf2 Bd6 1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2002.01.18"]
+[Round "7.3"]
+[White "Ponomariov, Ruslan"]
+[Black "Ivanchuk, Vassily"]
+[Result "1/2-1/2"]
+[WhiteElo "2727"]
+[BlackElo "2717"]
+[ECO "B47"]
+
+1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 Nc6 5.Nc3 Qc7 6.g3 a6 7.Bg2 d6 8.O-O Bd7
+9.Nxc6 Bxc6 10.Re1 Be7 11.Qg4 h5 12.Qe2 h4 13.a4 hxg3 14.hxg3 Rc8 15.a5 Kf8
+16.Be3 Nf6 17.Bb6 Qb8 18.Bf3 Nd7 19.Bd4 Bf6 20.Bxf6 gxf6 21.Bg2 Ne5 22.f4 Qa7+
+23.Kf1 Ng6 24.Qf2 Qxf2+ 25.Kxf2 Rh5 26.Rh1 Rc5 27.Rh7 Ke7 28.Bf1 Nf8 29.Rh8 Bb5
+30.Bd3 Bxd3 31.cxd3 Nd7 32.Rxc8 Rxc8 33.d4 Rc4 34.Ra4 Rxa4 35.Nxa4 f5 36.exf5
+exf5 37.Nc3 Nf6 38.d5 Nd7 39.b4 Nf6 40.Ke3 Kd7 41.Kd4 Nh5 42.Ne2 Nf6 43.Kc4 Ne4
+44.b5 axb5+ 45.Kxb5 Kc7 46.Kc4 Kb8 47.Kb4 1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2002.01.19"]
+[Round "7.4"]
+[White "Ivanchuk, Vassily"]
+[Black "Ponomariov, Ruslan"]
+[Result "1/2-1/2"]
+[WhiteElo "2717"]
+[BlackElo "2727"]
+[ECO "D20"]
+
+1.d4 d5 2.c4 dxc4 3.e4 Nf6 4.e5 Nd5 5.Bxc4 Nb6 6.Bb3 Nc6 7.Ne2 Bf5 8.Nbc3 e6
+9.O-O Qd7 10.Be3 O-O-O 11.Qc1 Nb4 12.Rd1 Kb8 13.Nf4 c6 14.Qd2 h5 15.Qe2 h4
+16.Rac1 Be7 17.a3 N4d5 18.Nd3 f6 19.Bd2 Bxd3 20.Qxd3 f5 21.Ne2 g5 22.Bc2 g4
+23.b4 Rdf8 24.Rf1 Qd8 25.f4 gxf3 26.gxf3 Rfg8+ 27.Kh1 h3 28.f4 Rg2 29.Rf3 Qg8
+30.Rg3 Rxg3 31.hxg3 h2 32.Rf1 Qg4 33.Rf2 Qh5 34.Bb3 Nc7 35.Qf3 Qh3 36.Rg2 Nbd5
+37.Qf2 Nb5 38.Bxd5 cxd5 39.a4 Na3 40.Rxh2 Qxh2+ 41.Qxh2 Rxh2+ 42.Kxh2 Nc4 43.Bc3
+Kc7 44.Kh3 b5 45.axb5 Kb6 46.Be1 Ne3 47.Bd2 Nc4 48.Be1 Ne3 49.Bd2 Nc4 50.Be1 Ne3
+1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2002.01.21"]
+[Round "7.5"]
+[White "Ponomariov, Ruslan"]
+[Black "Ivanchuk, Vassily"]
+[Result "1-0"]
+[WhiteElo "2727"]
+[BlackElo "2717"]
+[ECO "C88"]
+
+1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 b5 7.Bb3 O-O 8.h3 Bb7 9.d3
+d6 10.a3 Nb8 11.Nbd2 Nbd7 12.Nf1 Re8 13.Ng3 c6 14.Nh2 d5 15.Qf3 g6 16.Ba2 Bf8
+17.Bg5 h6 18.Bd2 Bg7 19.Ng4 Nxg4 20.hxg4 Nc5 21.Rad1 Rc8 22.Nf1 Ne6 23.Qg3 Kh7
+24.Nh2 f6 25.Nf3 c5 26.Qh2 Nd4 27.Nxd4 cxd4 28.c3 dxc3 29.bxc3 dxe4 30.dxe4 Qe7
+31.a4 bxa4 32.Qh3 Red8 33.Qf3 Rc7 34.Bc1 Rcd7 35.Bb1 Qe6 36.Rxd7 Rxd7 37.Bc2 Bc6
+38.Rd1 Qa2 39.Rxd7 Bxd7 40.Qd1 Bb5 41.Be3 Qc4 42.Kh2 Bc6 43.Qa1 Bf8 44.Bb1 a3
+45.f3 Qb3 46.Qa2 Ba4 47.Kg3 Kg7 48.Qd2 g5 49.Ba2 Qb7 50.Qd3 Be8 51.Qd5 Qxd5
+52.exd5 a5 53.c4 Bb4 54.c5 Kf8 55.Kf2 Bb5 56.c6 Ke7 57.Ba7 Kd8 58.Bb6+ Kc8
+59.Ke3 a4 60.Ke4 Be2 61.Kf5 e4 62.Ke6 exf3 63.d6 Bxd6 64.Kxd6 1-0
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2002.01.22"]
+[Round "7.6"]
+[White "Ivanchuk, Vassily"]
+[Black "Ponomariov, Ruslan"]
+[Result "1/2-1/2"]
+[WhiteElo "2717"]
+[BlackElo "2727"]
+[ECO "C42"]
+
+1.e4 e5 2.Nf3 Nf6 3.Nxe5 d6 4.Nf3 Nxe4 5.d4 d5 6.Bd3 Nc6 7.O-O Be7 8.c4 Nb4
+9.Be2 O-O 10.Nc3 Be6 11.Ne5 f6 12.Nf3 Kh8 13.h3 f5 14.a3 Nc6 15.Nxd5 Bxd5
+16.cxd5 Qxd5 17.Qa4 Bf6 18.Rd1 Rad8 19.Be3 f4 20.Bxf4 Nxd4 21.Nxd4 Bxd4 22.Be3
+c5 23.Bxd4 cxd4 24.f3 d3 25.Qxe4 Qxe4 26.fxe4 dxe2 27.Rd5 1/2-1/2
+
+[Event "FIDE World Championship 2002"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Moscow RUS"]
+[Date "2002.01.23"]
+[Round "7.7"]
+[White "Ponomariov, Ruslan"]
+[Black "Ivanchuk, Vassily"]
+[Result "1/2-1/2"]
+[WhiteElo "2727"]
+[BlackElo "2717"]
+[ECO "B04"]
+
+1.e4 Nf6 2.e5 Nd5 3.d4 d6 4.Nf3 Nc6 5.c4 Nb6 6.e6 fxe6 7.Nc3 g6 8.Be3 Bg7 9.h4
+O-O 10.h5 e5 11.d5 Nd4 12.Nxd4 exd4 13.Bxd4 g5 14.Bxg7 Kxg7 15.h6+ Kg8 16.Qd2 e5
+17.Rh5 g4 18.Qg5+ Qxg5 19.Rxg5+ Kh8 20.Rg7 Rf6 21.Rxc7 Rxh6 22.b4 1/2-1/2
