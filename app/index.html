@@ -7217,6 +7217,9 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Free play": "Jeu libre",
 "Won": "Gagnées",
 "Drawn": "Nulles",
+"Decisive": "Décisives",
+"White won": "Gain des Blancs",
+"Black won": "Gain des Noirs",
 "Lost": "Perdues",
 "Player": "Joueur",
 "Event": "Événement",
@@ -7773,6 +7776,9 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Free play": "Freies Spiel",
 "Won": "Gewonnen",
 "Drawn": "Remis",
+"Decisive": "Entschieden",
+"White won": "Weiß gewann",
+"Black won": "Schwarz gewann",
 "Lost": "Verloren",
 "Player": "Spieler",
 "Event": "Turnier",
@@ -8260,6 +8266,9 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Free play": "Juego libre",
 "Won": "Ganadas",
 "Drawn": "Tablas",
+"Decisive": "Decisivas",
+"White won": "Ganan blancas",
+"Black won": "Ganan negras",
 "Lost": "Perdidas",
 "Player": "Jugador",
 "Event": "Evento",
@@ -8747,6 +8756,9 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Free play": "Gioco libero",
 "Won": "Vinte",
 "Drawn": "Patte",
+"Decisive": "Decisive",
+"White won": "Vince il Bianco",
+"Black won": "Vince il Nero",
 "Lost": "Perse",
 "Player": "Giocatore",
 "Event": "Evento",
@@ -10304,13 +10316,12 @@ function wireGameReview(x){
   };
 }
 // The game list: Masters or My games, a search (players, year, event); a game opens at its start
-const gp = { tab:'mine', f:{} };   // (f: the lists' choices, per tab: player, event, decade / speed, result, site)
+const gp = { tab:'masters', f:{} };   // (f: the lists' choices, per tab: player, event, decade / speed, result, site)
 function openGamePicker(){
   if(document.getElementById('gpModal')) return;
-  if(!myGames.length) gp.tab = 'masters';
   const div = document.createElement('div'); div.className = 'modal-backdrop'; div.id = 'gpModal'; div.dataset.scr = screen;
   div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box gp-box" role="dialog" aria-label="Load a game"><h3>Load a game</h3>
-    <div class="seg seg-sm" role="tablist">${[['mine', 'My games'], ['masters', 'Masters']].map(([k, l])=>`<button class="seg-btn${gp.tab===k ? ' active' : ''}" data-gp="${k}">${l}</button>`).join('')}</div>
+    <div class="seg seg-sm" role="tablist">${[['masters', 'Masters'], ['mine', 'My games']].map(([k, l])=>`<button class="seg-btn${gp.tab===k ? ' active' : ''}" data-gp="${k}">${l}</button>`).join('')}</div>
     <div class="gp-filters" id="gpF"></div>
     <div class="gp-list" id="gpList"></div>
     <div class="modal-actions">${explorer && explorer.game ? '<button class="btn secondary" id="gpReset">Reset game</button>' : ''}<button class="btn secondary" id="gpClose">Close</button></div></div></div>`;
@@ -10319,11 +10330,12 @@ function openGamePicker(){
   { const r = document.getElementById('gpReset'); if(r) r.onclick = ()=>{ close(); const ret = explorer.ret; explorer = null; explorerInit(); explorer.ret = ret; render(); }; }   // (no game: the explorer's own board, from the start)
   div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')) close(); });
   document.getElementById('gpClose').onclick = close;
-  // the drop-down lists: Masters by player and decade; yours by speed, result and site (each its name first, for all);
+  // the drop-down lists: Masters by player, result and decade; yours by speed, result and site (each its name first, for all);
   // each choice with its number of games, the other lists' choices applied
   const mineRes = g=>!g.result || g.result==='*' ? null : g.result==='1/2-1/2' ? 'draw' : (g.result==='1-0')===(g.me==='w') ? 'win' : 'loss';
   const FILTERS = {
     masters: [['player', 'Player', ()=>{ const n = {}; Object.values(GAME_INFO).forEach(i=>String(i.title || '').split(' – ').forEach(x=>{ if(x) n[x] = (n[x] || 0) + 1; })); return Object.keys(n).sort().map(x=>[x, x]); }, (id, v)=>String((GAME_INFO[id] || {}).title || '').split(' – ').includes(v)],
+              ['result', 'Result', ()=>[['decisive', 'Decisive'], ['1-0', 'White won'], ['0-1', 'Black won'], ['1/2-1/2', 'Drawn']], (id, v)=>{ const r = (GAME_INFO[id] || {}).result; return v==='decisive' ? r==='1-0' || r==='0-1' : r===v; }],
               ['decade', 'Decade', ()=>[...new Set(Object.values(GAME_INFO).map(i=>String(i.date || '').slice(0, 3)).filter(Boolean))].sort().reverse().map(d=>[d, d + '0–' + d.slice(2) + '9']), (id, v)=>String((GAME_INFO[id] || {}).date || '').startsWith(v)]],
     mine: [['speed', 'Speed', ()=>Object.keys(SPEED_NAMES).filter(k=>myGames.some(g=>g.speed===k)).map(k=>[k, SPEED_NAMES[k]]), (g, v)=>g.speed===v],
            ['result', 'Result', ()=>[['win', 'Won'], ['draw', 'Drawn'], ['loss', 'Lost']], (g, v)=>mineRes(g)===v],
@@ -10335,8 +10347,10 @@ function openGamePicker(){
     const box = document.getElementById('gpF'); box.style.gridTemplateColumns = `repeat(${FILTERS[gp.tab].length}, minmax(0, 1fr))`;
     box.innerHTML = FILTERS[gp.tab].map(([k, l, opts, test])=>{
       const base = all.filter(x=>FILTERS[gp.tab].every(([k2, , , t2])=>k2===k || !f[k2] || t2(x, f[k2])));
-      return `<select class="gp-sel" data-gf="${k}" aria-label="${l}"><option value="">${l} (${base.length})</option>${opts().map(([v, t])=>[v, t, base.filter(x=>test(x, v)).length]).filter(([v, , n])=>n || f[k]===v)
-        .map(([v, t, n])=>`<option value="${escHtml(v)}"${f[k]===v ? ' selected' : ''}>${escHtml(t)} (${n})</option>`).join('')}</select>`; }).join('');
+      // (translated here: a count follows each name; the choice shown closed goes without its count, to fit)
+      const o = (v, t, n, on)=>`<option value="${escHtml(v)}"${on ? ' selected' : ''} data-no-i18n>${escHtml(tr(t))}${on ? '' : ` (${n})`}</option>`;
+      return `<select class="gp-sel" data-gf="${k}" aria-label="${l}">${o('', l, base.length, !f[k])}${opts().map(([v, t])=>[v, t, base.filter(x=>test(x, v)).length]).filter(([v, , n])=>n || f[k]===v)
+        .map(([v, t, n])=>o(v, t, n, f[k]===v)).join('')}</select>`; }).join('');
     div.querySelectorAll('[data-gf]').forEach(el=>el.onchange = ()=>{ f[el.dataset.gf] = el.value || undefined; drawFilters(); list(); });
   };
   const list = ()=>{
