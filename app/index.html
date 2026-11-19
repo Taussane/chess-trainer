@@ -5412,10 +5412,12 @@ function renderHome(){
 // mistakes go to Candidate moves at once, and to Move selection after one top-5 search. The others
 // get a quick background scan, only while the engine has nothing else to do, and each likely
 // mistake it flags is checked with the engine first. Everything is saved privately to your account.
-const OWN = { minMove:5, maxMove:40, minLegal:4, mistakeDrop:10, spacing:{ imbalances:4, planq:3 }, maxMaterialDiff:3, bigMaterialMaxWin:85, 
+const OWN = { minMove:5, maxMove:40, openingFrom:18, minLegal:4, mistakeDrop:10, spacing:{ imbalances:4, planq:3 }, maxMaterialDiff:3, bigMaterialMaxWin:85, 
               candidatesMinLegal:2, finalMinLegal:4, maxGamesPerUpload:200,
               // your other positions (either side to move), after your mistakes: the master rules (finder/rules.js)
               trapMinDrop:12, maxDecent:3, candidatesSpacing:10, finalSpacing:2,
+              // Imbalance reading and the Plan finder: from the middlegame's start, or after move 9 (half-move 18) when the
+              // opening lasts longer (the end of the opening: development still counts), whichever comes first
               passMs:1000,       // the pass: one top-5 search per position, depth 20 at most (see ownPass)
               checkMs:1200 };    // the app's usual background search
 // Move selection's spread rule (see finalSpreadOk), the same as the master positions' (finder/rules.js).
@@ -6021,7 +6023,7 @@ function extractOwnPositions0(g){
   };
   const div = divideGame(fens);
   g.ph = [div.mid >= 0 ? div.mid : null, div.end >= 0 ? div.end : null];   // (kept with the game: the Filter's phases)
-  const baFrom = div.mid>=0 ? div.mid : div.end, baTo = hist.length-1;   // from the middlegame's start (or the endgame's, when they start together) to move 40 (OWN.maxMove)
+  const f0 = div.mid>=0 ? div.mid : div.end, baFrom = Math.min(f0>=0 ? f0 : Infinity, OWN.openingFrom), baTo = hist.length-1;   // from the middlegame's start (or the endgame's, when they start together), or after move 9 if sooner, to move 40 (OWN.maxMove)
   const out = [], ba = [];
   // One pass over the game, every half-move checked once (early exits).
   for(let ply=0; ply<hist.length; ply++){
