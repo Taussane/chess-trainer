@@ -2584,11 +2584,12 @@ const PHASE_OF_GAME = new Map();
 function posPhase(p){
   const src = p.gameId ? 'mine' : 'masters', id = p.gameId || p.game, ply = p.ply;
   if(id==null || ply==null) return null;
-  const k = src + ':' + id, ph = src==='masters' && (GAME_INFO[id] || {}).ph; let d = ph ? { mid:ph[0], end:ph[1] } : PHASE_OF_GAME.get(k);   // (master games: worked out at build time)
+  const g = src==='mine' ? currentGame(id) : null, k = src + ':' + id, ph = src==='masters' ? (GAME_INFO[id] || {}).ph : g && g.ph; let d = ph ? { mid:ph[0], end:ph[1] } : PHASE_OF_GAME.get(k);   // (master games: worked out at build time)
   if(!d){
     const sans = gameSans(src==='mine' ? { gameId:id } : { game:id }); if(!sans) return null;
     const c = new Chess(), fens = [c.fen()]; for(const m of sans){ if(!c.move(m)) break; fens.push(c.fen()); }
     d = gameDivision(fens); PHASE_OF_GAME.set(k, d);
+    if(g) g.ph = [d.mid, d.end];   // (kept with your game from now on: worked out once)
   }
   return d.end!=null && ply >= d.end ? 'endgame' : d.mid!=null && ply >= d.mid ? 'middlegame' : 'opening';
 }
@@ -6019,6 +6020,7 @@ function extractOwnPositions0(g){
     return entry(ply, acts, extra);
   };
   const div = divideGame(fens);
+  g.ph = [div.mid >= 0 ? div.mid : null, div.end >= 0 ? div.end : null];   // (kept with the game: the Filter's phases)
   const baFrom = div.mid>=0 ? div.mid : div.end, baTo = hist.length-1;   // from the middlegame's start (or the endgame's, when they start together) to move 40 (OWN.maxMove)
   const out = [], ba = [];
   // One pass over the game, every half-move checked once (early exits).
@@ -10117,33 +10119,9 @@ async function explorerAnalyse(G){
   }
   const g = G.kept && currentGame(G.id); if(g) saveMyGame(g);
 }
-// Where the middlegame and the endgame start, as Lichess divides a game (scalachess Divider): the middlegame at the
-// first position with 10 or fewer pieces (not kings or pawns), a back rank with fewer than 4 of its side's pieces, or
-// pieces mixed across the board (mixedness over 150); the endgame at the first with 6 or fewer pieces (none before
-// a middlegame; the middlegame shown only when it starts before the endgame)
-function gameDivision(fens){
-  const score = (y, w, b)=>w===0 ? (b===1 ? 1 + y : b===2 ? (y < 6 ? 2 + (6 - y) : 0) : b===3 || b===4 ? (y < 7 ? 3 + (7 - y) : 0) : 0)
-    : w===1 ? (b===0 ? 1 + (8 - y) : b===1 ? 5 + Math.abs(4 - y) : b===2 ? 4 + (7 - y) : b===3 ? 5 + (7 - y) : 0)
-    : w===2 ? (b===0 ? (y > 2 ? 2 + (y - 2) : 0) : b===1 ? 4 + (y - 1) : b===2 ? 7 : 0)
-    : w===3 ? (b===0 ? (y > 1 ? 3 + (y - 1) : 0) : b===1 ? 5 + (y - 1) : 0)
-    : w===4 ? (b===0 ? (y > 1 ? 3 + (y - 1) : 0) : 0) : 0;
-  const grid = fen=>fen.split(' ')[0].split('/').reverse().map(r=>r.replace(/\d/g, d=>'.'.repeat(+d)).split(''));   // [rank 1..8][file]
-  let mid = null, end = null;
-  for(let i = 0; i < fens.length; i++){
-    const g = grid(fens[i]), all = g.flat(), pieces = all.filter(c=>/[QRBNqrbn]/.test(c)).length;
-    if(mid==null){
-      const sparse = g[0].filter(c=>/[A-Z]/.test(c)).length < 4 || g[7].filter(c=>/[a-z]/.test(c)).length < 4;
-      let mix = 0;
-      if(!(pieces <= 10 || sparse)) for(let y = 0; y < 7; y++) for(let x = 0; x < 7; x++){
-        const sq = [g[y][x], g[y][x + 1], g[y + 1][x], g[y + 1][x + 1]];
-        mix += score(y + 1, sq.filter(c=>/[A-Z]/.test(c)).length, sq.filter(c=>/[a-z]/.test(c)).length);
-      }
-      if(pieces <= 10 || sparse || mix > 150) mid = i;
-    }
-    if(mid!=null && pieces <= 6){ end = i; break; }
-  }
-  return { mid: mid!=null && (end==null || mid < end) ? mid : null, end };
-}
+// Where the middlegame and the endgame start (divideGame: Lichess's rules, as the positions from your games use them),
+// null where the game never gets there
+function gameDivision(fens){ const d = divideGame(fens); return { mid: d.mid >= 0 ? d.mid : null, end: d.end >= 0 ? d.end : null }; }
 // move k's grade (from the position before it to the one after), or null while either isn't evaluated
 function gameGrade(G, k){
   const b = G.E[k - 1], a = G.E[k]; if(!b || !a || k < 1) return null;
