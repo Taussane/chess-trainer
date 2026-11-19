@@ -19,6 +19,7 @@ for i, (g, s) in enumerate(zip(games, stats)):
     info = {}
     if y.isdigit(): info['date'] = y + ('-' + m + ('-' + d if d.isdigit() else '') if m.isdigit() else '')
     if h.get('EventShort'): info['event'] = h['EventShort']
+    if 'Exhibition' in h.get('Event', ''): info['skip'] = 1   # (not a title match: kept in the library, left out of the app's positions and game list)
     info['title'] = h.get('White', '').split(',')[0].strip() + ' – ' + h.get('Black', '').split(',')[0].strip()
     if h.get('Result') in ('1-0', '0-1', '1/2-1/2'): info['result'] = h['Result']
     if s['id'] in phases: info['ph'] = phases[s['id']]   # (where its middlegame and endgame start: scripts/master-phases.js)

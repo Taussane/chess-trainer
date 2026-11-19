@@ -32,7 +32,7 @@ const cj = fs.readFileSync(path.join(ROOT, 'vendor/chess.js/chess.js'), 'utf8');
   await p.route('**/*', r => { const u = r.request().url(); if (u.startsWith('http://localhost')) return r.continue(); if (u.includes('chess.js')) return r.fulfill({ body: cj, contentType: 'application/javascript' }); return r.abort(); });
   await p.goto(`http://localhost:${PORT}/`); await p.waitForTimeout(3000);
   console.log('engine', await p.evaluate(() => sfState + ' ' + sfVersion));
-  const games = (await p.evaluate(() => Object.keys(GAME_MOVES))).slice(0, +(process.env.LIMIT || 1e9));   // (LIMIT=n: the first n games, for a try)
+  const games = (await p.evaluate(() => Object.keys(GAME_MOVES).filter(g => !(GAME_INFO[g] || {}).skip))).slice(0, +(process.env.LIMIT || 1e9));   // (exhibition games left out)   // (LIMIT=n: the first n games, for a try)
   const file = gid => path.join(PASS_DIR, gid + '.json');
   if (STEP === 'pass') {
     const mine = games.filter((g, i) => i % SH_N === SH_I), t0 = Date.now(); let done = 0;
