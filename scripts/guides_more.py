@@ -134,7 +134,7 @@ GUIDES_MORE = {
     title='Kandidatenzüge im Schach: mehr als einen guten Zug finden',
     desc='Was Kandidatenzüge sind, wie man sie findet (Schachs, Schlagzüge, Drohungen, dann der Plan), und eine kostenlose Übung, die deine Wahl mit Stockfish bewertet, an Meisterpartien und deinen eigenen Partien.',
     lead='Die meisten Fehler entstehen, wenn man den ersten Zug spielt, der gut aussieht. Alexander Kotows Rat: zuerst einige ernsthafte Optionen auflisten, dann wählen.',
-    alt='Auswertung der Kandidatenzüge in einer WM-Stellung von 2024: bxa3 und Qa5, die beiden besten Züge der Engine, dann h5, zweifelhaft; auch der dritte Zug der Engine ist zweifelhaft',
+    alt='Auswertung der Kandidatenzüge in einer WM-Stellung von 2024: bxa3 und Qa5, die beiden besten Züge der Engine, dann h5, eine Ungenauigkeit; auch der dritte Zug der Engine ist eine Ungenauigkeit',
     caption='Hier halten nur zwei Züge, bxa3 und Qa5, und beide wurden gefunden. Die dritte Wahl hätte man aber weglassen sollen.',
     body="""
 <h2>Wie man sie findet</h2>
@@ -145,13 +145,13 @@ GUIDES_MORE = {
 </ul>
 
 <h2>Die Übung</h2>
-<p>Wähle 1 bis 3 starke Züge. Stockfish bewertet jeden im Vergleich zu seinem besten Zug: Bester, Gut, Ok, Zweifelhaft, Fehler oder Patzer. Zweifelhaft oder schlechter bringt nichts: Im Zweifel lieber weniger wählen.</p>
+<p>Wähle 1 bis 3 starke Züge. Stockfish bewertet jeden im Vergleich zu seinem besten Zug: Bester, Gut, Ok, Ungenauigkeit, Fehler oder Patzer. Eine Ungenauigkeit oder schlechter bringt nichts: Im Zweifel lieber weniger wählen.</p>
 """),
   es=dict(slug='jugadas-candidatas', name='Jugadas candidatas', sub='Encuentra una o más buenas jugadas',
     title='Jugadas candidatas en ajedrez: encuentra más de una buena jugada',
     desc='Qué son las jugadas candidatas, cómo encontrarlas (jaques, capturas, amenazas, luego el plan), y un ejercicio gratuito que califica tus elecciones con Stockfish en partidas de maestros y en tus propias partidas.',
     lead='La mayoría de los errores vienen de jugar la primera jugada que parece buena. El consejo de Alexander Kotov: haz primero una lista de algunas opciones serias, luego elige.',
-    alt='Corrección de Jugadas candidatas en una posición del Campeonato del Mundo de 2024: bxa3 y Qa5, las dos mejores del motor, luego h5, dudosa; la propia 3.ª jugada del motor también es dudosa',
+    alt='Corrección de Jugadas candidatas en una posición del Campeonato del Mundo de 2024: bxa3 y Qa5, las dos mejores del motor, luego h5, una imprecisión; la propia 3.ª jugada del motor también es una imprecisión',
     caption='Aquí solo aguantan dos jugadas, bxa3 y Qa5, y se encontraron las dos. Pero la tercera elección debía haberse evitado.',
     body="""
 <h2>Cómo encontrarlas</h2>
@@ -162,13 +162,13 @@ GUIDES_MORE = {
 </ul>
 
 <h2>El ejercicio</h2>
-<p>Elige de 1 a 3 jugadas fuertes. Stockfish califica cada una frente a su mejor jugada: Mejor, Buena, Aceptable, Dudosa, Error o Error grave. Dudosa o peor no suma nada: ante la duda, elige menos.</p>
+<p>Elige de 1 a 3 jugadas fuertes. Stockfish califica cada una frente a su mejor jugada: Mejor, Buena, Aceptable, Imprecisión, Error o Error grave. Una imprecisión o peor no suma nada: ante la duda, elige menos.</p>
 """),
   it=dict(slug='mosse-candidate', name='Mosse candidate', sub='Trova una o più buone mosse',
     title='Le mosse candidate negli scacchi: trova più di una buona mossa',
     desc='Cosa sono le mosse candidate, come trovarle (scacchi, catture, minacce, poi il piano), e un esercizio gratuito che valuta le tue scelte con Stockfish su partite di maestri e sulle tue partite.',
     lead='La maggior parte degli errori nasce dal giocare la prima mossa che sembra buona. Il consiglio di Aleksandr Kotov: elenca prima alcune opzioni serie, poi scegli.',
-    alt='Correzione di Mosse candidate su una posizione del Campionato del mondo 2024: bxa3 e Qa5, le due migliori del motore, poi h5, dubbia; anche la 3ª mossa del motore è dubbia',
+    alt='Correzione di Mosse candidate su una posizione del Campionato del mondo 2024: bxa3 e Qa5, le due migliori del motore, poi h5, un\'imprecisione; anche la 3ª mossa del motore è un\'imprecisione',
     caption='Qui reggono solo due mosse, bxa3 e Qa5, e sono state trovate entrambe. La terza scelta però andava evitata.',
     body="""
 <h2>Come trovarle</h2>
@@ -179,7 +179,7 @@ GUIDES_MORE = {
 </ul>
 
 <h2>L'esercizio</h2>
-<p>Scegli da 1 a 3 mosse forti. Stockfish valuta ciascuna rispetto alla sua mossa migliore: Migliore, Buona, Accettabile, Dubbia, Errore o Errore grave. Dubbia o peggio non vale niente: nel dubbio, scegline meno.</p>
+<p>Scegli da 1 a 3 mosse forti. Stockfish valuta ciascuna rispetto alla sua mossa migliore: Migliore, Buona, Accettabile, Imprecisione, Errore o Errore grave. Un'imprecisione o peggio non vale niente: nel dubbio, scegline meno.</p>
 """)),
 
 'final': dict(
@@ -187,7 +187,7 @@ GUIDES_MORE = {
     title='Wie man im Schach den besten Zug wählt',
     desc='Wie man im Schach zwischen gut aussehenden Zügen wählt: den besten finden, dann prüfen, was jeder Zug zulässt. Eine kostenlose Übung, in der du vier Züge aus Meisterpartien und deinen eigenen Partien ordnest.',
     lead='Mehrere Züge mögen gut aussehen, aber nur einer ist der beste. Wenn das Erkunden der <a href="../kandidatenzuege/">Kandidatenzüge</a> dir einige ernsthafte Optionen gegeben hat, bleibt als letzter Schritt die Wahl zwischen ihnen, und genau dort gehen viele Partien verloren.',
-    alt='Auswertung der Zugwahl in einer WM-Stellung von 1963: vier Züge geordnet, der Partiezug Nxe4 ist der beste, zwei zweifelhafte',
+    alt='Auswertung der Zugwahl in einer WM-Stellung von 1963: vier Züge geordnet, der Partiezug Nxe4 ist der beste, zwei Ungenauigkeiten',
     caption='Der Partiezug Nxe4 ist der beste und wurde gefunden. Qh2, der einzige andere spielbare Zug, hätte auf Platz 2 gehört.',
     body="""
 <h2>Deine Optionen ordnen</h2>
@@ -205,7 +205,7 @@ GUIDES_MORE = {
     title='Cómo elegir la mejor jugada en ajedrez',
     desc='Cómo elegir entre jugadas que parecen buenas: encontrar la mejor y comprobar lo que permite cada una. Un ejercicio gratuito en el que ordenas cuatro jugadas de partidas de maestros y de tus propias partidas.',
     lead='Varias jugadas pueden parecer buenas, pero solo una es la mejor. Cuando explorar las <a href="../jugadas-candidatas/">jugadas candidatas</a> te ha dado algunas opciones serias, queda el último paso: elegir entre ellas, y ahí es donde se pierden muchas partidas.',
-    alt='Corrección de Elección de jugada en una posición del Campeonato del Mundo de 1963: cuatro jugadas ordenadas, la jugada de la partida Nxe4 es la mejor, dos dudosas',
+    alt='Corrección de Elección de jugada en una posición del Campeonato del Mundo de 1963: cuatro jugadas ordenadas, la jugada de la partida Nxe4 es la mejor, dos imprecisiones',
     caption='La jugada de la partida, Nxe4, es la mejor y se encontró. Qh2, la única otra jugada jugable, debía ir 2.ª.',
     body="""
 <h2>Ordenar tus opciones</h2>
@@ -223,7 +223,7 @@ GUIDES_MORE = {
     title='Come scegliere la mossa migliore negli scacchi',
     desc='Come scegliere tra mosse che sembrano buone: trovare la migliore, poi verificare cosa concede ogni mossa. Un esercizio gratuito in cui ordini quattro mosse da partite di maestri e dalle tue partite.',
     lead='Diverse mosse possono sembrare buone, ma solo una è la migliore. Quando l\'esplorazione delle <a href="../mosse-candidate/">mosse candidate</a> ti ha dato alcune opzioni serie, resta l\'ultimo passo: scegliere tra loro, ed è lì che si perdono molte partite.',
-    alt='Correzione di Scelta della mossa su una posizione del Campionato del mondo 1963: quattro mosse ordinate, la mossa della partita Nxe4 è la migliore, due dubbie',
+    alt='Correzione di Scelta della mossa su una posizione del Campionato del mondo 1963: quattro mosse ordinate, la mossa della partita Nxe4 è la migliore, due imprecisioni',
     caption='La mossa della partita, Nxe4, è la migliore ed è stata trovata. Qh2, l\'unica altra mossa giocabile, andava messa 2ª.',
     body="""
 <h2>Ordinare le opzioni</h2>

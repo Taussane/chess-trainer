@@ -105,7 +105,7 @@ GUIDES = [
       title='Candidate moves in chess: find more than one good move',
       desc='What candidate moves are, how to find them (checks, captures, threats, then the plan), and a free exercise grading your picks with Stockfish on master games and your own games.',
       lead="Most mistakes come from playing the first move that looks good. Alexander Kotov's advice: list a few serious options first, then choose.",
-      alt="Candidate moves review on a 2024 World Championship position: bxa3 and Qa5, the engine's top two, then h5, dubious; the engine's own 3rd move is dubious too",
+      alt="Candidate moves review on a 2024 World Championship position: bxa3 and Qa5, the engine's top two, then h5, an inaccuracy; the engine's own 3rd move is an inaccuracy too",
       caption="Only two moves hold here, bxa3 and Qa5, and both were found. The third pick should have been skipped though.",
       body="""
 <h2>How to find them</h2>
@@ -116,13 +116,13 @@ GUIDES = [
 </ul>
 
 <h2>The exercise</h2>
-<p>Pick 1 to 3 strong moves. Stockfish grades each against its best move: Best, Good, Ok, Dubious, Mistake or Blunder. Dubious or worse scores zero: when unsure, pick fewer.</p>
+<p>Pick 1 to 3 strong moves. Stockfish grades each against its best move: Best, Good, Ok, Inaccuracy, Mistake or Blunder. An inaccuracy or worse scores zero: when unsure, pick fewer.</p>
 """),
     fr=dict(slug='coups-candidats', name='Coups candidats', sub='Trouver un ou plusieurs bons coups',
       title="Les coups candidats aux échecs : trouver plus d'un bon coup",
       desc="Ce que sont les coups candidats, comment les trouver (échecs, prises, menaces, puis le plan), et un exercice gratuit qui note vos choix avec Stockfish sur des parties de maîtres et vos propres parties.",
       lead="La plupart des erreurs viennent du premier coup qui a l'air bon. Le conseil d'Alexandre Kotov : dresser d'abord la liste de quelques options sérieuses, puis choisir.",
-      alt="Correction de Coups candidats sur une position du championnat du monde 2024 : bxa3 et Qa5, les deux meilleurs coups du moteur, puis h5, douteux ; le 3e coup du moteur lui-même est douteux",
+      alt="Correction de Coups candidats sur une position du championnat du monde 2024 : bxa3 et Qa5, les deux meilleurs coups du moteur, puis h5, une imprécision ; le 3e coup du moteur lui-même est une imprécision",
       caption="Seuls deux coups tiennent ici, bxa3 et Qa5, et les deux ont été trouvés. Le troisième choix aurait pourtant dû être évité.",
       body="""
 <h2>Comment les trouver</h2>
@@ -133,7 +133,7 @@ GUIDES = [
 </ul>
 
 <h2>L'exercice</h2>
-<p>Choisissez 1 à 3 bons coups. Stockfish note chacun par rapport à son meilleur coup : Meilleur, Bon, Correct, Douteux, Erreur ou Gaffe. Douteux ou pire ne rapporte rien : dans le doute, choisissez-en moins.</p>
+<p>Choisissez 1 à 3 bons coups. Stockfish note chacun par rapport à son meilleur coup : Meilleur, Bon, Correct, Imprécision, Erreur ou Gaffe. Une imprécision ou pire ne rapporte rien : dans le doute, choisissez-en moins.</p>
 """)),
 
   dict(play='final', img='move-selection',
@@ -141,7 +141,7 @@ GUIDES = [
       title='How to choose the best move in chess',
       desc='How to choose between good-looking moves in chess: find the best one, then check what each move allows. A free exercise ranking four moves from master games and your own games.',
       lead="Several moves may look fine, but only one is best. Once exploring <a href=\"../candidate-moves/\">candidate moves</a> has given you a few serious options, the last step is choosing between them, and that's where many games are lost.",
-      alt='Move selection review on a 1963 World Championship position: four moves ranked, the game move Nxe4 best, two dubious ones',
+      alt='Move selection review on a 1963 World Championship position: four moves ranked, the game move Nxe4 best, two inaccuracies',
       caption='The game move Nxe4 is best and was found. Qh2, the only other good move, should have come 2nd.',
       body="""
 <h2>Ranking your options</h2>
@@ -159,7 +159,7 @@ GUIDES = [
       title='Comment choisir le meilleur coup aux échecs',
       desc="Comment choisir entre des coups qui ont l'air bons : trouver le meilleur, puis vérifier ce que chaque coup permet. Un exercice gratuit qui fait classer quatre coups, tirés de parties de maîtres et de vos propres parties.",
       lead="Plusieurs coups peuvent avoir l'air bien, mais un seul est le meilleur. Une fois que l'exploration des <a href=\"../coups-candidats/\">coups candidats</a> vous a donné quelques options sérieuses, reste à choisir entre elles, et c'est là que beaucoup de parties se perdent.",
-      alt="Correction de Choix du coup sur une position du championnat du monde 1963 : quatre coups classés, le coup joué Nxe4 est le meilleur, deux coups douteux",
+      alt="Correction de Choix du coup sur une position du championnat du monde 1963 : quatre coups classés, le coup joué Nxe4 est le meilleur, deux imprécisions",
       caption="Le coup joué Nxe4 est le meilleur et a été trouvé. Qh2, le seul autre coup valable, aurait dû être 2e.",
       body="""
 <h2>Classer vos options</h2>

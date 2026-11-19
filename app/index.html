@@ -1669,14 +1669,14 @@ function labelColor(label){
   if(label==='Best') return 'var(--best-green)'; // a stronger, more saturated green than an ordinary Good move
   if(label==='Good') return 'var(--good)';
   if(label==='Ok') return 'var(--ok)';
-  if(label==='Dubious') return 'var(--dubious)';
+  if(label==='Inaccuracy') return 'var(--dubious)';
   if(label==='Mistake') return 'var(--mistake)';
   if(label==='Blunder') return 'var(--bad)';
   return 'var(--text-mute)';
 }
 
 
-const GRADES = ["<strong>Best</strong>: the engine's top choice.", "<strong>Good, Ok, Dubious, Mistake, Blunder</strong>: how much winning chance a move gives up."];
+const GRADES = ["<strong>Best</strong>: the engine's top choice.", "<strong>Good, Ok, Inaccuracy, Mistake, Blunder</strong>: how much winning chance a move gives up."];
 // Help (the ? button): `task` while you answer, `review` once checked. Each is a list of paragraphs:
 // a string, or [heading, text, bullets?] (text may be ''). In a review with an imbalance selected (a
 // row, or a plan line), that imbalance's own help shows instead (ASP_HELP).
@@ -1729,12 +1729,12 @@ const HELP = {
     task:[
       "Pick 1 to 3 strong moves for the side to play.",
       ['The idea', "Most mistakes come from playing the first move that looks good. List a few serious options first, then choose."],
-      ['Tips', '', ["Checks, captures and threats first, for both sides.", "Then moves that follow the plan: they make the most of your most decisive imbalances, or reduce your opponent's.", "Keep the game phase in mind. Opening: develop, get your king safe. Middlegame: better squares for your pieces, fix your weaknesses. Endgame: bring your king in, push passed pawns.", "Unsure? Pick fewer. A Dubious or worse move scores zero."]],
+      ['Tips', '', ["Checks, captures and threats first, for both sides.", "Then moves that follow the plan: they make the most of your most decisive imbalances, or reduce your opponent's.", "Keep the game phase in mind. Opening: develop, get your king safe. Middlegame: better squares for your pieces, fix your weaknesses. Endgame: bring your king in, push passed pawns.", "Unsure? Pick fewer. An inaccuracy or worse scores zero."]],
     ],
     review:[
-      ['Score', '', ["Each move is compared with the engine's best.", "Dubious or worse scores zero."]],
+      ['Score', '', ["Each move is compared with the engine's best.", "An inaccuracy or worse scores zero."]],
       ['Grades', '', GRADES],
-      ['Lists', '', ["Tap a list's title to show its arrows.", "Greyed-out moves are Dubious or worse."]],
+      ['Lists', '', ["Tap a list's title to show its arrows.", "Greyed-out moves are inaccuracies or worse."]],
     ],
   },
   final: {
@@ -1746,7 +1746,7 @@ const HELP = {
       ['Tips', '', ["Check each move for a blunder: your opponent's checks, captures and threats after it. A move that drops material or exposes your king generally goes down, however menacing it looks.", "Prefer moves that make the most of your advantages, or reduce your opponent's.", "Two moves look equal? Don't spend too long: if they really are close, the choice won't change much.", "Find the best move first. It's half the score."]],
     ],
     review:[
-      ['Score', '', ["1st place: 50%, 2nd: 30%, 3rd: 20%.", "Each place is compared with the best move left: full points if yours is as good, zero if it's Dubious or worse."]],
+      ['Score', '', ["1st place: 50%, 2nd: 30%, 3rd: 20%.", "Each place is compared with the best move left: full points if yours is as good, zero if it's an inaccuracy or worse."]],
       ['Grades', '', GRADES.concat(["<strong>Game move</strong>: played in the game."])],
     ],
   },
@@ -2244,7 +2244,7 @@ function fmtSigned(info){
 // Lichess's own model for turning a centipawn/mate score into an estimated win percentage for
 // whoever is to move (the exact curve their client and server code both use — a logistic over
 // centipawns, saturating at 0/100 for a mate score). The single source of truth for "win%"
-// throughout the app — the Dubious/Mistake/Blunder thresholds below, the eval bar (cpToPct,
+// throughout the app — the Inaccuracy/Mistake/Blunder thresholds below, the eval bar (cpToPct,
 // above), and the Board-analysis accuracy score all read from this one curve.
 function winPercent(cp, mate){
   if(mate!=null) return mate>0 ? 100 : 0;
@@ -2262,7 +2262,7 @@ function winPercent(cp, mate){
 // up against the best line, not by a fixed centipawn amount — the same numeric slip matters far
 // more near an even position than once one side is already close to winning or losing, and a
 // win%-based cutoff tracks that automatically. Lichess's own published thresholds only start at
-// >=30 points → Blunder, >=20 → Mistake, >=10 → Dubious (their "Inaccuracy") — anything under 10
+// >=30 points → Blunder, >=20 → Mistake, >=10 → Inaccuracy (their "Inaccuracy") — anything under 10
 // is just "not annotated" on their site, which in practice lumps a near-perfect move together
 // with one that's already given up most of that 10-point budget. "Ok" splits that unannotated
 // range in two — there's no published standard for where, so it's our own extension, done the
@@ -2273,7 +2273,7 @@ function labelFromWinDrop(winDrop, isTop){
   if(isTop) return {label:'Best', category:'good'};
   if(winDrop>=30) return {label:'Blunder', category:'bad'};
   if(winDrop>=20) return {label:'Mistake', category:'bad'};
-  if(winDrop>=10) return {label:'Dubious', category:'dubious'};
+  if(winDrop>=10) return {label:'Inaccuracy', category:'dubious'};
   if(winDrop>=3) return {label:'Ok', category:'ok'};
   return {label:'Good', category:'good'};
 }
@@ -2442,10 +2442,10 @@ function moverScore(l){
 // Candidate moves accuracy — distance from the position's evaluation.
 // The position's evaluation is the evaluation of the engine's best move (#1), so a move's
 // "distance" is how far below #1 it lands, from the side to move's point of view, capped at the
-// Dubious distance: how far a move has to fall to lose 10 points of winning chances (the same
-// line where the review labels a move Dubious). N = how many moves the player picked (1–3).
-//   100% = the engine's top N added up (#1 is 0; its #2/#3 count only if not Dubious or worse)
-//     0% = N × the Dubious distance (every pick Dubious or worse)
+// Inaccuracy distance: how far a move has to fall to lose 10 points of winning chances (the same
+// line where the review labels a move Inaccuracy). N = how many moves the player picked (1–3).
+//   100% = the engine's top N added up (#1 is 0; its #2/#3 count only if not Inaccuracy or worse)
+//     0% = N × the Inaccuracy distance (every pick Inaccuracy or worse)
 //   Yours = your picks' capped distances added up; accuracy is where that falls between the two.
 // No pairing, no ranks. Everything comes from the one combined evaluation.
 function dubiousDistance(bestCp){
@@ -2476,8 +2476,8 @@ function pickAccuracyPct(picksIn, evalData){
 // Move selection accuracy — each place against the best move not placed yet.
 // Going down your ranking, each of your first three places compares the move you put there with
 // the best of the moves you haven't placed so far: how far below it your move is (side to move,
-// centipawns), capped at the Dubious distance as in Candidate moves. Same strength = the place's
-// full weight, a Dubious distance or more below = 0. Places weigh 50/30/20% — your first choice,
+// centipawns), capped at the Inaccuracy distance as in Candidate moves. Same strength = the place's
+// full weight, an Inaccuracy distance or more below = 0. Places weigh 50/30/20% — your first choice,
 // the move you'd play, counts most; the 4th place is whatever is left, so it isn't scored.
 const RANK_WEIGHTS = [0.5, 0.3, 0.2];
 function rankAccuracyPct(orderIds, cpById){
@@ -3058,9 +3058,9 @@ function finalMoves(p){
 }
 // The four moves: the best move; the game move; then, down the top 5, moves whose grade isn't
 // represented yet; then moves from the least-represented grades. At most one move per bad grade
-// (Dubious, Mistake, Blunder), so bad moves can be told apart; only if the top 5 leave no other
+// (Inaccuracy, Mistake, Blunder), so bad moves can be told apart; only if the top 5 leave no other
 // choice is a bad grade repeated.
-const BAD_GRADES = ['Dubious','Mistake','Blunder'];
+const BAD_GRADES = ['Inaccuracy','Mistake','Blunder'];
 // A position's top 5 (side to move's view) and the game move's value, from searches made before: your game's pass (the
 // game move from the next position's search), or the master pass's, shipped in master-evals.json (fields 3 and 4).
 // null when there's none (the app searches then).
@@ -3095,7 +3095,7 @@ function pickFinalUcis(p, disc){
   const repeatsBad = l=>BAD_GRADES.includes(gradeOf(l)) && have().includes(gradeOf(l));
   while(picks.length<4){
     const left = lines.filter(l=>!picks.some(m=>m.uci===l.uci));
-    // never two moves of one bad grade (Dubious, Mistake, Blunder) when the search allows it; otherwise (this
+    // never two moves of one bad grade (Inaccuracy, Mistake, Blunder) when the search allows it; otherwise (this
     // search drifting from the check the position passed, ~1 in 15) four moves anyway: their order still counts
     const rest = left.some(l=>!repeatsBad(l)) ? left.filter(l=>!repeatsBad(l)) : left;
     if(!rest.length) break;
@@ -4632,7 +4632,7 @@ const GHOST_IMBALANCES = [
   `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div>${aspectsGridHtml(null, null, 0, true)}${GHOST_ACTIONS}`,
 ];
 function ghostCandidates(){
-  const mini = `<div class="mini-row"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span><span class="mini-result"><span class="mini-label">Dubious</span><span class="move-eval">−1.6</span></span></div>`;
+  const mini = `<div class="mini-row"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span><span class="mini-result"><span class="mini-label">Inaccuracy</span><span class="move-eval">−1.6</span></span></div>`;
   const col = `<div class="review-col"><div class="col-toggle"><span class="col-toggle-box"></span>Top 3 moves</div>${mini.repeat(3)}</div>`;
   const pick = `<div class="review-row pick-row"><div class="move-tag"><span class="num">1</span><span class="move-chip" style="background:var(--text-mute)">Qxd8+</span></div><span class="del-btn">✕</span></div>`;
   return [
@@ -4643,7 +4643,7 @@ function ghostCandidates(){
 function ghostFinal(){
   const chip = `<span class="move-chip" style="background:var(--text-mute)">Qxd8+</span>`;
   const rank = `<div class="rate-row"><div class="move-tag"><span class="num">1</span>${chip}</div><span class="drag-handle">⠿</span></div>`;
-  const rev = tag=>`<div class="review-row"><div class="move-tag"><span class="num">1</span>${chip}${tag ? '<span class="badges"><span class="badge">Game move</span></span>' : ''}</div><div class="move-result"><span class="grade">Dubious</span><span class="move-eval">−1.6</span></div></div>`;
+  const rev = tag=>`<div class="review-row"><div class="move-tag"><span class="num">1</span>${chip}${tag ? '<span class="badges"><span class="badge">Game move</span></span>' : ''}</div><div class="move-result"><span class="grade">Inaccuracy</span><span class="move-eval">−1.6</span></div></div>`;
   return [
     `<p class="prompt top">Order the moves, best first.</p><div>${rank.repeat(4)}</div><div class="actions-row"><span class="btn">Check</span></div>`,
     `<div class="score"><span class="score-num">100%</span><span class="score-label">Accuracy</span></div><div class="rev-list">${rev(true)}${rev(false).repeat(3)}</div>${GHOST_ACTIONS}`,
@@ -5412,7 +5412,7 @@ function renderHome(){
 // Your own games (synced from Lichess and Chess.com; inside Claude, added as a Lichess file) become
 // positions for the three exercises:
 //  - Candidate moves and Move selection: the position just before a move of yours that lost 10+
-//    points of winning chances (Dubious or worse); your move is the game move. Each mistake goes
+//    points of winning chances (Inaccuracy or worse); your move is the game move. Each mistake goes
 //    into Candidate moves, and into Move selection when it has at least 4 legal moves and its four
 //    moves are spread enough to rank (finalSpreadOk, the same rule as the master positions').
 //  - the quiet positions (Imbalance reading, the Plan finder): like the master games (middlegame and endgame starts, then positions at
@@ -6592,7 +6592,7 @@ function renderCandidates(){
     if(canSort && s.sortDone){
       mine = mine.slice().sort((a,b)=>pickSortKey(b) - pickSortKey(a)).map((r,i)=>({ ...r, num:String(i+1) }));
     }
-    // List 2: the engine's top 3, whatever you picked. Anything already Dubious or worse (10+ win%
+    // List 2: the engine's top 3, whatever you picked. Anything already Inaccuracy or worse (10+ win%
     // points behind the best) is greyed out: it's in the list only because there aren't that many good moves.
     let nextTop = 0;
     const topN = 3;
@@ -7346,7 +7346,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Best": "Meilleur",
 "Good": "Bon",
 "Ok": "Correct",
-"Dubious": "Douteux",
+"Inaccuracy": "Imprécision",
 "Mistake": "Erreur",
 "Blunder": "Gaffe",
 "A known ending (Stockfish scores it on its own): only Material is scored.": "Une finale connue (Stockfish l'évalue à part) : seul le Matériel est noté.",
@@ -7563,8 +7563,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Urgent: the right answer, full points (green); anything else, nothing (red).": "Urgence : la bonne réponse, tous les points (vert) ; le reste, rien (rouge).",
 "Who's better: the right answer, full points (green); within 0.15 of the ±0.5 line, the neighbouring answer, half (yellow-green).": "Qui est mieux : la bonne réponse, tous les points (vert) ; à moins de 0,15 de la limite de ±0,5, la réponse voisine, la moitié (vert-jaune).",
 "Each move is compared with the engine's best.": "Chaque coup est comparé au meilleur du moteur.",
-"Dubious or worse scores zero.": "Douteux ou pire ne rapporte rien.",
-"Greyed-out moves are Dubious or worse.": "Les coups grisés sont Douteux ou pire.",
+"An inaccuracy or worse scores zero.": "Une imprécision ou pire ne rapporte rien.",
+"Greyed-out moves are inaccuracies or worse.": "Les coups grisés sont des imprécisions ou pire.",
 "Each imbalance compares both sides: = balanced; + or ++ a small or big edge for White, − or −− for Black.": "Chaque déséquilibre compare les deux camps : = équilibré ; + ou ++ un petit ou un gros avantage pour les Blancs, − ou −− pour les Noirs.",
 "Enemy threats: parry first, or counter with a bigger one.": "Menaces adverses : parez d'abord, ou répondez par une plus forte.",
 "Worse pieces: improve the worst one, trade the enemy's best one.": "Pièces moins bonnes : améliorez la pire, échangez la meilleure de l'adversaire.",
@@ -7613,7 +7613,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Prefer moves that make the most of your advantages, or reduce your opponent's.": "Préférez les coups qui tirent le meilleur de vos avantages, ou réduisent ceux de l'adversaire.",
 "Two moves look equal? Don't spend too long: if they really are close, the choice won't change much.": "Deux coups se valent ? N'y passez pas trop de temps : s'ils sont vraiment proches, le choix ne changera pas grand-chose.",
 "Checks, captures and threats first, for both sides.": "Échecs, prises et menaces d'abord, pour les deux camps.",
-"Good, Ok, Dubious, Mistake, Blunder": "Bon, Correct, Douteux, Erreur, Gaffe",
+"Good, Ok, Inaccuracy, Mistake, Blunder": "Bon, Correct, Imprécision, Erreur, Gaffe",
 "Inspired by Stockfish's former evaluation system.": "Inspiré de l'ancien système d'évaluation de Stockfish.",
 "Mates count in King safety.": "Les mats comptent dans la Sécurité du roi.",
 "Tap a list's title to show its arrows.": "Touchez le titre d'une liste pour afficher ses flèches.",
@@ -7622,10 +7622,10 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Colours": "Couleurs",
 "Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all.": "Les notes ne s'additionnent pas simplement. Un gros déséquilibre peut l'emporter sur plusieurs petits, et la tactique prime sur tout.",
 "Pick 1 to 3 strong moves for the side to play.": "Choisissez 1 à 3 bons coups pour le camp au trait.",
-"Unsure? Pick fewer. A Dubious or worse move scores zero.": "Un doute ? Choisissez-en moins. Un coup Douteux ou pire ne rapporte rien.",
+"Unsure? Pick fewer. An inaccuracy or worse scores zero.": "Un doute ? Choisissez-en moins. Une imprécision ou pire ne rapporte rien.",
 "Find the best move first. It's half the score.": "Trouvez d'abord le meilleur coup. Il vaut la moitié du score.",
 "1st place: 50%, 2nd: 30%, 3rd: 20%.": "1re place : 50 %, 2e : 30 %, 3e : 20 %.",
-"Each place is compared with the best move left: full points if yours is as good, zero if it's Dubious or worse.": "Chaque place est comparée au meilleur coup restant : tous les points si le vôtre le vaut, zéro s'il est Douteux ou pire.",
+"Each place is compared with the best move left: full points if yours is as good, zero if it's an inaccuracy or worse.": "Chaque place est comparée au meilleur coup restant : tous les points si le vôtre le vaut, zéro si c'est une imprécision ou pire.",
 ": played in the game.": " : joué dans la partie.",
 "Pawn 1, knight 3, bishop 3, rook 5, queen 9.": "Pion 1, cavalier 3, fou 3, tour 5, dame 9.",
 "Ahead: trade pieces, not pawns. Head for the endgame.": "En avance : échangez les pièces, pas les pions. Allez vers la finale.",
@@ -7904,7 +7904,7 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Best": "Bester",
 "Good": "Gut",
 "Ok": "Ok",
-"Dubious": "Zweifelhaft",
+"Inaccuracy": "Ungenauigkeit",
 "Mistake": "Fehler",
 "Blunder": "Patzer",
 "A known ending (Stockfish scores it on its own): only Material is scored.": "Ein bekanntes Endspiel (Stockfish bewertet es gesondert): Nur Material wird bewertet.",
@@ -8121,8 +8121,8 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Urgent: the right answer, full points (green); anything else, nothing (red).": "Dringend: die richtige Antwort, volle Punkte (grün); alles andere, nichts (rot).",
 "Who's better: the right answer, full points (green); within 0.15 of the ±0.5 line, the neighbouring answer, half (yellow-green).": "Wer steht besser: die richtige Antwort, volle Punkte (grün); innerhalb von 0,15 um die Grenze von ±0,5 die benachbarte Antwort, die Hälfte (gelbgrün).",
 "Each move is compared with the engine's best.": "Jeder Zug wird mit dem besten der Engine verglichen.",
-"Dubious or worse scores zero.": "Zweifelhaft oder schlechter bringt nichts.",
-"Greyed-out moves are Dubious or worse.": "Ausgegraute Züge sind Zweifelhaft oder schlechter.",
+"An inaccuracy or worse scores zero.": "Eine Ungenauigkeit oder schlechter bringt nichts.",
+"Greyed-out moves are inaccuracies or worse.": "Ausgegraute Züge sind Ungenauigkeiten oder schlechter.",
 "Each imbalance compares both sides: = balanced; + or ++ a small or big edge for White, − or −− for Black.": "Jedes Ungleichgewicht vergleicht beide Seiten: = ausgeglichen; + oder ++ ein kleiner oder großer Vorteil für Weiß, − oder −− für Schwarz.",
 "Enemy threats: parry first, or counter with a bigger one.": "Gegnerische Drohungen: zuerst abwehren oder mit einer größeren kontern.",
 "Worse pieces: improve the worst one, trade the enemy's best one.": "Schlechtere Figuren: die schlechteste verbessern, die beste des Gegners tauschen.",
@@ -8171,7 +8171,7 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Prefer moves that make the most of your advantages, or reduce your opponent's.": "Bevorzuge Züge, die das Beste aus deinen Vorteilen machen oder die des Gegners verringern.",
 "Two moves look equal? Don't spend too long: if they really are close, the choice won't change much.": "Zwei Züge sehen gleich aus? Verliere nicht zu viel Zeit: Wenn sie wirklich nah beieinander liegen, ändert die Wahl wenig.",
 "Checks, captures and threats first, for both sides.": "Zuerst Schachs, Schlagzüge und Drohungen, für beide Seiten.",
-"Good, Ok, Dubious, Mistake, Blunder": "Gut, Ok, Zweifelhaft, Fehler, Patzer",
+"Good, Ok, Inaccuracy, Mistake, Blunder": "Gut, Ok, Ungenauigkeit, Fehler, Patzer",
 "Inspired by Stockfish's former evaluation system.": "Angelehnt an das frühere Bewertungssystem von Stockfish.",
 "Mates count in King safety.": "Matts zählen bei der Königssicherheit.",
 "Tap a list's title to show its arrows.": "Tippe auf den Titel einer Liste, um ihre Pfeile zu zeigen.",
@@ -8180,10 +8180,10 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Colours": "Farben",
 "Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all.": "Bewertungen addieren sich nicht einfach. Ein großes Ungleichgewicht kann mehrere kleine aufwiegen, und Taktik schlägt sie alle.",
 "Pick 1 to 3 strong moves for the side to play.": "Wähle 1 bis 3 starke Züge für die Seite am Zug.",
-"Unsure? Pick fewer. A Dubious or worse move scores zero.": "Unsicher? Wähle weniger. Ein Zweifelhafter oder schlechterer Zug bringt nichts.",
+"Unsure? Pick fewer. An inaccuracy or worse scores zero.": "Unsicher? Wähle weniger. Eine Ungenauigkeit oder schlechter bringt nichts.",
 "Find the best move first. It's half the score.": "Finde zuerst den besten Zug. Er ist die halbe Wertung.",
 "1st place: 50%, 2nd: 30%, 3rd: 20%.": "1. Platz: 50 %, 2.: 30 %, 3.: 20 %.",
-"Each place is compared with the best move left: full points if yours is as good, zero if it's Dubious or worse.": "Jeder Platz wird mit dem besten verbleibenden Zug verglichen: volle Punkte, wenn deiner gleich gut ist, nichts, wenn er Zweifelhaft oder schlechter ist.",
+"Each place is compared with the best move left: full points if yours is as good, zero if it's an inaccuracy or worse.": "Jeder Platz wird mit dem besten verbleibenden Zug verglichen: volle Punkte, wenn deiner gleich gut ist, nichts, wenn er eine Ungenauigkeit oder schlechter ist.",
 ": played in the game.": ": in der Partie gespielt.",
 "Pawn 1, knight 3, bishop 3, rook 5, queen 9.": "Bauer 1, Springer 3, Läufer 3, Turm 5, Dame 9.",
 "Ahead: trade pieces, not pawns. Head for the endgame.": "Im Vorteil: Figuren tauschen, keine Bauern. Steuere aufs Endspiel zu.",
@@ -8395,7 +8395,7 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Best": "Mejor",
 "Good": "Buena",
 "Ok": "Aceptable",
-"Dubious": "Dudosa",
+"Inaccuracy": "Imprecisión",
 "Mistake": "Error",
 "Blunder": "Error grave",
 "A known ending (Stockfish scores it on its own): only Material is scored.": "Un final conocido (Stockfish lo evalúa aparte): solo se puntúa el Material.",
@@ -8612,8 +8612,8 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Urgent: the right answer, full points (green); anything else, nothing (red).": "Urgente: la respuesta correcta, todos los puntos (verde); lo demás, nada (rojo).",
 "Who's better: the right answer, full points (green); within 0.15 of the ±0.5 line, the neighbouring answer, half (yellow-green).": "Quién está mejor: la respuesta correcta, todos los puntos (verde); a menos de 0,15 del límite de ±0,5, la respuesta vecina, la mitad (verde amarillento).",
 "Each move is compared with the engine's best.": "Cada jugada se compara con la mejor del motor.",
-"Dubious or worse scores zero.": "Dudosa o peor no suma nada.",
-"Greyed-out moves are Dubious or worse.": "Las jugadas en gris son Dudosas o peores.",
+"An inaccuracy or worse scores zero.": "Una imprecisión o peor no suma nada.",
+"Greyed-out moves are inaccuracies or worse.": "Las jugadas en gris son imprecisiones o peores.",
 "Each imbalance compares both sides: = balanced; + or ++ a small or big edge for White, − or −− for Black.": "Cada desequilibrio compara los dos bandos: = equilibrado; + o ++ una ventaja pequeña o grande para las blancas, − o −− para las negras.",
 "Enemy threats: parry first, or counter with a bigger one.": "Amenazas rivales: páralas primero, o responde con una mayor.",
 "Worse pieces: improve the worst one, trade the enemy's best one.": "Peores piezas: mejora la peor, cambia la mejor del rival.",
@@ -8662,7 +8662,7 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Prefer moves that make the most of your advantages, or reduce your opponent's.": "Prefiere las jugadas que sacan el máximo de tus ventajas o reducen las del rival.",
 "Two moves look equal? Don't spend too long: if they really are close, the choice won't change much.": "¿Dos jugadas parecen iguales? No pierdas mucho tiempo: si de verdad están cerca, la elección no cambiará mucho.",
 "Checks, captures and threats first, for both sides.": "Primero jaques, capturas y amenazas, de ambos bandos.",
-"Good, Ok, Dubious, Mistake, Blunder": "Buena, Aceptable, Dudosa, Error, Error grave",
+"Good, Ok, Inaccuracy, Mistake, Blunder": "Buena, Aceptable, Imprecisión, Error, Error grave",
 "Inspired by Stockfish's former evaluation system.": "Inspirado en el antiguo sistema de evaluación de Stockfish.",
 "Mates count in King safety.": "Los mates cuentan en Seguridad del rey.",
 "Tap a list's title to show its arrows.": "Toca el título de una lista para mostrar sus flechas.",
@@ -8671,10 +8671,10 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Colours": "Colores",
 "Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all.": "Las calificaciones no se suman sin más. Un gran desequilibrio puede pesar más que varios pequeños, y la táctica les gana a todos.",
 "Pick 1 to 3 strong moves for the side to play.": "Elige de 1 a 3 jugadas fuertes para el bando que juega.",
-"Unsure? Pick fewer. A Dubious or worse move scores zero.": "¿Dudas? Elige menos. Una jugada Dudosa o peor no suma nada.",
+"Unsure? Pick fewer. An inaccuracy or worse scores zero.": "¿Dudas? Elige menos. Una imprecisión o peor no suma nada.",
 "Find the best move first. It's half the score.": "Encuentra primero la mejor jugada. Vale la mitad de la puntuación.",
 "1st place: 50%, 2nd: 30%, 3rd: 20%.": "1.er puesto: 50 %, 2.º: 30 %, 3.º: 20 %.",
-"Each place is compared with the best move left: full points if yours is as good, zero if it's Dubious or worse.": "Cada puesto se compara con la mejor jugada restante: todos los puntos si la tuya es igual de buena, cero si es Dudosa o peor.",
+"Each place is compared with the best move left: full points if yours is as good, zero if it's an inaccuracy or worse.": "Cada puesto se compara con la mejor jugada restante: todos los puntos si la tuya es igual de buena, cero si es una imprecisión o peor.",
 ": played in the game.": ": jugada en la partida.",
 "Pawn 1, knight 3, bishop 3, rook 5, queen 9.": "Peón 1, caballo 3, alfil 3, torre 5, dama 9.",
 "Ahead: trade pieces, not pawns. Head for the endgame.": "Con ventaja: cambia piezas, no peones. Ve hacia el final.",
@@ -8886,7 +8886,7 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Best": "Migliore",
 "Good": "Buona",
 "Ok": "Accettabile",
-"Dubious": "Dubbia",
+"Inaccuracy": "Imprecisione",
 "Mistake": "Errore",
 "Blunder": "Errore grave",
 "A known ending (Stockfish scores it on its own): only Material is scored.": "Un finale noto (Stockfish lo valuta a parte): conta solo il Materiale.",
@@ -9103,8 +9103,8 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Urgent: the right answer, full points (green); anything else, nothing (red).": "Urgente: la risposta giusta, tutti i punti (verde); il resto, niente (rosso).",
 "Who's better: the right answer, full points (green); within 0.15 of the ±0.5 line, the neighbouring answer, half (yellow-green).": "Chi sta meglio: la risposta giusta, tutti i punti (verde); entro 0,15 dal limite di ±0,5, la risposta vicina, metà (giallo-verde).",
 "Each move is compared with the engine's best.": "Ogni mossa è confrontata con la migliore del motore.",
-"Dubious or worse scores zero.": "Dubbia o peggio non vale niente.",
-"Greyed-out moves are Dubious or worse.": "Le mosse in grigio sono Dubbie o peggio.",
+"An inaccuracy or worse scores zero.": "Un'imprecisione o peggio non vale niente.",
+"Greyed-out moves are inaccuracies or worse.": "Le mosse in grigio sono imprecisioni o peggio.",
 "Each imbalance compares both sides: = balanced; + or ++ a small or big edge for White, − or −− for Black.": "Ogni squilibrio confronta i due lati: = equilibrato; + o ++ un vantaggio piccolo o grande per il Bianco, − o −− per il Nero.",
 "Enemy threats: parry first, or counter with a bigger one.": "Minacce avversarie: parale prima, o rispondi con una più forte.",
 "Worse pieces: improve the worst one, trade the enemy's best one.": "Pezzi peggiori: migliora il peggiore, cambia il migliore dell'avversario.",
@@ -9153,7 +9153,7 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Prefer moves that make the most of your advantages, or reduce your opponent's.": "Preferisci le mosse che sfruttano al meglio i tuoi vantaggi o riducono quelli dell'avversario.",
 "Two moves look equal? Don't spend too long: if they really are close, the choice won't change much.": "Due mosse sembrano equivalenti? Non perderci troppo tempo: se sono davvero vicine, la scelta non cambierà molto.",
 "Checks, captures and threats first, for both sides.": "Prima scacchi, catture e minacce, per entrambi i lati.",
-"Good, Ok, Dubious, Mistake, Blunder": "Buona, Accettabile, Dubbia, Errore, Errore grave",
+"Good, Ok, Inaccuracy, Mistake, Blunder": "Buona, Accettabile, Imprecisione, Errore, Errore grave",
 "Inspired by Stockfish's former evaluation system.": "Ispirato al vecchio sistema di valutazione di Stockfish.",
 "Mates count in King safety.": "I matti contano in Sicurezza del re.",
 "Tap a list's title to show its arrows.": "Tocca il titolo di un elenco per mostrarne le frecce.",
@@ -9162,10 +9162,10 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Colours": "Colori",
 "Grades don't simply add up. One big imbalance can outweigh several small ones, and tactics beat them all.": "I giudizi non si sommano semplicemente. Un grande squilibrio può pesare più di diversi piccoli, e la tattica batte tutti.",
 "Pick 1 to 3 strong moves for the side to play.": "Scegli da 1 a 3 mosse forti per il lato che muove.",
-"Unsure? Pick fewer. A Dubious or worse move scores zero.": "Dubbi? Scegline meno. Una mossa Dubbia o peggio non vale niente.",
+"Unsure? Pick fewer. An inaccuracy or worse scores zero.": "Dubbi? Scegline meno. Un'imprecisione o peggio non vale niente.",
 "Find the best move first. It's half the score.": "Trova prima la mossa migliore. Vale metà del punteggio.",
 "1st place: 50%, 2nd: 30%, 3rd: 20%.": "1º posto: 50%, 2º: 30%, 3º: 20%.",
-"Each place is compared with the best move left: full points if yours is as good, zero if it's Dubious or worse.": "Ogni posto è confrontato con la migliore mossa rimasta: tutti i punti se la tua è altrettanto buona, zero se è Dubbia o peggio.",
+"Each place is compared with the best move left: full points if yours is as good, zero if it's an inaccuracy or worse.": "Ogni posto è confrontato con la migliore mossa rimasta: tutti i punti se la tua è altrettanto buona, zero se è un'imprecisione o peggio.",
 ": played in the game.": ": giocata nella partita.",
 "Pawn 1, knight 3, bishop 3, rook 5, queen 9.": "Pedone 1, cavallo 3, alfiere 3, torre 5, donna 9.",
 "Ahead: trade pieces, not pawns. Head for the endgame.": "In vantaggio: cambia i pezzi, non i pedoni. Punta al finale.",
@@ -10070,7 +10070,7 @@ const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup"
   </div>`;
 // ---- Game review (beta): a whole game in the explorer, a master's or one of yours. Each position gets an evaluation
 // (yours: Lichess's analysis or the pass; the rest searched here, 0.4 s each, in the background), each move its grade
-// (the reviews' own: Best, Good, Ok, Dubious, Mistake, Blunder), and a chart of the game shows where it turned: tap
+// (the reviews' own: Best, Good, Ok, Inaccuracy, Mistake, Blunder), and a chart of the game shows where it turned: tap
 // it to go there. x.game: { src: 'masters' | 'mine', id, title, fens, sans, moves, E: [evaluations, White's view] }.
 const GAME_MS = 400, GAME_EVALS = new Map();   // (each game's evaluations, kept for the visit: reopened, it isn't searched again)
 // A game's positions, moves and the evaluations known so far (yours: Lichess's, the pass's, the review's; a master
@@ -10103,7 +10103,7 @@ function gameData(src, id){
   if(g && E[0].best===undefined){ const rv = reviewLine(g, 0); if(rv) E[0] = reviewEntry(rv, fens[0]); }
   return d;
 }
-// how many moves each side got Dubious or worse (the chart's dots), from the evaluations known so far
+// how many moves each side got Inaccuracy or worse (the chart's dots), from the evaluations known so far
 function gameErrors(src, id){
   const d = gameData(src, id); if(!d) return null;
   const last = d.fens.length - 1; for(let k = 1; k < last; k++) if(!d.E[k]) return null;   // (not every position evaluated yet: none shown; the last can be the game's end)
@@ -10198,7 +10198,7 @@ function gameReviewHtml(x){
   const G = x.game;
   if(!G) return `<div class="xpg xpg-none"><p class="xpg-empty">Load a master game or one of yours: each move gets its grade, and a chart shows where the game turned.</p><button class="btn secondary xpg-load" data-load-game>Load a game</button></div>`;   // (the title's button, at hand)
   // the chart: Black's colour behind, White's below the curve (its share of winning chances), a thin line at 0.0,
-  // the errors (Dubious or worse) as dots over it all, the position shown as a gold line
+  // the errors (Inaccuracy or worse) as dots over it all, the position shown as a gold line
   const n = G.fens.length - 1, W = 300, H = 100, X = k=>n ? k * W / n : 0, Y = e=>H - winPercent(e.cp, e.mate) * H / 100;
   let pts = [], last = 0;
   for(let k = 0; k <= n; k++){ if(G.E[k]){ pts.push([X(k), Y(G.E[k])]); last = k; } }
@@ -10225,7 +10225,7 @@ function gameProgHtml(G){
 }
 // Statistics: each player's accuracy (per move, from the drop in winning chances, as Lichess counts it; averaged)
 // and how many moves got each grade
-const GRADE_ORDER = ['Best', 'Good', 'Ok', 'Dubious', 'Mistake', 'Blunder'];
+const GRADE_ORDER = ['Best', 'Good', 'Ok', 'Inaccuracy', 'Mistake', 'Blunder'];
 function gameStatsHtml(x){
   const G = x.game;
   if(!G) return gameReviewHtml(x);
@@ -10245,7 +10245,7 @@ function gameStatsHtml(x){
       ${gameProgHtml(G)}
     </div>`;
 }
-// the move just played, graded Dubious or worse: its sign at the top right of its square (?!, ?, ??)
+// the move just played, graded Inaccuracy or worse: its sign at the top right of its square (?!, ?, ??)
 // Any move shown (the game's, or one played on the board): its grade from the evaluations before and after it (the
 // game's where the position is the game's, else the explorer's own search, once it's done)
 function xpEvalAt(x, i){
@@ -10375,7 +10375,7 @@ function openGamePicker(){
         const i = GAME_INFO[id] || {}, mv = Math.ceil(GAME_MOVES[id].split(' ').length / 2);
         return { key:'masters:' + id, src:'masters', id, t:i.title || id, res:res(i.result), sub:[fmtGameDate(i.date), i.event && tr(i.event)].filter(Boolean).join(' · '), mv:mv + ' moves' }; });
     // (each row: where it comes from; then, its own line on a phone: its length and errors)
-    // and how many moves each side got Dubious or worse ("errors": not to mix them up with the Mistake grade)
+    // and how many moves each side got Inaccuracy or worse ("errors": not to mix them up with the Mistake grade)
     // (counted after the list shows, a few rows at a time: the page stays responsive)
     const shown = rows.slice(0, 150), run = gp.run = {};
     const fill = i=>{ if(gp.run!==run || !document.getElementById('gpModal')) return;
