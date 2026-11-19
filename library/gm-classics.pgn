@@ -21385,3 +21385,25 @@ Qf6 31.Rab3 Qf7 32.Rc3 Qf5 33.Qd1 Qe4 34.Qg4 Qf5 35.Qd1 Qe4 36.b3 Rcc7 37.f3 Qf5
 45.b4 Rcf7 46.Rf3 Rc7 47.Rb3 bxc6 48.dxc6 Rh1 49.Rc3 Rb1 50.Rc2 Rb3 51.b5 axb5
 52.Rb7 Rc8 53.c7 f3 54.gxf3+ Rxf3+ 55.Ke2 Rh3 56.a6 b4 57.Rb8 Rh2+ 58.Kf1 Rh1+
 59.Kg2 b3 60.Rc3 1-0
+
+[Event "FIDE World Championship 2004"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Tripoli LBA"]
+[Date "2004.07.13"]
+[Round "7.8"]
+[Stage "Tiebreak"]
+[White "Kasimdzhanov, Rustam"]
+[Black "Adams, Michael"]
+[Result "1/2-1/2"]
+[WhiteElo "2652"]
+[BlackElo "2731"]
+[ECO "C69"]
+
+1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.O-O Qd6 6.d3 Ne7 7.Be3 Ng6 8.Nbd2 c5
+9.a4 b6 10.Nc4 Qe6 11.Ng5 Qf6 12.Qh5 h6 13.Nh3 Bxh3 14.Qxh3 Bd6 15.Qg4 Rd8 16.g3
+h5 17.Qe2 Qe6 18.f4 exf4 19.gxf4 Qg4+ 20.Qxg4 hxg4 21.Rae1 Kd7 22.e5 Be7 23.f5
+Nh4 24.e6+ fxe6 25.Ne5+ Kc8 26.fxe6 Rdf8 27.Rf7 Bd6 28.Bg5 Nf3+ 29.Nxf3 gxf3
+30.h4 Rxf7 31.exf7 Kd7 32.Re8 Rxe8 33.fxe8=Q+ Kxe8 34.Kf2 Kf7 35.Kxf3 g6 36.Kg4
+Ke6 37.Bd2 Be7 38.Bf4 c6 39.c4 b5 40.b3 Bf6 41.Be3 Be7 42.Bf4 Bf8 43.Kg5 Kf7
+44.Kg4 Kf6 45.Bg3 Bh6 46.Bd6 Be3 47.Bg3 Ke6 48.Bc7 1/2-1/2
