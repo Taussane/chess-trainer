@@ -1,5 +1,5 @@
 # Writes each master game's players ("Botvinnik – Tal"), its result ("1-0"), its phases (ph: library/master-phases.json), their FIDE Elo from 1971 (we, be), the day it joined the library (Added), its date ("1981-05-12", or "1981" when only the year is known) and short event
-# name (the library's EventShort header, written by hand: "USSR Championship", "Leipzig Olympiad"…)
+# name (the library's EventShort header, written by hand: "World Championship", "PCA World Championship", "Leipzig Olympiad"…)
 # into the app (the /*GAME_INFO*/ ... /*END GAME_INFO*/ block of app/index.html), shown above the board.
 # Game ids are the finder's: g0, g1, … in the order of library/gm-classics.pgn (checked against data/stats.json).
 # Usage: python3 scripts/master-info.py   (inject.py runs it too)
