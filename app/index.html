@@ -10319,11 +10319,11 @@ function openGamePicker(){
   { const r = document.getElementById('gpReset'); if(r) r.onclick = ()=>{ close(); const ret = explorer.ret; explorer = null; explorerInit(); explorer.ret = ret; render(); }; }   // (no game: the explorer's own board, from the start)
   div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')) close(); });
   document.getElementById('gpClose').onclick = close;
-  // the drop-down lists: Masters by player, event and decade; yours by speed, result and site (each "All" first)
+  // the drop-down lists: Masters by player and decade; yours by speed, result and site (each its name first, for all);
+  // each choice with its number of games, the other lists' choices applied
   const mineRes = g=>!g.result || g.result==='*' ? null : g.result==='1/2-1/2' ? 'draw' : (g.result==='1-0')===(g.me==='w') ? 'win' : 'loss';
   const FILTERS = {
     masters: [['player', 'Player', ()=>{ const n = {}; Object.values(GAME_INFO).forEach(i=>String(i.title || '').split(' – ').forEach(x=>{ if(x) n[x] = (n[x] || 0) + 1; })); return Object.keys(n).sort().map(x=>[x, x]); }, (id, v)=>String((GAME_INFO[id] || {}).title || '').split(' – ').includes(v)],
-              ['event', 'Event', ()=>[...new Set(Object.values(GAME_INFO).filter(i=>!i.skip).map(i=>i.event).filter(Boolean))].sort().map(x=>[x, tr(x)]), (id, v)=>(GAME_INFO[id] || {}).event===v],
               ['decade', 'Decade', ()=>[...new Set(Object.values(GAME_INFO).map(i=>String(i.date || '').slice(0, 3)).filter(Boolean))].sort().reverse().map(d=>[d, d + '0–' + d.slice(2) + '9']), (id, v)=>String((GAME_INFO[id] || {}).date || '').startsWith(v)]],
     mine: [['speed', 'Speed', ()=>Object.keys(SPEED_NAMES).filter(k=>myGames.some(g=>g.speed===k)).map(k=>[k, SPEED_NAMES[k]]), (g, v)=>g.speed===v],
            ['result', 'Result', ()=>[['win', 'Won'], ['draw', 'Drawn'], ['loss', 'Lost']], (g, v)=>mineRes(g)===v],
@@ -10331,8 +10331,13 @@ function openGamePicker(){
   };
   const drawFilters = ()=>{
     const f = gp.f[gp.tab] = gp.f[gp.tab] || {};
-    document.getElementById('gpF').innerHTML = FILTERS[gp.tab].map(([k, l, opts])=>`<select class="gp-sel" data-gf="${k}" aria-label="${l}"><option value="">${l}</option>${opts().map(([v, t])=>`<option value="${escHtml(v)}"${f[k]===v ? ' selected' : ''}>${escHtml(t)}</option>`).join('')}</select>`).join('');
-    div.querySelectorAll('[data-gf]').forEach(el=>el.onchange = ()=>{ f[el.dataset.gf] = el.value || undefined; list(); });
+    const all = gp.tab==='mine' ? myGames : Object.keys(GAME_MOVES).filter(id=>!(GAME_INFO[id] || {}).skip);
+    const box = document.getElementById('gpF'); box.style.gridTemplateColumns = `repeat(${FILTERS[gp.tab].length}, minmax(0, 1fr))`;
+    box.innerHTML = FILTERS[gp.tab].map(([k, l, opts, test])=>{
+      const base = all.filter(x=>FILTERS[gp.tab].every(([k2, , , t2])=>k2===k || !f[k2] || t2(x, f[k2])));
+      return `<select class="gp-sel" data-gf="${k}" aria-label="${l}"><option value="">${l} (${base.length})</option>${opts().map(([v, t])=>[v, t, base.filter(x=>test(x, v)).length]).filter(([v, , n])=>n || f[k]===v)
+        .map(([v, t, n])=>`<option value="${escHtml(v)}"${f[k]===v ? ' selected' : ''}>${escHtml(t)} (${n})</option>`).join('')}</select>`; }).join('');
+    div.querySelectorAll('[data-gf]').forEach(el=>el.onchange = ()=>{ f[el.dataset.gf] = el.value || undefined; drawFilters(); list(); });
   };
   const list = ()=>{
     const f = gp.f[gp.tab] || {}, keep = x=>FILTERS[gp.tab].every(([k, , , test])=>!f[k] || test(x, f[k]));
