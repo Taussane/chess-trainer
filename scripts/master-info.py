@@ -1,4 +1,4 @@
-# Writes each master game's players ("Botvinnik – Tal"), its result ("1-0"), their FIDE Elo from 1971 (we, be), the day it joined the library (Added), its date ("1981-05-12", or "1981" when only the year is known) and short event
+# Writes each master game's players ("Botvinnik – Tal"), its result ("1-0"), its phases (ph: library/master-phases.json), their FIDE Elo from 1971 (we, be), the day it joined the library (Added), its date ("1981-05-12", or "1981" when only the year is known) and short event
 # name (the library's EventShort header, written by hand: "USSR Championship", "Leipzig Olympiad"…)
 # into the app (the /*GAME_INFO*/ ... /*END GAME_INFO*/ block of app/index.html), shown above the board.
 # Game ids are the finder's: g0, g1, … in the order of library/gm-classics.pgn (checked against data/stats.json).
@@ -9,6 +9,8 @@ pgn = (root/'library'/'gm-classics.pgn').read_text(encoding='utf-8')
 games = [g for g in re.split(r'\n\s*\n(?=\[Event )', pgn) if g.strip().startswith('[Event ')]
 stats = json.load(open(root/'data'/'stats.json', encoding='utf-8'))['games']
 assert len(games) == len(stats), (len(games), len(stats))
+phase_file = root/'library'/'master-phases.json'
+phases = json.load(open(phase_file, encoding='utf-8')) if phase_file.exists() else {}
 dates = {}
 for i, (g, s) in enumerate(zip(games, stats)):
     h = dict(re.findall(r'^\[(\w+)\s+"([^"]*)"\]', g, re.M))
@@ -19,6 +21,7 @@ for i, (g, s) in enumerate(zip(games, stats)):
     if h.get('EventShort'): info['event'] = h['EventShort']
     info['title'] = h.get('White', '').split(',')[0].strip() + ' – ' + h.get('Black', '').split(',')[0].strip()
     if h.get('Result') in ('1-0', '0-1', '1/2-1/2'): info['result'] = h['Result']
+    if s['id'] in phases: info['ph'] = phases[s['id']]   # (where its middlegame and endgame start: scripts/master-phases.js)
     if y.isdigit() and int(y) >= 1971:   # (FIDE's Elo: its first list is from 1971; no rating shown before)
         for k, c in (('WhiteElo', 'we'), ('BlackElo', 'be')):
             if h.get(k, '').isdigit(): info[c] = int(h[k])
