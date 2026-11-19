@@ -2570,11 +2570,11 @@ let sharedOpen = null;   // a position opened from a shared link: its exercise (
 const ctx = (a, r = routine) => testMode ? 't-' + a : replayMode ? 'x-' + a : rushMode ? 'z-' + a : (r ? 'r-' : '') + a + (source==='masters' ? '' : '@' + (source==='filter' ? 'filter.' + filterKey() : source));   // the open track for exercise `a`
 const orders = {}, seqBy = {}, store = {};
 const isTest = t=>t.startsWith('t-') || t.startsWith('x-') || t.startsWith('z-');   // fixed tracks: test positions, the replay ('x-'), a rush ('z-')
-// Where positions come from: the master games built into the app, your own games, or both (beta: a Filter in place of
-// Both: which games, which phases; never anything that gives an exercise's answer away)
-const SOURCES = BETA_SITE ? { masters:'Masters', mine:'My games', filter:'Filter' } : { masters:'Masters', mine:'My games', both:'Both' };
+// Where positions come from: the master games built into the app, your own games, or a Filter (which games, which
+// phases; never anything that gives an exercise's answer away; it replaced "Both")
+const SOURCES = { masters:'Masters', mine:'My games', filter:'Filter' };
 let source = 'masters';
-try{ let v = localStorage.getItem('cst.source'); if(BETA_SITE && v==='both') v = 'filter'; if(!BETA_SITE && v==='filter') v = 'both'; if(SOURCES[v]) source = v; }catch(e){}
+try{ let v = localStorage.getItem('cst.source'); if(v==='both') v = 'filter'; if(SOURCES[v]) source = v; }catch(e){}
 const FILTER_KEYS = ['masters', 'mine', 'opening', 'middlegame', 'endgame'];
 let posFilter = Object.fromEntries(FILTER_KEYS.map(k=>[k, true]));
 try{ const v = JSON.parse(localStorage.getItem('cst.filter') || 'null'); if(v) FILTER_KEYS.forEach(k=>{ if(typeof v[k]==='boolean') posFilter[k] = v[k]; }); }catch(e){}
@@ -6502,11 +6502,10 @@ function renderTests(){
     <div class="test-list">${TEST_POSITIONS.map((p,i)=>`
       <div class="test-item">
         <div class="test-name">${p.title}<small>${p.side==='w' ? 'White' : 'Black'} to play · game move ${fmtSan(p.hist.san, true, p.side)}</small></div>
-        <div class="test-go">${ACTIVITIES.filter(a=>!(a==='imbalances' && p.noImbalances)).map(a=>`<button class="chip-btn" data-i="${i}" data-a="${a}">${ACT_NAMES[a]}</button>`).join('')}${BETA && p.eval ? `<button class="chip-btn" data-i="${i}" data-pq="1">Plan finder</button>` : ''}</div>
+        <div class="test-go">${ACTIVITIES.filter(a=>!(a==='imbalances' && p.noImbalances)).map(a=>`<button class="chip-btn" data-i="${i}" data-a="${a}">${ACT_NAMES[a]}</button>`).join('')}</div>
       </div>`).join('')}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
-  app.querySelectorAll('.chip-btn[data-pq]').forEach(b=>b.onclick = ()=>{ planqTest(+b.dataset.i); });
   app.querySelectorAll('.chip-btn[data-a]').forEach(b=>b.onclick = ()=>{
     const a = b.dataset.a, t = 't-'+a, i = +b.dataset.i;
     testMode = true; routine = false;
