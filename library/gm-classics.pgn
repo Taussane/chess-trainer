@@ -21427,3 +21427,20 @@ h6 17.g5 hxg5 18.Bxg5 Nh7 19.Be3 Bb7 20.Rg1 Bf6 21.Rg3 d5 22.exd5 cxd5 23.Nxd5
 e4 24.Nxf6+ Qxf6 25.Be2 Qxf5 26.Qd4 g5 27.Rf1 Qg6 28.Bc4 Rac8 29.h4 Rxc4 30.bxc4
 g4 31.Rxg4 Qxg4 32.Rg1 Qxg1+ 33.Kxg1 f6 34.Qxa7 Rf7 35.Qb8+ Kg7 36.Qg3+ Kh8
 37.Bh6 1-0
+
+[Event "FIDE World Championship 1999"]
+[EventShort "World Championship"]
+[Added "2026.11.19"]
+[Site "Las Vegas USA"]
+[Date "1999.08.09"]
+[Round "4.1"]
+[White "Khalifman, Alexander"]
+[Black "Gelfand, Boris"]
+[Result "1/2-1/2"]
+[WhiteElo "2628"]
+[BlackElo "2713"]
+[ECO "B92"]
+
+1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6 6.Be2 e5 7.Nb3 Be7 8.Be3 O-O 9.g4
+Be6 10.g5 Nfd7 11.Qd2 a5 12.a4 Nc6 13.f4 f5 14.exf5 Bxf5 15.fxe5 dxe5 16.O-O-O
+Nb4 17.Rhf1 Be6 18.Rxf8+ Qxf8 19.Rf1 Qc8 20.Bb5 Qc7 21.Bxd7 1/2-1/2
