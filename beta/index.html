@@ -168,6 +168,7 @@
   .rc-tick{fill:var(--text-mute); font-size:18px; text-anchor:middle;} .rc-tick.rc-y{text-anchor:end;} .rc-tick.rc-start{text-anchor:start;} .rc-note{color:var(--text-mute); font-size:.78rem; margin-top:4px;}
   .rc-best{stroke:var(--text-mute); stroke-width:1.5; stroke-dasharray:5 5;} .rc-best-l{fill:var(--text-mute); font-size:17px;}
   .rc-legend{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:8px; font-size:.8rem; color:var(--text-mute);} .rc-legend i{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px;} .rc-legend b{color:var(--text);}
+  .rush-top{display:flex; align-items:baseline; gap:8px; font-variant-numeric:tabular-nums;} .rush-top small{color:var(--text-mute); font-size:.85rem;} .rush-top b{color:var(--text); font-size:1.5rem; line-height:1;}
   .rush-best{font-variant-numeric:tabular-nums; color:var(--text-mute);} .rush-best b{color:var(--text);}
   @media (max-width:480px){ .rush-stat b{font-size:1.8rem;} .rush-stat.rush-total b{font-size:2.4rem;} }
   .rush-pts{font-variant-numeric:tabular-nums; color:var(--text);}
@@ -3437,7 +3438,7 @@ function rushState(it){
 }
 function rushNextItem(){ const r = rush; while(r.queue.length && rushState(r.queue[0])==='failed') r.queue.shift(); rushFill(); return r.queue[0] || null; }
 function rushShow(it){
-  const r = rush; r.queue.shift(); r.shown++; r.cur = it; r.waitNext = false; r.shownAt = performance.now(); r.used = 0; rushFill();
+  const r = rush; r.queue.shift(); r.shown++; r.cur = it; r.waitNext = false; r.shownAt = performance.now(); r.usedMs = 0; rushFill();
   if(rushState(it)==='ready') rushGo(r); else r.phase = 'wait';
   rushMode = true; selSquare = null; promoPending = null; helpVisible = false;
   if(it.a==='planq'){ planq = it.q; screen = 'planq'; }
@@ -3445,9 +3446,9 @@ function rushShow(it){
   render();
 }
 // Check: the clock stops for the review
-function rushPause(){ if(rushMode && rush && (rush.phase==='run' || rush.phase==='wait')){ if(rush.phase==='run'){ rush.left = rushLeft(); rush.used = (rush.leftAt || 0) - rush.left; } rush.phase = 'review'; rush.waitNext = false; } }
+function rushPause(){ if(rushMode && rush && (rush.phase==='run' || rush.phase==='wait')){ if(rush.phase==='run'){ rush.left = rushLeft(); rush.usedMs = (rush.leftAt || 0) - rush.left; } rush.phase = 'review'; rush.waitNext = false; } }
 // A position's points, once its review has its accuracy (recordResult, planqRecord)
-function rushScored(a, p, acc){ if(rush) rush.items.push({ a, key: p.key, pts: Math.round(acc || 0), ms: Math.round(rush.used || 0) }); }
+function rushScored(a, p, acc){ if(rush) rush.items.push({ a, key: p.key, pts: Math.round(acc || 0), ms: Math.round(rush.usedMs || 0) }); }
 // Next position (from the review): shown at once, the clock going on once it can be answered
 function rushNext(){
   const r = rush;
@@ -3582,7 +3583,7 @@ function rushCountUp(r){
 function rushCard(){
   const n = v=>v!=null ? `<b>${v}</b>` : '—', top = (profile.rushTop || {}).mixed;   // (its best run's points per exercise, adding up to its best)
   return `<div class="routine rush-card">
-      <div class="routine-head"><span class="routine-title">Mixed rush</span><span class="routine-count${dataCls()}">Best ${n(rushBest('mixed'))}</span></div>
+      <div class="routine-head"><span class="routine-title">Mixed rush</span><span class="rush-top${dataCls()}"><small>Best run</small><b>${rushBest('mixed')!=null ? rushBest('mixed') : '—'}</b></span></div>
       ${ROUTINE.map(a=>`<div class="routine-row"><span>${ACT_NAMES[a]}</span><span class="rush-best${dataCls()}">${n(top && top.s ? top.s[a] || 0 : null)}</span></div>`).join('')}
       <button class="btn routine-btn" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>Start mixed rush</button>
     </div>`;
