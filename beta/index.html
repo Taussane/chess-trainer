@@ -10689,7 +10689,7 @@ function renderExplorer(){
   if(x.aspView && vals && isOff(vals, { key:x.aspView })){ x.aspView = null; x.aspPiece = x.aspKing = null; }   // (an imbalance switched off by the move, Space after trades: its marks go too)
   const done = ev && !failed && ev.lines.length ? ev.lines[0] : null, live = !ev && x.engineOn ? explorerLive[fen] : null;
   const line = done || live, info = line ? toWhitePerspective(line, fen) : null;
-  if(info){ x.lastPct = cpToPct(info.cp, info.mate); x.lastInfo = info; }   // (the bar stays where it was until the next position's first reading)
+  if(info){ x.lastPct = info.mate===0 ? (fen.split(' ')[1]==='b' ? 99 : 1) : cpToPct(info.cp, info.mate); x.lastInfo = info; }   // (mate on the board, #0: the side to move has lost; its sign can't tell)   // (the bar stays where it was until the next position's first reading)
   const pct = x.lastPct ?? 50;
   const g = new Chess(fen), mine = x.flip ? 'b' : 'w';
   const best = line && line.uci;
