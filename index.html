@@ -147,26 +147,27 @@
   .card.xp-entry .card-glyph, .card.xp-entry .card-desc{color:var(--on-accent);} .card.xp-entry .card-desc{opacity:.8;}
   .card.xp-entry .title-badge{color:var(--on-accent); border-color:var(--on-accent);}
   /* Rush (beta): its page (menu, countdown, end), and in a run the clock and score, and a chip per position */
-  .rush-page{display:flex; flex-direction:column; gap:14px; margin-top:12px;} .rush-lead{color:var(--text-mute); margin:4px 0 0;} .rush-soon{margin:0;}
-  .rush-mid{text-align:center; padding:28px 0 8px;} .rush-mid p{margin:4px 0; color:var(--text-mute);}
-  .rush-big{font-size:4.2rem; font-weight:700; color:var(--text) !important; line-height:1.1; font-variant-numeric:tabular-nums;} .rush-big.rush-dim{color:var(--text-mute) !important;}
-  .rush-sub b{color:var(--text);}
-  .rush-list{display:flex; flex-direction:column; border-top:1px solid var(--border);} .rush-row{display:grid; grid-template-columns:28px 1fr auto; gap:10px; align-items:center; padding:8px 2px; border-bottom:1px solid var(--border);}
-  .rush-row .num{color:var(--text-mute); text-align:center;} .rush-what small{color:var(--text-mute);}
-  .rush-chip{display:inline-block; min-width:2.2em; text-align:center; padding:1px 7px; border-radius:999px; font-size:.85rem; font-weight:700; color:#12161B; font-variant-numeric:tabular-nums;}
-  .rush-chip.hi{background:var(--best-green);} .rush-chip.mid{background:var(--dubious);} .rush-chip.lo{background:var(--bad); color:#fff;}
-  .posbar .rush-clock{margin-left:auto; font-size:1.5rem; line-height:1; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text);}
-  .rush-clock.paused{color:var(--text-mute) !important;} .posbar .rush-clock.paused::before{content:"II"; font-size:.6em; font-weight:800; letter-spacing:-.05em; margin-right:7px; vertical-align:.18em;}
+  .rush-page{display:flex; flex-direction:column; gap:14px; margin-top:12px;}
+  .pl-line .rush-clock{margin-left:auto; font-size:1.15rem; line-height:22px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text);}
+  .rush-clock.paused{color:var(--text-mute) !important; opacity:.6;}
   .rush-toggle svg{width:18px; height:18px; color:var(--accent); flex:none;} .rush-toggle{padding:4px 10px 4px 8px !important;}
   .rush-toggle.on{background:var(--accent); color:var(--bg); border-color:var(--accent);} .rush-toggle.on svg{color:var(--bg);}
   html.desk2 .wrap.home .source-row .rush-toggle svg{width:24px; height:24px;} html.desk2 .wrap.home .source-row .rush-toggle{padding:6px 14px 6px 12px !important;}
   .home-chips{display:flex; flex-direction:column; align-items:flex-end; gap:6px; min-width:0;}
-  .rush-sum{display:flex; justify-content:center; align-items:flex-end; gap:14px; margin-bottom:6px;} .rush-stat{display:flex; flex-direction:column; align-items:center; transition:opacity .2s;}
-  .rush-stat b{font-size:2.4rem; line-height:1.1; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums;} .rush-stat small{color:var(--text-mute); font-size:.8rem;}
-  .rush-stat.rush-total b{font-size:4.2rem; color:var(--accent);} .rush-op{font-size:1.8rem; color:var(--text-mute); padding-bottom:22px;}
-  @media (max-width:480px){ .rush-sum{gap:8px;} .rush-stat b{font-size:1.9rem;} .rush-stat.rush-total b{font-size:3.2rem;} .rush-op{font-size:1.4rem; padding-bottom:20px;} }
+  .rush-end{display:flex; flex-direction:column; gap:22px; padding-top:18px;}
+  .rush-sum{display:grid; grid-template-columns:1fr 1fr 1.3fr; gap:10px; align-items:end;}
+  .rush-stat{display:flex; flex-direction:column; align-items:center; gap:2px; padding:12px 6px; background:var(--panel); border:1px solid var(--border); border-radius:12px; transition:opacity .2s;}
+  .rush-stat b{font-size:2.2rem; line-height:1.1; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums;} .rush-stat small{color:var(--text-mute); font-size:.8rem; text-align:center;}
+  .rush-stat.rush-total{border-color:var(--accent);} .rush-stat.rush-total b{font-size:3rem; color:var(--accent);}
+  .rush-new{display:inline-block; margin-left:4px; padding:1px 7px; border-radius:999px; background:var(--accent); color:var(--bg); font-weight:700; font-size:.72rem; opacity:0; transform:scale(.6); transition:opacity .25s, transform .3s cubic-bezier(.3,1.6,.6,1);} .rush-new.on{opacity:1; transform:none;}
+  .rush-chart{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 14px;} .rc-h{color:var(--text-mute); font-size:.8rem; margin-bottom:6px;}
+  .rush-chart svg{display:block; width:100%; height:auto; max-height:190px;} .rc-old{fill:var(--text-mute); opacity:.45;} .rc-cur{fill:var(--accent);}
+  .rc-val{fill:var(--text); font-size:15px; font-weight:700; text-anchor:middle;} .rc-axis{stroke:var(--border); stroke-width:1;}
+  .rc-best{stroke:var(--text-mute); stroke-width:1.5; stroke-dasharray:5 5;} .rc-best-l{fill:var(--text-mute); font-size:13px;}
+  .rc-legend{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:8px; font-size:.8rem; color:var(--text-mute);} .rc-legend i{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px;} .rc-legend b{color:var(--text);}
+  .rush-best{font-variant-numeric:tabular-nums; color:var(--text-mute);} .rush-best b{color:var(--text);}
+  @media (max-width:480px){ .rush-stat b{font-size:1.8rem;} .rush-stat.rush-total b{font-size:2.4rem;} }
   .rush-pts{font-variant-numeric:tabular-nums; color:var(--text);}
-  .rush-cols{display:grid; grid-template-columns:3.4em 3.4em; gap:8px; text-align:right; font-variant-numeric:tabular-nums; color:var(--text-mute);} .rush-cols b{color:var(--text);}
   .card-glyph{font-size:1.9rem; line-height:1; width:36px; text-align:center; color:var(--accent);}
   .act-icon{width:1em; height:1em; vertical-align:-0.15em;}
   .card-title{display:block; font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
@@ -3163,7 +3164,7 @@ function header(title){
 function posBar(){
   const p = pos();
   return `<div class="posbar">
-      <div class="pos-title">${posSource(p)}<br>${toPlay(p)}</div>${rushClockHtml()}
+      <div class="pos-title">${posSource(p)}<br>${toPlay(p)}</div>
     </div>`;
 }
 // "11. White to play", "25... Black to play" (the move number from the FEN).
@@ -3205,11 +3206,12 @@ function materialHtml(fen, color){
 function playerLine(where){
   let p = null; try{ p = pos(); }catch(e){}
   const names = p && p.title && p.title.includes(' – ') ? p.title.split(' – ') : null;
-  if(!names) return `<div class="pl-line" aria-hidden="true"></div>`;
+  const clock = where==='top' ? rushClockHtml() : '';   // (a rush: its clock, at the right)
+  if(!names) return `<div class="pl-line"${clock ? '' : ' aria-hidden="true"'}>${clock}</div>`;
   const color = where==='bottom' ? p.side : (p.side==='w' ? 'b' : 'w');
   const g = p.gameId ? currentGame(p.gameId) : null, gi = !g && p.game ? GAME_INFO[p.game] : null;   // (a master game: FIDE's Elo, from 1971)
   const elo = g ? (color==='w' ? g.whiteElo : g.blackElo) : gi ? gi[color==='w' ? 'we' : 'be'] : null;
-  return `<div class="pl-line">${String(names[color==='w' ? 0 : 1]).replace(/</g,'&lt;')}${elo ? `<span class="pl-elo">${elo}</span>` : ''}${materialHtml(p.fen, color)}</div>`;
+  return `<div class="pl-line">${String(names[color==='w' ? 0 : 1]).replace(/</g,'&lt;')}${elo ? `<span class="pl-elo">${elo}</span>` : ''}${materialHtml(p.fen, color)}${clock}</div>`;
 }
 function wireCommon(helpKey, checked){
   document.getElementById('homeBtn').onclick = ()=>{
@@ -3362,24 +3364,21 @@ function lichessUrl(p){
 // it), and a link to it to share
 // ================= Rush (beta) =================
 // A mode, switched on and off on the home page (kept on this device): each exercise, and the mixed run (the four
-// exercises in the routine's order), as 3 minutes of positions. A run's score: the points of all its positions
-// (each position's accuracy, so 12 positions at 75% make 900: going fast pays only if the answers hold up); each
-// kind of run keeps its best (profile.rushPts) and today's (this device). The clock runs only while a position is
-// to be answered: it stops at Check for the usual review until Next position, and while the next position is
-// prepared (Move selection: its four moves and their evaluations; Imbalance reading: its table). Positions come
-// from the chosen source. Nothing is recorded: averages, the routine, missed and played positions are untouched.
-// Its own tracks ('z-'): see ctx.
-const RUSH_MS = 180000, RUSH_AHEAD = 3, RUSH_SEARCH_MS = 2000, RUSH_KINDS = ['mixed', ...ROUTINE];   // (its searches: 2 s each, so positions keep up)
+// exercises in the routine's order), as 3 minutes of positions. A run's score: its positions' accuracies added up
+// (going fast pays only if the answers hold up); each kind of run keeps its best (profile.rushPts) and its last
+// runs (profile.rushRuns, the end's chart). The clock runs only while a position can be answered: it stops at
+// Check for the usual review until Next position (the Plan finder: at its last question's Check), and while a
+// position shown isn't ready yet (Move selection: until its four moves are known). Positions come from the chosen
+// source, prepared ahead. Nothing else is recorded: averages, the routine, missed and played positions are
+// untouched. Its own tracks ('z-'): see ctx.
+const RUSH_MS = 180000, RUSH_AHEAD = 3, RUSH_SEARCH_MS = 2000, RUSH_RUNS = 30, RUSH_CHART = 12;   // (its searches: 2 s each, so positions keep up)
 let rushOn = false;
 try{ rushOn = BETA_SITE && localStorage.getItem('cst.rush')==='1'; }catch(e){}
 function setRushOn(v){ rushOn = !!v; try{ localStorage.setItem('cst.rush', rushOn ? '1' : '0'); }catch(e){} render(); }
-let rushMode = false, rush = null;   // rush: { k ('mixed' or an exercise), phase: 'prep' | 'run' | 'review' | 'wait' | 'end', left, at, items, queue, ... }
+let rushMode = false, rush = null;   // rush: { k ('mixed' or an exercise), phase: 'wait' | 'run' | 'review' | 'end', left, at, items, queue, cur, ... }
 const rushName = k=>k==='mixed' ? 'Mixed' : ACT_NAMES[k];
 const rushBest = k=>(profile.rushPts || {})[k];
-const RUSH_TODAY_LS = 'cst.rushToday.v1';
-let rushToday = { day: todayKey(), pts: {} };
-try{ const v = JSON.parse(localStorage.getItem(RUSH_TODAY_LS) || 'null'); if(v && v.day===rushToday.day && v.pts) rushToday = v; }catch(e){}
-const rushTodayBest = k=>{ if(rushToday.day!==todayKey()) rushToday = { day: todayKey(), pts: {} }; return rushToday.pts[k]; };
+const rushRuns = k=>((profile.rushRuns || {})[k] || []);
 const rushTotal = r=>r.items.reduce((t, x)=>t + x.pts, 0);
 const rushAvg = r=>r.items.length ? Math.round(rushTotal(r) / r.items.length) : null;
 const rushFmt = ms=>{ const t = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
@@ -3390,9 +3389,12 @@ const rushCan = k=>progressLoaded && (k==='mixed' ? ROUTINE.every(rushCan) : k==
 function rushStart(k){
   if(!rushCan(k)) return;
   leaveExercise();
-  rush = { k, phase:'prep', left: RUSH_MS, at: null, items: [], used: new Set(), queue: [], started: new Set(), fens: new Set(), shown: 0, best0: rushBest(k), planq0: planq, pqAt: 0 };
+  rush = { k, phase:'wait', left: RUSH_MS, at: null, items: [], used: new Set(), queue: [], started: new Set(), fens: new Set(), shown: 0, best0: rushBest(k), planq0: planq, pqAt: 0, cur: null, waitNext: true };
   ROUTINE.forEach(a=>{ if(a!=='planq'){ const t = 'z-' + a; orders[t] = []; seqBy[t] = 0; store[t] = {}; } });
-  routine = false; rushMode = false; screen = 'rush'; rushFill(); render(); rushTick();
+  routine = false; rushMode = false; rushFill();
+  const it = rushNextItem();
+  if(it) rushShow(it); else { screen = 'rush'; render(); }   // (none picked yet, rare: a moment's "Loading")
+  rushTick();
 }
 function rushFill(){
   const r = rush;
@@ -3407,50 +3409,57 @@ function rushFill(){
     const p = pool[Math.floor(Math.random() * pool.length)];
     r.used.add(p.key); r.fens.add(p.fen); r.queue.push({ a, p });
   }
-  // prepared in order, one at a time: the next starts once the one before is ready (all at once, the last asked
-  // would go first)
-  for(const it of r.queue){ if(!r.started.has(it.p.key)){ r.started.add(it.p.key); rushPrep(it); break; } if(rushState(it)==='wait') break; }
+  // prepared in order, one at a time: the next starts once the one before is (all at once, the last asked would go first)
+  for(const it of r.queue){ if(!r.started.has(it.p.key)){ r.started.add(it.p.key); rushPrep(it); break; } if(!rushPrepped(it)) break; }
 }
 function rushPrep(it){
   if(it.a==='final') return prepareFinal(it.p, 0, 'front');
   withPrep('front', ()=>{ if(it.a==='imbalances') aspectsEntry(it.p.fen); else if(it.a==='candidates') fenEvalEntry(it.p.fen); });
 }
-// ready to be answered: Move selection its four moves and their evaluations; Imbalance reading its table (the
-// others need nothing before Check); a position the engine couldn't do is dropped
+// prepared: Move selection its four moves and their evaluations, Imbalance reading its table (the others: their
+// position's search under way)
+function rushPrepped(it){
+  if(it.a==='final'){ const mv = finalMoves(it.p); return evalFailed(mv) || (Array.isArray(mv) && !!finalEval(it.p, mv)); }
+  if(it.a==='imbalances'){ const e = aspectsStore[it.p.fen]; return !!e && e.status==='done'; }
+  return true;
+}
+// can be answered (the clock runs): Move selection once its four moves are known; a position the engine couldn't do
+// is skipped
 function rushState(it){
-  if(it.a==='final'){
-    const mv = finalMoves(it.p); if(evalFailed(mv)) return 'failed'; if(!Array.isArray(mv)) return 'wait';
-    const ev = finalEval(it.p, mv); return evalFailed(ev) ? 'failed' : ev ? 'ready' : 'wait';
-  }
-  if(it.a==='imbalances'){ const e = aspectsStore[it.p.fen]; return !e || e.status!=='done' ? 'wait' : e.data ? 'ready' : 'failed'; }
+  if(it.a==='final'){ const mv = finalMoves(it.p); return evalFailed(mv) ? 'failed' : Array.isArray(mv) ? 'ready' : 'wait'; }
+  if(it.a==='imbalances'){ const e = aspectsStore[it.p.fen]; return e && e.status==='done' && !e.data ? 'failed' : 'ready'; }
   return 'ready';
 }
-function rushHead(){ const r = rush; while(r.queue.length && rushState(r.queue[0])==='failed') r.queue.shift(); rushFill(); return r.queue[0] && rushState(r.queue[0])==='ready' ? r.queue[0] : null; }
+function rushNextItem(){ const r = rush; while(r.queue.length && rushState(r.queue[0])==='failed') r.queue.shift(); rushFill(); return r.queue[0] || null; }
 function rushShow(it){
-  rush.queue.shift(); rush.shown++; rushFill();
+  const r = rush; r.queue.shift(); r.shown++; r.cur = it; r.waitNext = false; rushFill();
+  r.phase = rushState(it)==='ready' ? 'run' : 'wait'; if(r.phase==='run') r.at = performance.now();
   rushMode = true; selSquare = null; promoPending = null; helpVisible = false;
   if(it.a==='planq'){ planq = it.q; screen = 'planq'; }
   else { const t = 'z-' + it.a; orders[t].push(it.p); seqBy[t] = orders[t].length - 1; screen = it.a; }
   render();
 }
-// Check: the clock stops for the review (the Plan finder: its last question's; the clock goes on between them)
-function rushPause(){ if(rushMode && rush && rush.phase==='run'){ rush.left = rushLeft(); rush.phase = 'review'; } }
+// Check: the clock stops for the review
+function rushPause(){ if(rushMode && rush && (rush.phase==='run' || rush.phase==='wait')){ if(rush.phase==='run') rush.left = rushLeft(); rush.phase = 'review'; rush.waitNext = false; } }
 // A position's points, once its review has its accuracy (recordResult, planqRecord)
-function rushScored(a, p, acc){ if(rush) rush.items.push({ a, key: p.key, title: p.title, year: p.year, pts: Math.round(acc || 0) }); }
-// Next position (from the review): the clock goes on with it (or, not ready yet, stays stopped until it is)
+function rushScored(a, p, acc){ if(rush) rush.items.push({ a, key: p.key, pts: Math.round(acc || 0) }); }
+// Next position (from the review): shown at once, the clock going on once it can be answered
 function rushNext(){
-  if(!rush || rush.phase!=='review' || rush.items.length < rush.shown) return;
-  if(rush.left <= 0) return rushEnd();
-  const next = rushHead();
-  if(next){ rush.phase = 'run'; rush.at = performance.now(); rushShow(next); }
-  else { rush.phase = 'wait'; rushMode = false; screen = 'rush'; render(); }
+  const r = rush;
+  if(!r || r.phase!=='review' || r.items.length < r.shown) return;
+  if(r.left <= 0) return rushEnd();
+  const it = rushNextItem();
+  if(it) rushShow(it); else { r.phase = 'wait'; r.waitNext = true; render(); }   // (none picked yet: shown as soon as it is)
 }
 function rushEnd(){
   const r = rush; r.left = 0; r.phase = 'end'; rushMode = false; screen = 'rush'; planq = r.planq0;
   r.score = rushTotal(r);
   if(r.items.length){
-    if(r.best0==null || r.score > r.best0){ profile.rushPts = { ...(profile.rushPts || {}), [r.k]: r.score }; saveProfile(); r.newBest = true; }
-    if(!(rushTodayBest(r.k) >= r.score)){ rushToday.pts[r.k] = r.score; try{ localStorage.setItem(RUSH_TODAY_LS, JSON.stringify(rushToday)); }catch(e){} }
+    if(r.best0==null || r.score > r.best0){ profile.rushPts = { ...(profile.rushPts || {}), [r.k]: r.score }; r.newBest = true; }
+    const run = { t: Date.now(), p: r.score, n: r.items.length };
+    if(r.k==='mixed'){ run.s = {}; ROUTINE.forEach(a=>{ run.s[a] = r.items.filter(x=>x.a===a).reduce((t, x)=>t + x.pts, 0); }); }
+    profile.rushRuns = { ...(profile.rushRuns || {}), [r.k]: rushRuns(r.k).concat(run).slice(-RUSH_RUNS) };
+    saveProfile();
   }
   render();
 }
@@ -3458,36 +3467,59 @@ function rushQuit(){ if(rush) planq = rush.planq0; rushMode = false; rush = null
 function rushTick(){
   const r = rush; if(!r || r.phase==='end') return;
   rushFill();
-  if(r.phase==='prep' || r.phase==='wait'){ const it = rushHead(); if(it){ r.phase = 'run'; r.at = performance.now(); rushShow(it); } }
+  if(r.phase==='wait'){
+    if(r.waitNext){ const it = rushNextItem(); if(it) rushShow(it); }
+    else if(r.cur){ const s = rushState(r.cur);
+      if(s==='ready'){ r.phase = 'run'; r.at = performance.now(); }
+      else if(s==='failed'){ r.shown--; r.waitNext = true; } }   // (couldn't be evaluated: the next one instead, no score)
+  }
   else if(r.phase==='run' && rushLeft() <= 0) return rushEnd();
   // the clock, without redrawing the page
   const c = document.getElementById('rushClock'); if(c){ c.textContent = rushFmt(rushLeft()); c.classList.toggle('paused', r.phase!=='run'); }
   setTimeout(rushTick, 100);
 }
-// Above the board, on the right: the time left (stopped: dimmed)
+// On the line above the board, at the right: the time left (greyed while stopped)
 const rushClockHtml = ()=>rushMode && rush ? `<span class="rush-clock${rush.phase==='run' ? '' : ' paused'}" id="rushClock">${rushFmt(rushLeft())}</span>` : '';
-// The review's score line: the run's total so far (its positions' accuracies added up)
+// The review's score line: the run's total so far
 const rushSoFar = r=>`Total <strong>${rushTotal(r)}</strong>`;
-const rushPtsCls = n=>n >= 80 ? 'hi' : n >= 50 ? 'mid' : 'lo';
+// The end: the run's positions, average accuracy and points (counted up one after the other), a "New best" badge,
+// and its last runs as bars (a mixed run: stacked by exercise, its points per exercise in the legend), the best as
+// a line
+const RUSH_COLORS = { imbalances:'#3987e5', planq:'#d95926', candidates:'#199e70', final:'#c98500' };   // (dataviz categorical, dark steps: validated on the panel)
+function rushChart(k, cur){
+  const runs = rushRuns(k).slice(-RUSH_CHART); if(!runs.length) return '';
+  const W = 600, H = 170, top = 18, base = H - 8, slot = W / RUSH_CHART, bw = Math.min(34, slot - 10), best = rushBest(k) || 0;
+  const max = Math.max(best, ...runs.map(x=>x.p), 1) * 1.08, y = v=>base - (base - top) * v / max;
+  const bars = runs.map((x, i)=>{
+    const cx = (RUSH_CHART - runs.length + i + 0.5) * slot, x0 = cx - bw / 2, isCur = cur && x.t===cur.t, op = isCur ? 1 : 0.45;
+    const tip = `<title>${new Date(x.t).toLocaleDateString(dateLoc(), { month:'short', day:'numeric' })}: ${x.p} points, ${x.n} positions</title>`;
+    if(k==='mixed' && x.s){
+      let acc = 0; const segs = ROUTINE.map(a=>{ const v = x.s[a] || 0; if(!v) return ''; const y1 = y(acc), y2 = y(acc + v); acc += v;
+        return `<rect x="${x0.toFixed(1)}" y="${(y2 + 1).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0, y1 - y2 - 2).toFixed(1)}" rx="3" fill="${RUSH_COLORS[a]}" opacity="${op}"/>`; }).join('');
+      return `<g>${tip}${segs}${isCur ? `<text x="${cx.toFixed(1)}" y="${(y(x.p) - 6).toFixed(1)}" class="rc-val">${x.p}</text>` : ''}</g>`;
+    }
+    return `<g>${tip}<rect x="${x0.toFixed(1)}" y="${y(x.p).toFixed(1)}" width="${bw.toFixed(1)}" height="${(base - y(x.p)).toFixed(1)}" rx="4" class="${isCur ? 'rc-cur' : 'rc-old'}"/>${isCur ? `<text x="${cx.toFixed(1)}" y="${(y(x.p) - 6).toFixed(1)}" class="rc-val">${x.p}</text>` : ''}</g>`;
+  }).join('');
+  const bl = best ? `<line x1="0" x2="${W}" y1="${y(best).toFixed(1)}" y2="${y(best).toFixed(1)}" class="rc-best"/><text x="2" y="${(y(best) - 5).toFixed(1)}" class="rc-best-l">Best ${best}</text>` : '';
+  const legend = k==='mixed' && cur && cur.s ? `<div class="rc-legend">${ROUTINE.map(a=>`<span><i style="background:${RUSH_COLORS[a]}"></i>${ACT_NAMES[a]} <b>${cur.s[a] || 0}</b></span>`).join('')}</div>` : '';
+  return `<div class="rush-chart"><div class="rc-h">Last runs</div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Last runs' points">${bl}${bars}<line x1="0" x2="${W}" y1="${base}" y2="${base}" class="rc-axis"/></svg>${legend}</div>`;
+}
 function renderRush(){
   const app = document.getElementById('app'), r = rush;
   if(!r){ screen = 'home'; return render(); }
   const top = `<div class="title-row"><button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button><h1>Rush <span class="title-badge">${rushName(r.k)}</span></h1><span></span></div>`;
   let body;
-  if(r.phase==='prep') body = `<div class="rush-mid"><p class="rush-big rush-dim">…</p><p>Preparing the first positions</p></div>`;
-  else if(r.phase==='wait') body = `<div class="rush-mid"><p class="rush-big rush-dim" id="rushClock">${rushFmt(r.left)}</p><p>Clock stopped: preparing the next position</p><p class="rush-sub">Total <b>${rushTotal(r)}</b></p></div>`;
+  if(r.phase!=='end') body = `<p class="mg-status mg-loading">Loading positions…</p>`;
   else {
-    // the score explained: positions × average accuracy = total (counted up one after the other, once); a mixed
-    // run: each exercise's points too, adding up to the total
-    const best = rushBest(r.k), n = r.items.length, avg = n ? Math.round(10 * r.score / n) / 10 : 0;   // (to a tenth: positions × average gives the total back)
-    const per = ROUTINE.map(a=>({ a, xs: r.items.filter(x=>x.a===a) })).filter(g=>g.xs.length);
-    body = `<div class="rush-mid rush-end">
-        <div class="rush-sum"><span class="rush-stat"><b class="rush-n" data-to="${n}">${n}</b><small>Positions</small></span><span class="rush-op">×</span>
-          <span class="rush-stat"><b class="rush-n" data-to="${avg}" data-pct="1" data-dec="${Number.isInteger(avg) ? 0 : 1}">${avg}%</b><small>Average</small></span><span class="rush-op">=</span>
-          <span class="rush-stat rush-total"><b class="rush-n" data-to="${r.score}">${r.score}</b><small>Points</small></span></div>
-        <p class="rush-sub">${r.newBest ? (r.best0==null ? 'Your first run.' : `New best! (was ${r.best0})`) : best!=null ? `Best: <b>${best}</b>` : ''}</p></div>
-      ${r.k==='mixed' && per.length ? `<div class="rush-list rush-per">${per.map(g=>`<div class="rush-row"><span class="num"></span><span class="rush-what">${ACT_NAMES[g.a]} <small>${g.xs.length} position${g.xs.length===1 ? '' : 's'}</small></span><b class="rush-pts">${g.xs.reduce((t, x)=>t + x.pts, 0)}</b></div>`).join('')}</div>` : ''}
-      <div class="rush-list">${r.items.map((x, i)=>`<div class="rush-row"><span class="num">${i + 1}</span><span class="rush-what">${r.k==='mixed' ? `${ACT_NAMES[x.a]} <small>` : ''}${escHtml(x.title || '')}${x.year ? ` ${escHtml(String(x.year))}` : ''}${r.k==='mixed' ? '</small>' : ''}</span><span class="rush-chip ${rushPtsCls(x.pts)}">${x.pts}</span></div>`).join('')}</div>
+    const n = r.items.length, avg = rushAvg(r) || 0, runs = rushRuns(r.k), cur = n ? runs[runs.length - 1] : null;
+    body = `<div class="rush-end">
+        <div class="rush-sum">
+          <span class="rush-stat"><b class="rush-n" data-to="${n}">${n}</b><small>Positions</small></span>
+          <span class="rush-stat"><b class="rush-n" data-to="${avg}" data-pct="1">${avg}%</b><small>Average accuracy</small></span>
+          <span class="rush-stat rush-total"><b class="rush-n" data-to="${r.score}">${r.score}</b><small>Points${r.newBest ? ' <span class="rush-new">New best</span>' : ''}</small></span>
+        </div>
+        ${rushChart(r.k, cur)}
+      </div>
       <div class="actions-row split rush-actions"><button class="btn secondary" id="rushMenu" data-no-i18n>${L({ en:'Done', fr:'Terminé', de:'Fertig', es:'Terminar', it:'Fine' })}</button><button class="btn" id="rushAgain">Play again</button></div>`;
   }
   app.innerHTML = top + `<div class="rush-page">${body}</div>`;
@@ -3497,30 +3529,31 @@ function renderRush(){
   on('rushAgain', ()=>rushStart(r.k));
   if(r.phase==='end') rushCountUp(r);
 }
-// The end's three numbers, counted up from 0 one after the other (positions, average, total), once per run
+// The end's three numbers, counted up from 0 one after the other (positions, average, points), once per run
 const RUSH_COUNT_MS = 700;
 function rushCountUp(r){
   const els = [...document.querySelectorAll('#app .rush-n')];
   if(r.countAt==null){ r.countAt = performance.now(); if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) r.countAt -= 1e6; }
+  const badge = document.querySelector('#app .rush-new');
   const step = ()=>{
     if(rush!==r || screen!=='rush' || !els[0] || !els[0].isConnected) return;
     const t = performance.now() - r.countAt; let busy = false;
     els.forEach((el, i)=>{
       const f = Math.max(0, Math.min(1, (t - i * (RUSH_COUNT_MS + 150)) / RUSH_COUNT_MS)), to = +el.dataset.to;
-      const v = (to * (1 - Math.pow(1 - f, 3))).toFixed(+el.dataset.dec || 0);
-      el.textContent = v + (el.dataset.pct ? '%' : ''); el.parentNode.style.opacity = f > 0 ? 1 : .35;
+      el.textContent = Math.round(to * (1 - Math.pow(1 - f, 3))) + (el.dataset.pct ? '%' : ''); el.parentNode.style.opacity = f > 0 ? 1 : .35;
       if(f < 1) busy = true;
     });
+    if(badge) badge.classList.toggle('on', !busy);   // (the badge once the points are in)
     if(busy) requestAnimationFrame(step);
   };
   step();
 }
-// The home page in rush mode: in the routine's place, the mixed run and each kind's scores, today's and best
+// The home page in rush mode, in the routine's place: the mixed run (its best) and each exercise's best
 function rushCard(){
   const n = v=>v!=null ? `<b>${v}</b>` : '—';
   return `<div class="routine rush-card">
-      <div class="routine-head"><span class="routine-title">Rush</span><span class="rush-cols${dataCls()}"><span>Today</span><span>Best</span></span></div>
-      ${RUSH_KINDS.map(k=>`<div class="routine-row"><span>${rushName(k)}</span><span class="rush-cols${dataCls()}"><span>${n(rushTodayBest(k))}</span><span>${n(rushBest(k))}</span></span></div>`).join('')}
+      <div class="routine-head"><span class="routine-title">Mixed rush</span><span class="routine-count${dataCls()}">Best ${n(rushBest('mixed'))}</span></div>
+      ${ROUTINE.map(a=>`<div class="routine-row"><span>${ACT_NAMES[a]}</span><span class="rush-best${dataCls()}">${n(rushBest(a))}</span></div>`).join('')}
       <button class="btn routine-btn" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>Start mixed rush</button>
     </div>`;
 }
@@ -5075,6 +5108,7 @@ async function loadProfileMeta(db, id){
     if(p && p.joinedAt) profile.joinedAt = profile.joinedAt ? Math.min(profile.joinedAt, p.joinedAt) : p.joinedAt;
     if(p && p.accResetAt) profile.accResetAt = Math.max(profile.accResetAt || 0, p.accResetAt);   // (beta resets, the latest wins)
     if(p && p.timeResetAt) profile.timeResetAt = Math.max(profile.timeResetAt || 0, p.timeResetAt);
+    if(p && p.rushRuns) for(const [k, xs] of Object.entries(p.rushRuns)) if(Array.isArray(xs)){ const have = new Set(rushRuns(k).map(x=>x.t)); profile.rushRuns = { ...(profile.rushRuns || {}), [k]: rushRuns(k).concat(xs.filter(x=>x && !have.has(x.t))).sort((a, b)=>a.t - b.t).slice(-RUSH_RUNS) }; }   // (each kind's last runs, from both)
     if(p && p.rushPts) for(const [k, n] of Object.entries(p.rushPts)) if(typeof n==='number') profile.rushPts = { ...(profile.rushPts || {}), [k]: Math.max(n, (profile.rushPts || {})[k] || 0) };   // (each kind of run's best, the higher wins)
     if(p && p.onboard) profile.onboard = { ...(profile.onboard || {}), ...p.onboard };   // the onboarding drawn on another device wins
     if(r && Array.isArray(r.items)) r.items.forEach(x=>{ if(!legacyMissed.some(y=>y.key===x.key && y.a===x.a)) legacyMissed.push(x); });
