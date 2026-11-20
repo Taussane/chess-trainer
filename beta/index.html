@@ -680,6 +680,7 @@
   .xpg-now{stroke:var(--accent); stroke-width:1.5; vector-effect:non-scaling-stroke;}
   .xpg-grade{font-weight:700;} .xpg-ev{color:var(--text-mute); font-variant-numeric:tabular-nums;}
   .xpg-badge{position:absolute; z-index:3; width:5.6%; aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; transform:translate(-70%, -30%); color:#fff; font-weight:800; letter-spacing:-0.04em; box-shadow:0 1px 3px rgba(0,0,0,.45); pointer-events:none;}
+  .xpg-badge.xpg-mate{background:#111418;}   /* (checkmate: on the mated king) */
   .xpg-stats{display:grid; grid-template-columns:1fr auto 1fr; column-gap:12px; align-content:space-between; height:calc(4 * var(--pn-row) - 4px); font-size:0.82rem; position:relative;}
   .xpg-stats > *{display:flex; align-items:center; white-space:nowrap; min-width:0; font-variant-numeric:tabular-nums;}
   .xpg-stats .l{justify-content:center;} .xpg-stats .b{justify-content:flex-end;}   /* (White's figures on the left, the stat in the middle, Black's on the right) */
@@ -10444,12 +10445,24 @@ function xpMoveGrade(x, k){
   return gr && { ...gr, b, a };
 }
 function gameMoveBadge(x){
+  mateBadge(x);
   if(!x.at || !x.engineOn) return;   // (the engine off: no badge)
   const gr = xpMoveGrade(x, x.at), i = gr ? BAD_GRADES.indexOf(gr.label) : -1; if(i < 0) return;
   const outer = document.querySelector('.board-outer'), to = x.moves[x.at - 1].to; if(!outer) return;
   const f = to.charCodeAt(0) - 97, r = +to[1], flip = boardFlipped(), col = flip ? 7 - f : f, row = flip ? r - 1 : 8 - r;
   const b = document.createElement('div'); b.className = 'xpg-badge'; b.textContent = ['?!', '?', '??'][i];
   b.style.cssText = `left:${(col + 1) * 12.5}%; top:${row * 12.5}%; background:${labelColor(gr.label)}; font-size:${Math.max(10, outer.clientWidth * 0.034).toFixed(1)}px`;
+  outer.appendChild(b);
+}
+// Checkmate on the board: a black "#" badge on the mated king (as a bad move's badge sits on its square)
+function mateBadge(x){
+  const fen = x.fens[x.at], g = new Chess(fen); if(!g.in_checkmate()) return;
+  const outer = document.querySelector('.board-outer'), side = fen.split(' ')[1]; if(!outer) return;
+  const k = g.board().flat().find(p=>p && p.type==='k' && p.color===side); if(!k) return;
+  const sq = k.square || (()=>{ const B = g.board(); for(let r = 0; r < 8; r++) for(let f = 0; f < 8; f++){ const p = B[r][f]; if(p && p.type==='k' && p.color===side) return 'abcdefgh'[f] + (8 - r); } })();
+  const f = sq.charCodeAt(0) - 97, r = +sq[1], flip = boardFlipped(), col = flip ? 7 - f : f, row = flip ? r - 1 : 8 - r;
+  const b = document.createElement('div'); b.className = 'xpg-badge xpg-mate'; b.textContent = '#';
+  b.style.cssText = `left:${(col + 1) * 12.5}%; top:${row * 12.5}%; font-size:${Math.max(10, outer.clientWidth * 0.034).toFixed(1)}px`;
   outer.appendChild(b);
 }
 // A game loaded: where it comes from, then the move just played with its grade and how much it changed the
@@ -10627,7 +10640,7 @@ function xpBarEase(target){
   xpBar.raf = requestAnimationFrame(step);
 }
 function explorerHbarHtml(info, pct, flip, off){   // flip (playing Black): White's share from the right; off: the engine off (no bar, its room kept)
-  const num = info ? (info.mate!=null ? '#' + Math.abs(info.mate) : fmtBarScore(info)) : '…', whiteAhead = pct >= 50;
+  const num = info ? (info.mate!=null ? '#' + (info.mate ? Math.abs(info.mate) : '') : fmtBarScore(info)) : '…', whiteAhead = pct >= 50;   // (mate on the board: "#")
   const from = xpBar.shown ?? pct;   // where it stands now; it eases to pct (xpBarEase), across redraws
   return `<div class="pl-line xp-hbar-line"><div class="xp-hbar${flip ? ' flip' : ''}"${off ? ' style="visibility:hidden"' : ''} role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" id="xpBarW" style="--w:${from}%"></div>
       <span class="xp-hbar-num ${whiteAhead ? 'w' : 'b'}">${num}</span></div></div>`;
@@ -10693,8 +10706,11 @@ function renderExplorer(){
   const pct = x.lastPct ?? 50;
   const g = new Chess(fen), mine = x.flip ? 'b' : 'w';
   const best = line && line.uci;
-  const depth = g.game_over() ? '' : x.engineOn ? depthBtnHtml(ev, fen).replace('<button class="depth-btn"', '<button class="depth-btn" aria-pressed="true"')
-    : `<button class="depth-btn off" id="depthBtn" aria-pressed="false" aria-label="Engine off"><b>Off</b></button>`;   // the engine's depth; tap: on / off
+  // the engine's depth (tap: on / off); the game over, nothing to search: the last depth shown stays
+  const depth = !x.engineOn ? `<button class="depth-btn off" id="depthBtn" aria-pressed="false" aria-label="Engine off"><b>Off</b></button>`
+    : g.game_over() ? `<button class="depth-btn" id="depthBtn" aria-pressed="true" aria-label="${sfVersion==='SF19' ? 'Stockfish 19' : 'Stockfish 10'}"><b>${x.lastDepth || '—'}</b></button>`
+    : depthBtnHtml(ev, fen).replace('<button class="depth-btn"', '<button class="depth-btn" aria-pressed="true"');
+  if(x.engineOn && !g.game_over() && reviewDepth) x.lastDepth = reviewDepth;
   const planInfo = x.engineOn ? info || x.lastInfo : { cp:0 };
   const pq = x.mode==='plans' ? explorerPlan(p, p.side, planInfo) : null;   // (the side to play's plan)
   const body = x.mode==='imbalances'
