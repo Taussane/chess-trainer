@@ -4854,6 +4854,7 @@ const ALL_ACTS = ['imbalances', 'analysis', 'candidates', 'final', 'planq'];   /
 const zeroCounts = ()=>Object.fromEntries(ALL_ACTS.map(a=>[a, 0]));
 // The exercises' icons (line drawings in the text colour): a balance, a gauge, a light bulb, sorting best first.
 const actIcon = d=>`<svg class="act-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const MIXED_ICON = actIcon('<path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M8 6H5v1.5A3 3 0 0 0 8 10.5M16 6h3v1.5a3 3 0 0 1-3 3M12 13v4M8.5 20h7M10 17h4"/>');   // (Mixed rush: a trophy, its best run)
 const RUSH_ICON = actIcon('<circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M10 2.5h4M12 2.5V6M18.5 6.5l1.5-1.5"/>');
 const ACT_GLYPHS = {
   imbalances: actIcon('<path d="M12 4v16M8 20h8M5 7h14M12 4.5l-.01 0"/><path d="M5 7l-3 6a3 3 0 0 0 6 0z"/><path d="M19 7l-3 6a3 3 0 0 0 6 0z"/>'),
@@ -4921,7 +4922,7 @@ function renderSide(){
   const item = (k, icon, name, extra, dis)=>`<button class="side-item${at===k ? ' on' : ''}" data-side="${k}"${dis ? ' disabled' : ''}${at===k ? ' aria-current="page"' : ''}>${icon}<span class="side-name">${name}</span>${extra ? `<span class="side-n">${extra}</span>` : ''}</button>`;
   const html = `
     <button class="side-logo${at==='home' ? ' on' : ''}" data-side="home" data-no-i18n aria-label="Home"><b>Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span></b></button>
-    ${rushOn ? item('routine', RUSH_ICON, 'Mixed rush', progressLoaded && rushBest('mixed')!=null ? rushBest('mixed') : '', !rushCan('mixed'))
+    ${rushOn ? item('routine', MIXED_ICON, 'Mixed rush', progressLoaded && rushBest('mixed')!=null ? rushBest('mixed') : '', !rushCan('mixed'))
       : item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     <div class="side-sec">Exercises</div>
     ${ACTS.map(a=>{ const L = levelNow(a); return rushOn ? item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && rushBest(a)!=null ? rushBest(a) : '', !rushCan(a)) : item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
@@ -5533,7 +5534,7 @@ function routineChip(){
 }
 // (rush mode, sideways: the mixed run, with its best)
 function rushChip(){
-  return `<button class="acct-chip routine-chip" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>${RUSH_ICON}<span>Mixed rush</span>${progressLoaded && rushBest('mixed')!=null ? `<span class="routine-n">${rushBest('mixed')}</span>` : ''}</button>`;
+  return `<button class="acct-chip routine-chip" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>${MIXED_ICON}<span>Mixed rush</span>${progressLoaded && rushBest('mixed')!=null ? `<span class="routine-n">${rushBest('mixed')}</span>` : ''}</button>`;
 }
 function renderHome(){
   const app = document.getElementById('app');
