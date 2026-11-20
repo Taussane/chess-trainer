@@ -8,7 +8,7 @@ module.exports = {
   ENGINE: { movetime: 1200, multipv: 5 },
 
   // Grades: points of winning chances (Lichess win% curve) below the best move.
-  GRADES: [ ['Good', 0], ['Ok', 3], ['Dubious', 10], ['Mistake', 20], ['Blunder', 30] ],
+  GRADES: [ ['Good', 0], ['Ok', 3], ['Inaccuracy', 10], ['Mistake', 20], ['Blunder', 30] ],
 
   GENERAL: {
     minMove: 5,            // full-move number of the position
@@ -36,7 +36,7 @@ module.exports = {
 
   CANDIDATES: {
     trapTopN: 5,                   // a trap among the top 5: a move losing 12+ points of winning chances
-    trapMinDrop: 12,               // (10 = Dubious, plus a 2-point margin: the live search can differ a little)
+    trapMinDrop: 12,               // (10 = Inaccuracy, plus a 2-point margin: the live search can differ a little)
     maxDecent: 3,                  // at most 3 decent moves (not a trap) in the top 5: with 4, almost any sensible picks score
     spacingPlies: 10,              // 10 half-moves between kept positions from the same game
   },
@@ -50,8 +50,8 @@ module.exports = {
     // flip too easily between two searches).
     worstMinDrop: 13,
     maxRandomAccuracy: 57,         // average accuracy of all 24 orders must be at most this
-    noRepeatBad: true,             // never two moves with the same bad grade (Dubious, Mistake, Blunder): two blunders can't be ranked
+    noRepeatBad: true,             // never two moves with the same bad grade (Inaccuracy, Mistake, Blunder): two blunders can't be ranked
     spacingPlies: 2,               // 2 half-moves between kept positions from the same game
-    weights: [0.5, 0.3, 0.2],      // the app's scoring rule (best remaining move, Dubious cap)
+    weights: [0.5, 0.3, 0.2],      // the app's scoring rule (best remaining move, Inaccuracy cap)
   },
 };

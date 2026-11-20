@@ -2,7 +2,7 @@
 // Usage: node finder/own.js <games.pgn> <player> <out-dir>
 //
 // Own games are about the player's errors and the games' key moments:
-//  - Candidate moves and Final choice: EVERY move of the player that was Dubious or worse
+//  - Candidate moves and Final choice: EVERY move of the player that was an inaccuracy or worse
 //    (10+ points of winning chances below the best move), at any move number, with no spacing.
 //    Only rules that would break an exercise apply: Final choice needs at least 4 legal moves,
 //    Candidate moves at least 2. A mistake goes into both exercises.

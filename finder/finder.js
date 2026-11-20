@@ -81,7 +81,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
         else if(div.mid>=0 && ply < div.mid + R.ANALYSIS.earlyBalanced.plies && ls[0].mate==null && Math.abs(ls[0].cp) < R.ANALYSIS.earlyBalanced.maxEval) tally(stats.analysis,'rejected: balanced, early in the middlegame');
         else { e.options.add('analysis'); e.metrics.evalWhite = (fen.split(' ')[1]==='w' ? 1 : -1) * moverScore(ls[0]); e.metrics.mate = ls[0].mate ?? null; }
       }
-      // Candidate moves: a trap (Dubious or worse) among the top 5, and at most 3 decent moves.
+      // Candidate moves: a trap (an inaccuracy or worse) among the top 5, and at most 3 decent moves.
       { const decent = top5.filter(l=>drop(l) < R.CANDIDATES.trapMinDrop).length;
         if(decent === top5.length) tally(stats.candidates, 'rejected: no trap in top 5');
         else if(decent > R.CANDIDATES.maxDecent) tally(stats.candidates, 'rejected: more than 3 decent moves');
@@ -113,7 +113,7 @@ const { fs, path, Chess, R, header, mainline, analyse, lines, winPct, moverScore
       const picks = [cand[0]]; if(gmLine!==cand[0]) picks.push(gmLine);
       const have = ()=>picks.map(l=>gradeOf(cDrop(l)));
       for(const l of cand){ if(picks.length>=4) break; if(!picks.includes(l) && !have().includes(gradeOf(cDrop(l)))) picks.push(l); }
-      const BAD = ['Dubious', 'Mistake', 'Blunder'];   // the app's pick: at most one move per bad grade when the top 5 allow it
+      const BAD = ['Inaccuracy', 'Mistake', 'Blunder'];   // the app's pick: at most one move per bad grade when the top 5 allow it
       while(picks.length<4){
         const rest = cand.filter(l=>!picks.includes(l) && !(BAD.includes(gradeOf(cDrop(l))) && have().includes(gradeOf(cDrop(l))))); if(!rest.length) break;
         const count = g=>have().filter(x=>x===g).length;

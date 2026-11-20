@@ -42,13 +42,13 @@ function rankAccuracyPct(ids, cp) {
   return Math.round(100 * got);
 }
 const perms = a => a.length < 2 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map(p => [x, ...p]));
-function gradeOf(drop) { return drop >= 30 ? 'Blunder' : drop >= 20 ? 'Mistake' : drop >= 10 ? 'Dubious' : drop >= 3 ? 'Ok' : 'Good'; }
+function gradeOf(drop) { return drop >= 30 ? 'Blunder' : drop >= 20 ? 'Mistake' : drop >= 10 ? 'Inaccuracy' : drop >= 3 ? 'Ok' : 'Good'; }
 function pickFinalUcis(gm, lines) {   // the app's rule (best, game move, new grades down the list, then least-represented)
   const best = winPercent(lines[0].cp, lines[0].mate), g = l => l ? gradeOf(best - winPercent(l.cp, l.mate)) : 'unknown';
   const picks = [], add = (u, gr) => { if (!picks.some(m => m.u === u)) picks.push({ u, gr }); }, have = () => picks.map(m => m.gr);
   add(lines[0].uci, 'Good'); add(gm, g(lines.find(l => l.uci === gm)));
   for (const l of lines) { if (picks.length >= 4) break; if (!have().includes(g(l))) add(l.uci, g(l)); }
-  const BAD = ['Dubious', 'Mistake', 'Blunder'], repeats = l => BAD.includes(g(l)) && have().includes(g(l));
+  const BAD = ['Inaccuracy', 'Mistake', 'Blunder'], repeats = l => BAD.includes(g(l)) && have().includes(g(l));
   while (picks.length < 4) {
     const left = lines.filter(l => !picks.some(m => m.u === l.uci)), rest = left.some(l => !repeats(l)) ? left.filter(l => !repeats(l)) : left;
     if (!rest.length) break;
