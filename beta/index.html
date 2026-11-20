@@ -164,6 +164,17 @@
   .rush-stat.rush-total{border-color:var(--accent); position:relative;} .rush-stat.rush-total b{font-size:3rem; color:var(--accent);}
   .rush-new{position:absolute; top:10px; right:10px; padding:1px 7px; border-radius:999px; background:var(--accent); color:var(--bg); font-weight:700; font-size:.72rem; opacity:0; transform:scale(.6); transition:opacity .25s, transform .3s cubic-bezier(.3,1.6,.6,1);} .rush-new.on{opacity:1; transform:none;}
   .rush-chart{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:10px 10px 8px;}   .rush-end .pf-h{margin:0 0 -12px;}
+  /* a phone held sideways: two rows, the run (its numbers beside its timeline), then its history (beside the buttons) */
+  @media (min-aspect-ratio:6/5) and (max-width:1023.98px){
+    .rush-page{margin-top:0;} .wrap[data-scr=rush]{padding-block:8px 10px;}
+    .rush-end{display:grid; grid-template-columns:150px 1fr 150px; grid-template-areas:"h1 h1 h1" "sum tl tl" "h2 h2 h2" "hist hist act"; gap:8px 12px; padding-top:0;}
+    .rush-end .pf-h{margin:0; font-size:.9rem;} .rh-run{grid-area:h1;} .rh-hist{grid-area:h2;}
+    .rush-sum{grid-area:sum; grid-template-columns:1fr; gap:6px;} .rc-tl{grid-area:tl;} .rc-hist{grid-area:hist;}
+    .rush-end .rush-stat{padding:4px 8px; flex-direction:row; justify-content:space-between; gap:8px;} .rush-stat b{font-size:1.25rem;} .rush-stat.rush-total b{font-size:1.6rem;} .rush-stat small{font-size:.72rem; text-align:left;}
+    .rush-stat.rush-total{flex-direction:column; align-items:flex-start; gap:0;} .rush-new{top:6px; right:6px;}
+    .rush-end .rush-chart{padding:6px 8px 4px;} .rush-end .rush-chart svg{max-height:96px;} .rush-end .rc-hist svg{max-height:104px;} .rc-note{display:none;} .rc-legend{margin-top:2px; gap:2px 10px; font-size:.72rem;}
+    .rush-end .rush-actions{grid-area:act; display:flex; flex-direction:column; align-self:stretch; justify-content:flex-end; gap:8px; margin:0;} .rush-end .rush-actions .btn{width:100%; flex:0 0 auto; max-width:none;}
+  }
   .rush-chart svg{display:block; width:100%; height:auto; max-height:190px;} .rc-old{fill:var(--text-mute); opacity:.45;} .rc-cur{fill:var(--accent);}
   .rc-val{fill:var(--text); font-size:20px; font-weight:700; text-anchor:middle;} .rc-axis{stroke:var(--border); stroke-width:1;} .rc-grid{stroke:var(--border); stroke-width:1; stroke-dasharray:2 4;}
   .rc-tick{fill:var(--text-mute); font-size:18px; text-anchor:middle;} .rc-tick.rc-y{text-anchor:end;} .rc-tick.rc-start{text-anchor:start;} .rc-note{color:var(--text-mute); font-size:.78rem; margin-top:4px;}
@@ -3495,7 +3506,7 @@ const rushSoFar = r=>`Total <strong>${rushTotal(r)}</strong>`;
 const RUSH_COLORS = { imbalances:'var(--pick1)', planq:'var(--pick2)', candidates:'var(--pick3)', final:'var(--system)' };   // (the arrows' 1st to 4th: the settings' colours)
 function rushChart(k, cur){
   const runs = rushRuns(k).slice(-RUSH_CHART); if(!runs.length) return '';
-  const W = 600, H = 170, top = 24, base = H - 8, slot = W / RUSH_CHART, bw = Math.min(34, slot - 10), best = rushBest(k) || 0;
+  const W = isLand() ? 1000 : 600, H = 170, top = 24, base = H - 8, slot = W / RUSH_CHART, bw = Math.min(34, slot - 10), best = rushBest(k) || 0;
   const max = Math.max(best, ...runs.map(x=>x.p), 1) * 1.08, y = v=>base - (base - top) * v / max, f1 = v=>v.toFixed(1);
   const bars = runs.map((x, i)=>{
     const cx = (RUSH_CHART - runs.length + i + 0.5) * slot, x0 = cx - bw / 2, isCur = cur && x.t===cur.t, op = isCur ? 1 : 0.4;
@@ -3510,20 +3521,20 @@ function rushChart(k, cur){
     return isCur ? `<g id="rcGrow">${tip}${mark}</g><text id="rcVal" x="${f1(cx)}" y="${f1(y(x.p) - 6)}" data-base="${base}" data-ytop="${f1(y(x.p))}" class="rc-val">${x.p}</text>` : `<g>${tip}${mark}</g>`;
   }).join('');
   const bl = best ? `<line x1="0" x2="${W}" y1="${f1(y(best))}" y2="${f1(y(best))}" class="rc-best"/><text x="2" y="${f1(y(best) - 5)}" class="rc-best-l">Best ${best}</text>` : '';
-  return `<h2 class="pf-h">History</h2><div class="rush-chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Last runs' points">${bl}${bars}<line x1="0" x2="${W}" y1="${base}" y2="${base}" class="rc-axis"/></svg>${r_hasTimeline(cur) ? '' : rushLegend(k, cur && cur.s)}</div>`;
+  return `<h2 class="pf-h rh-hist">History</h2><div class="rush-chart rc-hist"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Last runs' points">${bl}${bars}<line x1="0" x2="${W}" y1="${base}" y2="${base}" class="rc-axis"/></svg>${r_hasTimeline(cur) ? '' : rushLegend(k, cur && cur.s)}</div>`;
 }
 // The run's positions along its 3 minutes: each a bar as wide as the clock time it took (from shown to Check) and
 // as high as its points (a mixed run: in its exercise's colour); the time left on an unfinished position, empty.
 // Revealed from the left as the points count (rushCountUp)
 function rushTimeline(r){
   const xs = r.items.filter(x=>x.ms!=null); if(!xs.length) return '';
-  const W = 600, H = 160, l = 38, rt = 4, top = 10, base = H - 26, X = ms=>l + (W - l - rt) * ms / RUSH_MS, Y = v=>base - (base - top) * v / 100, f1 = v=>v.toFixed(1);
+  const W = isLand() ? 1000 : 600, H = 160, l = 38, rt = 4, top = 10, base = H - 26, X = ms=>l + (W - l - rt) * ms / RUSH_MS, Y = v=>base - (base - top) * v / 100, f1 = v=>v.toFixed(1);
   let t = 0; const bars = xs.map((x, i)=>{ const x0 = X(t), x1 = X(t + x.ms); t += x.ms;
     const col = r.k==='mixed' ? RUSH_COLORS[x.a] : 'var(--accent)';
     return `<rect x="${f1(x0 + 1)}" y="${f1(Y(x.pts))}" width="${f1(Math.max(1, x1 - x0 - 2))}" height="${f1(base - Y(x.pts))}" rx="2" fill="${col}"><title>${i + 1}. ${ACT_NAMES[x.a]}: ${rushFmt(x.ms).replace(/^0:/, '0:')} · ${x.pts} points</title></rect>`; }).join('');
   const grid = [50, 100].map(v=>`<line x1="${l}" x2="${W - rt}" y1="${f1(Y(v))}" y2="${f1(Y(v))}" class="rc-grid"/><text x="${l - 6}" y="${f1(Y(v) + 4)}" class="rc-tick rc-y">${v}</text>`).join('');
   const ticks = [0, 60e3, 120e3, 180e3].map(ms=>`<text x="${f1(X(ms))}" y="${H - 4}" class="rc-tick${ms===RUSH_MS ? ' rc-y' : ms===0 ? ' rc-start' : ''}">${rushFmt(ms)}</text>`).join('');
-  return `<div class="rush-chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Time and points per position">${grid}<clipPath id="rtClip"><rect id="rtReveal" x="0" y="0" width="${W}" height="${H}"/></clipPath><g clip-path="url(#rtClip)">${bars}</g><line x1="${l}" x2="${W - rt}" y1="${base}" y2="${base}" class="rc-axis"/>${ticks}</svg>
+  return `<div class="rush-chart rc-tl"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Time and points per position">${grid}<clipPath id="rtClip"><rect id="rtReveal" x="0" y="0" width="${W}" height="${H}"/></clipPath><g clip-path="url(#rtClip)">${bars}</g><line x1="${l}" x2="${W - rt}" y1="${base}" y2="${base}" class="rc-axis"/>${ticks}</svg>
     <div class="rc-note">Each position: as wide as its time, as high as its points</div>${rushLegend(r.k, r.k==='mixed' ? Object.fromEntries(ROUTINE.map(a=>[a, r.items.filter(x=>x.a===a).reduce((t, x)=>t + x.pts, 0)])) : null)}</div>`;
 }
 const r_hasTimeline = cur=>!!(cur && rush && rush.phase==='end' && rush.items.some(x=>x.ms!=null));
@@ -3538,7 +3549,7 @@ function renderRush(){
   else {
     const n = r.items.length, avg = rushAvg(r) || 0, runs = rushRuns(r.k), cur = n ? runs[runs.length - 1] : null;
     body = `<div class="rush-end">
-        <h2 class="pf-h">Run results</h2>
+        <h2 class="pf-h rh-run">Run results</h2>
         <div class="rush-sum">
           <span class="rush-stat"><b class="rush-n" data-to="${n}">0</b><small>Positions</small></span>
           <span class="rush-stat"><b class="rush-n" data-to="${avg}" data-pct="1">0%</b><small>Average accuracy</small></span>
@@ -3546,8 +3557,8 @@ function renderRush(){
         </div>
         ${rushTimeline(r)}
         ${rushChart(r.k, cur)}
-      </div>
-      <div class="actions-row split rush-actions" style="visibility:hidden"><button class="btn secondary" id="rushMenu" data-no-i18n>${L({ en:'Done', fr:'Terminé', de:'Fertig', es:'Terminar', it:'Fine' })}</button><button class="btn" id="rushAgain">Play again</button></div>`;
+      <div class="actions-row split rush-actions" style="visibility:hidden"><button class="btn secondary" id="rushMenu" data-no-i18n>${L({ en:'Done', fr:'Terminé', de:'Fertig', es:'Terminar', it:'Fine' })}</button><button class="btn" id="rushAgain">Play again</button></div>
+      </div>`;
   }
   app.innerHTML = top + `<div class="rush-page">${body}</div>`;
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
@@ -3573,7 +3584,7 @@ function rushCountUp(r){
     });
     if(grow){ const b = +val.dataset.base, yt = +val.dataset.ytop; grow.setAttribute('transform', `translate(0 ${(b * (1 - fp)).toFixed(2)}) scale(1 ${fp.toFixed(4)})`);
       val.setAttribute('y', (b - (b - yt) * fp - 6).toFixed(1)); val.textContent = Math.round(+els[els.length - 1].dataset.to * fp); val.style.opacity = fp > 0 ? 1 : 0; }
-    const rv = document.getElementById('rtReveal'); if(rv) rv.setAttribute('width', (600 * fp).toFixed(1));   // (the timeline, from the left)
+    const rv = document.getElementById('rtReveal'); if(rv) rv.setAttribute('width', (1000 * fp).toFixed(1));   // (the timeline, from the left)
     if(badge) badge.classList.toggle('on', !busy);   // (the badge once the points are in)
     if(!busy){ const a = document.querySelector('#app .rush-actions'); if(a && a.style.visibility==='hidden'){ a.style.visibility = ''; a.classList.add('fade-in'); } }   // (then the buttons)
     if(busy) requestAnimationFrame(step);
