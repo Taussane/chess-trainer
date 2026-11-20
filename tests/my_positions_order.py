@@ -66,7 +66,7 @@ async def main():
         if rot != {'core': 100, 'kept': True, 'dropped': True, 'replayHasIt': True, 'coreHasOld': False}: fails.append(f'rotation: {rot}')
         # Masters use the same line: positions added to the library later come first; one got right goes last.
         ms = await pg.evaluate("""(()=>{ const a = 'final', P = POOLS[a], now = Date.now();
-          const newer = P.slice(0, 5); newer.forEach(p=>p.added = (p.added||0) + 30*864e5);   // as if added a month later
+          const newer = P.slice(0, 5), last = Math.max(...P.map(p=>p.added||0)); newer.forEach(p=>p.added = last + 30*864e5);   // as if added a month after the newest
           results.push({ a, acc:95, ts: now, key: P[10].key, miss:false }); results.sort((x,y)=>x.ts-y.ts); lineCache = {};
           const c = candidatesFor(a, 'masters'), keys = c.core.map(p=>p.key);
           const first = {}; for(let i=0; i<20000; i++){ const k = drawWeighted(a, 'masters')[0].key; first[k] = (first[k]||0)+1; }
