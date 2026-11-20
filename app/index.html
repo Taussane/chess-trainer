@@ -657,6 +657,7 @@
   .gp-box .seg, .gp-box .gp-filters, .gp-box h3, .gp-box .modal-actions{flex:none;} .gp-box .seg{margin:0 0 8px;}
   .gp-filters{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; margin:0 0 8px;}   /* (the drop-down lists, side by side) */
   .gp-sel{min-width:0; width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:6px 2px 6px 6px; font:inherit; font-size:0.8rem;}
+  .gp-box .gp-count{margin:0 0 6px; font-size:.8rem; color:var(--text-mute);}
   .gp-list{overflow-y:auto; min-height:120px; flex:1; display:flex; flex-direction:column; gap:4px; margin-bottom:10px;}
   .gp-row{display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font:inherit; cursor:pointer;}
   .gp-row:hover{border-color:var(--accent);} @media not (min-aspect-ratio:6/5){ .gp-sep{display:none;} .gp-mv{display:block;} }   /* (portrait: length and errors on a line of their own) */ .gp-t{display:flex; justify-content:space-between; gap:10px; width:100%;} .gp-res{flex:none; color:var(--text-mute); font-variant-numeric:tabular-nums;} .gp-row small{color:var(--text-mute); font-size:0.78rem;}
@@ -7837,6 +7838,7 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Lichess analyses deeper on its servers, so its numbers can differ a little.": "Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer."
 }/*END I18N_FR*/));
 const I18N_FR_RE = [
+  [/^(\d+) games?$/, (m, n)=>`${n} partie${n==='1' ? '' : 's'}`],   // (the game list's count)
   [/^Best (\d+)$/, 'Record $1'],   // (Rush: the history's best line, its bars' tooltips)
   [/^(.+): (\d+) points, (\d+) positions$/, '$1 : $2 points, $3 positions'],
   [/^(\d+)\. (.+): (\d+:\d\d) · (\d+) points$/, (m, i, a, t, p)=>`${i}. ${tr(a)} : ${t} · ${p} points`],
@@ -9395,6 +9397,7 @@ const i18nSide = { de:{ White:'Weiß', Black:'Schwarz' }, es:{ White:'las blanca
 const capFirst = t=>t.charAt(0).toUpperCase() + t.slice(1);
 const decComma = v=>String(v).replace(/(\d)\.(\d)/g, '$1,$2');
 const I18N_DE_RE = [
+  [/^(\d+) games?$/, (m, n)=>`${n} ${n==='1' ? 'Partie' : 'Partien'}`],   // (the game list's count)
   [/^Best (\d+)$/, 'Rekord $1'],   // (Rush: the history's best line, its bars' tooltips)
   [/^(.+): (\d+) points, (\d+) positions$/, '$1: $2 Punkte, $3 Stellungen'],
   [/^(\d+)\. (.+): (\d+:\d\d) · (\d+) points$/, (m, i, a, t, p)=>`${i}. ${tr(a)}: ${t} · ${p} Punkte`],
@@ -9463,6 +9466,7 @@ const I18N_DE_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} beim letzten Mal unterbrochene ${n==='1' ? 'Partie' : 'Partien'} abgeschlossen.`)],
 ];
 const I18N_ES_RE = [
+  [/^(\d+) games?$/, (m, n)=>`${n} partida${n==='1' ? '' : 's'}`],   // (the game list's count)
   [/^Best (\d+)$/, 'Récord $1'],   // (Rush: the history's best line, its bars' tooltips)
   [/^(.+): (\d+) points, (\d+) positions$/, '$1: $2 puntos, $3 posiciones'],
   [/^(\d+)\. (.+): (\d+:\d\d) · (\d+) points$/, (m, i, a, t, p)=>`${i}. ${tr(a)}: ${t} · ${p} puntos`],
@@ -9530,6 +9534,7 @@ const I18N_ES_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} ${n==='1' ? 'partida interrumpida' : 'partidas interrumpidas'} la última vez, ${n==='1' ? 'terminada' : 'terminadas'}.`)],
 ];
 const I18N_IT_RE = [
+  [/^(\d+) games?$/, (m, n)=>`${n} partit${n==='1' ? 'a' : 'e'}`],   // (the game list's count)
   [/^Best (\d+)$/, 'Record $1'],   // (Rush: the history's best line, its bars' tooltips)
   [/^(.+): (\d+) points, (\d+) positions$/, '$1: $2 punti, $3 posizioni'],
   [/^(\d+)\. (.+): (\d+:\d\d) · (\d+) points$/, (m, i, a, t, p)=>`${i}. ${tr(a)}: ${t} · ${p} punti`],
@@ -10476,6 +10481,7 @@ function openGamePicker(){
   div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box gp-box" role="dialog" aria-label="Load a game"><h3>Load a game</h3>
     <div class="seg seg-sm" role="tablist">${[['masters', 'Masters'], ['mine', 'My games']].map(([k, l])=>`<button class="seg-btn${gp.tab===k ? ' active' : ''}" data-gp="${k}">${l}</button>`).join('')}</div>
     <div class="gp-filters" id="gpF"></div>
+    <p class="gp-count" id="gpCount"></p>
     <div class="gp-list" id="gpList"></div>
     <div class="modal-actions">${explorer && explorer.game ? '<button class="btn secondary" id="gpReset">Reset game</button>' : ''}<button class="btn secondary" id="gpClose">Close</button></div></div></div>`;
   document.body.appendChild(div);
@@ -10520,18 +10526,28 @@ function openGamePicker(){
         return { key:'masters:' + id, src:'masters', id, t:i.title || id, res:res(i.result), sub:[fmtGameDate(i.date), i.event && tr(i.event)].filter(Boolean).join(' · '), mv:mv + ' moves' }; });
     // (each row: where it comes from; then, its own line on a phone: its length and errors)
     // and how many moves each side got Inaccuracy or worse ("errors": not to mix them up with the Mistake grade)
-    // (counted after the list shows, a few rows at a time: the page stays responsive)
-    const shown = rows.slice(0, 150), run = gp.run = {};
-    const fill = i=>{ if(gp.run!==run || !document.getElementById('gpModal')) return;
-      for(const r of shown.slice(i, i + 15)){ const n = gameErrors(r.src, r.id), el = n && div.querySelector(`[data-load="${CSS.escape(r.key)}"] .gp-mv`); if(el) el.textContent = r.mv + ` · Errors: ${n.w} – ${n.b}`; }
-      if(i + 15 < shown.length) setTimeout(()=>fill(i + 15), 0); };
-    setTimeout(()=>fill(0), 0);
-    document.getElementById('gpList').innerHTML = shown.map(r=>`<button class="gp-row" data-load="${escHtml(r.key)}"><span class="gp-t"><b>${escHtml(r.t)}</b>${r.res ? `<span class="gp-res">${r.res}</span>` : ''}</span><small><span>${escHtml(r.sub)}</span><span class="gp-sep"> · </span><span class="gp-mv">${escHtml(r.mv)}</span></small></button>`).join('')
-      || `<p class="xpg-note">${gp.tab==='mine' && !myGames.length ? 'No games yet: link Lichess or Chess.com in your profile.' : 'No game found.'}</p>`;
-    div.querySelectorAll('[data-load]').forEach(b=>b.onclick = ()=>{
-      const [src, id] = [b.dataset.load.slice(0, b.dataset.load.indexOf(':')), b.dataset.load.slice(b.dataset.load.indexOf(':') + 1)];
-      close(); explorerLoadGame(src, id, 0);   // (at its start)
-    });
+    // (counted after the rows show, a few at a time: the page stays responsive). The rows come 150 at a time, the next
+    // ones as the list nears its end; the number of games found above it
+    const PAGE = 150, run = gp.run = {}, box = document.getElementById('gpList');
+    const cnt = document.getElementById('gpCount'); if(cnt) cnt.textContent = rows.length ? `${rows.length} game${rows.length===1 ? '' : 's'}` : '';
+    const rowHtml = r=>`<button class="gp-row" data-load="${escHtml(r.key)}"><span class="gp-t"><b>${escHtml(r.t)}</b>${r.res ? `<span class="gp-res">${r.res}</span>` : ''}</span><small><span>${escHtml(r.sub)}</span><span class="gp-sep"> · </span><span class="gp-mv">${escHtml(r.mv)}</span></small></button>`;
+    const fill = (i, end)=>{ if(gp.run!==run || !document.getElementById('gpModal')) return;
+      for(const r of rows.slice(i, Math.min(i + 15, end))){ const n = gameErrors(r.src, r.id), el = n && div.querySelector(`[data-load="${CSS.escape(r.key)}"] .gp-mv`); if(el) el.textContent = r.mv + ` · Errors: ${n.w} – ${n.b}`; }
+      if(i + 15 < end) setTimeout(()=>fill(i + 15, end), 0); };
+    let shown = 0;
+    const more = ()=>{
+      if(gp.run!==run || shown >= rows.length) return;
+      const from = shown; shown = Math.min(rows.length, shown + PAGE);
+      box.insertAdjacentHTML('beforeend', rows.slice(from, shown).map(rowHtml).join(''));
+      [...box.querySelectorAll('[data-load]')].slice(from).forEach(b=>b.onclick = ()=>{
+        const [src, id] = [b.dataset.load.slice(0, b.dataset.load.indexOf(':')), b.dataset.load.slice(b.dataset.load.indexOf(':') + 1)];
+        close(); explorerLoadGame(src, id, 0);   // (at its start)
+      });
+      setTimeout(()=>fill(from, shown), 0);
+    };
+    box.innerHTML = rows.length ? '' : `<p class="xpg-note">${gp.tab==='mine' && !myGames.length ? 'No games yet: link Lichess or Chess.com in your profile.' : 'No game found.'}</p>`;
+    box.scrollTop = 0; more();
+    box.onscroll = ()=>{ if(box.scrollTop + box.clientHeight > box.scrollHeight - 600) more(); };
   };
   if(!masterPassData) loadMasterPass().then(()=>{ if(document.getElementById('gpModal')===div && gp.tab==='masters') list(); });   // (the master games' errors, once their evaluations are in)
   div.querySelectorAll('[data-gp]').forEach(b=>b.onclick = ()=>{ gp.tab = b.dataset.gp; div.querySelectorAll('[data-gp]').forEach(y=>y.classList.toggle('active', y===b)); drawFilters(); list(); });
