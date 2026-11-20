@@ -157,15 +157,15 @@
   html.desk2 .wrap.home .source-row .rush-toggle svg{width:24px; height:24px;} html.desk2 .wrap.home .source-row .rush-toggle{padding:6px 14px 6px 12px !important;}
   .home-chips{display:flex; flex-direction:column; align-items:flex-end; gap:6px; min-width:0;}
   .rush-end{display:flex; flex-direction:column; gap:22px; padding-top:18px;}
-  .rush-sum{display:grid; grid-template-columns:1fr 1fr 1.3fr; gap:10px; align-items:end;}
-  .rush-stat{display:flex; flex-direction:column; align-items:center; gap:2px; padding:12px 6px; background:var(--panel); border:1px solid var(--border); border-radius:12px; transition:opacity .2s;}
+  .rush-sum{display:grid; grid-template-columns:1fr 1fr; gap:10px;} .rush-sum .rush-total{grid-column:1 / -1;}
+  .rush-stat{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:12px 6px; background:var(--panel); border:1px solid var(--border); border-radius:12px;}
   .rush-stat b{font-size:2.2rem; line-height:1.1; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums;} .rush-stat small{color:var(--text-mute); font-size:.8rem; text-align:center;}
-  .rush-stat.rush-total{border-color:var(--accent);} .rush-stat.rush-total b{font-size:3rem; color:var(--accent);}
-  .rush-new{display:inline-block; margin-left:4px; padding:1px 7px; border-radius:999px; background:var(--accent); color:var(--bg); font-weight:700; font-size:.72rem; opacity:0; transform:scale(.6); transition:opacity .25s, transform .3s cubic-bezier(.3,1.6,.6,1);} .rush-new.on{opacity:1; transform:none;}
+  .rush-stat.rush-total{border-color:var(--accent); position:relative;} .rush-stat.rush-total b{font-size:3rem; color:var(--accent);}
+  .rush-new{position:absolute; top:10px; right:10px; padding:1px 7px; border-radius:999px; background:var(--accent); color:var(--bg); font-weight:700; font-size:.72rem; opacity:0; transform:scale(.6); transition:opacity .25s, transform .3s cubic-bezier(.3,1.6,.6,1);} .rush-new.on{opacity:1; transform:none;}
   .rush-chart{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 14px;} .rc-h{color:var(--text-mute); font-size:.8rem; margin-bottom:6px;}
   .rush-chart svg{display:block; width:100%; height:auto; max-height:190px;} .rc-old{fill:var(--text-mute); opacity:.45;} .rc-cur{fill:var(--accent);}
-  .rc-val{fill:var(--text); font-size:15px; font-weight:700; text-anchor:middle;} .rc-axis{stroke:var(--border); stroke-width:1;}
-  .rc-best{stroke:var(--text-mute); stroke-width:1.5; stroke-dasharray:5 5;} .rc-best-l{fill:var(--text-mute); font-size:13px;}
+  .rc-val{fill:var(--text); font-size:20px; font-weight:700; text-anchor:middle;} .rc-axis{stroke:var(--border); stroke-width:1;}
+  .rc-best{stroke:var(--text-mute); stroke-width:1.5; stroke-dasharray:5 5;} .rc-best-l{fill:var(--text-mute); font-size:17px;}
   .rc-legend{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:8px; font-size:.8rem; color:var(--text-mute);} .rc-legend i{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px;} .rc-legend b{color:var(--text);}
   .rush-best{font-variant-numeric:tabular-nums; color:var(--text-mute);} .rush-best b{color:var(--text);}
   @media (max-width:480px){ .rush-stat b{font-size:1.8rem;} .rush-stat.rush-total b{font-size:2.4rem;} }
@@ -3384,7 +3384,9 @@ const rushRuns = k=>((profile.rushRuns || {})[k] || []);
 const rushTotal = r=>r.items.reduce((t, x)=>t + x.pts, 0);
 const rushAvg = r=>r.items.length ? Math.round(rushTotal(r) / r.items.length) : null;
 const rushFmt = ms=>{ const t = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
-const rushLeft = ()=>rush ? (rush.phase==='run' ? rush.left - (performance.now() - rush.at) : rush.left) : 0;
+const rushLeft = ()=>rush ? (rush.phase==='run' ? rush.left - Math.max(0, performance.now() - rush.at) : rush.left) : 0;
+const rushTicking = ()=>!!rush && rush.phase==='run' && performance.now() >= rush.at;
+const rushGo = r=>{ r.phase = 'run'; r.at = Math.max(performance.now(), (r.shownAt || 0) + INTRO_DELAY + XP_SLIDE_MS + 50); };   // (once the move into the position has been played on the board)
 const rushSrc = ()=>source==='filter' ? 'filter.' + filterKey() : source;
 const rushActAt = (r, n)=>r.k==='mixed' ? ROUTINE[n % ROUTINE.length] : r.k;   // the exercise of a run's n-th position
 const rushCan = k=>progressLoaded && (k==='mixed' ? ROUTINE.every(rushCan) : k==='planq' ? planqPool().length > 0 : sourcePool(k, rushSrc()).length > 0);
@@ -3434,8 +3436,8 @@ function rushState(it){
 }
 function rushNextItem(){ const r = rush; while(r.queue.length && rushState(r.queue[0])==='failed') r.queue.shift(); rushFill(); return r.queue[0] || null; }
 function rushShow(it){
-  const r = rush; r.queue.shift(); r.shown++; r.cur = it; r.waitNext = false; rushFill();
-  r.phase = rushState(it)==='ready' ? 'run' : 'wait'; if(r.phase==='run') r.at = performance.now();
+  const r = rush; r.queue.shift(); r.shown++; r.cur = it; r.waitNext = false; r.shownAt = performance.now(); rushFill();
+  if(rushState(it)==='ready') rushGo(r); else r.phase = 'wait';
   rushMode = true; selSquare = null; promoPending = null; helpVisible = false;
   if(it.a==='planq'){ planq = it.q; screen = 'planq'; }
   else { const t = 'z-' + it.a; orders[t].push(it.p); seqBy[t] = orders[t].length - 1; screen = it.a; }
@@ -3457,9 +3459,9 @@ function rushEnd(){
   const r = rush; r.left = 0; r.phase = 'end'; rushMode = false; screen = 'rush'; planq = r.planq0;
   r.score = rushTotal(r);
   if(r.items.length){
-    if(r.best0==null || r.score > r.best0){ profile.rushPts = { ...(profile.rushPts || {}), [r.k]: r.score }; r.newBest = true; }
     const run = { t: Date.now(), p: r.score, n: r.items.length };
     if(r.k==='mixed'){ run.s = {}; ROUTINE.forEach(a=>{ run.s[a] = r.items.filter(x=>x.a===a).reduce((t, x)=>t + x.pts, 0); }); }
+    if(r.best0==null || r.score > r.best0){ profile.rushPts = { ...(profile.rushPts || {}), [r.k]: r.score }; profile.rushTop = { ...(profile.rushTop || {}), [r.k]: run }; r.newBest = true; }
     profile.rushRuns = { ...(profile.rushRuns || {}), [r.k]: rushRuns(r.k).concat(run).slice(-RUSH_RUNS) };
     saveProfile();
   }
@@ -3472,40 +3474,43 @@ function rushTick(){
   if(r.phase==='wait'){
     if(r.waitNext){ const it = rushNextItem(); if(it) rushShow(it); }
     else if(r.cur){ const s = rushState(r.cur);
-      if(s==='ready'){ r.phase = 'run'; r.at = performance.now(); }
+      if(s==='ready') rushGo(r);
       else if(s==='failed'){ r.shown--; r.waitNext = true; } }   // (couldn't be evaluated: the next one instead, no score)
   }
   else if(r.phase==='run' && rushLeft() <= 0) return rushEnd();
   // the clock, without redrawing the page
-  const c = document.getElementById('rushClock'); if(c){ c.textContent = rushFmt(rushLeft()); c.classList.toggle('paused', r.phase!=='run'); }
+  const c = document.getElementById('rushClock'); if(c){ c.textContent = rushFmt(rushLeft()); c.classList.toggle('paused', !rushTicking()); }
   setTimeout(rushTick, 100);
 }
 // On the line above the board, at the right: the time left (greyed while stopped)
-const rushClockHtml = ()=>rushMode && rush ? `<span class="rush-clock${rush.phase==='run' ? '' : ' paused'}" id="rushClock">${rushFmt(rushLeft())}</span>` : '';
+const rushClockHtml = ()=>rushMode && rush ? `<span class="rush-clock${rushTicking() ? '' : ' paused'}" id="rushClock">${rushFmt(rushLeft())}</span>` : '';
 // The review's score line: the run's total so far
 const rushSoFar = r=>`Total <strong>${rushTotal(r)}</strong>`;
 // The end: the run's positions, average accuracy and points (counted up one after the other), a "New best" badge,
 // and its last runs as bars (a mixed run: stacked by exercise, its points per exercise in the legend), the best as
 // a line
-const RUSH_COLORS = { imbalances:'#3987e5', planq:'#d95926', candidates:'#199e70', final:'#c98500' };   // (dataviz categorical, dark steps: validated on the panel)
+const RUSH_COLORS = { imbalances:'var(--pick1)', planq:'var(--pick2)', candidates:'var(--pick3)', final:'var(--system)' };   // (the arrows' 1st to 4th: the settings' colours)
 function rushChart(k, cur){
   const runs = rushRuns(k).slice(-RUSH_CHART); if(!runs.length) return '';
-  const W = 600, H = 170, top = 18, base = H - 8, slot = W / RUSH_CHART, bw = Math.min(34, slot - 10), best = rushBest(k) || 0;
-  const max = Math.max(best, ...runs.map(x=>x.p), 1) * 1.08, y = v=>base - (base - top) * v / max;
+  const W = 600, H = 170, top = 24, base = H - 8, slot = W / RUSH_CHART, bw = Math.min(34, slot - 10), best = rushBest(k) || 0;
+  const max = Math.max(best, ...runs.map(x=>x.p), 1) * 1.08, y = v=>base - (base - top) * v / max, f1 = v=>v.toFixed(1);
   const bars = runs.map((x, i)=>{
-    const cx = (RUSH_CHART - runs.length + i + 0.5) * slot, x0 = cx - bw / 2, isCur = cur && x.t===cur.t, op = isCur ? 1 : 0.45;
+    const cx = (RUSH_CHART - runs.length + i + 0.5) * slot, x0 = cx - bw / 2, isCur = cur && x.t===cur.t, op = isCur ? 1 : 0.4;
     const tip = `<title>${new Date(x.t).toLocaleDateString(dateLoc(), { month:'short', day:'numeric' })}: ${x.p} points, ${x.n} positions</title>`;
-    if(k==='mixed' && x.s){
+    let mark;
+    if(k==='mixed' && x.s){   // stacked by exercise, straight where they meet (a 2px gap), the bar's own ends rounded
       let acc = 0; const segs = ROUTINE.map(a=>{ const v = x.s[a] || 0; if(!v) return ''; const y1 = y(acc), y2 = y(acc + v); acc += v;
-        return `<rect x="${x0.toFixed(1)}" y="${(y2 + 1).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0, y1 - y2 - 2).toFixed(1)}" rx="3" fill="${RUSH_COLORS[a]}" opacity="${op}"/>`; }).join('');
-      return `<g>${tip}${segs}${isCur ? `<text x="${cx.toFixed(1)}" y="${(y(x.p) - 6).toFixed(1)}" class="rc-val">${x.p}</text>` : ''}</g>`;
-    }
-    return `<g>${tip}<rect x="${x0.toFixed(1)}" y="${y(x.p).toFixed(1)}" width="${bw.toFixed(1)}" height="${(base - y(x.p)).toFixed(1)}" rx="4" class="${isCur ? 'rc-cur' : 'rc-old'}"/>${isCur ? `<text x="${cx.toFixed(1)}" y="${(y(x.p) - 6).toFixed(1)}" class="rc-val">${x.p}</text>` : ''}</g>`;
+        const gap = acc >= x.p ? 0 : 2;   // (a gap above each part but the top one)
+        return `<rect x="${f1(x0)}" y="${f1(y2 + gap)}" width="${f1(bw)}" height="${f1(Math.max(0, y1 - y2 - gap))}" fill="${RUSH_COLORS[a]}"/>`; }).join('');
+      mark = `<clipPath id="rcc${i}"><rect x="${f1(x0)}" y="${f1(y(x.p))}" width="${f1(bw)}" height="${f1(base - y(x.p))}" rx="4"/></clipPath><g clip-path="url(#rcc${i})" opacity="${op}">${segs}</g>`;
+    } else mark = `<rect x="${f1(x0)}" y="${f1(y(x.p))}" width="${f1(bw)}" height="${f1(base - y(x.p))}" rx="4" class="${isCur ? 'rc-cur' : 'rc-old'}"/>`;
+    return isCur ? `<g id="rcGrow">${tip}${mark}</g><text id="rcVal" x="${f1(cx)}" y="${f1(y(x.p) - 6)}" data-base="${base}" data-ytop="${f1(y(x.p))}" class="rc-val">${x.p}</text>` : `<g>${tip}${mark}</g>`;
   }).join('');
-  const bl = best ? `<line x1="0" x2="${W}" y1="${y(best).toFixed(1)}" y2="${y(best).toFixed(1)}" class="rc-best"/><text x="2" y="${(y(best) - 5).toFixed(1)}" class="rc-best-l">Best ${best}</text>` : '';
-  const legend = k==='mixed' && cur && cur.s ? `<div class="rc-legend">${ROUTINE.map(a=>`<span><i style="background:${RUSH_COLORS[a]}"></i>${ACT_NAMES[a]} <b>${cur.s[a] || 0}</b></span>`).join('')}</div>` : '';
-  return `<div class="rush-chart"><div class="rc-h">Last runs</div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Last runs' points">${bl}${bars}<line x1="0" x2="${W}" y1="${base}" y2="${base}" class="rc-axis"/></svg>${legend}</div>`;
+  const bl = best ? `<line x1="0" x2="${W}" y1="${f1(y(best))}" y2="${f1(y(best))}" class="rc-best"/><text x="2" y="${f1(y(best) - 5)}" class="rc-best-l">Best ${best}</text>` : '';
+  return `<div class="rush-chart"><div class="rc-h">Last runs</div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Last runs' points">${bl}${bars}<line x1="0" x2="${W}" y1="${base}" y2="${base}" class="rc-axis"/></svg>${rushLegend(k, cur && cur.s)}</div>`;
 }
+// A mixed run's points per exercise (adding up to its total), with their colours
+const rushLegend = (k, s)=>k==='mixed' && s ? `<div class="rc-legend">${ROUTINE.map(a=>`<span><i style="background:${RUSH_COLORS[a]}"></i>${ACT_NAMES[a]} <b>${s[a] || 0}</b></span>`).join('')}</div>` : '';
 function renderRush(){
   const app = document.getElementById('app'), r = rush;
   if(!r){ screen = 'home'; return render(); }
@@ -3516,9 +3521,9 @@ function renderRush(){
     const n = r.items.length, avg = rushAvg(r) || 0, runs = rushRuns(r.k), cur = n ? runs[runs.length - 1] : null;
     body = `<div class="rush-end">
         <div class="rush-sum">
-          <span class="rush-stat"><b class="rush-n" data-to="${n}">${n}</b><small>Positions</small></span>
-          <span class="rush-stat"><b class="rush-n" data-to="${avg}" data-pct="1">${avg}%</b><small>Average accuracy</small></span>
-          <span class="rush-stat rush-total"><b class="rush-n" data-to="${r.score}">${r.score}</b><small>Points${r.newBest ? ' <span class="rush-new">New best</span>' : ''}</small></span>
+          <span class="rush-stat"><b class="rush-n" data-to="${n}">0</b><small>Positions</small></span>
+          <span class="rush-stat"><b class="rush-n" data-to="${avg}" data-pct="1">0%</b><small>Average accuracy</small></span>
+          <span class="rush-stat rush-total"><b class="rush-n" data-to="${r.score}">0</b><small>Points${r.newBest ? ' <span class="rush-new">New best</span>' : ''}</small></span>
         </div>
         ${rushChart(r.k, cur)}
       </div>
@@ -3531,31 +3536,34 @@ function renderRush(){
   on('rushAgain', ()=>rushStart(r.k));
   if(r.phase==='end') rushCountUp(r);
 }
-// The end's three numbers, counted up from 0 one after the other (positions, average, points), once per run
-const RUSH_COUNT_MS = 700;
+// The end's three numbers, counted up from 0 one after the other (positions, average, points) after a short wait,
+// the run's bar rising with its points; once per run
+const RUSH_COUNT_MS = 700, RUSH_COUNT_WAIT = 600;
 function rushCountUp(r){
-  const els = [...document.querySelectorAll('#app .rush-n')];
-  if(r.countAt==null){ r.countAt = performance.now(); if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) r.countAt -= 1e6; }
-  const badge = document.querySelector('#app .rush-new');
+  const els = [...document.querySelectorAll('#app .rush-n')], grow = document.getElementById('rcGrow'), val = document.getElementById('rcVal');
+  if(r.countAt==null){ r.countAt = performance.now() + RUSH_COUNT_WAIT; if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) r.countAt -= 1e6; }
+  const badge = document.querySelector('#app .rush-new'), ease = f=>1 - Math.pow(1 - f, 3);
   const step = ()=>{
     if(rush!==r || screen!=='rush' || !els[0] || !els[0].isConnected) return;
-    const t = performance.now() - r.countAt; let busy = false;
+    const t = performance.now() - r.countAt; let busy = false, fp = 0;
     els.forEach((el, i)=>{
       const f = Math.max(0, Math.min(1, (t - i * (RUSH_COUNT_MS + 150)) / RUSH_COUNT_MS)), to = +el.dataset.to;
-      el.textContent = Math.round(to * (1 - Math.pow(1 - f, 3))) + (el.dataset.pct ? '%' : ''); el.parentNode.style.opacity = f > 0 ? 1 : .35;
-      if(f < 1) busy = true;
+      el.textContent = Math.round(to * ease(f)) + (el.dataset.pct ? '%' : '');
+      if(f < 1) busy = true; if(i===els.length - 1) fp = ease(f);
     });
+    if(grow){ const b = +val.dataset.base, yt = +val.dataset.ytop; grow.setAttribute('transform', `translate(0 ${(b * (1 - fp)).toFixed(2)}) scale(1 ${fp.toFixed(4)})`);
+      val.setAttribute('y', (b - (b - yt) * fp - 6).toFixed(1)); val.textContent = Math.round(+els[els.length - 1].dataset.to * fp); val.style.opacity = fp > 0 ? 1 : 0; }
     if(badge) badge.classList.toggle('on', !busy);   // (the badge once the points are in)
     if(busy) requestAnimationFrame(step);
   };
   step();
 }
-// The home page in rush mode, in the routine's place: the mixed run (its best) and each exercise's best
+// The home page in rush mode, in the routine's place: the mixed run's best, and that run's points per exercise
 function rushCard(){
-  const n = v=>v!=null ? `<b>${v}</b>` : '—';
+  const n = v=>v!=null ? `<b>${v}</b>` : '—', top = (profile.rushTop || {}).mixed;   // (its best run's points per exercise, adding up to its best)
   return `<div class="routine rush-card">
       <div class="routine-head"><span class="routine-title">Mixed rush</span><span class="routine-count${dataCls()}">Best ${n(rushBest('mixed'))}</span></div>
-      ${ROUTINE.map(a=>`<div class="routine-row"><span>${ACT_NAMES[a]}</span><span class="rush-best${dataCls()}">${n(rushBest(a))}</span></div>`).join('')}
+      ${ROUTINE.map(a=>`<div class="routine-row"><span>${ACT_NAMES[a]}</span><span class="rush-best${dataCls()}">${n(top && top.s ? top.s[a] || 0 : null)}</span></div>`).join('')}
       <button class="btn routine-btn" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>Start mixed rush</button>
     </div>`;
 }
@@ -5111,6 +5119,7 @@ async function loadProfileMeta(db, id){
     if(p && p.accResetAt) profile.accResetAt = Math.max(profile.accResetAt || 0, p.accResetAt);   // (beta resets, the latest wins)
     if(p && p.timeResetAt) profile.timeResetAt = Math.max(profile.timeResetAt || 0, p.timeResetAt);
     if(p && p.rushRuns) for(const [k, xs] of Object.entries(p.rushRuns)) if(Array.isArray(xs)){ const have = new Set(rushRuns(k).map(x=>x.t)); profile.rushRuns = { ...(profile.rushRuns || {}), [k]: rushRuns(k).concat(xs.filter(x=>x && !have.has(x.t))).sort((a, b)=>a.t - b.t).slice(-RUSH_RUNS) }; }   // (each kind's last runs, from both)
+    if(p && p.rushTop) for(const [k, x] of Object.entries(p.rushTop)) if(x && typeof x.p==='number' && !((profile.rushTop || {})[k] && profile.rushTop[k].p >= x.p)) profile.rushTop = { ...(profile.rushTop || {}), [k]: x };   // (each kind's best run, the higher wins)
     if(p && p.rushPts) for(const [k, n] of Object.entries(p.rushPts)) if(typeof n==='number') profile.rushPts = { ...(profile.rushPts || {}), [k]: Math.max(n, (profile.rushPts || {})[k] || 0) };   // (each kind of run's best, the higher wins)
     if(p && p.onboard) profile.onboard = { ...(profile.onboard || {}), ...p.onboard };   // the onboarding drawn on another device wins
     if(r && Array.isArray(r.items)) r.items.forEach(x=>{ if(!legacyMissed.some(y=>y.key===x.key && y.a===x.a)) legacyMissed.push(x); });
