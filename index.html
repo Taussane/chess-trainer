@@ -146,7 +146,7 @@
   .card.xp-entry:hover{filter:brightness(1.06);}
   .card.xp-entry .card-glyph, .card.xp-entry .card-desc{color:var(--on-accent);} .card.xp-entry .card-desc{opacity:.8;}
   .card.xp-entry .title-badge{color:var(--on-accent); border-color:var(--on-accent);}
-  /* Rush (beta): its page (menu, countdown, end), and in a run the clock and score, and a chip per position */
+  /* Rush: its end page (results, timeline, history), the clock in a run, the home switch and card */
   .rush-page{display:flex; flex-direction:column; gap:14px; margin-top:12px; max-width:760px; width:100%; margin-inline:auto;}
   .wrap[data-scr=rush] > #app > .title-row{max-width:760px; margin-inline:auto;}   /* (the rush's own pages: the FAQ's width, centred) */
   .pl-line .rush-clock{margin-left:auto; font-size:1.15rem; line-height:22px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text);}
@@ -182,7 +182,6 @@
   .rush-top{display:flex; align-items:baseline; gap:8px; font-variant-numeric:tabular-nums;} .rush-top small{color:var(--text-mute); font-size:.85rem;} .rush-top b{color:var(--text); font-size:1.15rem; line-height:1;}   /* (the title's size: the card as high as the routine's) */
   .rush-best{font-variant-numeric:tabular-nums; color:var(--text-mute);} .rush-best b{color:var(--text);}
   @media (max-width:480px){ .rush-stat b{font-size:1.8rem;} .rush-stat.rush-total b{font-size:2.4rem;} }
-  .rush-pts{font-variant-numeric:tabular-nums; color:var(--text);}
   .card-glyph{font-size:1.9rem; line-height:1; width:36px; text-align:center; color:var(--accent);}
   .act-icon{width:1em; height:1em; vertical-align:-0.15em;}
   .card-title{display:block; font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
@@ -3377,7 +3376,7 @@ function lichessUrl(p){
 }
 // A review's buttons on the left, icons only: the position on Lichess, in the Strategy explorer (the game's moves around
 // it), and a link to it to share
-// ================= Rush (beta) =================
+// ================= Rush =================
 // A mode, switched on and off on the home page (kept on this device): each exercise, and the mixed run (the four
 // exercises in the routine's order), as 3 minutes of positions. A run's score: its positions' accuracies added up
 // (going fast pays only if the answers hold up); each kind of run keeps its best (profile.rushPts) and its last
@@ -3388,7 +3387,7 @@ function lichessUrl(p){
 // untouched. Its own tracks ('z-'): see ctx.
 const RUSH_MS = 180000, RUSH_AHEAD = 3, RUSH_SEARCH_MS = 2000, RUSH_RUNS = 30, RUSH_CHART = 12;   // (its searches: 2 s each, so positions keep up)
 let rushOn = false;
-try{ rushOn = BETA_SITE && localStorage.getItem('cst.rush')==='1'; }catch(e){}
+try{ rushOn = localStorage.getItem('cst.rush')==='1'; }catch(e){}
 function setRushOn(v){ rushOn = !!v; try{ localStorage.setItem('cst.rush', rushOn ? '1' : '0'); }catch(e){} render(); }
 let rushMode = false, rush = null;   // rush: { k ('mixed' or an exercise), phase: 'wait' | 'run' | 'review' | 'end', left, at, items, queue, cur, ... }
 const rushName = k=>k==='mixed' ? 'Mixed' : ACT_NAMES[k];
@@ -3517,7 +3516,7 @@ function rushChart(k, cur){
         return `<rect x="${f1(x0)}" y="${f1(y2 + gap)}" width="${f1(bw)}" height="${f1(Math.max(0, y1 - y2 - gap))}" fill="${RUSH_COLORS[a]}"/>`; }).join('');
       mark = `<clipPath id="rcc${i}"><rect x="${f1(x0)}" y="${f1(y(x.p))}" width="${f1(bw)}" height="${f1(base - y(x.p))}" rx="4"/></clipPath><g clip-path="url(#rcc${i})" opacity="${op}">${segs}</g>`;
     } else mark = `<rect x="${f1(x0)}" y="${f1(y(x.p))}" width="${f1(bw)}" height="${f1(base - y(x.p))}" rx="4" class="${isCur ? 'rc-cur' : 'rc-old'}"/>`;
-    return isCur ? `<g id="rcGrow">${tip}${mark}</g><text id="rcVal" x="${f1(cx)}" y="${f1(y(x.p) - 6)}" data-base="${base}" data-ytop="${f1(y(x.p))}" class="rc-val">${x.p}</text>` : `<g>${tip}${mark}</g>`;
+    return isCur ? `<g>${tip}${mark}</g><text x="${f1(cx)}" y="${f1(y(x.p) - 6)}" class="rc-val">${x.p}</text>` : `<g>${tip}${mark}</g>`;
   }).join('');
   const bl = best ? `<line x1="0" x2="${W}" y1="${f1(y(best))}" y2="${f1(y(best))}" class="rc-best"/><text x="2" y="${f1(y(best) - 5)}" class="rc-best-l">Best ${best}</text>` : '';
   return `<h2 class="pf-h rh-hist">History</h2><div class="rush-chart rc-hist"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Last runs' points">${bl}${bars}<line x1="0" x2="${W}" y1="${base}" y2="${base}" class="rc-axis"/></svg>${r_hasTimeline(cur) ? '' : rushLegend(k, cur && cur.s)}</div>`;
@@ -3576,7 +3575,7 @@ function rushCard(){
     </div>`;
 }
 // The Rush switch (home page, beside the profile's button)
-const rushToggle = ()=>BETA_SITE ? `<button class="acct-chip rush-toggle${rushOn ? ' on' : ''}" id="rushToggle" aria-pressed="${rushOn}">${RUSH_ICON}<span>Rush</span></button>` : '';
+const rushToggle = ()=>`<button class="acct-chip rush-toggle${rushOn ? ' on' : ''}" id="rushToggle" aria-pressed="${rushOn}">${RUSH_ICON}<span>Rush</span></button>`;
 
 // A first visit (nothing played in this browser, not logged in, no games, no link to a position) opens straight
 // on Move selection, the most direct exercise; its review then offers the others in place of the Lichess, explorer
@@ -5542,9 +5541,9 @@ function renderHome(){
     </div>
     <div class="cards">
       ${ACTS.map(a=>[a, ACT_GLYPHS[a], ACT_DESC[a]]).map(([a, glyph, desc])=>{
-        const L = levelNow(a), open = rushOn ? rushCan(a) : canOpen(a, false);
+        const lvl = levelNow(a), open = rushOn ? rushCan(a) : canOpen(a, false);
         if(!open) desc = rushOn ? (progressLoaded ? 'No positions yet' : 'Loading…') : waitText(a, false);
-        const lv = rushOn ? `<b>${rushBest(a)!=null ? rushBest(a) : '—'}</b><small>Best</small>` : `${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small>`;   // (rush mode: each exercise's best run)
+        const lv = rushOn ? `<b>${rushBest(a)!=null ? rushBest(a) : '—'}</b><small data-no-i18n>${L({ en:'Best', fr:'Record', de:'Rekord', es:'Récord', it:'Record' })}</small>` : `${lvl.rated ? `<b>${pct(lvl.level)}</b>` : `<b>—</b>`}<small>Average</small>`;   // (rush mode: each exercise's best run)
         return `<button class="card" data-go="${a}" ${open ? '' : 'disabled'}>
           <span class="card-glyph" aria-hidden="true">${glyph}</span>
           <span><span class="card-title">${ACT_NAMES[a]}</span><span class="card-desc">${desc}</span></span>
@@ -7373,6 +7372,20 @@ function L(o){ return o[LANG]!=null ? o[LANG] : o.en; }
 const FAQ_PATH = { en:'learn/', fr:'fr/guides/', de:'de/anleitungen/', es:'es/guias/', it:'it/guide/' };
 const legalPath = k=>k + (LANG==='en' ? '' : '-' + LANG) + '.html';
 const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
+"Rush": "Rush",
+"Mixed rush": "Rush mixte",
+"Mixed": "Mixte",
+"Best run": "Meilleure série",
+"Start mixed rush": "Lancer le rush mixte",
+"Run results": "Résultats de la série",
+"History": "Historique",
+"Average accuracy": "Précision moyenne",
+"Total points": "Points au total",
+"New best": "Nouveau record",
+"Each position: as wide as its time, as high as its points": "Chaque position : aussi large que son temps, aussi haute que ses points",
+"Plan": "Plan",
+"Time and points per position": "Temps et points par position",
+"Last runs' points": "Points des dernières séries",
 "Off the game": "Hors de la partie",
 "Start of the game": "Début de la partie",
 "Free play": "Jeu libre",
@@ -7517,18 +7530,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "King activity": "Activité du roi",
 "few pieces": "peu de pièces",
 "no queens": "sans dames",
-"3 minutes of positions: your average accuracy.": "3 minutes de positions : votre précision moyenne.",
-"3 minutes of positions, one after another. Your score: your average accuracy.": "3 minutes de positions, l'une après l'autre. Votre score : votre précision moyenne.",
-"No run yet": "Aucune série pour l'instant",
-"Coming next: the other exercises, and a mixed run.": "Bientôt : les autres exercices, et une série mixte.",
-"Preparing the first positions": "Préparation des premières positions",
-"3 minutes. Rank the moves, best first.": "3 minutes. Classez les coups, le meilleur d'abord.",
-"Rank the moves, best first, then Check.": "Classez les coups, le meilleur d'abord, puis touchez Vérifier.",
 "Average —": "Moyenne —",
 "so far": "pour l'instant",
-"Clock stopped: preparing the next position": "Chrono arrêté : préparation de la position suivante",
-"Your first run.": "Votre première série.",
-"Best:": "Record :",
 "Play again": "Rejouer",
 "minors to move": "pièces mineures à sortir",
 "Show": "Afficher",
@@ -7865,6 +7868,9 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Lichess analyses deeper on its servers, so its numbers can differ a little.": "Lichess analyse plus en profondeur sur ses serveurs : ses chiffres peuvent donc un peu différer."
 }/*END I18N_FR*/));
 const I18N_FR_RE = [
+  [/^Best (\d+)$/, 'Record $1'],   // (Rush: the history's best line, its bars' tooltips)
+  [/^(.+): (\d+) points, (\d+) positions$/, '$1 : $2 points, $3 positions'],
+  [/^(\d+)\. (.+): (\d+:\d\d) · (\d+) points$/, (m, i, a, t, p)=>`${i}. ${tr(a)} : ${t} · ${p} points`],
   [/^(\d+) moves · Errors: (\d+) – (\d+)$/, '$1 coups · Fautes : $2 – $3'],
   [/^(\d+) moves$/, '$1 coups'],
   // the Plan finder's questions and answers (the side's name inside)
@@ -7888,8 +7894,6 @@ const I18N_FR_RE = [
   [/^Replay (\d+) missed$/, (m, n)=>`Revoir ${n==='1' ? 'la position manquée' : `les ${n} positions manquées`}`],   // (Progress)
   [/^(.+) positions you scored below your average on$/, (m, a)=>`Positions de ${tr(a)} sous votre moyenne`],
   [/^Accuracy (\d+)% · Average (\d+)%$/, 'Précision $1 % · Moyenne $2 %'],   // (the chart's tooltip)
-  [/^average accuracy, over (\d+) positions?$/, (m, n)=>`précision moyenne, sur ${n} position${n==='1' ? '' : 's'}`],   // (Rush)
-  [/^New best! \(was (\d+)%\)$/, 'Nouveau record ! (avant : $1 %)'],
   [/^Evaluation (.+)$/, (m, v)=>'Évaluation ' + v.replace(/(\d)\.(\d)/, '$1,$2')],
   [/^Remove (.+)$/, 'Retirer $1'],
   [/^(.+\S): not counted here$/, (m, a)=>tr(a) + ' : non compté ici'],
@@ -7933,6 +7937,20 @@ const I18N_FR_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} partie${n==='1' ? '' : 's'} interrompue${n==='1' ? '' : 's'} la dernière fois, terminée${n==='1' ? '' : 's'}.`)],
 ];
 const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
+"Rush": "Rush",
+"Mixed rush": "Gemischter Rush",
+"Mixed": "Gemischt",
+"Best run": "Beste Runde",
+"Start mixed rush": "Gemischten Rush starten",
+"Run results": "Ergebnisse der Runde",
+"History": "Verlauf",
+"Average accuracy": "Durchschnittliche Genauigkeit",
+"Total points": "Punkte gesamt",
+"New best": "Neuer Rekord",
+"Each position: as wide as its time, as high as its points": "Jede Stellung: so breit wie ihre Zeit, so hoch wie ihre Punkte",
+"Plan": "Plan",
+"Time and points per position": "Zeit und Punkte pro Stellung",
+"Last runs' points": "Punkte der letzten Runden",
 "Off the game": "Außerhalb der Partie",
 "Start of the game": "Anfang der Partie",
 "Free play": "Freies Spiel",
@@ -8075,18 +8093,8 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "King activity": "Königsaktivität",
 "few pieces": "wenige Figuren",
 "no queens": "ohne Damen",
-"3 minutes of positions: your average accuracy.": "3 Minuten Stellungen: deine durchschnittliche Genauigkeit.",
-"3 minutes of positions, one after another. Your score: your average accuracy.": "3 Minuten Stellungen, eine nach der anderen. Deine Wertung: deine durchschnittliche Genauigkeit.",
-"No run yet": "Noch kein Durchgang",
-"Coming next: the other exercises, and a mixed run.": "Demnächst: die anderen Übungen und ein gemischter Durchgang.",
-"Preparing the first positions": "Die ersten Stellungen werden vorbereitet",
-"3 minutes. Rank the moves, best first.": "3 Minuten. Ordne die Züge, den besten zuerst.",
-"Rank the moves, best first, then Check.": "Ordne die Züge, den besten zuerst, dann tippe auf Prüfen.",
 "Average —": "Durchschnitt —",
 "so far": "bisher",
-"Clock stopped: preparing the next position": "Uhr angehalten: Die nächste Stellung wird vorbereitet",
-"Your first run.": "Dein erster Durchgang.",
-"Best:": "Rekord:",
 "Play again": "Nochmal spielen",
 "minors to move": "Leichtfiguren zu entwickeln",
 "Show": "Anzeigen",
@@ -8424,6 +8432,20 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Suggest a strong move for Black.": "Schlage einen starken Zug für Schwarz vor."
 }/*END I18N_DE*/));
 const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
+"Rush": "Rush",
+"Mixed rush": "Rush mixto",
+"Mixed": "Mixto",
+"Best run": "Mejor serie",
+"Start mixed rush": "Empezar el rush mixto",
+"Run results": "Resultados de la serie",
+"History": "Historial",
+"Average accuracy": "Precisión media",
+"Total points": "Puntos totales",
+"New best": "Nuevo récord",
+"Each position: as wide as its time, as high as its points": "Cada posición: tan ancha como su tiempo, tan alta como sus puntos",
+"Plan": "Plan",
+"Time and points per position": "Tiempo y puntos por posición",
+"Last runs' points": "Puntos de las últimas series",
 "Off the game": "Fuera de la partida",
 "Start of the game": "Inicio de la partida",
 "Free play": "Juego libre",
@@ -8566,18 +8588,8 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "King activity": "Actividad del rey",
 "few pieces": "pocas piezas",
 "no queens": "sin damas",
-"3 minutes of positions: your average accuracy.": "3 minutos de posiciones: tu precisión media.",
-"3 minutes of positions, one after another. Your score: your average accuracy.": "3 minutos de posiciones, una tras otra. Tu puntuación: tu precisión media.",
-"No run yet": "Aún no hay ninguna serie",
-"Coming next: the other exercises, and a mixed run.": "Próximamente: los otros ejercicios y una serie mixta.",
-"Preparing the first positions": "Preparando las primeras posiciones",
-"3 minutes. Rank the moves, best first.": "3 minutos. Ordena las jugadas, la mejor primero.",
-"Rank the moves, best first, then Check.": "Ordena las jugadas, la mejor primero, y toca Comprobar.",
 "Average —": "Media —",
 "so far": "por ahora",
-"Clock stopped: preparing the next position": "Reloj detenido: preparando la siguiente posición",
-"Your first run.": "Tu primera serie.",
-"Best:": "Récord:",
 "Play again": "Jugar de nuevo",
 "minors to move": "piezas menores por sacar",
 "Show": "Mostrar",
@@ -8915,6 +8927,20 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Suggest a strong move for Black.": "Propón una jugada fuerte para las negras."
 }/*END I18N_ES*/));
 const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
+"Rush": "Rush",
+"Mixed rush": "Rush misto",
+"Mixed": "Misto",
+"Best run": "Miglior serie",
+"Start mixed rush": "Avvia il rush misto",
+"Run results": "Risultati della serie",
+"History": "Cronologia",
+"Average accuracy": "Precisione media",
+"Total points": "Punti totali",
+"New best": "Nuovo record",
+"Each position: as wide as its time, as high as its points": "Ogni posizione: larga quanto il suo tempo, alta quanto i suoi punti",
+"Plan": "Piano",
+"Time and points per position": "Tempo e punti per posizione",
+"Last runs' points": "Punti delle ultime serie",
 "Off the game": "Fuori dalla partita",
 "Start of the game": "Inizio della partita",
 "Free play": "Gioco libero",
@@ -9057,18 +9083,8 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "King activity": "Attività del re",
 "few pieces": "pochi pezzi",
 "no queens": "senza donne",
-"3 minutes of positions: your average accuracy.": "3 minuti di posizioni: la tua precisione media.",
-"3 minutes of positions, one after another. Your score: your average accuracy.": "3 minuti di posizioni, una dopo l'altra. Il tuo punteggio: la tua precisione media.",
-"No run yet": "Ancora nessuna serie",
-"Coming next: the other exercises, and a mixed run.": "Prossimamente: gli altri esercizi e una serie mista.",
-"Preparing the first positions": "Preparazione delle prime posizioni",
-"3 minutes. Rank the moves, best first.": "3 minuti. Ordina le mosse, la migliore per prima.",
-"Rank the moves, best first, then Check.": "Ordina le mosse, la migliore per prima, poi tocca Verifica.",
 "Average —": "Media —",
 "so far": "finora",
-"Clock stopped: preparing the next position": "Orologio fermo: preparazione della posizione successiva",
-"Your first run.": "La tua prima serie.",
-"Best:": "Record:",
 "Play again": "Gioca ancora",
 "minors to move": "pezzi minori da sviluppare",
 "Show": "Mostra",
@@ -9410,6 +9426,9 @@ const i18nSide = { de:{ White:'Weiß', Black:'Schwarz' }, es:{ White:'las blanca
 const capFirst = t=>t.charAt(0).toUpperCase() + t.slice(1);
 const decComma = v=>String(v).replace(/(\d)\.(\d)/g, '$1,$2');
 const I18N_DE_RE = [
+  [/^Best (\d+)$/, 'Rekord $1'],   // (Rush: the history's best line, its bars' tooltips)
+  [/^(.+): (\d+) points, (\d+) positions$/, '$1: $2 Punkte, $3 Stellungen'],
+  [/^(\d+)\. (.+): (\d+:\d\d) · (\d+) points$/, (m, i, a, t, p)=>`${i}. ${tr(a)}: ${t} · ${p} Punkte`],
   [/^(\d+) moves · Errors: (\d+) – (\d+)$/, '$1 Züge · Fehlgriffe: $2 – $3'],
   [/^(\d+) moves$/, '$1 Züge'],
   [/^Is anything urgent for (White|Black)\?$/, (m, c)=>`Gibt es für ${i18nSide.de[c]} etwas Dringendes?`],
@@ -9432,8 +9451,6 @@ const I18N_DE_RE = [
   [/^Replay (\d+) missed$/, (m, n)=>n==='1' ? 'Die verpasste Stellung wiederholen' : `Die ${n} verpassten Stellungen wiederholen`],
   [/^(.+) positions you scored below your average on$/, (m, a)=>`${tr(a)}: Stellungen unter deinem Durchschnitt`],
   [/^Accuracy (\d+)% · Average (\d+)%$/, 'Genauigkeit $1 % · Durchschnitt $2 %'],
-  [/^average accuracy, over (\d+) positions?$/, (m, n)=>`durchschnittliche Genauigkeit, über ${n} ${n==='1' ? 'Stellung' : 'Stellungen'}`],
-  [/^New best! \(was (\d+)%\)$/, 'Neuer Rekord! (vorher: $1 %)'],
   [/^Evaluation (.+)$/, (m, v)=>'Bewertung ' + decComma(v)],
   [/^Remove (.+)$/, '$1 entfernen'],
   [/^(.+\S): not counted here$/, (m, a)=>tr(a) + ': hier nicht gezählt'],
@@ -9477,6 +9494,9 @@ const I18N_DE_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} beim letzten Mal unterbrochene ${n==='1' ? 'Partie' : 'Partien'} abgeschlossen.`)],
 ];
 const I18N_ES_RE = [
+  [/^Best (\d+)$/, 'Récord $1'],   // (Rush: the history's best line, its bars' tooltips)
+  [/^(.+): (\d+) points, (\d+) positions$/, '$1: $2 puntos, $3 posiciones'],
+  [/^(\d+)\. (.+): (\d+:\d\d) · (\d+) points$/, (m, i, a, t, p)=>`${i}. ${tr(a)}: ${t} · ${p} puntos`],
   [/^(\d+) moves · Errors: (\d+) – (\d+)$/, '$1 jugadas · Fallos: $2 – $3'],
   [/^(\d+) moves$/, '$1 jugadas'],
   [/^Is anything urgent for (White|Black)\?$/, (m, c)=>`¿Hay algo urgente para ${i18nSide.es[c]}?`],
@@ -9499,8 +9519,6 @@ const I18N_ES_RE = [
   [/^Replay (\d+) missed$/, (m, n)=>n==='1' ? 'Repetir la posición fallada' : `Repetir las ${n} posiciones falladas`],
   [/^(.+) positions you scored below your average on$/, (m, a)=>`Posiciones de ${tr(a)} por debajo de tu media`],
   [/^Accuracy (\d+)% · Average (\d+)%$/, 'Precisión $1 % · Media $2 %'],
-  [/^average accuracy, over (\d+) positions?$/, (m, n)=>`precisión media, en ${n} ${n==='1' ? 'posición' : 'posiciones'}`],
-  [/^New best! \(was (\d+)%\)$/, '¡Nuevo récord! (antes: $1 %)'],
   [/^Evaluation (.+)$/, (m, v)=>'Evaluación ' + decComma(v)],
   [/^Remove (.+)$/, 'Quitar $1'],
   [/^(.+\S): not counted here$/, (m, a)=>tr(a) + ': no cuenta aquí'],
@@ -9543,6 +9561,9 @@ const I18N_ES_RE = [
     .replace(/Finished (\d+) games? that (?:was|were) cut short last time\./g, (m, n)=>`${n} ${n==='1' ? 'partida interrumpida' : 'partidas interrumpidas'} la última vez, ${n==='1' ? 'terminada' : 'terminadas'}.`)],
 ];
 const I18N_IT_RE = [
+  [/^Best (\d+)$/, 'Record $1'],   // (Rush: the history's best line, its bars' tooltips)
+  [/^(.+): (\d+) points, (\d+) positions$/, '$1: $2 punti, $3 posizioni'],
+  [/^(\d+)\. (.+): (\d+:\d\d) · (\d+) points$/, (m, i, a, t, p)=>`${i}. ${tr(a)}: ${t} · ${p} punti`],
   [/^(\d+) moves · Errors: (\d+) – (\d+)$/, '$1 mosse · Sbagli: $2 – $3'],
   [/^(\d+) moves$/, '$1 mosse'],
   [/^Is anything urgent for (White|Black)\?$/, (m, c)=>`C'è qualcosa di urgente per ${c==='White' ? 'il Bianco' : 'il Nero'}?`],
@@ -9565,8 +9586,6 @@ const I18N_IT_RE = [
   [/^Replay (\d+) missed$/, (m, n)=>n==='1' ? 'Ripeti la posizione sbagliata' : `Ripeti le ${n} posizioni sbagliate`],
   [/^(.+) positions you scored below your average on$/, (m, a)=>`Posizioni di ${tr(a)} sotto la tua media`],
   [/^Accuracy (\d+)% · Average (\d+)%$/, 'Precisione $1% · Media $2%'],
-  [/^average accuracy, over (\d+) positions?$/, (m, n)=>`precisione media, su ${n} ${n==='1' ? 'posizione' : 'posizioni'}`],
-  [/^New best! \(was (\d+)%\)$/, 'Nuovo record! (prima: $1%)'],
   [/^Evaluation (.+)$/, (m, v)=>'Valutazione ' + decComma(v)],
   [/^Remove (.+)$/, 'Rimuovi $1'],
   [/^(.+\S): not counted here$/, (m, a)=>tr(a) + ': non conta qui'],
