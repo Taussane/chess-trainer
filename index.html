@@ -3537,7 +3537,7 @@ function rushTimeline(r){
 }
 const r_hasTimeline = cur=>!!(cur && rush && rush.phase==='end' && rush.items.some(x=>x.ms!=null));
 // A mixed run's points per exercise (adding up to its total), with their colours
-const rushLegend = (k, s)=>k==='mixed' && s ? `<div class="rc-legend">${ROUTINE.map(a=>`<span><i style="background:${RUSH_COLORS[a]}"></i>${ACT_NAMES[a]} <b>${s[a] || 0}</b></span>`).join('')}</div>` : '';
+const rushLegend = (k, s)=>k==='mixed' && s ? `<div class="rc-legend">${ROUTINE.map(a=>`<span><i style="background:${RUSH_COLORS[a]}"></i>${ACT_SHORT[a]} <b>${s[a] || 0}</b></span>`).join('')}</div>` : '';
 function renderRush(){
   const app = document.getElementById('app'), r = rush;
   if(!r){ screen = 'home'; return render(); }
