@@ -147,7 +147,8 @@
   .card.xp-entry .card-glyph, .card.xp-entry .card-desc{color:var(--on-accent);} .card.xp-entry .card-desc{opacity:.8;}
   .card.xp-entry .title-badge{color:var(--on-accent); border-color:var(--on-accent);}
   /* Rush (beta): its page (menu, countdown, end), and in a run the clock and score, and a chip per position */
-  .rush-page{display:flex; flex-direction:column; gap:14px; margin-top:12px;}
+  .rush-page{display:flex; flex-direction:column; gap:14px; margin-top:12px; max-width:760px; width:100%; margin-inline:auto;}
+  .wrap[data-scr=rush] > #app > .title-row{max-width:760px; margin-inline:auto;}   /* (the rush's own pages: the FAQ's width, centred) */
   .pl-line .rush-clock{margin-left:auto; font-size:1.15rem; line-height:22px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text);}
   .rush-clock.paused{color:var(--text-mute) !important; opacity:.6;}
   .rush-toggle svg{width:18px; height:18px; color:var(--accent); flex:none;} .rush-toggle{padding:4px 10px 4px 8px !important;}
@@ -3535,7 +3536,7 @@ function renderRush(){
   else {
     const n = r.items.length, avg = rushAvg(r) || 0, runs = rushRuns(r.k), cur = n ? runs[runs.length - 1] : null;
     body = `<div class="rush-end">
-        <h2 class="pf-h">Results</h2>
+        <h2 class="pf-h">Run results</h2>
         <div class="rush-sum">
           <span class="rush-stat"><b class="rush-n" data-to="${n}">0</b><small>Positions</small></span>
           <span class="rush-stat"><b class="rush-n" data-to="${avg}" data-pct="1">0%</b><small>Average accuracy</small></span>
