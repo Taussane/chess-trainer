@@ -155,11 +155,17 @@
   .rush-sub b{color:var(--text);}
   .rush-list{display:flex; flex-direction:column; border-top:1px solid var(--border);} .rush-row{display:grid; grid-template-columns:28px 1fr auto; gap:10px; align-items:center; padding:8px 2px; border-bottom:1px solid var(--border);}
   .rush-row .num{color:var(--text-mute); text-align:center;} .rush-what small{color:var(--text-mute);}
-  .rush-top{display:flex; justify-content:space-between; align-items:baseline;} .rush-clock{font-variant-numeric:tabular-nums; font-weight:700; color:var(--text);} .rush-score{color:var(--text-mute);} .rush-score b{color:var(--text);}
-  .rush-bar .rush-chips{display:flex; flex-wrap:wrap; gap:6px; align-content:flex-start; min-height:2.6em;} .rush-none{color:var(--text-mute);}
   .rush-chip{display:inline-block; min-width:2.2em; text-align:center; padding:1px 7px; border-radius:999px; font-size:.85rem; font-weight:700; color:#12161B; font-variant-numeric:tabular-nums;}
   .rush-chip.hi{background:var(--best-green);} .rush-chip.mid{background:var(--dubious);} .rush-chip.lo{background:var(--bad); color:#fff;}
-  .rush-chip.new{animation:rowIn .5s ease-out both;}
+  .posbar .rush-clock{margin-left:auto; font-size:1.5rem; line-height:1; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text);}
+  .rush-clock.paused{color:var(--text-mute) !important;} .posbar .rush-clock.paused::before{content:"II"; font-size:.6em; font-weight:800; letter-spacing:-.05em; margin-right:7px; vertical-align:.18em;}
+  .rush-toggle svg{width:18px; height:18px; color:var(--accent); flex:none;} .rush-toggle{padding:4px 10px 4px 8px !important;}
+  .rt-knob{position:relative; flex:none; width:28px; height:16px; border-radius:999px; background:var(--border); transition:background .15s;}
+  .rt-knob::after{content:""; position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:var(--text-mute); transition:transform .15s, background .15s;}
+  .rush-toggle.on .rt-knob{background:var(--accent);} .rush-toggle.on .rt-knob::after{transform:translateX(12px); background:#12161B;}
+  html.desk2 .wrap.home .source-row .rush-toggle svg{width:24px; height:24px;} html.desk2 .wrap.home .source-row .rush-toggle{padding:6px 14px 6px 12px !important;}
+  .home-chips{display:flex; flex-direction:column; align-items:flex-end; gap:6px; min-width:0;}
+  .rush-cols{display:grid; grid-template-columns:3.4em 3.4em; gap:8px; text-align:right; font-variant-numeric:tabular-nums; color:var(--text-mute);} .rush-cols b{color:var(--text);}
   .card-glyph{font-size:1.9rem; line-height:1; width:36px; text-align:center; color:var(--accent);}
   .act-icon{width:1em; height:1em; vertical-align:-0.15em;}
   .card-title{display:block; font-family:var(--font-display); font-weight:600; font-size:1.15rem;}
@@ -3156,7 +3162,7 @@ function header(title){
 function posBar(){
   const p = pos();
   return `<div class="posbar">
-      <div class="pos-title">${posSource(p)}<br>${toPlay(p)}</div>
+      <div class="pos-title">${posSource(p)}<br>${toPlay(p)}</div>${rushClockHtml()}
     </div>`;
 }
 // "11. White to play", "25... Black to play" (the move number from the FEN).
@@ -3354,110 +3360,148 @@ function lichessUrl(p){
 // A review's buttons on the left, icons only: the position on Lichess, in the Strategy explorer (the game's moves around
 // it), and a link to it to share
 // ================= Rush (beta) =================
-// 3 minutes of positions, in one exercise (for now Move selection). The run's score is its average accuracy (so
-// going fast pays only if the answers hold up); each exercise keeps its best (profile.rushBest). Positions come from the master
-// games, prepared before they're shown (the four moves and their evaluations), so the clock never runs while the
-// engine works: it stops until the next one is ready. Each answer gets its usual review, the clock paused until Next
-// position. Nothing is recorded: averages, the routine, missed and
-// played positions are untouched. Its own track ('z-'): see ctx.
-const RUSH_MS = 180000, RUSH_AHEAD = 3, RUSH_COUNT_MS = 3000, RUSH_SEARCH_MS = 2000, RUSH_ACTS = ['final'];   // (its searches: 2 s each, so positions keep up)
-let rushMode = false, rush = null;   // rush: { a, phase: 'prep' | 'count' | 'run' | 'review' | 'wait' | 'end', left, at, score, items, used, queue }
-const rushBest = a=>(profile.rushBest || {})[a];
-const rushAvg = r=>r.items.length ? Math.round(r.items.reduce((t, x)=>t + x.pts, 0) / r.items.length) : null;   // (the run's score)
+// A mode, switched on and off on the home page (kept on this device): each exercise, and the mixed run (the four
+// exercises in the routine's order), as 3 minutes of positions. A run's score: the points of all its positions
+// (each position's accuracy, so 12 positions at 75% make 900: going fast pays only if the answers hold up); each
+// kind of run keeps its best (profile.rushPts) and today's (this device). The clock runs only while a position is
+// to be answered: it stops at Check for the usual review until Next position, and while the next position is
+// prepared (Move selection: its four moves and their evaluations; Imbalance reading: its table). Positions come
+// from the chosen source. Nothing is recorded: averages, the routine, missed and played positions are untouched.
+// Its own tracks ('z-'): see ctx.
+const RUSH_MS = 180000, RUSH_AHEAD = 3, RUSH_SEARCH_MS = 2000, RUSH_KINDS = ['mixed', ...ROUTINE];   // (its searches: 2 s each, so positions keep up)
+let rushOn = false;
+try{ rushOn = BETA_SITE && localStorage.getItem('cst.rush')==='1'; }catch(e){}
+function setRushOn(v){ rushOn = !!v; try{ localStorage.setItem('cst.rush', rushOn ? '1' : '0'); }catch(e){} render(); }
+let rushMode = false, rush = null;   // rush: { k ('mixed' or an exercise), phase: 'prep' | 'run' | 'review' | 'wait' | 'end', left, at, items, queue, ... }
+const rushName = k=>k==='mixed' ? 'Mixed' : ACT_NAMES[k];
+const rushBest = k=>(profile.rushPts || {})[k];
+const RUSH_TODAY_LS = 'cst.rushToday.v1';
+let rushToday = { day: todayKey(), pts: {} };
+try{ const v = JSON.parse(localStorage.getItem(RUSH_TODAY_LS) || 'null'); if(v && v.day===rushToday.day && v.pts) rushToday = v; }catch(e){}
+const rushTodayBest = k=>{ if(rushToday.day!==todayKey()) rushToday = { day: todayKey(), pts: {} }; return rushToday.pts[k]; };
+const rushTotal = r=>r.items.reduce((t, x)=>t + x.pts, 0);
+const rushAvg = r=>r.items.length ? Math.round(rushTotal(r) / r.items.length) : null;
 const rushFmt = ms=>{ const t = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 const rushLeft = ()=>rush ? (rush.phase==='run' ? rush.left - (performance.now() - rush.at) : rush.left) : 0;
-function rushStart(a){
-  rush = { a, phase:'prep', left: RUSH_MS, at: null, score: null, items: [], used: new Set(), queue: [], started: new Set(), fens: new Set(), countAt: null, best0: rushBest(a) };
-  const t = 'z-' + a; orders[t] = []; seqBy[t] = 0; store[t] = {};
-  rushMode = false; screen = 'rush'; rushFill(); render(); rushTick();
+const rushSrc = ()=>source==='filter' ? 'filter.' + filterKey() : source;
+const rushActAt = (r, n)=>r.k==='mixed' ? ROUTINE[n % ROUTINE.length] : r.k;   // the exercise of a run's n-th position
+const rushCan = k=>progressLoaded && (k==='mixed' ? ROUTINE.every(rushCan) : k==='planq' ? planqPool().length > 0 : sourcePool(k, rushSrc()).length > 0);
+function rushStart(k){
+  if(!rushCan(k)) return;
+  leaveExercise();
+  rush = { k, phase:'prep', left: RUSH_MS, at: null, items: [], used: new Set(), queue: [], started: new Set(), fens: new Set(), shown: 0, best0: rushBest(k), planq0: planq, pqAt: 0 };
+  ROUTINE.forEach(a=>{ if(a!=='planq'){ const t = 'z-' + a; orders[t] = []; seqBy[t] = 0; store[t] = {}; } });
+  routine = false; rushMode = false; screen = 'rush'; rushFill(); render(); rushTick();
 }
 function rushFill(){
-  const pool = POOLS[rush.a];
-  while(rush.queue.length < RUSH_AHEAD && rush.used.size < pool.length){
-    const p = pool[Math.floor(Math.random() * pool.length)]; if(rush.used.has(p.key)) continue;
-    rush.used.add(p.key); rush.queue.push(p); rush.fens.add(p.fen);
+  const r = rush;
+  for(let guard = 0; r.queue.length < RUSH_AHEAD && guard < 8; guard++){
+    const a = rushActAt(r, r.shown + r.queue.length);
+    if(a==='planq'){   // (the Plan finder picks its own positions: at most every half second, its picking reads positions)
+      if(performance.now() - r.pqAt < 500 || !planqEvalsReady()) break;
+      r.pqAt = performance.now(); const q = planqPick(); if(!q) break;
+      r.queue.push({ a, q, p: q.p }); continue;
+    }
+    const pool = sourcePool(a, rushSrc()).filter(p=>!r.used.has(p.key)); if(!pool.length) break;
+    const p = pool[Math.floor(Math.random() * pool.length)];
+    r.used.add(p.key); r.fens.add(p.fen); r.queue.push({ a, p });
   }
   // prepared in order, one at a time: the next starts once the one before is ready (all at once, the last asked
   // would go first)
-  for(const p of rush.queue){ if(!rush.started.has(p.key)){ rush.started.add(p.key); prepareFinal(p, 0, 'front'); break; } if(rushState(p)==='wait') break; }
+  for(const it of r.queue){ if(!r.started.has(it.p.key)){ r.started.add(it.p.key); rushPrep(it); break; } if(rushState(it)==='wait') break; }
 }
-// ready: its four moves and their evaluations in; a position the engine couldn't do is dropped
-function rushState(p){
-  const mv = finalMoves(p); if(evalFailed(mv)) return 'failed'; if(!Array.isArray(mv)) return 'wait';
-  const ev = finalEval(p, mv); return evalFailed(ev) ? 'failed' : ev ? 'ready' : 'wait';
+function rushPrep(it){
+  if(it.a==='final') return prepareFinal(it.p, 0, 'front');
+  withPrep('front', ()=>{ if(it.a==='imbalances') aspectsEntry(it.p.fen); else if(it.a==='candidates') fenEvalEntry(it.p.fen); });
 }
-function rushHead(){ while(rush.queue.length && rushState(rush.queue[0])==='failed') rush.queue.shift(); rushFill(); return rush.queue[0] && rushState(rush.queue[0])==='ready' ? rush.queue[0] : null; }
-function rushShow(p){
-  rush.queue.shift(); rushFill();
-  const t = 'z-' + rush.a; orders[t].push(p); seqBy[t] = orders[t].length - 1;
-  rushMode = true; screen = rush.a; selSquare = null; promoPending = null; helpVisible = false; render();
+// ready to be answered: Move selection its four moves and their evaluations; Imbalance reading its table (the
+// others need nothing before Check); a position the engine couldn't do is dropped
+function rushState(it){
+  if(it.a==='final'){
+    const mv = finalMoves(it.p); if(evalFailed(mv)) return 'failed'; if(!Array.isArray(mv)) return 'wait';
+    const ev = finalEval(it.p, mv); return evalFailed(ev) ? 'failed' : ev ? 'ready' : 'wait';
+  }
+  if(it.a==='imbalances'){ const e = aspectsStore[it.p.fen]; return !e || e.status!=='done' ? 'wait' : e.data ? 'ready' : 'failed'; }
+  return 'ready';
 }
-// At Check: its points, and the clock paused for the review
-function rushAnswered(p, acc){
-  if(!rush || rush.phase!=='run') return;
-  const pts = Math.round(acc || 0);
-  rush.left = rushLeft(); rush.phase = 'review';
-  rush.items.push({ key: p.key, title: p.title, year: p.year, pts }); rush.score = rushAvg(rush); rush.newAt = performance.now();
+function rushHead(){ const r = rush; while(r.queue.length && rushState(r.queue[0])==='failed') r.queue.shift(); rushFill(); return r.queue[0] && rushState(r.queue[0])==='ready' ? r.queue[0] : null; }
+function rushShow(it){
+  rush.queue.shift(); rush.shown++; rushFill();
+  rushMode = true; selSquare = null; promoPending = null; helpVisible = false;
+  if(it.a==='planq'){ planq = it.q; screen = 'planq'; }
+  else { const t = 'z-' + it.a; orders[t].push(it.p); seqBy[t] = orders[t].length - 1; screen = it.a; }
+  render();
 }
-// Next position (from the review): the clock goes on with the next position (or, not ready yet, stays stopped until it is)
+// Check: the clock stops for the review (the Plan finder: after each of its questions)
+function rushPause(){ if(rushMode && rush && rush.phase==='run'){ rush.left = rushLeft(); rush.phase = 'review'; } }
+// A question answered within a position (the Plan finder's first): the clock goes on
+function rushResume(){ if(rushMode && rush && rush.phase==='review'){ if(rush.left <= 0) return rushEnd(); rush.phase = 'run'; rush.at = performance.now(); } }
+// A position's points, once its review has its accuracy (recordResult, planqRecord)
+function rushScored(a, p, acc){ if(rush) rush.items.push({ a, key: p.key, title: p.title, year: p.year, pts: Math.round(acc || 0) }); }
+// Next position (from the review): the clock goes on with it (or, not ready yet, stays stopped until it is)
 function rushNext(){
-  if(!rush || rush.phase!=='review') return;
+  if(!rush || rush.phase!=='review' || rush.items.length < rush.shown) return;
+  if(rush.left <= 0) return rushEnd();
   const next = rushHead();
   if(next){ rush.phase = 'run'; rush.at = performance.now(); rushShow(next); }
   else { rush.phase = 'wait'; rushMode = false; screen = 'rush'; render(); }
 }
 function rushEnd(){
-  rush.left = 0; rush.phase = 'end'; rushMode = false; screen = 'rush';
-  rush.score = rushAvg(rush);
-  if(rush.items.length && (rush.best0==null || rush.score > rush.best0)){ profile.rushBest = { ...(profile.rushBest || {}), [rush.a]: rush.score }; saveProfile(); rush.newBest = true; }
+  const r = rush; r.left = 0; r.phase = 'end'; rushMode = false; screen = 'rush'; planq = r.planq0;
+  r.score = rushTotal(r);
+  if(r.items.length){
+    if(r.best0==null || r.score > r.best0){ profile.rushPts = { ...(profile.rushPts || {}), [r.k]: r.score }; saveProfile(); r.newBest = true; }
+    if(!(rushTodayBest(r.k) >= r.score)){ rushToday.pts[r.k] = r.score; try{ localStorage.setItem(RUSH_TODAY_LS, JSON.stringify(rushToday)); }catch(e){} }
+  }
   render();
 }
-function rushQuit(){ rushMode = false; rush = null; screen = 'rush'; render(); }   // (a run left before its end: no score)
+function rushQuit(){ if(rush) planq = rush.planq0; rushMode = false; rush = null; screen = 'home'; render(); }   // (a run left before its end: no score)
 function rushTick(){
   const r = rush; if(!r || r.phase==='end') return;
-  const now = performance.now();
   rushFill();
-  if(r.phase==='prep' && rushHead()){ r.phase = 'count'; r.countAt = now; render(); }
-  else if(r.phase==='count' && now - r.countAt >= RUSH_COUNT_MS){ const p = rushHead(); if(p){ r.phase = 'run'; r.at = now; rushShow(p); } }
-  else if(r.phase==='wait'){ const p = rushHead(); if(p){ r.phase = 'run'; r.at = now; rushShow(p); } }
+  if(r.phase==='prep' || r.phase==='wait'){ const it = rushHead(); if(it){ r.phase = 'run'; r.at = performance.now(); rushShow(it); } }
   else if(r.phase==='run' && rushLeft() <= 0) return rushEnd();
-  // the clock and the countdown, without redrawing the page
-  const c = document.getElementById('rushClock'); if(c) c.textContent = rushFmt(rushLeft());
-  const n = document.getElementById('rushCount'); if(n && r.phase==='count') n.textContent = String(Math.max(1, Math.ceil((RUSH_COUNT_MS - (now - r.countAt)) / 1000)));
+  // the clock, without redrawing the page
+  const c = document.getElementById('rushClock'); if(c){ c.textContent = rushFmt(rushLeft()); c.classList.toggle('paused', r.phase!=='run'); }
   setTimeout(rushTick, 100);
 }
+// Above the board, on the right: the time left (stopped: dimmed)
+const rushClockHtml = ()=>rushMode && rush ? `<span class="rush-clock${rush.phase==='run' ? '' : ' paused'}" id="rushClock">${rushFmt(rushLeft())}</span>` : '';
+// The review's score line: the run so far, its positions × their average accuracy (its points); the end: in words
+const rushSoFar = r=>`Run <strong>${r.items.length} × ${rushAvg(r)!=null ? rushAvg(r) + '%' : '—'}</strong>`;
+const rushSoFarLong = r=>`${r.items.length} position${r.items.length===1 ? '' : 's'} · Average <b>${rushAvg(r)!=null ? rushAvg(r) + '%' : '—'}</b>`;
 const rushPtsCls = n=>n >= 80 ? 'hi' : n >= 50 ? 'mid' : 'lo';
-// Above the board during a run: a chip per position played, the last one fading in
-function rushBar(){
-  const it = rush.items.slice(-12), el = rush.newAt==null ? 1e9 : performance.now() - rush.newAt;
-  return `<div class="posbar rush-bar"><div class="rush-chips">${it.map((x, i)=>`<span class="rush-chip ${rushPtsCls(x.pts)}${i===it.length-1 && el < 600 ? ' new' : ''}">${x.pts}</span>`).join('') || '<span class="rush-none">Rank the moves, best first, then Check.</span>'}</div></div>`;
-}
-const rushTop = ()=>`<p class="prompt top rush-top"><span class="rush-clock" id="rushClock">${rushFmt(rushLeft())}</span><span class="rush-score">${rush.items.length ? `Average <b>${rush.score}%</b>` : 'Average —'}</span></p>`;
 function renderRush(){
-  const app = document.getElementById('app'), r = rush, name = a=>ACT_NAMES[a];
-  const top = `<div class="title-row"><button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button><h1>Rush${r ? ` <span class="title-badge">${name(r.a)}</span>` : ''}</h1><span></span></div>`;
+  const app = document.getElementById('app'), r = rush;
+  if(!r){ screen = 'home'; return render(); }
+  const top = `<div class="title-row"><button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button><h1>Rush <span class="title-badge">${rushName(r.k)}</span></h1><span></span></div>`;
   let body;
-  if(!r) body = `<p class="rush-lead">3 minutes of positions, one after another. The clock stops while you look at each answer. Your score: your average accuracy.</p>
-    <div class="cards">${RUSH_ACTS.map(a=>`<button class="card" data-rush="${a}"><span class="card-glyph" aria-hidden="true">${ACT_GLYPHS[a]}</span>
-      <span><span class="card-title">${name(a)}</span><span class="card-desc">${rushBest(a)!=null ? `Best: <b>${rushBest(a)}%</b>` : 'No run yet'}</span></span></button>`).join('')}</div>
-    <p class="hint rush-soon">Coming next: the other exercises, and a mixed run.</p>`;
-  else if(r.phase==='prep') body = `<div class="rush-mid"><p class="rush-big rush-dim">…</p><p>Preparing the first positions</p></div>`;
-  else if(r.phase==='count') body = `<div class="rush-mid"><p class="rush-big" id="rushCount">${Math.max(1, Math.ceil((RUSH_COUNT_MS - (performance.now() - r.countAt)) / 1000))}</p><p>3 minutes. Rank the moves, best first.</p></div>`;
-  else if(r.phase==='wait') body = `<div class="rush-mid"><p class="rush-big rush-dim" id="rushClock">${rushFmt(r.left)}</p><p>Clock stopped: preparing the next position</p><p class="rush-sub">${r.items.length ? `Average <b>${r.score}%</b> so far` : ''}</p></div>`;
+  if(r.phase==='prep') body = `<div class="rush-mid"><p class="rush-big rush-dim">…</p><p>Preparing the first positions</p></div>`;
+  else if(r.phase==='wait') body = `<div class="rush-mid"><p class="rush-big rush-dim" id="rushClock">${rushFmt(r.left)}</p><p>Clock stopped: preparing the next position</p><p class="rush-sub">${rushSoFarLong(r)}</p></div>`;
   else {
-    const best = rushBest(r.a);
-    body = `<div class="rush-mid rush-end"><p class="rush-big">${r.items.length ? r.score + '%' : '—'}</p><p>average accuracy, over ${r.items.length} position${r.items.length===1 ? '' : 's'}</p>
-      <p class="rush-sub">${r.newBest ? (r.best0==null ? 'Your first run.' : `New best! (was ${r.best0}%)`) : best!=null ? `Best: <b>${best}%</b>` : ''}</p></div>
-      <div class="rush-list">${r.items.map((x, i)=>`<div class="rush-row"><span class="num">${i + 1}</span><span class="rush-what">${escHtml(x.title || '')}${x.year ? ` <small>${escHtml(String(x.year))}</small>` : ''}</span><span class="rush-chip ${rushPtsCls(x.pts)}">${x.pts}</span></div>`).join('')}</div>
+    const best = rushBest(r.k);
+    body = `<div class="rush-mid rush-end"><p class="rush-big">${r.score}</p><p>points</p><p class="rush-sub">${rushSoFarLong(r)}</p>
+      <p class="rush-sub">${r.newBest ? (r.best0==null ? 'Your first run.' : `New best! (was ${r.best0})`) : best!=null ? `Best: <b>${best}</b>` : ''}</p></div>
+      <div class="rush-list">${r.items.map((x, i)=>`<div class="rush-row"><span class="num">${i + 1}</span><span class="rush-what">${r.k==='mixed' ? `${ACT_NAMES[x.a]} <small>` : ''}${escHtml(x.title || '')}${x.year ? ` ${escHtml(String(x.year))}` : ''}${r.k==='mixed' ? '</small>' : ''}</span><span class="rush-chip ${rushPtsCls(x.pts)}">${x.pts}</span></div>`).join('')}</div>
       <div class="actions-row split rush-actions"><button class="btn secondary" id="rushMenu" data-no-i18n>${L({ en:'Done', fr:'Terminé', de:'Fertig', es:'Terminar', it:'Fine' })}</button><button class="btn" id="rushAgain">Play again</button></div>`;
   }
   app.innerHTML = top + `<div class="rush-page">${body}</div>`;
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
-  on('homeBtn', ()=>{ if(r && r.phase!=='end'){ rush = null; render(); } else { rush = null; screen = 'home'; render(); } });
-  on('rushMenu', ()=>{ rush = null; render(); });
-  on('rushAgain', ()=>rushStart(r.a));
-  document.querySelectorAll('[data-rush]').forEach(b=>b.onclick = ()=>rushStart(b.dataset.rush));
+  on('homeBtn', rushQuit);
+  on('rushMenu', rushQuit);
+  on('rushAgain', ()=>rushStart(r.k));
 }
+// The home page in rush mode: in the routine's place, the mixed run and each kind's scores, today's and best
+function rushCard(){
+  const n = v=>v!=null ? `<b>${v}</b>` : '—';
+  return `<div class="routine rush-card">
+      <div class="routine-head"><span class="routine-title">Rush</span><span class="rush-cols${dataCls()}"><span>Today</span><span>Best</span></span></div>
+      ${RUSH_KINDS.map(k=>`<div class="routine-row"><span>${rushName(k)}</span><span class="rush-cols${dataCls()}"><span>${n(rushTodayBest(k))}</span><span>${n(rushBest(k))}</span></span></div>`).join('')}
+      <button class="btn routine-btn" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>Start mixed rush</button>
+    </div>`;
+}
+// The Rush switch (home page, beside the profile's button)
+const rushToggle = ()=>BETA_SITE ? `<button class="acct-chip rush-toggle${rushOn ? ' on' : ''}" id="rushToggle" role="switch" aria-checked="${rushOn}">${RUSH_ICON}<span>Rush</span><span class="rt-knob" aria-hidden="true"></span></button>` : '';
 
 // A first visit (nothing played in this browser, not logged in, no games, no link to a position) opens straight
 // on Move selection, the most direct exercise; its review then offers the others in place of the Lichess, explorer
@@ -4766,6 +4810,8 @@ function leaveExercise(){
   testMode = false; replayMode = false; selSquare = null; promoPending = null;
 }
 function sideGo(where){
+  if(rush){ if(rush.phase!=='end') planq = rush.planq0; rushMode = false; rush = null; }   // (a run left: no score)
+  if(rushOn && (where==='routine' || ACTIVITIES.includes(where) || where==='planq')){ leaveExercise(); return rushStart(where==='routine' ? 'mixed' : where); }
   if(screen==='explorer' && explorer && explorer.ret){ const r = explorer.ret; explorer = r.saved; screen = r.screen; }   // (an explorer opened from a review: left as from the review, the sidebar's own explorer back)
   if(where==='routine'){ leaveExercise(); return startRoutine(); }
   if(ACTIVITIES.includes(where) || where==='planq'){ if(!canOpen(where, false)) return; leaveExercise(); routine = false; return openActivity(where); }
@@ -4784,14 +4830,15 @@ function renderSide(){
   if(!DESK) return;
   let nav = document.getElementById('side');
   if(!nav){ nav = document.createElement('nav'); nav.id = 'side'; nav.className = 'side'; nav.setAttribute('aria-label', 'Menu'); document.body.insertBefore(nav, document.querySelector('.wrap')); }
-  const at = routine && (ACTIVITIES.includes(screen) || screen==='planq') ? 'routine' : onProfile() ? 'account' : screen;
+  const at = rush ? (rush.k==='mixed' ? 'routine' : rush.k) : routine && (ACTIVITIES.includes(screen) || screen==='planq') ? 'routine' : onProfile() ? 'account' : screen;
   const c = todayBy(), total = ACTS.reduce((t,a)=>t+Math.min(c[a], DAILY_GOAL), 0);
   const item = (k, icon, name, extra, dis)=>`<button class="side-item${at===k ? ' on' : ''}" data-side="${k}"${dis ? ' disabled' : ''}${at===k ? ' aria-current="page"' : ''}>${icon}<span class="side-name">${name}</span>${extra ? `<span class="side-n">${extra}</span>` : ''}</button>`;
   const html = `
     <button class="side-logo${at==='home' ? ' on' : ''}" data-side="home" data-no-i18n aria-label="Home"><b>Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span></b></button>
-    ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
+    ${rushOn ? item('routine', RUSH_ICON, 'Mixed rush', progressLoaded && rushBest('mixed')!=null ? rushBest('mixed') : '', !rushCan('mixed'))
+      : item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     <div class="side-sec">Exercises</div>
-    ${ACTS.map(a=>{ const L = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
+    ${ACTS.map(a=>{ const L = levelNow(a); return rushOn ? item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && rushBest(a)!=null ? rushBest(a) : '', !rushCan(a)) : item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
     <div class="side-sec">More</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}
     <div class="side-sec">You</div>
     ${item('account', '<img class="side-app-icon" src="icons/icon.svg" alt="" aria-hidden="true">', displayName() || 'Profile')}
@@ -5004,7 +5051,7 @@ async function loadProfileMeta(db, id){
     if(p && p.joinedAt) profile.joinedAt = profile.joinedAt ? Math.min(profile.joinedAt, p.joinedAt) : p.joinedAt;
     if(p && p.accResetAt) profile.accResetAt = Math.max(profile.accResetAt || 0, p.accResetAt);   // (beta resets, the latest wins)
     if(p && p.timeResetAt) profile.timeResetAt = Math.max(profile.timeResetAt || 0, p.timeResetAt);
-    if(p && p.rushBest) for(const [a, n] of Object.entries(p.rushBest)) if(typeof n==='number') profile.rushBest = { ...(profile.rushBest || {}), [a]: Math.max(n, (profile.rushBest || {})[a] || 0) };   // (each run's best, the higher wins)
+    if(p && p.rushPts) for(const [k, n] of Object.entries(p.rushPts)) if(typeof n==='number') profile.rushPts = { ...(profile.rushPts || {}), [k]: Math.max(n, (profile.rushPts || {})[k] || 0) };   // (each kind of run's best, the higher wins)
     if(p && p.onboard) profile.onboard = { ...(profile.onboard || {}), ...p.onboard };   // the onboarding drawn on another device wins
     if(r && Array.isArray(r.items)) r.items.forEach(x=>{ if(!legacyMissed.some(y=>y.key===x.key && y.a===x.a)) legacyMissed.push(x); });
     metaCol = col;   // written to only after a successful read
@@ -5062,7 +5109,7 @@ function levelNow(a){
 // review shows: the level after this position and how much it moved.
 function recordResult(s, a, acc){
   if(s.rec || acc==null) return;
-  if(rushMode){ s.rec = { rush: true }; return; }   // (a rush's positions count in its run only)
+  if(rushMode){ s.rec = { rush: true }; rushScored(a, pos(), acc); return; }   // (a rush's positions count in its run only)
   markPlayed(pos().key);
   if(testMode){ s.rec = { test:true }; return; }   // test positions never count
   const before = levelNow(a);
@@ -5083,8 +5130,8 @@ function recordResult(s, a, acc){
 function levelChip(s, show, fade){
   if(!s.rec) return '';
   const r = s.rec;
-  if(r.rush) return rush && rush.phase==='review' ? `<span class="level${show ? (fade ? ' fade-in' : '') : ''}" style="${show ? '' : 'visibility:hidden'}">Clock paused <strong>${rushFmt(rush.left)}</strong></span>` : '';   // (a rush: its clock, paused during the review)
-  const body = r.test ? 'Not recorded'
+  const body = r.rush ? (rush ? rushSoFar(rush) : '')   // (a rush: the run so far)
+    : r.test ? 'Not recorded'
     : `Average <strong>${pct(r.level)}</strong>` + (r.delta==null ? '' : ' ' + deltaHtml(r.delta));
   return `<span class="level${show ? (fade ? ' fade-in' : '') : ''}" style="${show ? '' : 'visibility:hidden'}">${body}</span>`;
 }
@@ -5396,33 +5443,35 @@ function routineChip(){
   const c = todayBy(), total = ACTS.reduce((t, a)=>t + Math.min(c[a], DAILY_GOAL), 0);
   return `<button class="acct-chip routine-chip" id="routineBtn" ${canOpen(routineFrom(routineNext), true) ? '' : 'disabled'}>${SIDE_ICONS.routine}<span>Routine</span>${progressLoaded ? `<span class="routine-n">${total}/${DAILY_GOAL*ACTS.length}</span>` : ''}</button>`;
 }
+// (rush mode, sideways: the mixed run, with its best)
+function rushChip(){
+  return `<button class="acct-chip routine-chip" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>${RUSH_ICON}<span>Mixed rush</span>${progressLoaded && rushBest('mixed')!=null ? `<span class="routine-n">${rushBest('mixed')}</span>` : ''}</button>`;
+}
 function renderHome(){
   const app = document.getElementById('app');
   const donateHtml = `<div class="home-donate"><button class="donate-badge" id="donateBtn"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>${FEEDBACK_PILL}</div>`;   // (sideways: in the exercises' grid, beside the explorer)
   const acctChip = `<button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span><span class="acct-name">${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</span>${inboxBadge()}</button>`;   // (desktop: beside "Positions from")
   app.innerHTML = `
     <div class="home-head">
-      <div class="home-top"><h1 data-no-i18n>${isLand() ? `ChessStrategy<span class="tld">.org</span><span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span>` : `Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span>`}</h1>${isLand() ? routineChip() : ''}${isDesk() ? '' : acctChip}</div>
+      <div class="home-top"><h1 data-no-i18n>${isLand() ? `ChessStrategy<span class="tld">.org</span><span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span>` : `Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span>`}</h1>${isLand() ? (rushOn ? rushChip() : routineChip()) + rushToggle() : ''}${isDesk() ? '' : isLand() ? acctChip : `<div class="home-chips">${acctChip}${rushToggle()}</div>`}</div>
       ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isWide() ? `<p>Train your strategy beyond tactics puzzles: read the imbalances, define your plan, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
-    ${isLand() ? '' : routineCard()}
-    <div class="source-row">${isDesk() ? acctChip : ''}<span class="source-label">Positions from</span>
+    ${isLand() ? '' : rushOn ? rushCard() : routineCard()}
+    <div class="source-row">${isDesk() ? acctChip + rushToggle() : ''}<span class="source-label">Positions from</span>
       <div class="seg seg-sm" role="radiogroup" aria-label="Positions from">${Object.entries(SOURCES).map(([k,v])=>{
         const off = (k==='mine' || k==='both') && !myPositions.length;   // (the filter works on master games alone)
         return `<button class="seg-btn${k===source?' active':''}" role="radio" aria-checked="${k===source}" data-src="${k}" ${off ? 'disabled title="No positions from your games yet"' : ''}>${k==='mine' && (LANG==='de' || LANG==='it') ? `<span data-no-i18n>${L({ de:'Eigene', it:'Mie' })}</span>` : v}</button>`; }).join('')}</div>
     </div>
     <div class="cards">
       ${ACTS.map(a=>[a, ACT_GLYPHS[a], ACT_DESC[a]]).map(([a, glyph, desc])=>{
-        const L = levelNow(a), open = canOpen(a, false);
-        if(!open) desc = waitText(a, false);
+        const L = levelNow(a), open = rushOn ? rushCan(a) : canOpen(a, false);
+        if(!open) desc = rushOn ? (progressLoaded ? 'No positions yet' : 'Loading…') : waitText(a, false);
+        const lv = rushOn ? `<b>${rushBest(a)!=null ? rushBest(a) : '—'}</b><small>Best</small>` : `${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small>`;   // (rush mode: each exercise's best run)
         return `<button class="card" data-go="${a}" ${open ? '' : 'disabled'}>
           <span class="card-glyph" aria-hidden="true">${glyph}</span>
           <span><span class="card-title">${ACT_NAMES[a]}</span><span class="card-desc">${desc}</span></span>
-          <span class="card-level${dataCls()}">${L.rated ? `<b>${pct(L.level)}</b>` : `<b>—</b>`}<small>Average</small></span>
+          <span class="card-level${dataCls()}">${lv}</span>
         </button>`; }).join('')}
-      ${BETA_SITE ? `<button class="card" id="rushOpen"><span class="card-glyph" aria-hidden="true">${RUSH_ICON}</span>
-          <span><span class="card-title">Rush</span><span class="card-desc">3 minutes of positions: your average accuracy.</span></span>
-          <span class="card-level${dataCls()}">${RUSH_ACTS.some(a=>rushBest(a)!=null) ? `<b>${Math.max(...RUSH_ACTS.map(a=>rushBest(a) || 0))}%</b>` : '<b>—</b>'}<small>Best</small></span></button>` : ''}
       <button class="card xp-entry" id="xpOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.explorer}</span>
           <span><span class="card-title">Strategy explorer</span><span class="card-desc">Imbalances, plans and game analysis.</span></span></button>
       ${isLand() ? donateHtml : ''}
@@ -5432,11 +5481,11 @@ function renderHome(){
     ${DESK ? `<p class="home-foot ac-foot">${siteLinks()}</p>` : ''}`;
   app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>setSource(b.dataset.src));
   document.getElementById('donateBtn').onclick = ()=>{ supportFrom = 'home'; screen = 'support'; supportRebuild = true; render(); };
-  app.querySelectorAll('.card[data-go]').forEach(c=>c.onclick = ()=>{ if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
+  app.querySelectorAll('.card[data-go]').forEach(c=>c.onclick = ()=>{ if(rushOn) return rushStart(c.dataset.go); if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
+  { const t = document.getElementById('rushToggle'); if(t) t.onclick = ()=>setRushOn(!rushOn); }
   document.getElementById('accountBtn').onclick = ()=>{ screen = 'account'; render(); };
   const xpOpen = document.getElementById('xpOpen'); if(xpOpen) xpOpen.onclick = ()=>{ screen = 'explorer'; render(); };
-  const rushOpen = document.getElementById('rushOpen'); if(rushOpen) rushOpen.onclick = ()=>{ rush = null; screen = 'rush'; render(); };
-  const rb = document.getElementById('routineBtn'); if(rb) rb.onclick = startRoutine;
+  const rb = document.getElementById('routineBtn'); if(rb) rb.onclick = rushOn ? ()=>rushStart('mixed') : startRoutine;
   prefetchHome();
   progressJustLoaded = false;
 }
@@ -6594,7 +6643,7 @@ function renderImbalances(){
   if(!s.checked){
     introFade(s, ['imbPrompt', 'imbCheckRow']);   // the grades themselves are there at once
     wireAspectsInput(s);
-    document.getElementById('check').onclick = ()=>{ closeAspPicker(); s.checked = true; s.tc = activeNow(); s.justDone = false; aspectsEntry(p.fen); render(); };
+    document.getElementById('check').onclick = ()=>{ closeAspPicker(); s.checked = true; s.tc = activeNow(); rushPause(); s.justDone = false; aspectsEntry(p.fen); render(); };
   }
   wireCommon('imbalances', s.checked);
   s.justDone = false;
@@ -6758,7 +6807,7 @@ function renderCandidates(){
     listEl.appendChild(row);
   });
   introFade(s, ['candHint', 'candCheckRow']);
-  document.getElementById('check').onclick = ()=>{ s.checked = true; s.tc = activeNow(); s.sortDone = false; s.countStarted = false; s.countDone = false; s.sortStarted = false; s.topAt = null; selSquare = null; candidatesEval(p, s.picks); render(); };
+  document.getElementById('check').onclick = ()=>{ s.checked = true; s.tc = activeNow(); rushPause(); s.sortDone = false; s.countStarted = false; s.countDone = false; s.sortStarted = false; s.topAt = null; selSquare = null; candidatesEval(p, s.picks); render(); };
   wireCommon('candidates', false);
 }
 
@@ -6910,10 +6959,6 @@ function renderFinal(){
   const failed = evalFailed(ev0), ev = failed ? null : ev0;
   if(!s.order || s.order.length!==moves.length || !moves.every(m=>s.order.includes(m.id))) s.order = moves.map(m=>m.id);
   const ordered = s.order.map(id=>moves.find(m=>m.id===id));
-  if(rushMode && s.checked && !s.rushDone){   // a rush: its points and the clock paused, then the usual review (its evaluation is in: rushState)
-    s.rushDone = true; const cp = {}; moves.forEach(m=>{ const o = moveOutcome(p.fen, m.uci, ev); cp[m.id] = o ? o.moverCp : null; });
-    rushAnswered(p, ev ? rankAccuracyPct(s.order, cp) : 0);
-  }
 
   if(s.checked){
     const rows = ordered.map((m,i)=>({ ...m, num:String(i+1), outcome: moveOutcome(p.fen, m.uci, ev) }));
@@ -6939,7 +6984,7 @@ function renderFinal(){
     const scoreText = !counting ? '—' : s.revDone ? pctOrDash(acc) : Math.round(acc * easeOut((e - tCount)/COUNT_MS)) + '%';
     app.innerHTML = `
       ${header('Move selection')}
-      ${rushMode ? rushBar() : posBar()}
+      ${posBar()}
       ${boardHtml()}
       ${stackedPanel(`
         <div class="score"><span class="score-num" id="finalAcc">${scoreText}</span><span class="score-label" id="finalAccLabel">${failed ? 'Engine unavailable' : counting ? 'Accuracy' : 'Evaluating…'}</span>${levelChip(s, s.revDone, s.justDone)}${depthBtnHtml(ev0, p.fen)}${depthNoteHtml(s, ev, p.fen)}</div>
@@ -6983,10 +7028,10 @@ function renderFinal(){
 
   app.innerHTML = `
     ${header('Move selection')}
-    ${rushMode ? rushBar() : posBar()}
+    ${posBar()}
     ${boardHtml()}
     ${stackedPanel(`
-      ${rushMode ? rushTop() : `<p class="prompt top" id="finalHint">Order the moves, best first.</p>`}
+      <p class="prompt top" id="finalHint">Order the moves, best first.</p>
       <div id="ranked"></div>
       <div class="actions-row" id="finalCheckRow"><button class="btn" id="check" ${sfState==='error' || (!rushMode && !s.swapped && hintsOn('final')) ? 'disabled' : ''}>Check</button></div>`, ghostFinal(), engineErrorBanner())}`;
   renderBoard(document.getElementById('board'), bs, p.last);
@@ -7020,7 +7065,7 @@ function renderFinal(){
   rankedEl.classList.toggle('hinting', !s.rankTouched && hintsOn('final'));
   if(!s.rankTouched && hintsOn('final')){ rankedEl.addEventListener('pointerdown', ()=>{ if(!s.rankTouched){ s.rankTouched = true; hintStop(); } }, { capture:true, once:true }); hintStart(Math.max(HINT_PAUSE, tLast + SLIDE_MS - introEl + HINT_PAUSE)); }
   wireDragReorder(rankedEl, s.order, changed=>{ s.moved = true; if(changed) s.swapped = true; render(); });
-  document.getElementById('check').onclick = ()=>{ s.checked = true; s.tc = activeNow(); s.revAt = null; s.revDone = false; render(); };
+  document.getElementById('check').onclick = ()=>{ s.checked = true; s.tc = activeNow(); rushPause(); s.revAt = null; s.revDone = false; render(); };
   wireCommon('final', false);
 }
 
@@ -11291,7 +11336,7 @@ const planqAuto = q=>!q.done && q.checked && q.step===0 && q.scores.urgent===100
 // position that stops after phase 1: its two rows, half each
 const PLANQ_WEIGHTS = { urgent: 0.25, winning: 0.25, plan: 0.5 };
 const planqTotal = q=>Math.round(q.urgent.stop ? ((q.scores.urgent || 0) + (q.scores.winning || 0)) / 2 : ['urgent', 'winning', 'plan'].reduce((t, s)=>t + PLANQ_WEIGHTS[s] * (q.scores[s] || 0), 0));
-function planqGo(q){ if(planq!==q || !q.checked || q.done) return; q.step++; q.checked = false; q.aspView = q.aspPiece = q.aspKing = null; render(); }
+function planqGo(q){ if(planq!==q || !q.checked || q.done) return; rushResume(); q.step++; q.checked = false; q.aspView = q.aspPiece = q.aspKing = null; render(); }
 function renderPlanq(){
   const app = document.getElementById('app');
   loadMasterEvals();
@@ -11337,7 +11382,7 @@ function renderPlanq(){
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
-      <h1>${routine ? `Routine <span class="title-badge">Plan finder</span>` : replayMode ? `${sharedOpen ? 'Shared' : 'Replay'} <span class="title-badge">Plan finder</span>` : q.test!=null ? `Test <span class="title-badge">Plan finder</span>` : 'Plan finder'}</h1>
+      <h1>${rushMode ? `Rush <span class="title-badge">Plan finder</span>` : routine ? `Routine <span class="title-badge">Plan finder</span>` : replayMode ? `${sharedOpen ? 'Shared' : 'Replay'} <span class="title-badge">Plan finder</span>` : q.test!=null ? `Test <span class="title-badge">Plan finder</span>` : 'Plan finder'}</h1>
       <button class="icon-btn" id="helpBtn" aria-label="How this exercise works">?</button>
     </div>
     ${posBar()}
@@ -11375,9 +11420,9 @@ function renderPlanq(){
     }
   }
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
-  on('homeBtn', ()=>{ helpVisible = false; if(replayMode){ replayMode = false; planq = null; screen = sharedOpen ? 'home' : 'account'; sharedOpen = null; return render(); } if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
+  on('homeBtn', ()=>{ helpVisible = false; if(rushMode) return rushQuit(); if(replayMode){ replayMode = false; planq = null; screen = sharedOpen ? 'home' : 'account'; sharedOpen = null; return render(); } if(q.test!=null){ planq = null; screen = 'tests'; } else { leaveExercise(); screen = 'home'; } render(); });
   on('helpBtn', ()=>{ helpVisible = true; reportOpen = null; render(); });
-  on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.tc = activeNow();
+  on('pqCheck', ()=>{ if(!ready) return; q.checked = true; q.tc = activeNow(); rushPause();
     if(isPlan) q.scores.plan = planqPlanScore(q); else ['urgent', 'winning'].forEach(k=>{ q.scores[k] = planqAnswer(q, k).score(q.picks[k]); });
     if(last){ q.done = true; planqRecord(q, planqTotal(q)); }
     render(); });
@@ -11389,6 +11434,7 @@ function renderPlanq(){
   }
   on('pqNext', ()=>{
     helpVisible = false;
+    if(rushMode) return rushNext();
     if(replayMode){ planq = null; return nextPosition(); }
     if(routine){ const a = routineAfter('planq'); setRoutineNext(a); planq = null; return openActivity(a); }
     if(q.test!=null){ const j = TEST_POSITIONS.findIndex((x, k)=>k > q.test && x.eval); if(j >= 0) planqTest(j); else { planq = null; screen = 'tests'; render(); } return; }
@@ -11406,6 +11452,7 @@ function renderPlanq(){
 // list): kept like the other exercises' (recordResult)
 function planqRecord(q, acc){
   if(q.rec || acc==null) return;
+  if(rushMode){ q.rec = { rush: true }; rushScored('planq', q.p, acc); return; }   // (a rush's positions count in its run only)
   if(q.test!=null){ q.rec = { test:true }; return; }   // test positions never count
   markPlayed(q.p.key);
   const before = levelNow('planq');
