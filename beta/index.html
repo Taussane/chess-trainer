@@ -162,6 +162,7 @@
   .rush-stat{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:12px 6px; background:var(--panel); border:1px solid var(--border); border-radius:12px;}
   .rush-stat b{font-size:2.2rem; line-height:1.1; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums;} .rush-stat small{color:var(--text-mute); font-size:.8rem; text-align:center;}
   .rush-stat.rush-total{border-color:var(--accent); position:relative;} .rush-stat.rush-total b{font-size:3rem; color:var(--accent);}
+  .rs-in1{animation:rsIn .4s ease-out .1s both;} .rs-in2{animation:rsIn .4s ease-out .55s both;} @keyframes rsIn{from{opacity:0; transform:translateY(10px);}} @media (prefers-reduced-motion:reduce){ .rs-in1, .rs-in2{animation:none;} }
   .rush-new{position:absolute; top:10px; right:10px; padding:1px 7px; border-radius:999px; background:var(--accent); color:var(--bg); font-weight:700; font-size:.72rem; opacity:0; transform:scale(.6); transition:opacity .25s, transform .3s cubic-bezier(.3,1.6,.6,1);} .rush-new.on{opacity:1; transform:none;}
   .rush-chart{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:10px 10px 8px;}   .rush-end .pf-h{margin:0 0 -12px;}
   /* a phone held sideways: two rows, the run (its numbers beside its timeline), then its history (beside the buttons) */
@@ -3525,7 +3526,6 @@ function rushChart(k, cur){
 }
 // The run's positions along its 3 minutes: each a bar as wide as the clock time it took (from shown to Check) and
 // as high as its points (a mixed run: in its exercise's colour); the time left on an unfinished position, empty.
-// Revealed from the left as the points count (rushCountUp)
 function rushTimeline(r){
   const xs = r.items.filter(x=>x.ms!=null); if(!xs.length) return '';
   const W = isLand() ? 1000 : 600, H = 160, l = 38, rt = 4, top = 10, base = H - 26, X = ms=>l + (W - l - rt) * ms / RUSH_MS, Y = v=>base - (base - top) * v / 100, f1 = v=>v.toFixed(1);
@@ -3534,7 +3534,7 @@ function rushTimeline(r){
     return `<rect x="${f1(x0 + 1)}" y="${f1(Y(x.pts))}" width="${f1(Math.max(1, x1 - x0 - 2))}" height="${f1(base - Y(x.pts))}" rx="2" fill="${col}"><title>${i + 1}. ${ACT_NAMES[x.a]}: ${rushFmt(x.ms).replace(/^0:/, '0:')} · ${x.pts} points</title></rect>`; }).join('');
   const grid = [50, 100].map(v=>`<line x1="${l}" x2="${W - rt}" y1="${f1(Y(v))}" y2="${f1(Y(v))}" class="rc-grid"/><text x="${l - 6}" y="${f1(Y(v) + 4)}" class="rc-tick rc-y">${v}</text>`).join('');
   const ticks = [0, 60e3, 120e3, 180e3].map(ms=>`<text x="${f1(X(ms))}" y="${H - 4}" class="rc-tick${ms===RUSH_MS ? ' rc-y' : ms===0 ? ' rc-start' : ''}">${rushFmt(ms)}</text>`).join('');
-  return `<div class="rush-chart rc-tl"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Time and points per position">${grid}<clipPath id="rtClip"><rect id="rtReveal" x="0" y="0" width="${W}" height="${H}"/></clipPath><g clip-path="url(#rtClip)">${bars}</g><line x1="${l}" x2="${W - rt}" y1="${base}" y2="${base}" class="rc-axis"/>${ticks}</svg>
+  return `<div class="rush-chart rc-tl"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Time and points per position">${grid}${bars}<line x1="${l}" x2="${W - rt}" y1="${base}" y2="${base}" class="rc-axis"/>${ticks}</svg>
     <div class="rc-note">Each position: as wide as its time, as high as its points</div>${rushLegend(r.k, r.k==='mixed' ? Object.fromEntries(ROUTINE.map(a=>[a, r.items.filter(x=>x.a===a).reduce((t, x)=>t + x.pts, 0)])) : null)}</div>`;
 }
 const r_hasTimeline = cur=>!!(cur && rush && rush.phase==='end' && rush.items.some(x=>x.ms!=null));
@@ -3548,16 +3548,18 @@ function renderRush(){
   if(r.phase!=='end') body = `<p class="mg-status mg-loading">Loading positions…</p>`;
   else {
     const n = r.items.length, avg = rushAvg(r) || 0, runs = rushRuns(r.k), cur = n ? runs[runs.length - 1] : null;
+    // (shown in two steps, once: the run's results, then its history and the buttons)
+    const first = !r.shownEnd; r.shownEnd = true; const a1 = first ? 'rs-in1' : '', a2 = first ? 'rs-in2' : '';
     body = `<div class="rush-end">
-        <h2 class="pf-h rh-run">Run results</h2>
-        <div class="rush-sum">
-          <span class="rush-stat"><b class="rush-n" data-to="${n}">0</b><small>Positions</small></span>
-          <span class="rush-stat"><b class="rush-n" data-to="${avg}" data-pct="1">0%</b><small>Average accuracy</small></span>
-          <span class="rush-stat rush-total"><b class="rush-n" data-to="${r.score}">0</b><small>Total points${r.newBest ? ' <span class="rush-new">New best</span>' : ''}</small></span>
+        <h2 class="pf-h rh-run ${a1}">Run results</h2>
+        <div class="rush-sum ${a1}">
+          <span class="rush-stat"><b>${n}</b><small>Positions</small></span>
+          <span class="rush-stat"><b>${avg}%</b><small>Average accuracy</small></span>
+          <span class="rush-stat rush-total"><b>${r.score}</b><small>Total points${r.newBest ? ' <span class="rush-new on">New best</span>' : ''}</small></span>
         </div>
-        ${rushTimeline(r)}
-        ${rushChart(r.k, cur)}
-      <div class="actions-row split rush-actions" style="visibility:hidden"><button class="btn secondary" id="rushMenu" data-no-i18n>${L({ en:'Done', fr:'Terminé', de:'Fertig', es:'Terminar', it:'Fine' })}</button><button class="btn" id="rushAgain">Play again</button></div>
+        ${rushTimeline(r).replace('class="rush-chart rc-tl"', `class="rush-chart rc-tl ${a1}"`)}
+        ${rushChart(r.k, cur).replace('class="pf-h rh-hist"', `class="pf-h rh-hist ${a2}"`).replace('class="rush-chart rc-hist"', `class="rush-chart rc-hist ${a2}"`)}
+      <div class="actions-row split rush-actions ${a2}"><button class="btn secondary" id="rushMenu" data-no-i18n>${L({ en:'Done', fr:'Terminé', de:'Fertig', es:'Terminar', it:'Fine' })}</button><button class="btn" id="rushAgain">Play again</button></div>
       </div>`;
   }
   app.innerHTML = top + `<div class="rush-page">${body}</div>`;
@@ -3565,31 +3567,6 @@ function renderRush(){
   on('homeBtn', rushQuit);
   on('rushMenu', rushQuit);
   on('rushAgain', ()=>rushStart(r.k));
-  if(r.phase==='end') rushCountUp(r);
-}
-// The end's three numbers, counted up from 0 one after the other (positions, average, points) after a short wait,
-// the run's bar rising with its points; once per run
-const RUSH_COUNT_MS = 700, RUSH_COUNT_WAIT = 600;
-function rushCountUp(r){
-  const els = [...document.querySelectorAll('#app .rush-n')], grow = document.getElementById('rcGrow'), val = document.getElementById('rcVal');
-  if(r.countAt==null){ r.countAt = performance.now() + RUSH_COUNT_WAIT; if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) r.countAt -= 1e6; }
-  const badge = document.querySelector('#app .rush-new'), ease = f=>1 - Math.pow(1 - f, 3);
-  const step = ()=>{
-    if(rush!==r || screen!=='rush' || !els[0] || !els[0].isConnected) return;
-    const t = performance.now() - r.countAt; let busy = false, fp = 0;
-    els.forEach((el, i)=>{
-      const f = Math.max(0, Math.min(1, (t - i * (RUSH_COUNT_MS + 150)) / RUSH_COUNT_MS)), to = +el.dataset.to;
-      el.textContent = Math.round(to * ease(f)) + (el.dataset.pct ? '%' : '');
-      if(f < 1) busy = true; if(i===els.length - 1) fp = ease(f);
-    });
-    if(grow){ const b = +val.dataset.base, yt = +val.dataset.ytop; grow.setAttribute('transform', `translate(0 ${(b * (1 - fp)).toFixed(2)}) scale(1 ${fp.toFixed(4)})`);
-      val.setAttribute('y', (b - (b - yt) * fp - 6).toFixed(1)); val.textContent = Math.round(+els[els.length - 1].dataset.to * fp); val.style.opacity = fp > 0 ? 1 : 0; }
-    const rv = document.getElementById('rtReveal'); if(rv) rv.setAttribute('width', (1000 * fp).toFixed(1));   // (the timeline, from the left)
-    if(badge) badge.classList.toggle('on', !busy);   // (the badge once the points are in)
-    if(!busy){ const a = document.querySelector('#app .rush-actions'); if(a && a.style.visibility==='hidden'){ a.style.visibility = ''; a.classList.add('fade-in'); } }   // (then the buttons)
-    if(busy) requestAnimationFrame(step);
-  };
-  step();
 }
 // The home page in rush mode, in the routine's place: the mixed run's best, and that run's points per exercise
 function rushCard(){
