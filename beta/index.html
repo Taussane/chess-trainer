@@ -943,26 +943,26 @@
   .panel-stack .xp-plan > *{margin:0; min-height:0;}
   .panel-stack .xp-plan > .xp-plan-note{max-height:var(--pn-row); align-self:start;}
 
-  /* ---- The look (beta first): Inter everywhere, titles in Inter Display; surfaces and controls told apart by shade,
-     no outlines (borders only where they mean something: a selection, the accent's tiles). :where() keeps these rules
-     as light as the ones they replace, so a state's own rule (.on, .active, :hover) still wins ---- */
-  html.beta{--font-display:"Inter Display","Inter",system-ui,sans-serif; --font-body:"Inter",system-ui,sans-serif;}
-  :where(html.beta) h1, :where(html.beta) h2, :where(html.beta) .card-title, :where(html.beta) .routine-title{font-weight:700; letter-spacing:-0.02em;}
-  :where(html.beta) .home-head .home-top h1{font-family:var(--font-display); letter-spacing:-0.03em;}
-  :where(html.beta) .card-level b, :where(html.beta) .score-num{font-weight:700; letter-spacing:-0.02em;}
+  /* ---- The look: Inter everywhere, titles in Inter Display; surfaces and controls told apart by shade,
+     no outlines (borders only where they mean something: a selection, the accent's tiles). Each selector stays
+     as light as the one it replaces (no :is() lists), so a state's own rule (.on, .active, :hover) still wins ---- */
+  :root{--font-display:"Inter Display","Inter",system-ui,sans-serif; --font-body:"Inter",system-ui,sans-serif;}
+  h1, h2, .card-title, .routine-title{font-weight:700; letter-spacing:-0.02em;}
+  .home-head .home-top h1{font-family:var(--font-display); letter-spacing:-0.03em;}
+  .card-level b, .score-num{font-weight:700; letter-spacing:-0.02em;}
   /* surfaces: shade and a soft shadow */
-  :where(html.beta) .card, :where(html.beta) .routine, :where(html.beta) .panel, :where(html.beta) .mg-card, :where(html.beta) .pf-card, :where(html.beta) .chart-box, :where(html.beta) .rush-stat:not(.rush-total), :where(html.beta) .rush-chart, :where(html.beta) .test-item, :where(html.beta) .gp-row, :where(html.beta) .title-chip, :where(html.beta) .flash-note, :where(html.beta) .depth-note, :where(html.beta) .lang-menu, :where(html.beta) .modal-box, :where(html.beta) .xpg-chart{border-color:transparent;}
-  :where(html.beta) .card{border-radius:14px; padding:14px 16px; box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 6px 18px rgba(0,0,0,.22); transition:background .15s, transform .15s;}
-  :where(html.beta) .card:hover{background:var(--panel-2); transform:translateY(-1px);}
-  :where(html.beta) .routine{background:linear-gradient(180deg, var(--panel-2), var(--panel)); border-radius:16px; box-shadow:0 10px 28px rgba(0,0,0,.28);}
-  :where(html.beta) .panel, :where(html.beta) .mg-card, :where(html.beta) .pf-card, :where(html.beta) .chart-box, :where(html.beta) .rush-chart, :where(html.beta) .test-item{border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.18);}
-  :where(html.beta) .gp-row{background:var(--panel-2);} :where(html.beta) .gp-row:hover{background:#2A333E;}
+  .card, .routine, .panel, .mg-card, .pf-card, .chart-box, .rush-stat:not(.rush-total), .rush-chart, .test-item, .gp-row, .title-chip, .flash-note, .depth-note, .lang-menu, .modal-box, .xpg-chart{border-color:transparent;}
+  .card{border-radius:14px; padding:14px 16px; box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 6px 18px rgba(0,0,0,.22); transition:background .15s, transform .15s;}
+  .card:hover{background:var(--panel-2); transform:translateY(-1px);}
+  .routine{background:linear-gradient(180deg, var(--panel-2), var(--panel)); border-radius:16px; box-shadow:0 10px 28px rgba(0,0,0,.28);}
+  .panel, .mg-card, .pf-card, .chart-box, .rush-chart, .test-item{border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.18);}
+  .gp-row{background:var(--panel-2);} .gp-row:hover{background:#2A333E;}
   /* controls: filled, no outline */
-  :where(html.beta) .acct-chip, :where(html.beta) .btn.secondary, :where(html.beta) .icon-btn, :where(html.beta) .chip-btn, :where(html.beta) .depth-btn, :where(html.beta) .set-opt, :where(html.beta) .set-toggle, :where(html.beta) .badge, :where(html.beta) .xp-side, :where(html.beta) .pq-side, :where(html.beta) .gp-sel, :where(html.beta) .cc-field, :where(html.beta) .goal-dots i{border-color:transparent;}
-  :where(html.beta) .acct-chip, :where(html.beta) .btn.secondary, :where(html.beta) .icon-btn, :where(html.beta) .chip-btn, :where(html.beta) .set-opt{background:var(--panel-2);}
-  :where(html.beta) .btn.secondary:hover, :where(html.beta) .icon-btn:hover, :where(html.beta) .chip-btn:hover, :where(html.beta) .set-opt:hover, :where(html.beta) .acct-chip:hover{background:#2A333E;}
-  :where(html.beta) .seg{border-color:transparent; background:var(--panel); border-radius:10px; padding:3px; gap:2px;} :where(html.beta) .seg-btn{border-radius:8px; border:0;} :where(html.beta) .seg-btn + .seg-btn{border-left:0;} :where(html.beta) .seg-btn.active{background:var(--panel-2); box-shadow:0 1px 3px rgba(0,0,0,.35);}
-  :where(html.beta) .btn{border-radius:10px;}
+  .acct-chip, .btn.secondary, .icon-btn, .chip-btn, .depth-btn, .set-opt, .set-toggle, .badge, .xp-side, .pq-side, .gp-sel, .cc-field, .goal-dots i{border-color:transparent;}
+  .acct-chip, .btn.secondary, .icon-btn, .chip-btn, .set-opt{background:var(--panel-2);}
+  .btn.secondary:hover, .icon-btn:hover, .chip-btn:hover, .set-opt:hover, .acct-chip:hover{background:#2A333E;}
+  .seg{border-color:transparent; background:var(--panel); border-radius:10px; padding:3px; gap:2px;} .seg-btn{border-radius:8px; border:0;} .seg-btn + .seg-btn{border-left:0;} .seg-btn.active{background:var(--panel-2); box-shadow:0 1px 3px rgba(0,0,0,.35);}
+  .btn{border-radius:10px;}
 </style>
 
 <div class="wrap">
