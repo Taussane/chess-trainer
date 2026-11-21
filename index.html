@@ -333,6 +333,13 @@
   .chip-btn{background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:999px; padding:5px 10px; font:inherit; font-size:0.8rem; cursor:pointer;}
   .fl-box{max-width:420px; width:100%; box-sizing:border-box;} .fl-group{margin:12px 0;} .fl-h{display:block; font-size:0.78rem; color:var(--text-mute); margin-bottom:6px;}   /* (the filter's options) */
   .fl-chips{display:flex; flex-wrap:wrap; gap:8px;} .fl-chip{font-size:0.9rem; padding:7px 14px;} .fl-chip.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;} .fl-chip:disabled{opacity:.4; cursor:default;} .fl-chip{display:inline-grid; justify-items:center; align-items:center;} .fl-chip > span{grid-area:1/1;} .fl-chip > .seg-w{font-weight:600; visibility:hidden;}   /* (each chip as wide as its word in bold, the box at one width: nothing moves when an option is turned on or off) */
+  @media (min-aspect-ratio:6/5) and (max-height:600px){   /* a phone held sideways: wider, each group's name beside its options, the counts two by two */
+    .modal-box.fl-box{max-width:min(620px, 94vw);}
+    .fl-box .fl-group{display:grid; grid-template-columns:6.5em minmax(0, 1fr); align-items:center; column-gap:12px; margin:8px 0;}
+    .fl-box .fl-h{margin:0;} .fl-box .fl-group:has(.fl-counts){align-items:start;} .fl-box .fl-group:has(.fl-counts) .fl-h{padding-top:3px;}
+    .fl-box .fl-counts{display:grid; grid-template-columns:1fr 1fr; column-gap:28px;}
+    .fl-box > h3{margin-bottom:4px;}
+  }
   .fl-counts{list-style:none; margin:0; padding:0; font-size:0.88rem;} .fl-counts li{display:flex; justify-content:space-between; padding:3px 0;} .fl-counts b{font-variant-numeric:tabular-nums;}
   .link-btn{background:transparent; border:none; color:var(--accent); font:inherit; font-size:0.9rem; font-weight:600; cursor:pointer; padding:6px 0;}
   .link-btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
