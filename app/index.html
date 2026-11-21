@@ -663,6 +663,7 @@
   /* game review (the explorer's Game tab, beta): its title, the chart (two rows), the move and its grade, in the panel's four rows */
   .xpg{min-width:0;}
   .xp-modes .seg-btn{flex:1 1 auto; padding-left:6px; padding-right:6px;}   /* (four tabs: each as wide as its word needs) */
+  .xp-modes .seg-btn{display:inline-grid; justify-items:center;} .xp-modes .seg-btn > span{grid-area:1/1;} .xp-modes .seg-btn > .seg-w{font-weight:600; visibility:hidden;}   /* (each tab as wide as its word in bold: nothing moves when another is chosen) */
   .xpg.xpg-full{display:block; position:relative; height:calc(4 * var(--pn-row));}
   .xpg-full .xpg-chart{height:calc(4 * var(--pn-row) - 4px);} .xpg-chart svg{display:block; width:100%; height:100%;} .xpg-full .xpg-prog{position:absolute; right:8px; top:6px;}
   .xpg-area{fill:var(--white-fill);} .xpg-dot{position:absolute; width:7px; height:7px; border-radius:50%; border:1px solid var(--black-fill); transform:translate(-50%, -50%); pointer-events:none;}
@@ -10268,9 +10269,8 @@ function explorerLichessUrl(x){
 }
 const explorerSidesHtml = x=>sidesHtml(x, !!x.aspView);
 const explorerModesHtml = x=>`<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Show">
-    <button class="seg-btn${x.mode==='imbalances' ? ' active' : ''}" data-mode="imbalances" role="radio" aria-checked="${x.mode==='imbalances'}">Imbalances</button>
-    <button class="seg-btn${x.mode==='plans' ? ' active' : ''}" data-mode="plans" role="radio" aria-checked="${x.mode==='plans'}">Plans</button>
-    ${['game', 'stats'].map((m, i)=>`<button class="seg-btn${x.mode===m ? ' active' : ''}" data-mode="${m}" role="radio" aria-checked="${x.mode===m}">${['Game', 'Statistics'][i]}</button>`).join('')}
+    ${['imbalances', 'plans', 'game', 'stats'].map((m, i)=>{ const l = ['Imbalances', 'Plans', 'Game', 'Statistics'][i];
+      return `<button class="seg-btn${x.mode===m ? ' active' : ''}" data-mode="${m}" role="radio" aria-checked="${x.mode===m}"><span>${l}</span><span class="seg-w" aria-hidden="true">${l}</span></button>`; }).join('')}
   </div>`;
 // ---- Game review (beta): a whole game in the explorer, a master's or one of yours. Each position gets an evaluation
 // (yours: Lichess's analysis or the pass; the rest searched here, 0.4 s each, in the background), each move its grade
