@@ -729,6 +729,11 @@
   .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:4px;}
   .modal-box.fb-box{width:100%; max-width:min(560px, 94vw);}
   .fb-box .cc-field{display:block; width:100%; box-sizing:border-box; margin:0 0 10px;}
+  @media (min-aspect-ratio:6/5) and (max-height:600px){   /* a phone held sideways: Lichess and Chess.com side by side, under them the username and Not now */
+    .modal-box.cn-box{max-width:min(560px, 94vw); display:grid; grid-template-columns:1fr 1fr; column-gap:10px;}
+    .cn-box > h3, .cn-box > p{grid-column:1 / -1;} .cn-box .btn{font-size:.88rem; white-space:nowrap;} .cn-box > .cc-field{grid-column:2;} .cn-box > .modal-actions{grid-column:1; grid-row:4; margin:0; align-self:start; justify-content:flex-start;}
+  }
+  .cn-box{width:100%;} .cn-box .lichess-btn, .cn-box .cc-btn, .cn-box .cc-field{width:100%; box-sizing:border-box; margin:0 0 8px;} .cn-box .cc-field{display:block;}   /* (the connect pop-up: as the profile's account card) */
   .fb-msg{min-height:160px; resize:vertical;}
   @media (min-aspect-ratio:6/5) and (min-height:600px){ .fb-msg{min-height:240px;} }
   @media (max-height:479.98px){   /* a phone held sideways: the form fits the screen, the message scrolls inside its box */
@@ -2883,12 +2888,13 @@ function openFilter(){
     div.dataset.none = none ? '1' : '';
     div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box fl-box" role="dialog" aria-label="Filter"><h3>Filter</h3>
       ${FILTER_GROUPS.map(([g, ks])=>`<div class="fl-group"><span class="fl-h">${g}</span><div class="fl-chips">${ks.map(([k, l])=>{
-        const off = k==='mine' && !myPositions.length;
+        const off = k==='mine' && !myPositions.length && !connectNeeded();
         return `<button class="chip-btn fl-chip${posFilter[k] && !off ? ' on' : ''}" data-fl="${k}" aria-pressed="${!!posFilter[k]}" ${off ? 'disabled' : ''}><span>${l}</span><span class="seg-w" aria-hidden="true">${l}</span></button>`; }).join('')}</div></div>`).join('')}
       <div class="fl-group"><span class="fl-h">Positions</span><ul class="fl-counts">${ACTS.map((a, i)=>`<li><span>${ACT_NAMES[a]}</span><b>${n[i]}</b></li>`).join('')}</ul></div>
       <div class="modal-actions"><button class="btn" id="flDone" ${none ? 'disabled' : ''}>Done</button></div></div></div>`;
     div.querySelectorAll('[data-fl]').forEach(b=>b.onclick = ()=>{
       const k = b.dataset.fl;
+      if(k==='mine' && connectNeeded()){ openConnect(); return; }
       posFilter[k] = !posFilter[k];
       try{ localStorage.setItem('cst.filter', JSON.stringify(posFilter)); }catch(e){}
       draw(); render();
@@ -3352,6 +3358,32 @@ function helpModal(app, h, a){
 // Its own popup on top of the page (the page's redraws leave it alone): the message, an email if they want an answer,
 // and where it was sent from. A field people don't see catches bots.
 document.addEventListener('click', e=>{ const f = e.target.closest && e.target.closest('[data-feedback]'); if(f){ e.preventDefault(); e.stopPropagation(); openFeedback(); } }, true);   // (first: the page's own link handlers leave it alone)
+// Your own games, not connected yet (website): tapping My games (home, Filter, Load a game) asks you to connect right there
+// (Lichess: log in and connect; Chess.com: its username), instead of sending you to the profile
+const connectNeeded = ()=>DIRECT_LICHESS && !!API_BASE && !lichessName() && !chesscomName;
+function openConnect(){
+  if(document.getElementById('cnModal')) return;
+  const div = document.createElement('div'); div.className = 'modal-backdrop'; div.id = 'cnModal'; div.dataset.scr = screen;
+  const close = ()=>div.remove();
+  const draw = (note, name)=>{
+    div.innerHTML = `<div class="modal-backdrop-inner"><div class="modal-box cn-box" role="dialog" aria-label="Your games"><h3>Your games</h3>
+      <p>Connect Lichess or Chess.com: your games become positions in every exercise, your mistakes first.</p>
+      <button class="btn lichess-btn" id="cnLichess">${LICHESS_LOGO} ${signedIn() ? 'Connect with Lichess' : 'Log in and connect with Lichess'}</button>
+      <button class="btn google-btn cc-btn" id="cnCc">${CHESSCOM_LOGO} Connect with Chess.com</button>
+      <input class="cc-field" id="cnUser" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Chess.com username" aria-label="Chess.com username">
+      ${note ? `<p class="fb-err" role="status">${note}</p>` : ''}
+      <div class="modal-actions"><button class="btn secondary" id="cnClose">Not now</button></div></div></div>`;
+    const f = document.getElementById('cnUser'); if(name) f.value = name;
+    document.getElementById('cnClose').onclick = close;
+    document.getElementById('cnLichess').onclick = ()=>lichessLogin(signedIn() ? true : undefined);
+    const cc = async ()=>{ const n = f.value.trim(); if(!n){ f.focus(); return; }
+      await connectChesscom(n);
+      if(chesscomName){ myImportNote = ''; close(); render(); } else { const m = myImportNote; myImportNote = ''; draw(m, n); } };
+    document.getElementById('cnCc').onclick = cc; f.onkeydown = e=>{ if(e.key==='Enter') cc(); };
+  };
+  document.body.appendChild(div); draw();
+  div.addEventListener('click', e=>{ if(e.target===div || e.target.classList.contains('modal-backdrop-inner')) close(); });
+}
 function openFeedback(){
   if(document.getElementById('fbModal')) return;
   const from = screen, div = document.createElement('div');
@@ -5601,7 +5633,7 @@ function renderHome(){
     ${isLand() ? (landNew() ? '' : rushOn ? rushRow() : routineRow()) : rushOn ? rushCard() : routineCard()}
     <div class="source-row">${isDesk() ? acctChip + rushToggle() : ''}<span class="source-label">Positions from</span>
       <div class="seg seg-sm" role="radiogroup" aria-label="Positions from">${Object.entries(SOURCES).map(([k,v])=>{
-        const off = (k==='mine' || k==='both') && !myPositions.length;   // (the filter works on master games alone)
+        const off = (k==='mine' || k==='both') && !myPositions.length && !connectNeeded();   // (not connected: My games asks you to connect)   // (the filter works on master games alone)
         return `<button class="seg-btn${k===source?' active':''}" role="radio" aria-checked="${k===source}" data-src="${k}" ${off ? 'disabled title="No positions from your games yet"' : ''}>${k==='mine' && (LANG==='de' || LANG==='it') ? `<span data-no-i18n>${L({ de:'Eigene', it:'Mie' })}</span>` : v}</button>`; }).join('')}</div>
     </div>
     <div class="cards">
@@ -5621,7 +5653,7 @@ function renderHome(){
     ${isLand() ? '' : donateHtml}
     ${engineErrorBanner()}
     ${DESK ? `<p class="home-foot ac-foot">${siteLinks()}</p>` : ''}`;
-  app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>setSource(b.dataset.src));
+  app.querySelectorAll('[data-src]').forEach(b=>b.onclick = ()=>b.dataset.src==='mine' && connectNeeded() ? openConnect() : setSource(b.dataset.src));
   document.getElementById('donateBtn').onclick = ()=>{ supportFrom = 'home'; screen = 'support'; supportRebuild = true; render(); };
   app.querySelectorAll('.card[data-go]').forEach(c=>c.onclick = ()=>{ if(rushOn) return rushStart(c.dataset.go); if(!canOpen(c.dataset.go, false)) return; routine = false; openActivity(c.dataset.go); });
   { const t = document.getElementById('rushToggle'); if(t) t.onclick = ()=>setRushOn(!rushOn); }
@@ -7227,7 +7259,7 @@ document.addEventListener('pointerdown', e=>{
   holdRender(); clearTimeout(holdRender.safety); holdRender.safety = setTimeout(releaseRender, 2000);
 }, true);
 function render(){
-  for(const id of ['fbModal', 'gpModal', 'flModal']){ const m = document.getElementById(id); if(m && m.dataset.scr!==screen) m.remove(); }
+  for(const id of ['fbModal', 'gpModal', 'flModal', 'cnModal']){ const m = document.getElementById(id); if(m && m.dataset.scr!==screen) m.remove(); }
   if(renderHeld){ renderWaiting = true; return; }
   if(firstVisit && screen!=='final') firstVisit = null;   // (the first visit's way in is over once the player goes elsewhere)
   // The page is redrawn often (e.g. while your games are analysed): text being typed, and the
@@ -7447,6 +7479,9 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Mixed rush": "Rush mixte",
 "Mixed": "Mixte",
 "Best run": "Meilleure série",
+"Your games": "Vos parties",
+"Connect Lichess or Chess.com: your games become positions in every exercise, your mistakes first.": "Connectez Lichess ou Chess.com : vos parties deviennent des positions dans chaque exercice, vos erreurs d'abord.",
+"Not now": "Plus tard",
 "Start": "Commencer",
 "Continue": "Continuer",
 "Start mixed rush": "Lancer le rush mixte",
@@ -8006,6 +8041,9 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Mixed rush": "Gemischter Rush",
 "Mixed": "Gemischt",
 "Best run": "Beste Runde",
+"Your games": "Deine Partien",
+"Connect Lichess or Chess.com: your games become positions in every exercise, your mistakes first.": "Verbinde Lichess oder Chess.com: Deine Partien werden zu Stellungen in jeder Übung, deine Fehler zuerst.",
+"Not now": "Später",
 "Start": "Starten",
 "Continue": "Weiter",
 "Start mixed rush": "Gemischten Rush starten",
@@ -8495,6 +8533,9 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Mixed rush": "Rush mixto",
 "Mixed": "Mixto",
 "Best run": "Mejor serie",
+"Your games": "Tus partidas",
+"Connect Lichess or Chess.com: your games become positions in every exercise, your mistakes first.": "Conecta Lichess o Chess.com: tus partidas se convierten en posiciones en cada ejercicio, empezando por tus errores.",
+"Not now": "Ahora no",
 "Start": "Empezar",
 "Continue": "Continuar",
 "Start mixed rush": "Empezar el rush mixto",
@@ -8984,6 +9025,9 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Mixed rush": "Rush misto",
 "Mixed": "Misto",
 "Best run": "Miglior serie",
+"Your games": "Le tue partite",
+"Connect Lichess or Chess.com: your games become positions in every exercise, your mistakes first.": "Collega Lichess o Chess.com: le tue partite diventano posizioni in ogni esercizio, a partire dai tuoi errori.",
+"Not now": "Non ora",
 "Start": "Inizia",
 "Continue": "Continua",
 "Start mixed rush": "Avvia il rush misto",
@@ -10638,7 +10682,7 @@ function openGamePicker(){
     box.onscroll = ()=>{ if(box.scrollTop + box.clientHeight > box.scrollHeight - 600) more(); };
   };
   if(!masterPassData) loadMasterPass().then(()=>{ if(document.getElementById('gpModal')===div && gp.tab==='masters') list(); });   // (the master games' errors, once their evaluations are in)
-  div.querySelectorAll('[data-gp]').forEach(b=>b.onclick = ()=>{ gp.tab = b.dataset.gp; div.querySelectorAll('[data-gp]').forEach(y=>y.classList.toggle('active', y===b)); drawFilters(); list(); });
+  div.querySelectorAll('[data-gp]').forEach(b=>b.onclick = ()=>{ if(b.dataset.gp==='mine' && connectNeeded()){ openConnect(); return; } gp.tab = b.dataset.gp; div.querySelectorAll('[data-gp]').forEach(y=>y.classList.toggle('active', y===b)); drawFilters(); list(); });
   drawFilters(); list();
 }
 // The six imbalances at once, from Stockfish's evaluation table (no search): shown while the short mate
