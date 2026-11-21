@@ -359,6 +359,21 @@
      modes too (its panel's top line made that high); the desktop home page's larger one apart */
   .seg .seg-btn{padding:6px 4px; font-size:0.8rem;}
   .wrap[data-scr=explorer] .panel, html.desk2 .wrap.ex[data-scr=explorer] .panel{--pn-top:35px;}
+  /* a phone held upright: the board in the very same place on every exercise and the explorer. The board alone is
+     centred; the lines around it (names, Imbalance reading's and the explorer's side buttons, the explorer's
+     evaluation bar) sit outside its box, in the room above and below, so their heights never move it; the
+     explorer's panel as high as the exercises' (its taller tabs: smaller gaps) */
+  @media (max-aspect-ratio:6/5){
+    .stage .board-col{position:relative;}
+    .stage .board-col > .pl-line:has(+ .board-outer){position:absolute; left:0; right:0; bottom:100%;}
+    .stage .board-col > .board-outer ~ .pl-line{position:absolute; left:0; right:0; top:100%;}
+    .stage .board-col > .xp-hbar-line{position:absolute; left:0; right:0; bottom:calc(100% + 26px); height:16px;}
+    .stage .board-col > .board-outer, .stage .board-col:has(> .xp-hbar-line) > .board-outer, .stage .board-col:has(> .pl-line.xp-top:not(:empty)) > .board-outer{width:min(100cqw, 100cqh - 64px, 420px);}
+    .wrap.ex[data-scr=explorer] .panel{--pn-gap:4px;}
+    html.desk2 .wrap.ex > #app > .panel, html.desk2 .wrap.ex:is([data-scr=candidates], [data-scr=final]) > #app > .panel{margin-top:10px;}
+    .wrap.ex .xp-sides.sides-desk{margin:0;}
+    .wrap.ex > #app > .title-row{height:28px;}
+  }
   /* My games */
   .mg-card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:10px; min-width:0;}
   .mg-card h2{margin:0; font-size:1rem;}
@@ -899,6 +914,7 @@
   .panel-stack .aspects .asp-grid{grid-template-rows:repeat(4, var(--pn-row)); row-gap:0; align-items:center; column-gap:22px;}   /* (Imbalance reading as the explorer: the columns, the grades where the explorer's are) */
   @container (max-width:335px){ .panel-stack .aspects .asp-grid{column-gap:12px;} }   /* (a narrow panel: more room for the names, everywhere alike) */
   .panel-stack .aspects .asp-grid > .asp-head{align-self:end; padding-bottom:6px;}
+  .wrap[data-scr=explorer] .panel-stack .aspects .asp-grid > .asp-head{align-self:center; padding-bottom:0;}   /* (the explorer: Static / Dynamic closer to its tabs) */
   .panel-stack .rate-row, .panel-stack .review-row.pick-row, .panel-stack .rev-list .review-row{height:var(--pn-row); min-height:0; box-sizing:border-box; padding-block:0;}
   .panel-stack .review-cols{gap:0 12px;}
   .panel-stack .review-col{display:grid; grid-template-rows:repeat(4, var(--pn-row));}
