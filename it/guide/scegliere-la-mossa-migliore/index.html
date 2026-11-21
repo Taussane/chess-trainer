@@ -48,7 +48,7 @@
   .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
   ul, ol{ padding-left:22px; } li{ margin:4px 0; }
   .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
-  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); } @media (min-aspect-ratio: 6/5){ figure img{ max-width:100%; } }
   figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
   .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
   .card{ display:block; background:var(--panel); border-radius:14px; padding:14px 16px; text-decoration:none; box-shadow:0 6px 18px rgba(0,0,0,.18); } .card:hover{ background:#222A33; }
@@ -67,7 +67,7 @@
 <h1>Scelta della mossa</h1>
 <p class="sub">Come scegliere la mossa migliore</p>
 <p class="lead">Diverse mosse possono sembrare buone, ma solo una è la migliore. Quando l'esplorazione delle <a href="../mosse-candidate/">mosse candidate</a> ti ha dato alcune opzioni serie, resta l'ultimo passo: scegliere tra loro, ed è lì che si perdono molte partite.</p>
-<figure><img src="../../../learn/img/move-selection-it.webp" width="390" height="844" alt="Correzione di Scelta della mossa su una posizione del Campionato del mondo 1963: quattro mosse ordinate, la mossa della partita Nxe4 è la migliore, due imprecisioni" loading="lazy"><figcaption>La mossa della partita, Nxe4, è la migliore ed è stata trovata. Qh2, l'unica altra mossa giocabile, andava messa 2ª.</figcaption></figure>
+<figure><picture><source media="(min-aspect-ratio: 6/5) and (max-height: 600px)" srcset="../../../learn/img/move-selection-land-it.webp" width="1688" height="780"><source media="(min-aspect-ratio: 6/5)" srcset="../../../learn/img/move-selection-desk-it.webp" width="1520" height="950"><img src="../../../learn/img/move-selection-it.webp" width="390" height="844" alt="Correzione di Scelta della mossa su una posizione del Campionato del mondo 1963: quattro mosse ordinate, la mossa della partita Nxe4 è la migliore, due imprecisioni" loading="lazy"></picture><figcaption>La mossa della partita, Nxe4, è la migliore ed è stata trovata. Qh2, l'unica altra mossa giocabile, andava messa 2ª.</figcaption></figure>
 <h2>Ordinare le opzioni</h2>
 <ul>
   <li><strong>Verifica che nessuna mossa sia un errore grave</strong>: guarda gli scacchi, le catture e le minacce dell'avversario dopo di essa. Una mossa che perde materiale o espone il re di solito scende in classifica, per quanto minacciosa sembri.</li>

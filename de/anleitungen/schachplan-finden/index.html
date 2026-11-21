@@ -48,7 +48,7 @@
   .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
   ul, ol{ padding-left:22px; } li{ margin:4px 0; }
   .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
-  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); } @media (min-aspect-ratio: 6/5){ figure img{ max-width:100%; } }
   figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
   .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
   .card{ display:block; background:var(--panel); border-radius:14px; padding:14px 16px; text-decoration:none; box-shadow:0 6px 18px rgba(0,0,0,.18); } .card:hover{ background:#222A33; }
@@ -67,7 +67,7 @@
 <h1>Planfindung</h1>
 <p class="sub">Wie man im Schach einen allgemeinen Plan findet</p>
 <p class="lead">„Ein schlechter Plan ist besser als gar keiner“, sagt die alte Weisheit (oft Tschigorin zugeschrieben). Ein Plan gibt dir eine Richtung für die Suche nach guten Zügen und hilft dir, bessere Entscheidungen zu treffen. Vier Fragen, der Reihe nach, können zu einem führen.</p>
-<figure><img src="../../../learn/img/plan-finder-de.webp" width="390" height="844" alt="Auswertung der Planfindung in einer WM-Stellung von 1963: Figuren behalten richtig, Beides statt Öffnen / Angreifen" loading="lazy"><figcaption>Der schwarze König steckt im Zentrum fest, und die weiße Dame steht schon auf g6. Dieser schwache König entscheidet den Plan.</figcaption></figure>
+<figure><picture><source media="(min-aspect-ratio: 6/5) and (max-height: 600px)" srcset="../../../learn/img/plan-finder-land-de.webp" width="1688" height="780"><source media="(min-aspect-ratio: 6/5)" srcset="../../../learn/img/plan-finder-desk-de.webp" width="1520" height="950"><img src="../../../learn/img/plan-finder-de.webp" width="390" height="844" alt="Auswertung der Planfindung in einer WM-Stellung von 1963: Figuren behalten richtig, Beides statt Öffnen / Angreifen" loading="lazy"></picture><figcaption>Der schwarze König steckt im Zentrum fest, und die weiße Dame steht schon auf g6. Dieser schwache König entscheidet den Plan.</figcaption></figure>
 <h2>Vier Fragen</h2>
 <ol>
   <li><strong>Etwas Dringendes?</strong> Schachs, Schlagzüge und Drohungen, für beide Seiten: etwas zu gewinnen oder zu verteidigen, etwa ein Bauer oder die Qualität. (Stellungen, in denen eine Figur oder mehr auf dem Spiel steht, sind ausgenommen: Dort entscheidet die Drohung den Zug.)</li>

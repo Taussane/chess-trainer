@@ -48,7 +48,7 @@
   .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
   ul, ol{ padding-left:22px; } li{ margin:4px 0; }
   .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
-  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); } @media (min-aspect-ratio: 6/5){ figure img{ max-width:100%; } }
   figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
   .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
   .card{ display:block; background:var(--panel); border-radius:14px; padding:14px 16px; text-decoration:none; box-shadow:0 6px 18px rgba(0,0,0,.18); } .card:hover{ background:#222A33; }
@@ -67,7 +67,7 @@
 <h1>Move selection</h1>
 <p class="sub">How to choose the best move</p>
 <p class="lead">Several moves may look fine, but only one is best. Once exploring <a href="../candidate-moves/">candidate moves</a> has given you a few serious options, the last step is choosing between them, and that's where many games are lost.</p>
-<figure><img src="../../learn/img/move-selection.webp" width="390" height="844" alt="Move selection review on a 1963 World Championship position: four moves ranked, the game move Nxe4 best, two inaccuracies" loading="lazy"><figcaption>The game move Nxe4 is best and was found. Qh2, the only other good move, should have come 2nd.</figcaption></figure>
+<figure><picture><source media="(min-aspect-ratio: 6/5) and (max-height: 600px)" srcset="../../learn/img/move-selection-land.webp" width="1688" height="780"><source media="(min-aspect-ratio: 6/5)" srcset="../../learn/img/move-selection-desk.webp" width="1520" height="950"><img src="../../learn/img/move-selection.webp" width="390" height="844" alt="Move selection review on a 1963 World Championship position: four moves ranked, the game move Nxe4 best, two inaccuracies" loading="lazy"></picture><figcaption>The game move Nxe4 is best and was found. Qh2, the only other good move, should have come 2nd.</figcaption></figure>
 <h2>Ranking your options</h2>
 <ul>
   <li><strong>Check each move for a blunder</strong>: look at your opponent's checks, captures and threats after it. A move that drops material or exposes your king generally goes down, however menacing it looks.</li>

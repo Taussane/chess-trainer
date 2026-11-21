@@ -48,7 +48,7 @@
   .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
   ul, ol{ padding-left:22px; } li{ margin:4px 0; }
   .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
-  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); } @media (min-aspect-ratio: 6/5){ figure img{ max-width:100%; } }
   figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
   .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
   .card{ display:block; background:var(--panel); border-radius:14px; padding:14px 16px; text-decoration:none; box-shadow:0 6px 18px rgba(0,0,0,.18); } .card:hover{ background:#222A33; }
@@ -67,7 +67,7 @@
 <h1>Ricerca del piano</h1>
 <p class="sub">Come trovare un piano generale negli scacchi</p>
 <p class="lead">«Un cattivo piano è meglio di nessun piano», dice il vecchio adagio (spesso attribuito a Čigorin). Un piano ti dà una direzione per cercare buone mosse e ti aiuta a prendere decisioni migliori. Quattro domande, in ordine, possono portarti a uno.</p>
-<figure><img src="../../../learn/img/plan-finder-it.webp" width="390" height="844" alt="Correzione di Ricerca del piano su una posizione del Campionato del mondo 1963: Tieni i pezzi giusto, Indifferente invece di Apri / Attacca" loading="lazy"><figcaption>Il re nero è bloccato al centro, con la donna bianca già in g6. Quel re debole decide il piano.</figcaption></figure>
+<figure><picture><source media="(min-aspect-ratio: 6/5) and (max-height: 600px)" srcset="../../../learn/img/plan-finder-land-it.webp" width="1688" height="780"><source media="(min-aspect-ratio: 6/5)" srcset="../../../learn/img/plan-finder-desk-it.webp" width="1520" height="950"><img src="../../../learn/img/plan-finder-it.webp" width="390" height="844" alt="Correzione di Ricerca del piano su una posizione del Campionato del mondo 1963: Tieni i pezzi giusto, Indifferente invece di Apri / Attacca" loading="lazy"></picture><figcaption>Il re nero è bloccato al centro, con la donna bianca già in g6. Quel re debole decide il piano.</figcaption></figure>
 <h2>Quattro domande</h2>
 <ol>
   <li><strong>Qualcosa di urgente?</strong> Scacchi, catture e minacce, per entrambi i lati: qualcosa da vincere o da difendere, come un pedone o la qualità. (Le posizioni in cui è in gioco un pezzo o più sono escluse: lì è la minaccia a decidere la mossa.)</li>

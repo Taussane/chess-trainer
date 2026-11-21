@@ -2,7 +2,8 @@
 # FAQ), privacy and terms (their text in scripts/pages/), all in one frame, and the sitemap. For search engines, and
 # for anyone who wants to know what an exercise trains before trying it. Plain pages, no script.
 # Run by scripts/build-site.py (so `build-site.py --check` covers them too); the text lives here.
-# The pictures (learn/img/) are the app's own screens on master positions, as a new visitor gets them (-fr: in French).
+# The pictures (learn/img/) are the app's own screens on master positions, as a new visitor gets them (-fr: in French; -land, -desk:
+# held sideways, on a desktop, shown on such screens).
 import pathlib, json, html, re
 root = pathlib.Path(__file__).resolve().parent.parent
 SITE = 'https://chessstrategy.org/'
@@ -289,7 +290,7 @@ STYLE = """
   .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
   ul, ol{ padding-left:22px; } li{ margin:4px 0; }
   .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
-  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); } @media (min-aspect-ratio: 6/5){ figure img{ max-width:100%; } }
   figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
   .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
   .card{ display:block; background:var(--panel); border-radius:14px; padding:14px 16px; text-decoration:none; box-shadow:0 6px 18px rgba(0,0,0,.18); } .card:hover{ background:#222A33; }
@@ -348,6 +349,9 @@ LEGAL_TEXT = [
 legal = lambda k, l: f'{k}{"" if l=="en" else "-" + l}.html'
 LEGAL = [(legal(k, l), l, t, d, k) for l, pt, pd, tt, td in LEGAL_TEXT for k, t, d in (('privacy', pt, pd), ('terms', tt, td))]
 
+# The guides' pictures as the reader's screen shows the app: a phone held sideways, a desktop (the phone held upright: the <img> itself)
+SHOTS = [('land', '(min-aspect-ratio: 6/5) and (max-height: 600px)', 1688, 780), ('desk', '(min-aspect-ratio: 6/5)', 1520, 950)]
+
 def crumbs(*items):
   return { '@type': 'BreadcrumbList', 'itemListElement': [{ '@type': 'ListItem', 'position': i + 1, 'name': n, 'item': SITE + u } for i, (n, u) in enumerate(items)] }
 
@@ -358,12 +362,13 @@ def build(extra=None):   # extra: pages built elsewhere, {path: text} (the app's
     for g in GUIDES:
       t = g[lang]; path = f'{HUB[lang]}{t["slug"]}/index.html'; alts = { l: f'{HUB[l]}{g[l]["slug"]}/index.html' for l in LANGS }
       img = f'{g["img"]}{"" if lang=="en" else "-" + lang}.webp'
+      up = '../' * path.count('/'); pic = lambda k: f'{g["img"]}-{k}{"" if lang=="en" else "-" + lang}.webp'   # (the same screen held sideways, and on a desktop: SHOTS)
       # heading as on the FAQ's card (name, subtitle); the search-friendly title stays in <title>
       body = fix(f"""<p class="back"><a href="../">‹ FAQ</a></p>
 <h1>{html.escape(t['name'])}</h1>
 <p class="sub">{html.escape(t.get('sub', t['title']))}</p>
 <p class="lead">{t['lead']}</p>
-<figure><img src="{'../' * path.count('/')}learn/img/{img}" width="390" height="844" alt="{html.escape(t['alt'])}" loading="lazy"><figcaption>{t['caption']}</figcaption></figure>
+<figure><picture>{''.join(f'<source media="{m}" srcset="{up}learn/img/{pic(k)}" width="{w}" height="{h}">' for k, m, w, h in SHOTS)}<img src="{up}learn/img/{img}" width="390" height="844" alt="{html.escape(t['alt'])}" loading="lazy"></picture><figcaption>{t['caption']}</figcaption></figure>
 {t['body'].strip()}""")
       ld = [{ '@context': 'https://schema.org', '@type': 'Article', 'headline': t['title'], 'description': t['desc'], 'inLanguage': lang,
               'image': SITE + f'learn/img/{img}', 'url': SITE + path.removesuffix('index.html'),

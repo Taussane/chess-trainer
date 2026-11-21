@@ -48,7 +48,7 @@
   .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
   ul, ol{ padding-left:22px; } li{ margin:4px 0; }
   .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
-  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); } @media (min-aspect-ratio: 6/5){ figure img{ max-width:100%; } }
   figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
   .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
   .card{ display:block; background:var(--panel); border-radius:14px; padding:14px 16px; text-decoration:none; box-shadow:0 6px 18px rgba(0,0,0,.18); } .card:hover{ background:#222A33; }
@@ -67,7 +67,7 @@
 <h1>Desequilibrios</h1>
 <p class="sub">Aprende a leer una posición</p>
 <p class="lead">Cada posición es un conjunto de diferencias entre los dos bandos. Los jugadores fuertes detectan las pocas que deciden la partida y planifican en torno a ellas: una idea que hizo famosa Jeremy Silman.</p>
-<figure><img src="../../../learn/img/imbalance-reading-es.webp" width="390" height="844" alt="Corrección de Desequilibrios en una posición del Campeonato del Mundo de 1929: Actividad y Peones para las blancas, correctos; Material dado a las negras aunque está equilibrado; Espacio para las negras, olvidado" loading="lazy"><figcaption>Actividad y Peones para las blancas: correcto. El Material se dio a las negras, pero está equilibrado: había que elegir el Espacio.</figcaption></figure>
+<figure><picture><source media="(min-aspect-ratio: 6/5) and (max-height: 600px)" srcset="../../../learn/img/imbalance-reading-land-es.webp" width="1688" height="780"><source media="(min-aspect-ratio: 6/5)" srcset="../../../learn/img/imbalance-reading-desk-es.webp" width="1520" height="950"><img src="../../../learn/img/imbalance-reading-es.webp" width="390" height="844" alt="Corrección de Desequilibrios en una posición del Campeonato del Mundo de 1929: Actividad y Peones para las blancas, correctos; Material dado a las negras aunque está equilibrado; Espacio para las negras, olvidado" loading="lazy"></picture><figcaption>Actividad y Peones para las blancas: correcto. El Material se dio a las negras, pero está equilibrado: había que elegir el Espacio.</figcaption></figure>
 <h2>Los seis desequilibrios</h2>
 <ul>
   <li><strong>Material</strong>: peón 1, caballo y alfil 3, torre 5, dama 9; la pareja de alfiles suma medio peón.</li>

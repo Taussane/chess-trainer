@@ -48,7 +48,7 @@
   .lead{ font-size:1.08rem; } p, li{ color:var(--text); } .mute{ color:var(--mute); } a{ color:var(--accent); }
   ul, ol{ padding-left:22px; } li{ margin:4px 0; }
   .cta{ display:inline-block; background:var(--accent); color:#12161B; font-weight:700; text-decoration:none; padding:12px 22px; border-radius:10px; margin:8px 0 4px; }
-  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); }
+  figure{ margin:24px 0; text-align:center; } figure img{ width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); } @media (min-aspect-ratio: 6/5){ figure img{ max-width:100%; } }
   figcaption{ color:var(--mute); font-size:.92rem; max-width:520px; margin:8px auto 0; }
   .cards{ display:grid; gap:12px; grid-template-columns:1fr; margin:20px 0; } @media (min-width:640px){ .cards{ grid-template-columns:1fr 1fr; } }
   .card{ display:block; background:var(--panel); border-radius:14px; padding:14px 16px; text-decoration:none; box-shadow:0 6px 18px rgba(0,0,0,.18); } .card:hover{ background:#222A33; }
@@ -67,7 +67,7 @@
 <h1>Jugadas candidatas</h1>
 <p class="sub">Encuentra una o más buenas jugadas</p>
 <p class="lead">La mayoría de los errores vienen de jugar la primera jugada que parece buena. El consejo de Alexander Kotov: haz primero una lista de algunas opciones serias, luego elige.</p>
-<figure><img src="../../../learn/img/candidate-moves-es.webp" width="390" height="844" alt="Corrección de Jugadas candidatas en una posición del Campeonato del Mundo de 2024: bxa3 y Qa5, las dos mejores del motor, luego h5, una imprecisión; la propia 3.ª jugada del motor también es una imprecisión" loading="lazy"><figcaption>Aquí solo aguantan dos jugadas, bxa3 y Qa5, y se encontraron las dos. Pero la tercera elección debía haberse evitado.</figcaption></figure>
+<figure><picture><source media="(min-aspect-ratio: 6/5) and (max-height: 600px)" srcset="../../../learn/img/candidate-moves-land-es.webp" width="1688" height="780"><source media="(min-aspect-ratio: 6/5)" srcset="../../../learn/img/candidate-moves-desk-es.webp" width="1520" height="950"><img src="../../../learn/img/candidate-moves-es.webp" width="390" height="844" alt="Corrección de Jugadas candidatas en una posición del Campeonato del Mundo de 2024: bxa3 y Qa5, las dos mejores del motor, luego h5, una imprecisión; la propia 3.ª jugada del motor también es una imprecisión" loading="lazy"></picture><figcaption>Aquí solo aguantan dos jugadas, bxa3 y Qa5, y se encontraron las dos. Pero la tercera elección debía haberse evitado.</figcaption></figure>
 <h2>Cómo encontrarlas</h2>
 <ul>
   <li><strong>Primero las jugadas forzantes</strong>: jaques, capturas y amenazas, de ambos bandos.</li>
