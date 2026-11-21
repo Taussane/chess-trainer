@@ -350,7 +350,7 @@ legal = lambda k, l: f'{k}{"" if l=="en" else "-" + l}.html'
 LEGAL = [(legal(k, l), l, t, d, k) for l, pt, pd, tt, td in LEGAL_TEXT for k, t, d in (('privacy', pt, pd), ('terms', tt, td))]
 
 # The guides' pictures as the reader's screen shows the app: a phone held sideways, a desktop (the phone held upright: the <img> itself)
-SHOTS = [('land', '(min-aspect-ratio: 6/5) and (max-height: 600px)', 1688, 780), ('desk', '(min-aspect-ratio: 6/5)', 1520, 950)]
+SHOTS = [('land', '(min-aspect-ratio: 6/5) and (max-height: 600px)', 1688, 780), ('desk', '(min-aspect-ratio: 6/5)', 1520, 1163)]
 
 def crumbs(*items):
   return { '@type': 'BreadcrumbList', 'itemListElement': [{ '@type': 'ListItem', 'position': i + 1, 'name': n, 'item': SITE + u } for i, (n, u) in enumerate(items)] }
