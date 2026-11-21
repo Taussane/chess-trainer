@@ -7279,10 +7279,12 @@ function reviewOpened(){
 // entries a page adds without one): home 0; an exercise, the profile 1; settings, the metrics, the tests
 // (from the profile) 2; ... and the grades' scale open, one more. Going up by the page's own arrow takes the
 // entries back off; the phone's back button goes up one level.
-function pageDepth(){
+const openModal = ()=>{ const m = document.querySelectorAll('.modal-backdrop'); return m[m.length-1] || null; };
+function pageDepth(){ return pageDepth0() + (openModal() ? 1 : 0); }   // (a pop-up open: one level more, the back button closes it)
+function pageDepth0(){
   if(screen==='home') return 0;
   if(screen==='doc') return (doc.from==='home' ? 0 : 1) + 1 + doc.stack.length;
-  if(screen==='explorer' && explorer && explorer.ret){ const s0 = screen, x0 = explorer; screen = x0.ret.screen; explorer = x0.ret.saved; try{ return pageDepth() + 1; } finally { screen = s0; explorer = x0; } }
+  if(screen==='explorer' && explorer && explorer.ret){ const s0 = screen, x0 = explorer; screen = x0.ret.screen; explorer = x0.ret.saved; try{ return pageDepth0() + 1; } finally { screen = s0; explorer = x0; } }
   let d = ['settings', 'metrics', 'tests'].includes(screen) ? 2
         : screen==='support' ? (supportFrom==='home' ? 1 : 2)
         : ACTIVITIES.includes(screen) ? (testMode ? 3 : replayMode || rushMode ? 2 : 1) : 1;
@@ -7308,6 +7310,8 @@ window.addEventListener('popstate', e=>{
   histPopping = true;
   try{
     for(let k=0; k<6 && pageDepth() > target; k++){
+      const m = openModal();
+      if(m){ m.click(); if(m.isConnected) break; continue; }   // (as a tap outside it: each pop-up's own rule; one that stays open stays)
       if(aspPicker){ closeAspPicker(); continue; }
       const b = document.getElementById('homeBtn');
       if(b) b.click(); else { screen = 'home'; render(); }
@@ -7315,6 +7319,7 @@ window.addEventListener('popstate', e=>{
   } finally { histPopping = false; }
   syncHistory();   // (a level the arrows skip: entries put back as needed)
 });
+{ let had = false; new MutationObserver(()=>{ const h = !!openModal(); if(h!==had){ had = h; syncHistory(); } }).observe(document.body, { childList:true, subtree:true }); }   // (a pop-up opened or closed: the levels follow)
 // The page is rebuilt from scratch on every redraw, and redraws come often in the background (an
 // evaluation arriving, your account syncing, the engine starting): a CSS animation on a rebuilt
 // element would start over (or, its class gone, stop dead). So animations follow the clock, not the

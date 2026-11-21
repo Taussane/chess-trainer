@@ -1,5 +1,5 @@
 // tests/back_button.js (node; needs playwright): the phone's back button goes up one level at a time (settings ->
-// profile -> home), closes the grades' scale first, and only leaves the site from the home page.
+// profile -> home), closes the grades' scale and a pop-up (Feedback) first, and only leaves the site from the home page.
 const { chromium } = require('playwright');
 const path = require('path'), { spawn } = require('child_process');
 const server = spawn('python3', ['-m', 'http.server', '8793'], { cwd: path.join(__dirname, '..'), stdio: 'ignore' });
@@ -36,12 +36,19 @@ const cj = require('fs').readFileSync(path.join(__dirname, '../vendor/chess.js/c
   await p.click('#accountBtn'); await p.waitForTimeout(300); await p.click('#settingsBtn'); await p.waitForTimeout(300);
   await p.reload(); await p.waitForTimeout(1500);
   out.push('reload in settings (' + await where() + '): back -> ' + await back());
+  // 6. the feedback pop-up, on the home page and in an exercise: back closes it, nothing else
+  await p.goto('http://localhost:8793/'); await p.waitForTimeout(1500);
+  const fb = async () => { await p.evaluate(() => openFeedback()); await p.waitForTimeout(300); const b1 = await back(); return b1 + (await p.evaluate(() => !!document.getElementById('fbModal')) ? '+feedback' : ''); };
+  const h1 = await fb(); await p.evaluate(() => openActivity('final')); await p.waitForTimeout(300);
+  const f1 = await fb();
+  out.push('feedback: home back -> ' + h1 + '; final back -> ' + f1 + ', back -> ' + await back());
   await b.close(); server.kill();
   const want = ['home > profile > settings: back -> account, back -> home, back -> LEFT THE SITE',
     'arrows back to home (home), then back -> LEFT THE SITE',
     'imbalances with scale (imbalances+scale): back -> imbalances, back -> home',
     'final: back -> home; profile: back -> home, back -> LEFT THE SITE',
-    'reload in settings (home): back -> LEFT THE SITE'];
+    'reload in settings (home): back -> LEFT THE SITE',
+    'feedback: home back -> home; final back -> final, back -> home'];
   const bad = want.filter((w, i) => out[i] !== w).map((w, i) => 'FAIL got: ' + out[want.indexOf(w)] + ' | want: ' + w);
   console.log(bad.length ? bad.join('\n') : 'ok'); process.exit(bad.length ? 1 : 0);
 })();
