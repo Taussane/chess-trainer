@@ -857,6 +857,9 @@
     .side-item.on{background:var(--panel-2); box-shadow:inset 3px 0 0 var(--accent);}
     .side-item:disabled{opacity:.45; cursor:default;}
     .side-item .act-icon, .side-item svg{width:20px; height:20px; flex:none; color:var(--accent);}
+    .side-item .side-ic{position:relative; flex:none; display:flex;}   /* (a Rush item: the exercise's icon, a small chrono at its corner) */
+    .side-item .side-chrono{position:absolute; right:-5px; bottom:-4px; width:12px; height:12px; display:flex; border-radius:50%; background:var(--panel); box-shadow:0 0 0 1.5px var(--panel);}
+    .side-item .side-chrono svg{width:12px; height:12px;} .side-item.on .side-chrono, .side-item:hover:not(:disabled) .side-chrono{background:var(--panel-2); box-shadow:0 0 0 1.5px var(--panel-2);}
     .side-item .side-app-icon{width:20px; height:20px; flex:none; border-radius:4px;}
     .side-item .side-name{flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
     .side-item .side-n{font-size:.8rem; color:var(--text-mute); font-variant-numeric:tabular-nums;}
@@ -4988,11 +4991,11 @@ function renderSide(){
   const html = `
     <button class="side-logo${at==='home' ? ' on' : ''}" data-side="home" data-no-i18n aria-label="Home"><b>Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span></b></button>
     <div class="side-sec">Exercises</div>
-    ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
+    ${item('routine', SIDE_ICONS.routine, "Today's routine", progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     ${ACTS.map(a=>{ const lv = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && lv.rated ? pct(lv.level) : '', !canOpen(a, false)); }).join('')}
     <div class="side-sec">Rush</div>
-    ${item('rush:routine', MIXED_ICON, 'Mixed rush', progressLoaded && rushBest('mixed')!=null ? rushBest('mixed') : '', !rushCan('mixed'))}
-    ${ROUTINE.map(a=>item('rush:' + a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && rushBest(a)!=null ? rushBest(a) : '', !rushCan(a))).join('')}
+    ${item('rush:routine', RUSH_ICON, 'Mixed rush', progressLoaded && rushBest('mixed')!=null ? rushBest('mixed') : '', !rushCan('mixed'))}
+    ${ROUTINE.map(a=>item('rush:' + a, `<span class="side-ic">${ACT_GLYPHS[a]}<span class="side-chrono">${RUSH_ICON}</span></span>`, ACT_NAMES[a], progressLoaded && rushBest(a)!=null ? rushBest(a) : '', !rushCan(a))).join('')}
     <div class="side-sec">More</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}
     <div class="side-sec">You</div>
     ${item('account', '<img class="side-app-icon" src="icons/icon.svg" alt="" aria-hidden="true">', displayName() || 'Profile')}
