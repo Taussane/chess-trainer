@@ -273,11 +273,15 @@
   .goal-dots i.on{background:var(--accent); border-color:var(--accent);}
   .routine-btn{margin-top:12px;}
   .routine-btn{width:100%;}
-  .routine.routine-line{display:flex; align-items:center; gap:18px; margin:0 0 12px; padding:6px 6px 6px 14px;}   /* (sideways: one row) */
-  .routine-line .routine-title{flex:none; max-width:6.5em; font-size:1rem; line-height:1.15; text-wrap:balance;}
-  .routine-line .rl-act{flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:.8rem; color:var(--text-mute); white-space:nowrap;}
-  .routine-line .goal-dots{gap:5px;} .routine-line .goal-dots i{width:22px; height:7px;}
-  .routine-line .routine-btn{flex:none; width:auto; max-width:9em; margin:0; padding:4px 16px; font-size:.9rem; line-height:1.2; text-wrap:balance;}
+  .routine.routine-line{display:flex; align-items:center; gap:16px; margin:0 0 12px; padding:6px 6px 6px 14px;}   /* (sideways: one row) */
+  .routine-line .routine-title{flex:none; font-size:1rem; white-space:nowrap;}
+  .routine-line .rl-act{flex:1 1 auto; min-width:0; display:flex; align-items:center; justify-content:center; gap:7px; font-size:.8rem; color:var(--text-mute); white-space:nowrap;}
+  .routine-line .rl-act > b{color:var(--text); font-variant-numeric:tabular-nums;}
+  .routine-line .rl-act > span:first-child{min-width:0; overflow:hidden; text-overflow:ellipsis;} .routine-line .rl-act > :not(:first-child){flex:none;}   /* (a narrow screen, a long name: cut short, its count kept) */
+  .routine-line .rl-best-n{display:none; margin-left:8px; color:var(--accent);}
+  @media (max-width:800px){ .routine.routine-line{gap:10px;} .routine-line .rl-best{display:none;} .routine-line .rl-best-n{display:inline;} }   /* (narrow: the best beside the name, not as a fifth item) */
+  .routine-line .goal-dots{gap:4px;} .routine-line .goal-dots i{width:7px; height:7px; border-radius:50%;}
+  .routine-line .routine-btn{flex:none; width:auto; margin:0; padding:6px 18px; font-size:.9rem;}
   a.link-btn{text-decoration:none;}
   .link-btn.quiet{color:var(--text-mute); font-weight:500;}
   .title-spacer{width:36px; flex:none;}
@@ -5289,7 +5293,17 @@ function routineCard(){
   return `<div class="routine${done ? ' done' : ''}">
       <div class="routine-head"><span class="routine-title">Today's routine</span><span class="routine-count${dataCls()}">${done ? 'Done <span class="wk-done">✓</span>' : `${total}/${DAILY_GOAL*ACTS.length}`}</span></div>
       ${ACTS.map(a=>`<div class="routine-row"><span>${ACT_NAMES[a]}</span><span class="goal-dots${dataCls()}" aria-label="${Math.min(c[a],DAILY_GOAL)} of ${DAILY_GOAL}">${Array.from({length:DAILY_GOAL}, (_,i)=>`<i class="${i<c[a]?'on':''}"></i>`).join('')}</span></div>`).join('')}
-      <button class="btn${done ? ' secondary' : ''} routine-btn" id="routineBtn" ${canOpen(rn, true) ? '' : 'disabled'}><span class="${dataCls().trim()}">${!canOpen(rn, true) ? waitText(rn, true) : done ? 'Keep training' : started ? 'Continue routine' : 'Start routine'}</span></button>
+      <button class="btn${done ? ' secondary' : ''} routine-btn" id="routineBtn" ${canOpen(rn, true) ? '' : 'disabled'}><span class="${dataCls().trim()}">${!canOpen(rn, true) ? waitText(rn, true) : started ? 'Continue' : 'Start'}</span></button>
+    </div>`;
+}
+// (rush mode: the mixed run the same way, each exercise's points in its best run, the best, its button)
+function rushRow(){
+  const top = (profile.rushTop || {}).mixed, n = v=>v!=null ? v : '—';
+  return `<div class="routine routine-line rush-card">
+      <span class="routine-title">Mixed rush<b class="rl-best-n ${dataCls().trim()}">${n(rushBest('mixed'))}</b></span>
+      ${ROUTINE.map(a=>`<span class="rl-act"><span>${rowName(a)}</span><b class="${dataCls().trim()}">${n(top && top.s ? top.s[a] || 0 : null)}</b></span>`).join('')}
+      <span class="rl-act rl-best"><span>Best run</span><b class="${dataCls().trim()}">${n(rushBest('mixed'))}</b></span>
+      <button class="btn routine-btn" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>Start</button>
     </div>`;
 }
 
@@ -5589,13 +5603,24 @@ function rushChip(){
   return `<button class="acct-chip routine-chip" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>${MIXED_ICON}<span>Mixed rush</span>${progressLoaded && rushBest('mixed')!=null ? `<span class="routine-n">${rushBest('mixed')}</span>` : ''}</button>`;
 }
 // Sideways, once you've started (the intro gone): the routine as one row, its name, each exercise's three dots, its button
+const rowName = a=>a==='imbalances' && (LANG==='de' || LANG==='es') ? `<span data-no-i18n>${L({ de:'Ungleichg.', es:'Desequil.' })}</span>` : ACT_SHORT[a];   // (the routine's row: as the profile's tabs)
 const landNew = ()=>DIRECT_LICHESS ? !signedIn() : !results.length;   // (a newcomer: the intro, the routine as a button beside the profile's)
 function routineRow(){
   const c = todayBy(), done = progressLoaded && ACTS.every(a=>c[a]>=DAILY_GOAL), started = ACTS.some(a=>c[a] > 0), rn = routineFrom(routineNext);
   return `<div class="routine routine-line${done ? ' done' : ''}">
       <span class="routine-title">Today's routine</span>
-      ${ACTS.map(a=>`<span class="rl-act"><span>${ACT_SHORT[a]}</span><span class="goal-dots${dataCls()}" aria-label="${Math.min(c[a],DAILY_GOAL)} of ${DAILY_GOAL}">${Array.from({length:DAILY_GOAL}, (_,i)=>`<i class="${i<c[a]?'on':''}"></i>`).join('')}</span></span>`).join('')}
-      <button class="btn${done ? ' secondary' : ''} routine-btn" id="routineBtn" ${canOpen(rn, true) ? '' : 'disabled'}><span class="${dataCls().trim()}">${!canOpen(rn, true) ? waitText(rn, true) : done ? 'Keep training' : started ? 'Continue routine' : 'Start routine'}</span></button>
+      ${ACTS.map(a=>`<span class="rl-act"><span>${rowName(a)}</span><span class="goal-dots${dataCls()}" aria-label="${Math.min(c[a],DAILY_GOAL)} of ${DAILY_GOAL}">${Array.from({length:DAILY_GOAL}, (_,i)=>`<i class="${i<c[a]?'on':''}"></i>`).join('')}</span></span>`).join('')}
+      <button class="btn${done ? ' secondary' : ''} routine-btn" id="routineBtn" ${canOpen(rn, true) ? '' : 'disabled'}><span class="${dataCls().trim()}">${!canOpen(rn, true) ? waitText(rn, true) : started ? 'Continue' : 'Start'}</span></button>
+    </div>`;
+}
+// (rush mode: the mixed run the same way, each exercise's points in its best run, the best, its button)
+function rushRow(){
+  const top = (profile.rushTop || {}).mixed, n = v=>v!=null ? v : '—';
+  return `<div class="routine routine-line rush-card">
+      <span class="routine-title">Mixed rush<b class="rl-best-n ${dataCls().trim()}">${n(rushBest('mixed'))}</b></span>
+      ${ROUTINE.map(a=>`<span class="rl-act"><span>${rowName(a)}</span><b class="${dataCls().trim()}">${n(top && top.s ? top.s[a] || 0 : null)}</b></span>`).join('')}
+      <span class="rl-act rl-best"><span>Best run</span><b class="${dataCls().trim()}">${n(rushBest('mixed'))}</b></span>
+      <button class="btn routine-btn" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>Start</button>
     </div>`;
 }
 function renderHome(){
@@ -5604,10 +5629,10 @@ function renderHome(){
   const acctChip = `<button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span><span class="acct-name">${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</span>${inboxBadge()}</button>`;   // (desktop: beside "Positions from")
   app.innerHTML = `
     <div class="home-head">
-      <div class="home-top"><h1 data-no-i18n>${isLand() ? `ChessStrategy<span class="tld">.org</span><span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span>` : `Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span>`}</h1>${isLand() ? (rushOn ? rushChip() : landNew() ? routineChip() : '') + rushToggle() : ''}${isDesk() ? '' : isLand() ? acctChip : `<div class="home-chips">${acctChip}${rushToggle()}</div>`}</div>
+      <div class="home-top"><h1 data-no-i18n>${isLand() ? `ChessStrategy<span class="tld">.org</span><span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span>` : `Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span>`}</h1>${isLand() ? (landNew() ? (rushOn ? rushChip() : routineChip()) : '') + rushToggle() : ''}${isDesk() ? '' : isLand() ? acctChip : `<div class="home-chips">${acctChip}${rushToggle()}</div>`}</div>
       ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isWide() && !isLand() ? `<p>Train your strategy beyond tactics puzzles: read the imbalances, define your plan, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
-    ${isLand() ? (!rushOn && !landNew() ? routineRow() : '') : rushOn ? rushCard() : routineCard()}
+    ${isLand() ? (landNew() ? '' : rushOn ? rushRow() : routineRow()) : rushOn ? rushCard() : routineCard()}
     <div class="source-row">${isDesk() ? acctChip + rushToggle() : ''}<span class="source-label">Positions from</span>
       <div class="seg seg-sm" role="radiogroup" aria-label="Positions from">${Object.entries(SOURCES).map(([k,v])=>{
         const off = (k==='mine' || k==='both') && !myPositions.length;   // (the filter works on master games alone)
@@ -7456,6 +7481,8 @@ const I18N_FR = new Map(Object.entries(/*I18N_FR*/{
 "Mixed rush": "Rush mixte",
 "Mixed": "Mixte",
 "Best run": "Meilleure série",
+"Start": "Commencer",
+"Continue": "Continuer",
 "Start mixed rush": "Lancer le rush mixte",
 "Run results": "Résultats de la série",
 "History": "Historique",
@@ -8021,6 +8048,8 @@ const I18N_DE = new Map(Object.entries(/*I18N_DE*/{
 "Mixed rush": "Gemischter Rush",
 "Mixed": "Gemischt",
 "Best run": "Beste Runde",
+"Start": "Starten",
+"Continue": "Weiter",
 "Start mixed rush": "Gemischten Rush starten",
 "Run results": "Ergebnisse der Runde",
 "History": "Verlauf",
@@ -8515,6 +8544,8 @@ const I18N_ES = new Map(Object.entries(/*I18N_ES*/{
 "Mixed rush": "Rush mixto",
 "Mixed": "Mixto",
 "Best run": "Mejor serie",
+"Start": "Empezar",
+"Continue": "Continuar",
 "Start mixed rush": "Empezar el rush mixto",
 "Run results": "Resultados de la serie",
 "History": "Historial",
@@ -9009,6 +9040,8 @@ const I18N_IT = new Map(Object.entries(/*I18N_IT*/{
 "Mixed rush": "Rush misto",
 "Mixed": "Misto",
 "Best run": "Miglior serie",
+"Start": "Inizia",
+"Continue": "Continua",
 "Start mixed rush": "Avvia il rush misto",
 "Run results": "Risultati della serie",
 "History": "Cronologia",
