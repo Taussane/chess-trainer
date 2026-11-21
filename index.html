@@ -10744,6 +10744,7 @@ function renderExplorer(){
   explorerInit();
   const app = document.getElementById('app'), x = explorer, p = explorerPos(), fen = p.fen;
   side = p.side;
+  if(xpBar.x!==x){ xpBar.x = x; xpBar.shown = null; }   // (an explorer just opened, from a position or a game: its bar starts on its own evaluation, known, or 0.0, never slides from the last one's)
   // the engine on or off (the depth button): off, no search, no bar, no best move (the plans read without the evaluation)
   if(x.engineOn==null){ x.engineOn = true; try{ x.engineOn = localStorage.getItem('cst.xpEngine')!=='off'; }catch(e){} }
   const ev = x.engineOn ? explorerEval(fen) : null, failed = evalFailed(ev);
