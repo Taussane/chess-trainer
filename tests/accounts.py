@@ -128,8 +128,10 @@ async def main():
             n = await B.evaluate("[chesscomName, myGames.filter(g=>siteOf(g)==='chesscom').length]"); print('    B after reload:', n)
             if n != ['CCPlayer', 9]: fails.append(f'Chess.com on device B: {n}')
             await A.evaluate("screen='mygames'; render()"); await A.screenshot(path=str(T.SHOTS/'accounts_chesscom.png'))
-            heads = await A.evaluate("[...document.querySelectorAll('.mg-table thead th')].map(c=>c.innerText.trim())")
-            rows = await A.evaluate("[...document.querySelectorAll('.mg-table tbody tr')].map(r=>[...r.children].map(c=>c.innerText.trim()))")
+            # (the games table: the owner's timing table, Taussane's, comes first)
+            gt = "[...document.querySelectorAll('.mg-table')].find(t=>/Masters/.test(t.tHead ? t.tHead.innerText : ''))"
+            heads = await A.evaluate(f"[...({gt}).querySelectorAll('thead th')].map(c=>c.innerText.trim())")
+            rows = await A.evaluate(f"[...({gt}).querySelectorAll('tbody tr')].map(r=>[...r.children].map(c=>c.innerText.trim()))")
             print('    table:', heads, rows)
             if heads != ['', 'Masters', 'Lichess', 'Chess.com'] or rows[0][0] != 'Games' or rows[0][3] != '9' or rows[0][2] != str(len(games)) or len(rows) != 5: fails.append(f'games table: {heads} {rows}')
             if await A.query_selector('#pgnFile'): fails.append('the website still offers adding a PGN file')
