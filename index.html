@@ -721,6 +721,12 @@
   .gp-filters{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; margin:0 0 8px;}   /* (the drop-down lists, side by side) */
   .gp-sel{min-width:0; width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:6px 2px 6px 6px; font:inherit; font-size:0.8rem;}
   .gp-box .gp-count{margin:0 0 6px; font-size:.8rem; color:var(--text-mute);}
+  @media (min-aspect-ratio:6/5) and (max-height:600px){   /* a phone held sideways: the tabs right of the title, the count left of the lists, more room for the games */
+    .modal-box.gp-box{display:grid; grid-template-columns:auto minmax(0, 1fr); grid-template-rows:auto auto minmax(0, 1fr) auto; column-gap:16px; align-items:center;}
+    .gp-box > h3{grid-area:1/1; margin:0 0 8px;} .gp-box > .seg{grid-area:1/2; margin:0 0 8px;}
+    .gp-box > .gp-count{grid-area:2/1; margin:0 0 8px;} .gp-box > .gp-filters{grid-area:2/2; margin:0 0 8px;}
+    .gp-box > .gp-list{grid-column:1 / -1; align-self:stretch; min-height:0;} .gp-box > .modal-actions{grid-column:1 / -1;}
+  }
   .gp-list{overflow-y:auto; min-height:120px; flex:1; display:flex; flex-direction:column; gap:4px; margin-bottom:10px;}
   .gp-row{display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font:inherit; cursor:pointer;}
   .gp-row:hover{border-color:var(--accent);} @media not (min-aspect-ratio:6/5){ .gp-sep{display:none;} .gp-mv{display:block;} }   /* (portrait: length and errors on a line of their own) */ .gp-t{display:flex; justify-content:space-between; gap:10px; width:100%;} .gp-res{flex:none; color:var(--text-mute); font-variant-numeric:tabular-nums;} .gp-row small{color:var(--text-mute); font-size:0.78rem;}
