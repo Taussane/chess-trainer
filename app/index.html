@@ -247,10 +247,10 @@
   .routine-line .rl-act{flex:1 1 auto; min-width:0; display:flex; align-items:center; justify-content:center; gap:7px; font-size:.8rem; color:var(--text-mute); white-space:nowrap;}
   .routine-line .rl-act > b{color:var(--text); font-variant-numeric:tabular-nums;}
   .routine-line .rl-act > span:first-child{min-width:0; overflow:hidden; text-overflow:ellipsis;} .routine-line .rl-act > :not(:first-child){flex:none;}   /* (a narrow screen, a long name: cut short, its count kept) */
-  .routine-line .rl-best-n{display:none; margin-left:8px; color:var(--accent);}
-  @media (max-width:800px){ .routine.routine-line{gap:10px;} .routine-line .rl-best{display:none;} .routine-line .rl-best-n{display:inline;} }   /* (narrow: the best beside the name, not as a fifth item) */
+  .routine-line .rush-top{flex:none;}   /* (the best run first, as in portrait) */
+  @media (max-width:800px){ .routine.routine-line{gap:10px;} .routine-line .rush-top small{display:none;} }   /* (narrow: the best alone beside the name) */
   .routine-line .goal-dots{gap:4px;} .routine-line .goal-dots i{width:7px; height:7px; border-radius:50%;}
-  .routine-line .routine-btn{flex:none; width:auto; margin:0; padding:6px 18px; font-size:.9rem;}
+  .routine-line .routine-btn{flex:none; width:auto; height:37px; box-sizing:border-box; margin:0; padding:0 18px; font-size:.9rem;}   /* (as tall as the source switch under it) */
   a.link-btn{text-decoration:none;}
   .link-btn.quiet{color:var(--text-mute); font-weight:500;}
   .title-spacer{width:36px; flex:none;}
@@ -5262,17 +5262,7 @@ function routineCard(){
   return `<div class="routine${done ? ' done' : ''}">
       <div class="routine-head"><span class="routine-title">Today's routine</span><span class="routine-count${dataCls()}">${done ? 'Done <span class="wk-done">✓</span>' : `${total}/${DAILY_GOAL*ACTS.length}`}</span></div>
       ${ACTS.map(a=>`<div class="routine-row"><span>${ACT_NAMES[a]}</span><span class="goal-dots${dataCls()}" aria-label="${Math.min(c[a],DAILY_GOAL)} of ${DAILY_GOAL}">${Array.from({length:DAILY_GOAL}, (_,i)=>`<i class="${i<c[a]?'on':''}"></i>`).join('')}</span></div>`).join('')}
-      <button class="btn${done ? ' secondary' : ''} routine-btn" id="routineBtn" ${canOpen(rn, true) ? '' : 'disabled'}><span class="${dataCls().trim()}">${!canOpen(rn, true) ? waitText(rn, true) : started ? 'Continue' : 'Start'}</span></button>
-    </div>`;
-}
-// (rush mode: the mixed run the same way, each exercise's points in its best run, the best, its button)
-function rushRow(){
-  const top = (profile.rushTop || {}).mixed, n = v=>v!=null ? v : '—';
-  return `<div class="routine routine-line rush-card">
-      <span class="routine-title">Mixed rush<b class="rl-best-n ${dataCls().trim()}">${n(rushBest('mixed'))}</b></span>
-      ${ROUTINE.map(a=>`<span class="rl-act"><span>${rowName(a)}</span><b class="${dataCls().trim()}">${n(top && top.s ? top.s[a] || 0 : null)}</b></span>`).join('')}
-      <span class="rl-act rl-best"><span>Best run</span><b class="${dataCls().trim()}">${n(rushBest('mixed'))}</b></span>
-      <button class="btn routine-btn" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>Start</button>
+      <button class="btn${done ? ' secondary' : ''} routine-btn" id="routineBtn" ${canOpen(rn, true) ? '' : 'disabled'}><span class="${dataCls().trim()}">${!canOpen(rn, true) ? waitText(rn, true) : done ? 'Keep training' : started ? 'Continue routine' : 'Start routine'}</span></button>
     </div>`;
 }
 
@@ -5586,9 +5576,9 @@ function routineRow(){
 function rushRow(){
   const top = (profile.rushTop || {}).mixed, n = v=>v!=null ? v : '—';
   return `<div class="routine routine-line rush-card">
-      <span class="routine-title">Mixed rush<b class="rl-best-n ${dataCls().trim()}">${n(rushBest('mixed'))}</b></span>
+      <span class="routine-title">Mixed rush</span>
+      <span class="rush-top${dataCls()}"><small>Best run</small><b>${n(rushBest('mixed'))}</b></span>
       ${ROUTINE.map(a=>`<span class="rl-act"><span>${rowName(a)}</span><b class="${dataCls().trim()}">${n(top && top.s ? top.s[a] || 0 : null)}</b></span>`).join('')}
-      <span class="rl-act rl-best"><span>Best run</span><b class="${dataCls().trim()}">${n(rushBest('mixed'))}</b></span>
       <button class="btn routine-btn" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>Start</button>
     </div>`;
 }
