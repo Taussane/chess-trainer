@@ -5624,7 +5624,7 @@ function rushRow(){
 function renderHome(){
   const app = document.getElementById('app');
   const donateHtml = `<div class="home-donate"><button class="donate-badge" id="donateBtn"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>${FEEDBACK_PILL}</div>`;   // (sideways: in the exercises' grid, beside the explorer)
-  const acctChip = `<button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span><span class="acct-name">${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</span>${inboxBadge()}</button>`;   // (desktop: beside "Positions from")
+  const acctChip = `<button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span><span class="acct-name">${DIRECT_LICHESS && !signedIn() ? 'Log in' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</span>${inboxBadge()}</button>`;   // (desktop: beside "Positions from")
   app.innerHTML = `
     <div class="home-head">
       <div class="home-top"><h1 data-no-i18n>${isLand() ? `ChessStrategy<span class="tld">.org</span><span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span>` : `Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span>`}</h1>${isLand() ? (landNew() ? (rushOn ? rushChip() : routineChip()) : '') + rushToggle() : ''}${isDesk() ? '' : isLand() ? acctChip : `<div class="home-chips">${acctChip}${rushToggle()}</div>`}</div>
