@@ -65,7 +65,7 @@ GUIDES = [
       title='How to find a plan in chess',
       desc="How to make a plan in chess: check what's urgent, judge who is better, then decide whether to trade and whether to attack or improve. A free exercise on master positions and your own games.",
       lead="\"A bad plan is better than no plan at all\", as the old saying goes (often credited to Chigorin). A plan gives you a direction to search for good moves, and helps you take better decisions. Four questions, in order, can lead to one.",
-      alt="Plan finder review on a 1963 World Championship position: Keep pieces right, Either instead of Open / Attack, 75%",
+      alt="Plan finder review on a 1963 World Championship position: Keep pieces right, Either instead of Open / Attack",
       caption="Black's king is stuck in the centre, with White's queen already on g6. That weak king decides the plan.",
       body="""
 <h2>Four questions</h2>
@@ -84,7 +84,7 @@ GUIDES = [
       title='Comment trouver un plan aux échecs',
       desc="Comment faire un plan aux échecs : voir ce qui est urgent, juger qui est mieux, puis décider s'il faut échanger, attaquer ou améliorer. Un exercice gratuit sur des positions de maîtres et vos propres parties.",
       lead="« Un mauvais plan vaut mieux que pas de plan du tout », dit le vieil adage (souvent attribué à Tchigorine). Un plan vous donne une direction pour chercher de bons coups, et vous aide à prendre de meilleures décisions. Quatre questions, dans l'ordre, peuvent y mener.",
-      alt="Correction de Recherche du plan sur une position du championnat du monde 1963 : Gardez les pièces juste, Au choix au lieu de Ouvrir / Attaquer, 75 %",
+      alt="Correction de Recherche du plan sur une position du championnat du monde 1963 : Gardez les pièces juste, Au choix au lieu de Ouvrir / Attaquer",
       caption="Le roi noir est resté au centre, et la dame blanche est déjà en g6. Ce roi faible décide du plan.",
       body="""
 <h2>Quatre questions</h2>

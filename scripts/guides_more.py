@@ -75,7 +75,7 @@ GUIDES_MORE = {
     title='Wie man im Schach einen Plan findet',
     desc='Wie man im Schach einen Plan macht: prüfen, was dringend ist, beurteilen, wer besser steht, dann entscheiden, ob getauscht und ob angegriffen oder verbessert wird. Eine kostenlose Übung an Meisterstellungen und deinen eigenen Partien.',
     lead='„Ein schlechter Plan ist besser als gar keiner“, sagt die alte Weisheit (oft Tschigorin zugeschrieben). Ein Plan gibt dir eine Richtung für die Suche nach guten Zügen und hilft dir, bessere Entscheidungen zu treffen. Vier Fragen, der Reihe nach, können zu einem führen.',
-    alt='Auswertung der Planfindung in einer WM-Stellung von 1963: Figuren behalten richtig, Beides statt Öffnen / Angreifen, 75 %',
+    alt='Auswertung der Planfindung in einer WM-Stellung von 1963: Figuren behalten richtig, Beides statt Öffnen / Angreifen',
     caption='Der schwarze König steckt im Zentrum fest, und die weiße Dame steht schon auf g6. Dieser schwache König entscheidet den Plan.',
     body="""
 <h2>Vier Fragen</h2>
@@ -94,7 +94,7 @@ GUIDES_MORE = {
     title='Cómo hacer un plan en ajedrez',
     desc='Cómo hacer un plan en ajedrez: ver qué es urgente, juzgar quién está mejor, y decidir si cambiar piezas y si atacar o mejorar. Un ejercicio gratuito con posiciones de maestros y tus propias partidas.',
     lead='«Un mal plan es mejor que ningún plan», dice el viejo refrán (a menudo atribuido a Chigorin). Un plan te da una dirección para buscar buenas jugadas y te ayuda a tomar mejores decisiones. Cuatro preguntas, en orden, pueden llevarte a uno.',
-    alt='Corrección de Búsqueda del plan en una posición del Campeonato del Mundo de 1963: Mantener piezas correcto, Cualquiera en vez de Abrir / Atacar, 75 %',
+    alt='Corrección de Búsqueda del plan en una posición del Campeonato del Mundo de 1963: Mantener piezas correcto, Cualquiera en vez de Abrir / Atacar',
     caption='El rey negro sigue atrapado en el centro, con la dama blanca ya en g6. Ese rey débil decide el plan.',
     body="""
 <h2>Cuatro preguntas</h2>
@@ -113,7 +113,7 @@ GUIDES_MORE = {
     title='Come trovare un piano negli scacchi',
     desc='Come fare un piano negli scacchi: vedere cosa è urgente, giudicare chi sta meglio, poi decidere se cambiare i pezzi e se attaccare o migliorare. Un esercizio gratuito su posizioni di maestri e sulle tue partite.',
     lead='«Un cattivo piano è meglio di nessun piano», dice il vecchio adagio (spesso attribuito a Čigorin). Un piano ti dà una direzione per cercare buone mosse e ti aiuta a prendere decisioni migliori. Quattro domande, in ordine, possono portarti a uno.',
-    alt='Correzione di Ricerca del piano su una posizione del Campionato del mondo 1963: Tieni i pezzi giusto, Indifferente invece di Apri / Attacca, 75%',
+    alt='Correzione di Ricerca del piano su una posizione del Campionato del mondo 1963: Tieni i pezzi giusto, Indifferente invece di Apri / Attacca',
     caption='Il re nero è bloccato al centro, con la donna bianca già in g6. Quel re debole decide il piano.',
     body="""
 <h2>Quattro domande</h2>
