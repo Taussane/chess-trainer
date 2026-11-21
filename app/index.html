@@ -10639,9 +10639,10 @@ function explorerLiveLine(fen, line, d){
   explorerLiveT = setTimeout(()=>{ explorerLiveT = null; if(screen==='explorer') render(); }, 200);
 }
 // After a move the imbalances change all at once; those whose grade changed pulse once.
+const shownLevel = (vals, key)=>(vals.off || []).includes(key) ? 'off' : String(aspectLevel(vals[key], key, vals));   // (an aspect left out, greyed: no grade to change)
 function explorerShownVals(x, fen, vals){
   if(!vals) return x.shown || null;
-  x.changed = x.from && x.revealFen===fen ? ASPECTS.filter(a=>aspectLevel(vals[a.key], a.key, vals)!==aspectLevel(x.from[a.key], a.key, x.from)).map(a=>a.key) : [];
+  x.changed = x.from && x.revealFen===fen ? ASPECTS.filter(a=>shownLevel(vals, a.key)!==shownLevel(x.from, a.key)).map(a=>a.key) : [];
   x.from = null;
   return (x.shown = vals);
 }
