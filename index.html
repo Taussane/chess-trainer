@@ -6697,10 +6697,11 @@ function renderTests(){
     <div class="test-list">${TEST_POSITIONS.map((p,i)=>`
       <div class="test-item">
         <div class="test-name">${p.title}<small>${p.side==='w' ? 'White' : 'Black'} to play · game move ${fmtSan(p.hist.san, true, p.side)}</small></div>
-        <div class="test-go">${ACTIVITIES.filter(a=>!(a==='imbalances' && p.noImbalances)).map(a=>`<button class="chip-btn" data-i="${i}" data-a="${a}">${ACT_NAMES[a]}</button>`).join('')}</div>
+        <div class="test-go">${ACTS.filter(a=>!(a==='imbalances' && p.noImbalances)).map(a=>a==='planq' ? `<button class="chip-btn" data-i="${i}" data-pq="1">${ACT_NAMES[a]}</button>` : `<button class="chip-btn" data-i="${i}" data-a="${a}">${ACT_NAMES[a]}</button>`).join('')}</div>
       </div>`).join('')}
     </div>`;
   document.getElementById('homeBtn').onclick = ()=>{ screen = 'account'; render(); };
+  app.querySelectorAll('.chip-btn[data-pq]').forEach(b=>b.onclick = ()=>{ planqTest(+b.dataset.i); });   // (the Plan finder: its own positions)
   app.querySelectorAll('.chip-btn[data-a]').forEach(b=>b.onclick = ()=>{
     const a = b.dataset.a, t = 't-'+a, i = +b.dataset.i;
     testMode = true; routine = false;
@@ -11407,11 +11408,18 @@ function planqMake(p, info, vals, seen){
   return { p, info, vals, urgent: planqUrgent(p, vals, info), rows: planqRows(p, vals, info), phase: planqPhase(p.fen), step: 0, picks: {}, scores: {},
            checked: false, done: false, aspView: null, aspPiece: null, aspKing: null, seen };
 }
-// A test position in the Plan finder (its evaluation stored with it: test.eval, White's side); "Next
-// position" walks through the other test positions that have one, then back to the list.
+// A test position in the Plan finder (its evaluation: test.eval, White's side, stored or else the engine's, a
+// second's search); "Next position" walks through the test positions after it, then back to the list.
 function planqTest(i){
   const p = TEST_POSITIONS[i], vals = explorerVals(p.fen);
   if(!vals) return;
+  if(!p.eval){   // (no evaluation stored: the engine's, a second's search, kept for the session)
+    flashNote('Evaluating…');
+    bgQueue.push({ fen: p.fen, multipv: 1, movetime: 1000, resolve: res=>{
+      const l = res && !res.failed && res.lines && res.lines[0]; if(!l) return flashNote("This position couldn't be evaluated.");
+      p.eval = toWhitePerspective({ cp: l.mate!=null ? null : l.cp, mate: l.mate!=null ? l.mate : null }, p.fen); planqTest(i); } });
+    pumpEngineQueue(); return;
+  }
   planq = planqMake(p, p.eval, vals, planq ? planq.seen : new Set());
   planq.test = i; screen = 'planq'; render();
 }
@@ -11593,7 +11601,7 @@ function renderPlanq(){
     if(rushMode) return rushNext();
     if(replayMode){ planq = null; return nextPosition(); }
     if(routine){ const a = routineAfter('planq'); setRoutineNext(a); planq = null; return openActivity(a); }
-    if(q.test!=null){ const j = TEST_POSITIONS.findIndex((x, k)=>k > q.test && x.eval); if(j >= 0) planqTest(j); else { planq = null; screen = 'tests'; render(); } return; }
+    if(q.test!=null){ const j = TEST_POSITIONS.findIndex((x, k)=>k > q.test); if(j >= 0) planqTest(j); else { planq = null; screen = 'tests'; render(); } return; }
     planq = planqPick() || null; render(); });
   app.querySelectorAll('.layer:not(.ghost) .pq-reason[data-key]').forEach(b=>b.onclick = ()=>{ q.aspView = q.aspView===b.dataset.key ? null : b.dataset.key; q.aspPiece = q.aspKing = null; render(); });
   app.querySelectorAll('.layer:not(.ghost) .pq-side[data-first]').forEach(b=>b.onclick = ()=>{ if(q.checked) return; q.picks[b.dataset.first] = b.dataset.v; q.touched = q.touched || {}; q.touched[q.step] = true; hintStop(); render(); });
