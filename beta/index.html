@@ -271,6 +271,7 @@
   .card-title .title-badge{font-size:0.62rem; vertical-align:2px;}
   .goal-dots{display:flex; gap:8px;}
   .goal-dots i{width:36px; height:8px; border-radius:4px; background:var(--panel-2); border:1px solid var(--border);}
+  .goal-dots i:not(.on){background:color-mix(in srgb, var(--text-mute) 32%, transparent);}   /* (an empty slot: plain grey, readable on the routine's shaded card) */
   .goal-dots i.on{background:var(--accent); border-color:var(--accent);}
   .routine-btn{margin-top:12px;}
   .routine-btn{width:100%;}
@@ -3251,7 +3252,7 @@ function posSource(p){
     const when = g && g.playedAt ? new Date(g.playedAt).toLocaleDateString(dateLoc(), { day:'numeric', month:'short', year:'numeric' }) : g && /^\d{4}$/.test(g.year || '') ? g.year : '';
     return [name, g && SPEED_NAMES[g.speed], when].filter(Boolean).join(' · ');
   }
-  if(p.game){ const gi = GAME_INFO[p.game] || {}; return ['Masters', gi.event, fmtGameDate(gi.date) || p.year].filter(Boolean).map(escHtml).join(' · '); }
+  if(p.game){ const gi = GAME_INFO[p.game] || {}; return [gi.event || 'Masters', fmtGameDate(gi.date) || p.year].filter(Boolean).map(escHtml).join(' · '); }
   return testMode ? `Test · ${escHtml(p.title)}` : ['Masters', p.year].filter(Boolean).join(' · ');
 }
 // The players' names beside the board: the side to play at the bottom (the board is seen from it).
