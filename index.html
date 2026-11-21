@@ -10171,7 +10171,7 @@ function explorerEval(fen){
     e = explorerEvals[fen] = { status:'pending', data:null };
     new Promise(resolve=>{
       if(sfState==='error'){ resolve(FAILED); return; }
-      queueJob({ fen, movetime: EXPLORER_MS, depth: LIVE_DEPTH, multipv: 3, explorer: true, resolve });   // (depth 20 at most, as the reviews: an endgame stops there) pumpEngineQueue();
+      queueJob({ fen, movetime: EXPLORER_MS, depth: LIVE_DEPTH, multipv: 3, explorer: true, resolve }); pumpEngineQueue();   // (depth 20 at most, as the reviews: an endgame stops there)
       if(sfBusy) preemptForOpen();   // a long search prepared in advance gives way (searched again later)
     }).then(d=>{
       if(d===EXPLORER_DROPPED){ delete explorerEvals[fen]; return; }
