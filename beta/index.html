@@ -883,8 +883,9 @@
     .side-logo b{display:block; font-size:1.35rem; line-height:1.1; font-weight:800; letter-spacing:-.01em;}
     .side-logo .tld{color:var(--accent); font-size:.8em;}
     .side-logo .beta{display:inline-block; margin-left:8px; padding:2px 5px; border:1px solid var(--accent); border-radius:5px; color:var(--accent); font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; vertical-align:4px;}
-    .side-sec{margin:14px 10px 6px; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-mute);}
-    .side-item{display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; border-radius:8px; color:var(--text); font:inherit; font-size:.92rem; text-align:left; padding:8px 10px; cursor:pointer;}
+    .side-sec{margin:10px 10px 4px; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-mute);}
+    .side-item{display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; border-radius:8px; color:var(--text); font:inherit; font-size:.92rem; text-align:left; padding:6px 10px; cursor:pointer;}   /* (6 px: the Exercises and Rush lists fit a 900 px high window) */
+    @media (max-height:820px){ .side-item{padding-block:3px;} .side-sec{margin-top:8px;} .side-logo{padding-bottom:10px;} .side-foot{gap:8px; padding-top:10px;} }
     .side-item:hover:not(:disabled){background:var(--panel-2);}
     .side-item.on{background:var(--panel-2); box-shadow:inset 3px 0 0 var(--accent);}
     .side-item:disabled{opacity:.45; cursor:default;}
@@ -4995,7 +4996,7 @@ function leaveExercise(){
 }
 function sideGo(where){
   if(rush){ if(rush.phase!=='end') planq = rush.planq0; rushMode = false; rush = null; }   // (a run left: no score)
-  if(rushOn && (where==='routine' || ACTIVITIES.includes(where) || where==='planq')){ leaveExercise(); return rushStart(where==='routine' ? 'mixed' : where); }
+  if(where.startsWith('rush:')){ const k = where.slice(5); if(!rushCan(k==='routine' ? 'mixed' : k)) return; leaveExercise(); return rushStart(k==='routine' ? 'mixed' : k); }   // (the menu's Rush list: a run, whatever the home page shows)
   if(screen==='explorer' && explorer && explorer.ret){ const r = explorer.ret; explorer = r.saved; screen = r.screen; }   // (an explorer opened from a review: left as from the review, the sidebar's own explorer back)
   if(where==='routine'){ leaveExercise(); return startRoutine(); }
   if(ACTIVITIES.includes(where) || where==='planq'){ if(!canOpen(where, false)) return; leaveExercise(); routine = false; return openActivity(where); }
@@ -5014,15 +5015,17 @@ function renderSide(){
   if(!DESK) return;
   let nav = document.getElementById('side');
   if(!nav){ nav = document.createElement('nav'); nav.id = 'side'; nav.className = 'side'; nav.setAttribute('aria-label', 'Menu'); document.body.insertBefore(nav, document.querySelector('.wrap')); }
-  const at = rush ? (rush.k==='mixed' ? 'routine' : rush.k) : routine && (ACTIVITIES.includes(screen) || screen==='planq') ? 'routine' : onProfile() ? 'account' : screen;
+  const at = rush ? 'rush:' + (rush.k==='mixed' ? 'routine' : rush.k) : routine && (ACTIVITIES.includes(screen) || screen==='planq') ? 'routine' : onProfile() ? 'account' : screen;
   const c = todayBy(), total = ACTS.reduce((t,a)=>t+Math.min(c[a], DAILY_GOAL), 0);
   const item = (k, icon, name, extra, dis)=>`<button class="side-item${at===k ? ' on' : ''}" data-side="${k}"${dis ? ' disabled' : ''}${at===k ? ' aria-current="page"' : ''}>${icon}<span class="side-name">${name}</span>${extra ? `<span class="side-n">${extra}</span>` : ''}</button>`;
   const html = `
     <button class="side-logo${at==='home' ? ' on' : ''}" data-side="home" data-no-i18n aria-label="Home"><b>Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span></b></button>
-    ${rushOn ? item('routine', MIXED_ICON, 'Mixed rush', progressLoaded && rushBest('mixed')!=null ? rushBest('mixed') : '', !rushCan('mixed'))
-      : item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
     <div class="side-sec">Exercises</div>
-    ${ACTS.map(a=>{ const L = levelNow(a); return rushOn ? item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && rushBest(a)!=null ? rushBest(a) : '', !rushCan(a)) : item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && L.rated ? pct(L.level) : '', !canOpen(a, false)); }).join('')}
+    ${item('routine', SIDE_ICONS.routine, 'Routine', progressLoaded ? `${total}/${DAILY_GOAL*ACTS.length}` : '', !canOpen(routineFrom(routineNext), true))}
+    ${ACTS.map(a=>{ const lv = levelNow(a); return item(a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && lv.rated ? pct(lv.level) : '', !canOpen(a, false)); }).join('')}
+    <div class="side-sec">Rush</div>
+    ${item('rush:routine', MIXED_ICON, 'Mixed rush', progressLoaded && rushBest('mixed')!=null ? rushBest('mixed') : '', !rushCan('mixed'))}
+    ${ROUTINE.map(a=>item('rush:' + a, ACT_GLYPHS[a], ACT_NAMES[a], progressLoaded && rushBest(a)!=null ? rushBest(a) : '', !rushCan(a))).join('')}
     <div class="side-sec">More</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}
     <div class="side-sec">You</div>
     ${item('account', '<img class="side-app-icon" src="icons/icon.svg" alt="" aria-hidden="true">', displayName() || 'Profile')}
