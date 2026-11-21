@@ -327,13 +327,13 @@ FAQ_MORE = {
 }
 
 W_MORE = {
-  'de': dict(faq='Häufige Fragen', exercises='Übungen',
+  'de': dict(guide='Anleitung', guide_title='Schachstrategie: Anleitung und häufige Fragen', faq='Häufige Fragen', exercises='Übungen',
     intro='Taktikaufgaben haben immer genau eine richtige Antwort. Echte Partien nicht. ChessStrategy.org trainiert, was vor dem Zug kommt: die Stellung lesen, einen Plan wählen, gute Züge finden und den besten auswählen.',
     faq_desc='Wie ChessStrategy.org funktioniert: seine vier Schachstrategie-Übungen (Ungleichgewichte, Pläne, Kandidatenzüge, Zugwahl), Wertungen, Stellungen und die Engine.'),
-  'es': dict(faq='Preguntas frecuentes', exercises='Ejercicios',
+  'es': dict(guide='Guía', guide_title='Guía de estrategia de ajedrez y preguntas frecuentes', faq='Preguntas frecuentes', exercises='Ejercicios',
     intro='Los problemas de táctica siempre tienen una única respuesta correcta. Las partidas reales, no. ChessStrategy.org entrena lo que viene antes de la jugada: leer la posición, elegir un plan, encontrar buenas jugadas y escoger la mejor.',
     faq_desc='Cómo funciona ChessStrategy.org: sus cuatro ejercicios de estrategia de ajedrez (desequilibrios, planes, jugadas candidatas, elección de jugada), puntuaciones, posiciones y el motor.'),
-  'it': dict(faq='Domande frequenti', exercises='Esercizi',
+  'it': dict(guide='Guida', guide_title='Guida alla strategia negli scacchi e domande frequenti', faq='Domande frequenti', exercises='Esercizi',
     intro='I problemi di tattica hanno sempre una sola risposta giusta. Le partite vere no. ChessStrategy.org allena ciò che viene prima della mossa: leggere la posizione, scegliere un piano, trovare buone mosse e sceglierne la migliore.',
     faq_desc='Come funziona ChessStrategy.org: i suoi quattro esercizi di strategia scacchistica (squilibri, piani, mosse candidate, scelta della mossa), punteggi, posizioni e il motore.'),
 }

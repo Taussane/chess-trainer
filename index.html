@@ -4974,7 +4974,7 @@ function sideGo(where){
 }
 function siteLinks(){
   const dd = DIRECT_LICHESS ? ' data-doc' : '';   // (on the website, opened inside the app: openDoc)
-  return `<a href="${DIRECT_LICHESS ? '' : 'https://chessstrategy.org/'}${FAQ_PATH[LANG]}" target="_blank" rel="noopener"${dd} data-no-i18n>FAQ</a> · ${DIRECT_LICHESS ? `<a href="${legalPath('privacy')}" target="_blank" rel="noopener"${dd}>Privacy</a> · <a href="${legalPath('terms')}" target="_blank" rel="noopener"${dd}>Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="#" data-feedback>Feedback</a>`;
+  return `<a href="${DIRECT_LICHESS ? '' : 'https://chessstrategy.org/'}${FAQ_PATH[LANG]}" target="_blank" rel="noopener"${dd} data-no-i18n>${L({ en:'Guide', fr:'Guide', de:'Anleitung', es:'Guía', it:'Guida' })}</a> · ${DIRECT_LICHESS ? `<a href="${legalPath('privacy')}" target="_blank" rel="noopener"${dd}>Privacy</a> · <a href="${legalPath('terms')}" target="_blank" rel="noopener"${dd}>Terms</a> · ` : ''}<a href="https://github.com/Taussane/chess-trainer" target="_blank" rel="noopener">Source code</a> · <a href="#" data-feedback>Feedback</a>`;
 }
 function renderSide(){
   if(!DESK) return;

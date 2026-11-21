@@ -20,15 +20,15 @@ let fails = 0; const check = (name, ok, info) => { console.log(name + ': ' + JSO
   // phone
   const [ctx, p] = await page({ width: 390, height: 844 }, 'http://localhost:8797/');
   await p.click('#accountBtn'); await p.waitForTimeout(400);
-  await p.click('.ac-foot a[data-doc]:has-text("FAQ")'); await p.waitForTimeout(800);
-  let s = await st(p); check('FAQ opens inside the app', s.screen === 'doc' && s.title === 'Frequently asked questions' && ctx.pages().length === 1, s);
+  await p.click('.ac-foot a[data-doc]:has-text("Guide")'); await p.waitForTimeout(800);
+  let s = await st(p); check('FAQ opens inside the app', s.screen === 'doc' && s.title === 'Guide' && ctx.pages().length === 1, s);
   check('its cards are there', await p.locator('.doc-page .card').count() === 4, await p.locator('.doc-page .card').count());
   if (SHOTS) await p.screenshot({ path: SHOTS + '/doc_faq.png' });
   await p.click('.doc-page .card >> nth=0'); await p.waitForTimeout(800);
   s = await st(p); check('a guide opens one level deeper', s.title === 'Imbalance reading' && s.depth === 1, s);
   check('its picture loads', await p.evaluate(() => { const i = document.querySelector('.doc-page figure img'); return !!i && new URL(i.src).pathname === '/learn/img/imbalance-reading.webp'; }), null);
   if (SHOTS) { await p.waitForTimeout(500); await p.screenshot({ path: SHOTS + '/doc_guide.png' }); }
-  await p.goBack(); await p.waitForTimeout(500); s = await st(p); check('back: the FAQ', s.title === 'Frequently asked questions' && s.depth === 0, s);
+  await p.goBack(); await p.waitForTimeout(500); s = await st(p); check('back: the FAQ', s.title === 'Guide' && s.depth === 0, s);
   await p.goBack(); await p.waitForTimeout(500); s = await st(p); check('back: the profile', s.screen === 'account', s);
   await p.goBack(); await p.waitForTimeout(500); s = await st(p); check('back: home', s.screen === 'home', s);
   await p.click('#accountBtn'); await p.waitForTimeout(400);
@@ -45,12 +45,12 @@ let fails = 0; const check = (name, ok, info) => { console.log(name + ': ' + JSO
   await c2.close();
   // desktop: from the menu
   const [c3, p3] = await page({ width: 1400, height: 900 }, 'http://localhost:8797/');
-  await p3.click('.side-links a[data-doc]:has-text("FAQ")'); await p3.waitForTimeout(800);
-  s = await st(p3); check('desktop: the menu\'s FAQ', s.screen === 'doc' && s.title === 'Frequently asked questions' && c3.pages().length === 1, s);
+  await p3.click('.side-links a[data-doc]:has-text("Guide")'); await p3.waitForTimeout(800);
+  s = await st(p3); check('desktop: the menu\'s FAQ', s.screen === 'doc' && s.title === 'Guide' && c3.pages().length === 1, s);
   await p3.click('.doc-page .card >> nth=3'); await p3.waitForTimeout(800);
   check('desktop: a guide has its back arrow', await p3.locator('#homeBtn').isVisible(), null);
   if (SHOTS) await p3.screenshot({ path: SHOTS + '/doc_desk.png' });
-  await p3.click('#homeBtn'); await p3.waitForTimeout(500); s = await st(p3); check('desktop: back to the FAQ', s.title === 'Frequently asked questions', s);
+  await p3.click('#homeBtn'); await p3.waitForTimeout(500); s = await st(p3); check('desktop: back to the FAQ', s.title === 'Guide', s);
   await c3.close();
   check('no page errors', errors.length === 0, errors);
   await b.close(); server.kill();

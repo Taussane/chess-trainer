@@ -246,10 +246,10 @@ FAQ.update(FAQ_MORE)
 
 # ---------------------------------------------------------------- the words around the text
 W = {
-  'en': dict(other='Lire en français', faq='Frequently asked questions', exercises='Exercises',
+  'en': dict(other='Lire en français', guide='Guide', guide_title='Chess strategy guide and FAQ', faq='Frequently asked questions', exercises='Exercises',
     intro="Tactics puzzles always have one right answer. Real games don't. ChessStrategy.org trains what comes before the move: reading the position, choosing a plan, finding good moves, and picking the best one.",
     faq_desc='How ChessStrategy.org works: its four chess strategy exercises (imbalances, plans, candidate moves, move selection), scores, positions and the engine.'),
-  'fr': dict(other='Read in English', faq='Questions fréquentes', exercises='Exercices',
+  'fr': dict(other='Read in English', guide='Guide', guide_title='Guide de stratégie aux échecs et questions fréquentes', faq='Questions fréquentes', exercises='Exercices',
     intro="Les puzzles de tactique ont toujours une seule bonne réponse. Les vraies parties, non. ChessStrategy.org entraîne ce qui vient avant le coup : lire la position, choisir un plan, trouver de bons coups, et choisir le meilleur.",
     faq_desc="Comment fonctionne ChessStrategy.org : ses quatre exercices de stratégie aux échecs (déséquilibres, plans, coups candidats, choix du coup), les scores, les positions et le moteur."),
 }
@@ -364,7 +364,7 @@ def build(extra=None):   # extra: pages built elsewhere, {path: text} (the app's
       img = f'{g["img"]}{"" if lang=="en" else "-" + lang}.webp'
       up = '../' * path.count('/'); pic = lambda k: f'{g["img"]}-{k}{"" if lang=="en" else "-" + lang}.webp'   # (the same screen held sideways, and on a desktop: SHOTS)
       # heading as on the FAQ's card (name, subtitle); the search-friendly title stays in <title>
-      body = fix(f"""<p class="back"><a href="../">‹ FAQ</a></p>
+      body = fix(f"""<p class="back"><a href="../">‹ {w['guide']}</a></p>
 <h1>{html.escape(t['name'])}</h1>
 <p class="sub">{html.escape(t.get('sub', t['title']))}</p>
 <p class="lead">{t['lead']}</p>
@@ -373,24 +373,24 @@ def build(extra=None):   # extra: pages built elsewhere, {path: text} (the app's
       ld = [{ '@context': 'https://schema.org', '@type': 'Article', 'headline': t['title'], 'description': t['desc'], 'inLanguage': lang,
               'image': SITE + f'learn/img/{img}', 'url': SITE + path.removesuffix('index.html'),
               'publisher': { '@type': 'Organization', 'name': 'ChessStrategy.org', 'url': SITE } },
-            { '@context': 'https://schema.org', **crumbs((W[lang]['faq'], HUB[lang]), (t['name'], path.removesuffix('index.html'))) }]
+            { '@context': 'https://schema.org', **crumbs((W[lang]['guide'], HUB[lang]), (t['name'], path.removesuffix('index.html'))) }]
       out[path] = page(path, lang, t['title'], t['desc'], body, alts, ld)
       urls.append(path.removesuffix('index.html'))
     # the index: the guides, then the FAQ
     path = HUB[lang] + 'index.html'
     cards = ''.join(f'<a class="card" href="{g[lang]["slug"]}/"><strong>{g[lang]["name"]}</strong><span>{html.escape(g[lang].get("sub", g[lang]["title"]))}</span></a>' for g in GUIDES)
     faq = ''.join(f'<h2 class="faq-h">{html.escape(sec)}</h2>' + ''.join(f'<details><summary>{html.escape(q)}</summary><div class="a">{a}</div></details>' for q, a in qs) for sec, qs in FAQ[lang])
-    hub = fix(f"""<h1>{w['faq']}</h1>
+    hub = fix(f"""<h1>{w['guide']}</h1>
 <p class="mute">{w['intro']}</p>
 <h2 class="faq-h">{w['exercises']}</h2>
 <div class="cards">{cards}</div>
 {faq}""")
     plain = lambda h: re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', ' ', fix(h)))).strip()
-    ld = [{ '@context': 'https://schema.org', '@type': 'CollectionPage', 'name': w['faq'], 'url': SITE + HUB[lang], 'inLanguage': lang,
+    ld = [{ '@context': 'https://schema.org', '@type': 'CollectionPage', 'name': w['guide_title'], 'url': SITE + HUB[lang], 'inLanguage': lang,
             'hasPart': [{ '@type': 'Article', 'headline': g[lang]['title'], 'url': SITE + HUB[lang] + g[lang]['slug'] + '/' } for g in GUIDES] },
           { '@context': 'https://schema.org', '@type': 'FAQPage', 'inLanguage': lang,
             'mainEntity': [{ '@type': 'Question', 'name': plain(q), 'acceptedAnswer': { '@type': 'Answer', 'text': plain(a) } } for _, qs in FAQ[lang] for q, a in qs] }]
-    out[path] = page(path, lang, w['faq'], w['faq_desc'], hub, { l: HUB[l] + 'index.html' for l in LANGS }, ld, kind='website')
+    out[path] = page(path, lang, w['guide_title'], w['faq_desc'], hub, { l: HUB[l] + 'index.html' for l in LANGS }, ld, kind='website')
     urls.append(HUB[lang])
   for f, lang, title, desc, k in LEGAL:
     out[f] = page(f, lang, title, desc, (root / 'scripts' / 'pages' / f).read_text(encoding='utf-8').strip(), { l: legal(k, l) for l in LANGS }, kind='website')
