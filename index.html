@@ -469,13 +469,13 @@
   .doc-page h2{font-size:1.2rem; margin:28px 0 8px;} .doc-page h3{font-size:1.02rem; margin:20px 0 4px;}
   .doc-page p{margin:0 0 12px;} .doc-page .lead{font-size:1.05rem;} .doc-page .mute, .doc-note{color:var(--text-mute);} .doc-page a{color:var(--accent);}
   .doc-page ul, .doc-page ol{padding-left:22px; margin:0 0 12px;} .doc-page li{margin:4px 0;}
-  .doc-page figure{margin:22px 0; text-align:center;} .doc-page figure img{width:100%; max-width:360px; height:auto; border-radius:14px; border:1px solid var(--border);}
+  .doc-page figure{margin:22px 0; text-align:center;} .doc-page figure img{width:100%; max-width:360px; height:auto; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25);}
   .doc-page figcaption{color:var(--text-mute); font-size:.9rem; max-width:520px; margin:8px auto 0;}
   .doc-page .cards{display:grid; gap:12px; grid-template-columns:1fr; margin:16px 0 20px;} @media (min-width:640px){ .doc-page .cards{grid-template-columns:1fr 1fr;} }
-  .doc-page .card{display:block; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 14px; text-decoration:none;}
+  .doc-page .card{display:block; background:var(--panel); border:0; border-radius:14px; padding:12px 14px; text-decoration:none; box-shadow:0 6px 18px rgba(0,0,0,.18);} .doc-page .card:hover{background:var(--panel-2); transform:none;}
   .doc-page .card strong{color:var(--text); display:block; margin-bottom:2px;} .doc-page .card span{color:var(--text-mute); font-size:.93rem;}
   .doc-page .faq-h{font-size:.92rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:.06em; margin:26px 0 6px;}
-  .doc-page details{border-bottom:1px solid var(--border);} .doc-page summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px;}
+  .doc-page details{background:var(--panel); border-radius:12px; padding:0 16px; margin:0 0 8px;} .doc-page summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:12px;}
   .doc-page summary::-webkit-details-marker{display:none;} .doc-page summary::after{content:'+'; color:var(--text-mute); font-weight:400;} .doc-page details[open] summary::after{content:'−';}
   .doc-page details .a{padding:0 0 12px; color:var(--text-mute);} .doc-page details .a b{color:var(--text);} .doc-page details .a ol, .doc-page details .a ul{margin:6px 0 0;}
   .sq.last::before{content:""; position:absolute; inset:0; background:var(--square-hl);}
