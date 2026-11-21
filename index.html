@@ -257,7 +257,7 @@
   .pq-side:disabled{cursor:default;} .pq-side.best{border-color:var(--best-green); box-shadow:inset 0 0 0 1px var(--best-green);} .pq-side.bad{border-color:var(--bad); box-shadow:inset 0 0 0 1px var(--bad);} .pq-side.off{opacity:.55;}
 
   .diag-pre{font-size:0.72rem; line-height:1.35; white-space:pre-wrap; margin:0; max-height:340px; overflow:auto; user-select:text;}
-  .mg-reset{display:inline-flex; align-items:center; gap:8px;}   /* (the owner's badge on the left of Reset my games) */
+  .mg-reset{display:inline-flex; align-items:center; gap:8px;}   /* (Reset my games, then the owner's badge, on one line) */
   .pf-resets{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px 12px; margin-top:10px;}
   .pq-reserve{display:grid;} .pq-reserve > *{grid-area:1 / 1;} .pq-ghost-text{visibility:hidden;}
   .pq-ask{display:flex; align-items:baseline; gap:12px;} .pq-ask .prompt{margin:0;}
@@ -6668,7 +6668,7 @@ function positionsSection(){
           : myGames.length ? (myConfirmClear
           ? (DIRECT_LICHESS ? `<div class="mg-confirm"><span>Analyse your games again from scratch?</span><button class="btn small danger" id="resetYes">Reset</button><button class="btn small ghost" id="clearNo">Keep</button></div>`
                             : `<div class="mg-confirm"><span>Remove all your games and their positions?</span><button class="btn small danger" id="clearYes">Remove</button><button class="btn small ghost" id="clearNo">Keep</button></div>`)
-          : myGamesLoaded && (!DIRECT_LICHESS || isOwner()) ? `<span class="mg-reset">${DIRECT_LICHESS ? '<span class="title-badge">Owner</span>' : ''}<button class="link-btn quiet" id="clearBtn">${DIRECT_LICHESS ? 'Reset my games' : 'Remove my games'}</button></span>` : '') : ''}
+          : myGamesLoaded && (!DIRECT_LICHESS || isOwner()) ? `<span class="mg-reset"><button class="link-btn quiet" id="clearBtn">${DIRECT_LICHESS ? 'Reset my games' : 'Remove my games'}</button>${DIRECT_LICHESS ? '<span class="title-badge">Owner</span>' : ''}</span>` : '') : ''}
       </section>`;
 }
 function wireGames(){
