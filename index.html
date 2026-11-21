@@ -273,6 +273,11 @@
   .goal-dots i.on{background:var(--accent); border-color:var(--accent);}
   .routine-btn{margin-top:12px;}
   .routine-btn{width:100%;}
+  .routine.routine-line{display:flex; align-items:center; gap:18px; margin:0 0 12px; padding:6px 6px 6px 14px;}   /* (sideways: one row) */
+  .routine-line .routine-title{flex:none; max-width:6.5em; font-size:1rem; line-height:1.15; text-wrap:balance;}
+  .routine-line .rl-act{flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:.8rem; color:var(--text-mute); white-space:nowrap;}
+  .routine-line .goal-dots{gap:5px;} .routine-line .goal-dots i{width:22px; height:7px;}
+  .routine-line .routine-btn{flex:none; width:auto; max-width:9em; margin:0; padding:4px 16px; font-size:.9rem; line-height:1.2; text-wrap:balance;}
   a.link-btn{text-decoration:none;}
   .link-btn.quiet{color:var(--text-mute); font-weight:500;}
   .title-spacer{width:36px; flex:none;}
@@ -916,6 +921,7 @@
     html.desk2 .wrap.home .home-top h1{flex:1; font-size:1.6rem;}
     html.desk2 .wrap.home .home-head p{margin-top:6px; font-size:0.9rem;}
     html.desk2 .wrap.home > #app > .source-row{margin:0 0 12px;}
+    html.desk2 .wrap.home > #app > .routine.routine-line{margin:0 0 12px;}   /* (the routine's row, once you've started: between the title and the source) */
     html.desk2 .wrap.home > #app > .source-row .seg{margin:0;} html.desk2 .wrap.home > #app > .source-row .seg-btn{padding:5px 4px;}
     html.desk2 .wrap.home > #app > .cards{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
     html.desk2 .wrap.home > #app > .cards > .home-donate{margin:0; flex-direction:column; align-items:flex-end; justify-content:flex-end; gap:8px;}   /* (Feedback above Support me, bottom right, beside the explorer) */
@@ -5582,16 +5588,26 @@ function routineChip(){
 function rushChip(){
   return `<button class="acct-chip routine-chip" id="routineBtn" ${rushCan('mixed') ? '' : 'disabled'}>${MIXED_ICON}<span>Mixed rush</span>${progressLoaded && rushBest('mixed')!=null ? `<span class="routine-n">${rushBest('mixed')}</span>` : ''}</button>`;
 }
+// Sideways, once you've started (the intro gone): the routine as one row, its name, each exercise's three dots, its button
+const landNew = ()=>DIRECT_LICHESS ? !signedIn() : !results.length;   // (a newcomer: the intro, the routine as a button beside the profile's)
+function routineRow(){
+  const c = todayBy(), done = progressLoaded && ACTS.every(a=>c[a]>=DAILY_GOAL), started = ACTS.some(a=>c[a] > 0), rn = routineFrom(routineNext);
+  return `<div class="routine routine-line${done ? ' done' : ''}">
+      <span class="routine-title">Today's routine</span>
+      ${ACTS.map(a=>`<span class="rl-act"><span>${ACT_SHORT[a]}</span><span class="goal-dots${dataCls()}" aria-label="${Math.min(c[a],DAILY_GOAL)} of ${DAILY_GOAL}">${Array.from({length:DAILY_GOAL}, (_,i)=>`<i class="${i<c[a]?'on':''}"></i>`).join('')}</span></span>`).join('')}
+      <button class="btn${done ? ' secondary' : ''} routine-btn" id="routineBtn" ${canOpen(rn, true) ? '' : 'disabled'}><span class="${dataCls().trim()}">${!canOpen(rn, true) ? waitText(rn, true) : done ? 'Keep training' : started ? 'Continue routine' : 'Start routine'}</span></button>
+    </div>`;
+}
 function renderHome(){
   const app = document.getElementById('app');
   const donateHtml = `<div class="home-donate"><button class="donate-badge" id="donateBtn"><img src="${KOFI_CUP}" alt="" aria-hidden="true">Support me</button>${FEEDBACK_PILL}</div>`;   // (sideways: in the exercises' grid, beside the explorer)
   const acctChip = `<button class="acct-chip" id="accountBtn"><span class="acct-dot" aria-hidden="true"><span class="pc pc-wK"></span></span><span class="acct-name">${DIRECT_LICHESS && !signedIn() ? 'Profile' : `${displayName().replace(/</g,'&lt;') || 'Guest'}`}</span>${inboxBadge()}</button>`;   // (desktop: beside "Positions from")
   app.innerHTML = `
     <div class="home-head">
-      <div class="home-top"><h1 data-no-i18n>${isLand() ? `ChessStrategy<span class="tld">.org</span><span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span>` : `Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span>`}</h1>${isLand() ? (rushOn ? rushChip() : routineChip()) + rushToggle() : ''}${isDesk() ? '' : isLand() ? acctChip : `<div class="home-chips">${acctChip}${rushToggle()}</div>`}</div>
-      ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isWide() ? `<p>Train your strategy beyond tactics puzzles: read the imbalances, define your plan, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
+      <div class="home-top"><h1 data-no-i18n>${isLand() ? `ChessStrategy<span class="tld">.org</span><span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span>` : `Chess<span class="beta">${L({ en:'Beta', fr:'Bêta' })}</span><br>Strategy<span class="tld">.org</span>`}</h1>${isLand() ? (rushOn ? rushChip() : landNew() ? routineChip() : '') + rushToggle() : ''}${isDesk() ? '' : isLand() ? acctChip : `<div class="home-chips">${acctChip}${rushToggle()}</div>`}</div>
+      ${(DIRECT_LICHESS ? !signedIn() : !results.length) || isWide() && !isLand() ? `<p>Train your strategy beyond tactics puzzles: read the imbalances, define your plan, find good candidates, choose the best.<br>Learn from master games and your own mistakes.</p>` : ''}
     </div>
-    ${isLand() ? '' : rushOn ? rushCard() : routineCard()}
+    ${isLand() ? (!rushOn && !landNew() ? routineRow() : '') : rushOn ? rushCard() : routineCard()}
     <div class="source-row">${isDesk() ? acctChip + rushToggle() : ''}<span class="source-label">Positions from</span>
       <div class="seg seg-sm" role="radiogroup" aria-label="Positions from">${Object.entries(SOURCES).map(([k,v])=>{
         const off = (k==='mine' || k==='both') && !myPositions.length;   // (the filter works on master games alone)
