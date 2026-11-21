@@ -51,3 +51,7 @@ Chess.com games are read through Chess.com's public API (by the account server).
 ## Master games
 
 `library/gm-classics.pgn` holds moves only (no annotations): the World Championship match games from the PGN Mentor event files (https://www.pgnmentor.com/files.html). Game scores are facts, not covered by copyright.
+
+## Inter
+
+The Inter typeface (https://github.com/rsms/inter), copyright 2016-2023 The Inter Project Authors, is used under the SIL Open Font License 1.1. `vendor/fonts/inter/` holds Latin subsets in WOFF2; its license is in `vendor/fonts/inter/COPYRIGHT.txt`.
