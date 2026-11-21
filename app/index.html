@@ -250,7 +250,7 @@
   .routine-line .rush-top{flex:none;}   /* (the best run first, as in portrait) */
   @media (max-width:800px){ .routine.routine-line{gap:10px;} .routine-line .rush-top small{display:none;} }   /* (narrow: the best alone beside the name) */
   .routine-line .goal-dots{gap:4px;} .routine-line .goal-dots i{width:7px; height:7px; border-radius:50%;}
-  .routine-line .routine-btn{flex:none; width:auto; height:37px; box-sizing:border-box; margin:0; padding:0 18px; font-size:.9rem;}   /* (as tall as the source switch under it) */
+  .routine-line .routine-btn{flex:none; width:auto; height:32px; box-sizing:border-box; margin:0; padding:0 18px; font-size:.9rem;}   /* (as tall as the source switch under it) */
   a.link-btn{text-decoration:none;}
   .link-btn.quiet{color:var(--text-mute); font-weight:500;}
   .title-spacer{width:36px; flex:none;}
@@ -895,7 +895,7 @@
     html.desk2 .wrap.home .home-head p{margin-top:6px; font-size:0.9rem;}
     html.desk2 .wrap.home > #app > .source-row{margin:0 0 12px;}
     html.desk2 .wrap.home > #app > .routine.routine-line{margin:0 0 12px;}   /* (the routine's row, once you've started: between the title and the source) */
-    html.desk2 .wrap.home > #app > .source-row .seg{margin:0;} html.desk2 .wrap.home > #app > .source-row .seg-btn{padding:5px 4px;}
+    html.desk2 .wrap.home > #app > .source-row .seg{margin:0; height:32px; box-sizing:border-box;} html.desk2 .wrap.home > #app > .source-row .seg-btn{padding:0 4px;}   /* (32 px, as the routine's button above it) */
     html.desk2 .wrap.home > #app > .cards{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
     html.desk2 .wrap.home > #app > .cards > .home-donate{margin:0; flex-direction:column; align-items:flex-end; justify-content:flex-end; gap:8px;}   /* (Feedback above Support me, bottom right, beside the explorer) */
     html.desk2 .wrap.home > #app > .cards > .home-donate .feedback-badge{order:-1;}
