@@ -554,7 +554,7 @@
   .promo-piece .piece-w{color:var(--piece-w); text-shadow:0 0 1px #000, 0 0 2px rgba(0,0,0,.5);}
   .promo-piece .piece-b{color:var(--piece-b); text-shadow:0 0 1px rgba(255,255,255,.3);}
   .board.asp-tappable .sq:has(.piece-w, .piece-b){cursor:pointer;}
-  svg.arrows{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:5;}
+  svg.arrows{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:5;} svg.arrows.um{z-index:4;}   /* (your own marks: under the app's arrows) */
 
   /* Panel */
   .panel{width:100%; max-width:420px; margin:16px auto 0; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px;}
@@ -7407,6 +7407,41 @@ window.addEventListener('popstate', e=>{
   } finally { histPopping = false; }
   syncHistory();   // (a level the arrows skip: entries put back as needed)
 });
+// Your own marks (beta, desktop with a mouse): right-click a square to circle it, right-drag for an arrow (again: off),
+// left-click to clear; in the 5th arrow colour, under the app's own arrows. Gone at the next position and in a review.
+const UM = { key:null, arrows:[], rings:[] };
+const umOn = ()=>BETA_SITE && matchMedia('(hover:hover) and (pointer:fine)').matches;
+const umReview = ()=>{ const r = ACTIVITIES.includes(screen) && curPos && store[ctx(screen)] && store[ctx(screen)][curPos.key]; return !!(r && r.checked) || (screen==='planq' && !!(planq && planq.done)); };
+const umKey = b=>[...b.querySelectorAll('.sq')].map(q=>{ const pc = q.querySelector('.pc'); return pc ? q.dataset.sq + (pc.className.match(/pc-\w\w/) || [''])[0] : ''; }).join('') + '|' + boardFlipped();
+function umSq(b, e){
+  const r = b.getBoundingClientRect(); if(e.clientX < r.left || e.clientX >= r.right || e.clientY < r.top || e.clientY >= r.bottom) return null;
+  const col = Math.floor((e.clientX - r.left) / r.width * 8), row = Math.floor((e.clientY - r.top) / r.height * 8);
+  return boardFlipped() ? FILES[7-col] + (row+1) : FILES[col] + (8-row);
+}
+function umDraw(){
+  const b = document.getElementById('board'); if(!b || !umOn()) return;
+  const k = umKey(b); if(k!==UM.key){ UM.key = k; UM.arrows = []; UM.rings = []; }
+  if(umReview()){ UM.arrows = []; UM.rings = []; }
+  let svg = b.parentElement.querySelector(':scope > #userMarks');
+  if(!svg){ svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.id = 'userMarks'; svg.setAttribute('class', 'arrows um'); svg.setAttribute('viewBox', '0 0 480 480'); b.parentElement.appendChild(svg); }
+  const sig = JSON.stringify([UM.arrows, UM.rings]); if(svg.dataset.sig===sig) return; svg.dataset.sig = sig;
+  const col = 'var(--cyan-arrow)';
+  drawArrows(svg, UM.arrows.map(a=>({ ...a, color:col })), 'um_');
+  svg.insertAdjacentHTML('beforeend', UM.rings.map(q=>{ const c = squareCenter(q); return `<circle cx="${c.x}" cy="${c.y}" r="26" fill="none" stroke="${col}" stroke-width="5" opacity=".85"/>`; }).join(''));
+}
+{ let start = null, raf = 0;
+  new MutationObserver(()=>{ if(raf || !umOn()) return; raf = requestAnimationFrame(()=>{ raf = 0; umDraw(); }); }).observe(document.body, { childList:true, subtree:true });
+  const onBoard = e=>umOn() && e.target.closest && e.target.closest('.board-outer') && document.getElementById('board');
+  document.addEventListener('contextmenu', e=>{ if(onBoard(e)) e.preventDefault(); });
+  document.addEventListener('mousedown', e=>{ const b = onBoard(e); if(!b) return;
+    if(e.button===2){ start = umSq(b, e); e.preventDefault(); }
+    else if(e.button===0 && (UM.arrows.length || UM.rings.length)){ UM.arrows = []; UM.rings = []; umDraw(); } }, true);
+  document.addEventListener('mouseup', e=>{ if(e.button!==2 || !start) return; const b = document.getElementById('board'), to = b && umSq(b, e), from = start; start = null;
+    if(!to || umReview()) return;
+    if(to===from){ const i = UM.rings.indexOf(to); i<0 ? UM.rings.push(to) : UM.rings.splice(i, 1); }
+    else { const i = UM.arrows.findIndex(a=>a.from===from && a.to===to); i<0 ? UM.arrows.push({ from, to }) : UM.arrows.splice(i, 1); }
+    umDraw(); });
+}
 { let had = false; new MutationObserver(()=>{ const h = !!openModal(); if(h!==had){ had = h; syncHistory(); } }).observe(document.body, { childList:true, subtree:true }); }   // (a pop-up opened or closed: the levels follow)
 // The page is rebuilt from scratch on every redraw, and redraws come often in the background (an
 // evaluation arriving, your account syncing, the engine starting): a CSS animation on a rebuilt
