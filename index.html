@@ -600,7 +600,7 @@
   .asp-badge{line-height:1.35; transition:background-color .5s, color .5s, border-color .5s, box-shadow .5s;}
   .asp-item.pickable{cursor:pointer; border-radius:6px; margin:-3px -6px; padding:3px 6px; -webkit-tap-highlight-color:transparent;}
   .asp-item.pickable .asp-name{text-decoration:underline dotted var(--text-mute); text-underline-offset:3px;}
-  @media (min-width:1024px) and (min-aspect-ratio:4/3){ .asp-item.pickable .asp-name{text-decoration-color:currentColor; padding-bottom:5px; margin-bottom:-5px;} }   /* (desktop: the dots in the text's colour, as the plans' reasons; room below the text for them: the name's box, which cuts a long name short, clipped them) */   /* (desktop: the grey dots all but vanished; as the plans' reasons) */
+  @media (min-width:1024px) and (min-aspect-ratio:4/3){ .asp-item.pickable .asp-name{padding-bottom:5px; margin-bottom:-5px;} }   /* (desktop: room below the text for the dots, in the same grey as on a phone: the name's box, which cuts a long name short, clipped them) */   /* (desktop: the grey dots all but vanished; as the plans' reasons) */
   .asp-item.pickable.sel .asp-name{text-decoration:none;}   /* the one shown: no underline */
   .asp-item.sel{background:var(--panel-2); box-shadow:inset 0 0 0 1px var(--accent);}
   .asp-item.sel .asp-name{text-decoration:none;}
