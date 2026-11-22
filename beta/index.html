@@ -7480,29 +7480,30 @@ const umClear = ()=>{ if(UM.arrows.length || UM.rings.length){ UM.arrows = []; U
   new MutationObserver(()=>{ if(raf || !umOn()) return; raf = requestAnimationFrame(()=>{ raf = 0; umDraw(); }); }).observe(document.body, { childList:true, subtree:true });
   const onBoard = e=>umOn() && e.target.closest && e.target.closest('.board-outer') && document.getElementById('board');
   document.addEventListener('contextmenu', e=>{ if(onBoard(e)) e.preventDefault(); });
+  window.addEventListener('blur', ()=>{ if(start || t){ start = null; if(t){ clearTimeout(t.timer); t = null; } UM.preview = null; umDraw(); releaseRender(); } });   // (a drawing cut short: the page redraws again)
   document.addEventListener('mousedown', e=>{ const b = onBoard(e); if(!b) return;
-    if(e.button===2){ start = umSq(b, e); e.preventDefault(); if(start){ UM.preview = { from:start, to:start }; umDraw(); } }
+    if(e.button===2){ start = umSq(b, e); e.preventDefault(); if(start){ holdRender(); UM.preview = { from:start, to:start }; umDraw(); } }   // (no redraw of the page while you draw: it would rebuild the board under your arrow)
     else if(e.button===0 && Date.now() - touchAt > 800) umClear(); }, true);   // (a touch's own mouse events: handled by the touch)
   document.addEventListener('mousemove', e=>{ if(!start) return; const b = document.getElementById('board'), sq = b && umSq(b, e);
     const pv = sq ? { from:start, to:sq } : null; if(JSON.stringify(pv)!==JSON.stringify(UM.preview)){ UM.preview = pv; umDraw(); } });
   document.addEventListener('mouseup', e=>{ if(e.button!==2 || !start) return; const b = document.getElementById('board'), to = b && umSq(b, e), from = start; start = null;
-    UM.preview = null; umToggle(from, to); umDraw(); });
+    UM.preview = null; umToggle(from, to); umDraw(); releaseRender(); });
   // touch: one finger; a drag to another square draws (the page doesn't scroll meanwhile), a long press circles
   // (its tap then does nothing else), a plain tap clears the marks and does what it always did
   let t = null, eat = false;
   const pt = e=>e.changedTouches[0];
   document.addEventListener('touchstart', e=>{ touchAt = Date.now(); const b = e.touches.length===1 && onBoard(e); if(!b){ t = null; return; }
     const sq = umSq(b, pt(e)); if(!sq){ t = null; return; }
-    t = { sq, drew:false, held:false, timer: setTimeout(()=>{ if(t && !t.drew){ t.held = true; umToggle(t.sq, t.sq); if(navigator.vibrate) navigator.vibrate(10); } }, 500) }; }, { passive:true });
+    holdRender(); t = { sq, drew:false, held:false, timer: setTimeout(()=>{ if(t && !t.drew){ t.held = true; umToggle(t.sq, t.sq); if(navigator.vibrate) navigator.vibrate(10); } }, 500) }; }, { passive:true });
   document.addEventListener('touchmove', e=>{ if(!t) return; const b = document.getElementById('board'), sq = b && umSq(b, pt(e));
     if(sq && sq!==t.sq && !t.drew){ t.drew = true; clearTimeout(t.timer); if(t.held){ t.held = false; umToggle(t.sq, t.sq); } }   // (a slow start: the circle the hold made goes, it's an arrow)
     if(t.drew){ const pv = sq && sq!==t.sq ? { from:t.sq, to:sq } : null; if(JSON.stringify(pv)!==JSON.stringify(UM.preview)){ UM.preview = pv; umDraw(); } }   // (the arrow follows your finger)
     if(e.cancelable) e.preventDefault(); }, { passive:false });   // (on the board: no scrolling, a drag may become an arrow)
-  document.addEventListener('touchend', e=>{ touchAt = Date.now(); if(!t) return; const x = t; t = null; clearTimeout(x.timer);
+  document.addEventListener('touchend', e=>{ touchAt = Date.now(); if(!t) return; const x = t; t = null; clearTimeout(x.timer); setTimeout(releaseRender, 0);   // (after the tap's own click, if any)
     if(x.drew){ const b = document.getElementById('board'), to = b && umSq(b, pt(e)); UM.preview = null; if(to!==x.sq) umToggle(x.sq, to); umDraw(); eat = true; if(e.cancelable) e.preventDefault(); }   // (back on its first square: nothing)
     else if(x.held){ eat = true; if(e.cancelable) e.preventDefault(); }
     else umClear(); }, { passive:false });
-  document.addEventListener('touchcancel', ()=>{ if(t){ clearTimeout(t.timer); t = null; } if(UM.preview){ UM.preview = null; umDraw(); } });
+  document.addEventListener('touchcancel', ()=>{ if(t){ clearTimeout(t.timer); t = null; releaseRender(); } if(UM.preview){ UM.preview = null; umDraw(); } });
   document.addEventListener('click', e=>{ if(eat){ eat = false; e.stopPropagation(); e.preventDefault(); } }, true);   // (no tap after a drawing or a long press)
   document.addEventListener('touchstart', ()=>{ eat = false; }, { passive:true, capture:true });
 }
