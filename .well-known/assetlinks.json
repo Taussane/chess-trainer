@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "org.chessstrategy.app",
+    "sha256_cert_fingerprints": [
+      "A8:85:09:10:82:8E:B0:5D:21:8B:7E:E1:9E:3B:34:BF:58:DA:A6:12:59:50:E4:C3:3F:3A:13:DA:E6:3A:BD:8B"
+    ]
+  }
+}]

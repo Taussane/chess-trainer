@@ -12,3 +12,9 @@ masters-searches.jsonl
 /*.png
 /pqlean.json
 /lean.json
+# the Android app: build outputs and secrets stay out
+android/**/build/
+android/.gradle/
+android/local.properties
+*.jks
+*.keystore
