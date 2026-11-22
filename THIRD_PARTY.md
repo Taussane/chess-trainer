@@ -14,9 +14,9 @@ The chess engine. The app searches with Stockfish 19 (the "lite, single-threaded
 
 The board's pieces, and the king of the app icon (`icons/`), are "caliente" (`vendor/pieces/caliente/`, with its licence file, embedded in the app by `scripts/piece-css.py`), by Leonid Gordenin "avi" (https://github.com/avi-0/caliente), licensed under Creative Commons Attribution-ShareAlike 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Changes: the files were renamed (`kw.svg` to `wK.svg`, and so on) and stripped of editor data (Inkscape metadata, unused ids, shorter numbers); the drawings are unchanged. The app icons put the white king on a yellow square. These files and icons remain under CC BY-SA 4.0.
 
-## Chess pieces: Cburnett, Merida and Chessnut sets (beta)
+## Chess pieces: Cburnett, Merida and Chessnut sets
 
-Settings, Pieces (beta for now) offers three more sets, served as files from `vendor/pieces/<set>/` (each folder has its licence note), unchanged, from the Lichess project (https://github.com/lichess-org/lila, `public/piece/`): "cburnett" by Colin M.L. Burnett and "merida" by Armando Hernandez Marroquin, both under the GNU General Public License, version 2 or later; "chessnut" by Alexis Luengas, under the Apache License 2.0 (its full text in `vendor/pieces/chessnut/LICENSE.txt`).
+Settings, Pieces offers three more sets, served as files from `vendor/pieces/<set>/` (each folder has its licence note), unchanged, from the Lichess project (https://github.com/lichess-org/lila, `public/piece/`): "cburnett" by Colin M.L. Burnett and "merida" by Armando Hernandez Marroquin, both under the GNU General Public License, version 2 or later; "chessnut" by Alexis Luengas, under the Apache License 2.0 (its full text in `vendor/pieces/chessnut/LICENSE.txt`).
 
 ## scalachess: game phases (Divider)
 

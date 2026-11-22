@@ -554,7 +554,7 @@
   .promo-piece .piece-w{color:var(--piece-w); text-shadow:0 0 1px #000, 0 0 2px rgba(0,0,0,.5);}
   .promo-piece .piece-b{color:var(--piece-b); text-shadow:0 0 1px rgba(255,255,255,.3);}
   .board.asp-tappable .sq:has(.piece-w, .piece-b){cursor:pointer;}
-  svg.arrows{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:5;} svg.arrows.um{z-index:4;}   /* (your own marks: under the app's arrows) */ html.beta .board-outer{-webkit-touch-callout:none; user-select:none; -webkit-user-select:none;}   /* (a long press circles a square: no text selection or menu) */
+  svg.arrows{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:5;} svg.arrows.um{z-index:4;}   /* (your own marks: under the app's arrows) */ .board-outer{-webkit-touch-callout:none; user-select:none; -webkit-user-select:none;}   /* (a long press circles a square: no text selection or menu) */
 
   /* Panel */
   .panel{width:100%; max-width:420px; margin:16px auto 0; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px;}
@@ -7409,12 +7409,12 @@ window.addEventListener('popstate', e=>{
   } finally { histPopping = false; }
   syncHistory();   // (a level the arrows skip: entries put back as needed)
 });
-// Your own marks (beta): with a mouse, right-click a square to circle it, right-drag for an arrow; on a touch screen,
+// Your own marks: with a mouse, right-click a square to circle it, right-drag for an arrow; on a touch screen,
 // a long press circles, a drag draws an arrow (the board takes taps only, never drags). The same mark again: off; a
 // plain click or tap clears them all. In the 5th arrow colour, under the app's own arrows; gone at the next position
 // and in a review.
 const UM = { key:null, arrows:[], rings:[], preview:null };   // (preview: the mark being drawn, shown before you let go)
-const umOn = ()=>BETA_SITE;
+const umOn = ()=>true;
 const umReview = ()=>{ const r = ACTIVITIES.includes(screen) && curPos && store[ctx(screen)] && store[ctx(screen)][curPos.key]; return !!(r && r.checked) || (screen==='planq' && !!(planq && planq.done)); };
 const umKey = b=>[...b.querySelectorAll('.sq')].map(q=>{ const pc = q.querySelector('.pc'); return pc ? q.dataset.sq + (pc.className.match(/pc-\w\w/) || [''])[0] : ''; }).join('') + '|' + boardFlipped();
 function umSq(b, e){
@@ -7509,7 +7509,7 @@ function keepFades(){
 const SETTINGS_LS = 'cst.settings';
 const SET_BASE = { 'board-light':'#D8E1E8', 'board-dark':'#4991BE', 'square-hl':'#9BCD14', pick1:'#279C47', pick2:'#D25450', pick3:'#4E7EE2', system:'#D9B33A', 'cyan-arrow':'#00CEEB', top3:'#CBA0FF' };
 const SET_ARROWS = [['pick1', '1st'], ['pick2', '2nd'], ['pick3', '3rd'], ['system', '4th'], ['cyan-arrow', '5th'], ['top3', '6th']];
-const SET_PIECES = [['caliente', 'Caliente'], ['cburnett', 'Cburnett'], ['merida', 'Merida'], ['chessnut', 'Chessnut']];   // (beta: the piece sets, vendor/pieces/; CSS by scripts/piece-css.py)
+const SET_PIECES = [['caliente', 'Caliente'], ['cburnett', 'Cburnett'], ['merida', 'Merida'], ['chessnut', 'Chessnut']];   // (the piece sets, vendor/pieces/; CSS by scripts/piece-css.py)
 const SET_DEFAULT = { coords:false, pieces:'caliente', boardHue:0, boardSat:100, boardLum:0, lastHue:null, arrows:{}, notation:'intl', lang:null, at:0, v:2 };   // lang null: the device's (French when it's French, else English)
 const SET_VERSION = 2;   // 2: hues in OKLCH (earlier saved hues, in HSL, are dropped)
 const setClean = x=>x && x.v===SET_VERSION ? x : { ...(x || {}), lastHue:null, arrows:{}, v:SET_VERSION };
@@ -7537,7 +7537,7 @@ function applySettings(){
   for(const k of ['board-light', 'board-dark']){ const [L, C, h] = hexOklch(SET_BASE[k]); set(k, boardSet ? oklchCss(Math.min(.98, Math.max(.15, L + (settings.boardLum || 0) / 100)), C * (settings.boardSat ?? 100) / 100, h + settings.boardHue) : null); }
   set('square-hl', settings.lastHue!=null ? hueCss('square-hl', settings.lastHue, .45) : null);
   for(const [k] of SET_ARROWS){ const h = settings.arrows[k]; set(k, h!=null ? hueCss(k, h) : null); }
-  const pcs = document.documentElement.classList.contains('beta') && settings.pieces && settings.pieces!=='caliente' ? settings.pieces : null;   // (beta only for now)
+  const pcs = !window.claude && settings.pieces && settings.pieces!=='caliente' ? settings.pieces : null;   // (the website: the other sets are its files)
   if(pcs) document.documentElement.dataset.pieces = pcs; else delete document.documentElement.dataset.pieces;
 }
 let settingsSyncT = null;
@@ -10027,7 +10027,7 @@ function renderSettings(){
         <div class="board-outer"><div class="board" id="setBoard"></div><svg class="arrows" id="setArrows" viewBox="0 0 480 480"></svg></div>
         <div class="set-chips" id="setChips"></div>
       </div>
-      <div class="seg" role="tablist" aria-label="Settings">${[['board', 'Board'], ...(BETA ? [['pieces', 'Pieces']] : []), ['arrows', 'Arrows'], ['notation', 'Notation']].map(([k, v])=>`<button class="seg-btn${setTab===k ? ' active' : ''}" role="tab" aria-selected="${setTab===k}" data-tab="${k}">${v}</button>`).join('')}</div>
+      <div class="seg" role="tablist" aria-label="Settings">${[['board', 'Board'], ...(DIRECT_LICHESS ? [['pieces', 'Pieces']] : []), ['arrows', 'Arrows'], ['notation', 'Notation']].map(([k, v])=>`<button class="seg-btn${setTab===k ? ' active' : ''}" role="tab" aria-selected="${setTab===k}" data-tab="${k}">${v}</button>`).join('')}</div>
       <section class="pf-card">${setTab==='board' ? `
         ${row('Coordinates', `<button class="set-toggle${settings.coords ? ' on' : ''}" id="setCoords" role="switch" aria-checked="${settings.coords}" aria-label="Coordinates"><span></span></button>`)}
         ${row('Board hue', slider('setBoardHue', -180, 180, settings.boardHue, boardTrack('hue')), 'var(--board-dark)')}
