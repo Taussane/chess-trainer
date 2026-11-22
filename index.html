@@ -2585,7 +2585,7 @@ function drawArrows(svg, list, keyPrefix){
     a.x += nx + dx/len*22; a.y += ny + dy/len*22;
     // like the board marks' arrows (a little thicker), with the same soft shadow
     const ex = b.x + nx - dx/len*12, ey = b.y + ny - dy/len*12;
-    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="8" stroke-linecap="butt" marker-end="url(#${keyPrefix}${i})" filter="url(#${keyPrefix}sh)" opacity=".8"/>`;
+    return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="8" stroke-linecap="butt" marker-end="url(#${keyPrefix}${i})" filter="url(#${keyPrefix}sh)" opacity="${m.opacity ?? .8}"/>`;
   }).join('');
   svg.innerHTML = `<defs>${defs}</defs>${lines}`;
 }
@@ -7442,7 +7442,7 @@ window.addEventListener('popstate', e=>{
 // a long press circles, a drag draws an arrow (the board takes taps only, never drags). The same mark again: off; a
 // plain click or tap clears them all. In the 5th arrow colour, under the app's own arrows; gone at the next position
 // and in a review.
-const UM = { key:null, arrows:[], rings:[] };
+const UM = { key:null, arrows:[], rings:[], preview:null };   // (preview: the mark being drawn, shown before you let go)
 const umOn = ()=>BETA_SITE;
 const umReview = ()=>{ const r = ACTIVITIES.includes(screen) && curPos && store[ctx(screen)] && store[ctx(screen)][curPos.key]; return !!(r && r.checked) || (screen==='planq' && !!(planq && planq.done)); };
 const umKey = b=>[...b.querySelectorAll('.sq')].map(q=>{ const pc = q.querySelector('.pc'); return pc ? q.dataset.sq + (pc.className.match(/pc-\w\w/) || [''])[0] : ''; }).join('') + '|' + boardFlipped();
@@ -7457,10 +7457,16 @@ function umDraw(){
   if(umReview()){ UM.arrows = []; UM.rings = []; }
   let svg = b.parentElement.querySelector(':scope > #userMarks');
   if(!svg){ svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.id = 'userMarks'; svg.setAttribute('class', 'arrows um'); svg.setAttribute('viewBox', '0 0 480 480'); b.parentElement.appendChild(svg); }
-  const sig = JSON.stringify([UM.arrows, UM.rings]); if(svg.dataset.sig===sig) return; svg.dataset.sig = sig;
-  const col = 'var(--cyan-arrow)';
-  drawArrows(svg, UM.arrows.map(a=>({ ...a, color:col })), 'um_');
-  svg.insertAdjacentHTML('beforeend', UM.rings.map(q=>{ const c = squareCenter(q); return `<circle cx="${c.x}" cy="${c.y}" r="26" fill="none" stroke="${col}" stroke-width="5" opacity=".85"/>`; }).join(''));
+  const pv = umReview() ? null : UM.preview;
+  const sig = JSON.stringify([UM.arrows, UM.rings, pv]); if(svg.dataset.sig===sig) return; svg.dataset.sig = sig;
+  // what letting go would do: a new mark shown faint, a mark it would remove faded further
+  const col = 'var(--cyan-arrow)', ring = pv && pv.from===pv.to, ar = pv && !ring;
+  const arrows = UM.arrows.map(a=>({ ...a, color:col, opacity: ar && a.from===pv.from && a.to===pv.to ? .25 : .8 }));
+  if(ar && !UM.arrows.some(a=>a.from===pv.from && a.to===pv.to)) arrows.push({ ...pv, color:col, opacity:.5 });
+  const rings = UM.rings.map(q=>({ q, o: ring && q===pv.from ? .25 : .85 }));
+  if(ring && !UM.rings.includes(pv.from)) rings.push({ q: pv.from, o:.5 });
+  drawArrows(svg, arrows, 'um_');
+  svg.insertAdjacentHTML('beforeend', rings.map(({ q, o })=>{ const c = squareCenter(q); return `<circle cx="${c.x}" cy="${c.y}" r="26" fill="none" stroke="${col}" stroke-width="5" opacity="${o}"/>`; }).join(''));
 }
 const umToggle = (from, to)=>{
   if(!from || !to || umReview()) return;
@@ -7473,10 +7479,12 @@ const umClear = ()=>{ if(UM.arrows.length || UM.rings.length){ UM.arrows = []; U
   const onBoard = e=>umOn() && e.target.closest && e.target.closest('.board-outer') && document.getElementById('board');
   document.addEventListener('contextmenu', e=>{ if(onBoard(e)) e.preventDefault(); });
   document.addEventListener('mousedown', e=>{ const b = onBoard(e); if(!b) return;
-    if(e.button===2){ start = umSq(b, e); e.preventDefault(); }
+    if(e.button===2){ start = umSq(b, e); e.preventDefault(); if(start){ UM.preview = { from:start, to:start }; umDraw(); } }
     else if(e.button===0 && Date.now() - touchAt > 800) umClear(); }, true);   // (a touch's own mouse events: handled by the touch)
+  document.addEventListener('mousemove', e=>{ if(!start) return; const b = document.getElementById('board'), sq = b && umSq(b, e);
+    const pv = sq ? { from:start, to:sq } : null; if(JSON.stringify(pv)!==JSON.stringify(UM.preview)){ UM.preview = pv; umDraw(); } });
   document.addEventListener('mouseup', e=>{ if(e.button!==2 || !start) return; const b = document.getElementById('board'), to = b && umSq(b, e), from = start; start = null;
-    umToggle(from, to); });
+    UM.preview = null; umToggle(from, to); umDraw(); });
   // touch: one finger; a drag to another square draws (the page doesn't scroll meanwhile), a long press circles
   // (its tap then does nothing else), a plain tap clears the marks and does what it always did
   let t = null, eat = false;
@@ -7486,12 +7494,13 @@ const umClear = ()=>{ if(UM.arrows.length || UM.rings.length){ UM.arrows = []; U
     t = { sq, drew:false, held:false, timer: setTimeout(()=>{ if(t && !t.drew){ t.held = true; umToggle(t.sq, t.sq); if(navigator.vibrate) navigator.vibrate(10); } }, 500) }; }, { passive:true });
   document.addEventListener('touchmove', e=>{ if(!t) return; const b = document.getElementById('board'), sq = b && umSq(b, pt(e));
     if(sq && sq!==t.sq && !t.drew){ t.drew = true; clearTimeout(t.timer); if(t.held){ t.held = false; umToggle(t.sq, t.sq); } }   // (a slow start: the circle the hold made goes, it's an arrow)
+    if(t.drew){ const pv = sq && sq!==t.sq ? { from:t.sq, to:sq } : null; if(JSON.stringify(pv)!==JSON.stringify(UM.preview)){ UM.preview = pv; umDraw(); } }   // (the arrow follows your finger)
     if(e.cancelable) e.preventDefault(); }, { passive:false });   // (on the board: no scrolling, a drag may become an arrow)
   document.addEventListener('touchend', e=>{ touchAt = Date.now(); if(!t) return; const x = t; t = null; clearTimeout(x.timer);
-    if(x.drew){ const b = document.getElementById('board'); umToggle(x.sq, b && umSq(b, pt(e))); eat = true; if(e.cancelable) e.preventDefault(); }
+    if(x.drew){ const b = document.getElementById('board'), to = b && umSq(b, pt(e)); UM.preview = null; if(to!==x.sq) umToggle(x.sq, to); umDraw(); eat = true; if(e.cancelable) e.preventDefault(); }   // (back on its first square: nothing)
     else if(x.held){ eat = true; if(e.cancelable) e.preventDefault(); }
     else umClear(); }, { passive:false });
-  document.addEventListener('touchcancel', ()=>{ if(t){ clearTimeout(t.timer); t = null; } });
+  document.addEventListener('touchcancel', ()=>{ if(t){ clearTimeout(t.timer); t = null; } if(UM.preview){ UM.preview = null; umDraw(); } });
   document.addEventListener('click', e=>{ if(eat){ eat = false; e.stopPropagation(); e.preventDefault(); } }, true);   // (no tap after a drawing or a long press)
   document.addEventListener('touchstart', ()=>{ eat = false; }, { passive:true, capture:true });
 }
