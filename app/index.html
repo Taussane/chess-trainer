@@ -1016,6 +1016,7 @@
   .card, .routine, .panel, .mg-card, .pf-card, .chart-box, .rush-stat:not(.rush-total), .rush-chart, .test-item, .gp-row, .title-chip, .flash-note, .depth-note, .lang-menu, .modal-box, .xpg-chart{border-color:transparent;}
   .card{border-radius:14px; padding:14px 16px; box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 6px 18px rgba(0,0,0,.22); transition:background .15s, transform .15s;}
   .card:hover{background:var(--panel-2); transform:translateY(-1px);}
+  .card.xp-entry:hover{background:var(--accent); border-color:transparent;}   /* (the explorer's yellow card stays yellow: only brighter) */
   .routine{background:linear-gradient(180deg, var(--panel-2), var(--panel)) border-box; border-radius:16px; box-shadow:0 10px 28px rgba(0,0,0,.28);}
   .panel, .mg-card, .pf-card, .chart-box, .rush-chart, .test-item{border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.18);}
   .gp-row{background:var(--panel-2);} .gp-row:hover{background:#2A333E;}
@@ -7443,18 +7444,19 @@ const umToggle = (from, to)=>{
   else { const i = UM.arrows.findIndex(a=>a.from===from && a.to===to); i<0 ? UM.arrows.push({ from, to }) : UM.arrows.splice(i, 1); }
   umDraw(); };
 const umClear = ()=>{ if(UM.arrows.length || UM.rings.length){ UM.arrows = []; UM.rings = []; umDraw(); } };
-{ let start = null, raf = 0, touchAt = 0;
+{ let start = null, moved = false, raf = 0, touchAt = 0;
   new MutationObserver(()=>{ if(raf || !umOn()) return; raf = requestAnimationFrame(()=>{ raf = 0; umDraw(); }); }).observe(document.body, { childList:true, subtree:true });
   const onBoard = e=>umOn() && e.target.closest && e.target.closest('.board-outer') && document.getElementById('board');
   document.addEventListener('contextmenu', e=>{ if(onBoard(e)) e.preventDefault(); });
   window.addEventListener('blur', ()=>{ if(start || t){ start = null; if(t){ clearTimeout(t.timer); t = null; } UM.preview = null; umDraw(); releaseRender(); } });   // (a drawing cut short: the page redraws again)
   document.addEventListener('mousedown', e=>{ const b = onBoard(e); if(!b) return;
-    if(e.button===2){ start = umSq(b, e); e.preventDefault(); if(start){ holdRender(); UM.preview = { from:start, to:start }; umDraw(); } }   // (no redraw of the page while you draw: it would rebuild the board under your arrow)
+    if(e.button===2){ start = umSq(b, e); moved = false; e.preventDefault(); if(start) holdRender(); }   // (no redraw of the page while you draw: it would rebuild the board under your arrow)
     else if(e.button===0 && Date.now() - touchAt > 800) umClear(); }, true);   // (a touch's own mouse events: handled by the touch)
   document.addEventListener('mousemove', e=>{ if(!start) return; const b = document.getElementById('board'), sq = b && umSq(b, e);
-    const pv = sq ? { from:start, to:sq } : null; if(JSON.stringify(pv)!==JSON.stringify(UM.preview)){ UM.preview = pv; umDraw(); } });
+    if(sq && sq!==start) moved = true;
+    const pv = sq && sq!==start ? { from:start, to:sq } : null; if(JSON.stringify(pv)!==JSON.stringify(UM.preview)){ UM.preview = pv; umDraw(); } });
   document.addEventListener('mouseup', e=>{ if(e.button!==2 || !start) return; const b = document.getElementById('board'), to = b && umSq(b, e), from = start; start = null;
-    UM.preview = null; umToggle(from, to); umDraw(); releaseRender(); });
+    UM.preview = null; if(!(moved && to===from)) umToggle(from, to); umDraw(); releaseRender(); });   // (an arrow begun and brought back: nothing, the circle stays)
   // touch: one finger; a drag to another square draws (the page doesn't scroll meanwhile), a long press circles
   // (its tap then does nothing else), a plain tap clears the marks and does what it always did
   let t = null, eat = false;
