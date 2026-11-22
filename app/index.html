@@ -4929,7 +4929,7 @@ function reviewRowHtml(m){
   const tags = m.historical ? [pos().gameId && (myGames.find(g=>g.id===pos().gameId) || {}).me===pos().side ? 'Your move' : 'Game move'] : [];
   const labelStyle = m.outcome ? `color:${labelColor(label)};` : '';
   return `<div class="review-row${label==='Best' ? ' best-row' : ''}">
-      <div class="move-tag"><span class="num">${m.num}</span><span class="move-chip" style="background:${m.color}">${fmtSan(m.san, true, pos().side)}</span>${tags.length ? `<span class="badges">${tags.map(t=>`<span class="badge">${t}</span>`).join('')}</span>` : ''}</div>
+      <div class="move-tag"><span class="num">${m.num}</span><span class="move-chip" style="background:${m.color}">${chipSan(m.san, pos().side)}</span>${tags.length ? `<span class="badges">${tags.map(t=>`<span class="badge">${t}</span>`).join('')}</span>` : ''}</div>
       <div class="move-result"><span class="grade" style="${labelStyle}">${label}</span><span class="move-eval">${m.outcome ? fmtSigned(m.outcome) : m.na ? '—' : '…'}</span></div>
     </div>`;
 }
@@ -4941,7 +4941,7 @@ function miniRowHtml(m, highlight, fadeIn){
   const best = highlight && label==='Best';
   return `<div class="mini-row${best ? ' best-row' : ''}${best && fadeIn ? ' best-in' : ''}${m.muted ? ' muted' : ''}" data-key="${m.from}${m.to}">
       <span class="num">${m.num}</span>
-      <span class="move-chip" style="background:${m.color}">${fmtSan(m.san, true, pos().side)}</span>
+      <span class="move-chip" style="background:${m.color}">${chipSan(m.san, pos().side)}</span>
       <span class="mini-result"><span class="mini-label" style="${m.outcome ? 'color:'+labelColor(label) : ''}">${label}</span><span class="move-eval">${m.outcome ? fmtSigned(m.outcome) : m.na ? '' : '…'}</span></span>
     </div>`;
 }
@@ -7018,7 +7018,7 @@ function renderCandidates(){
   s.picks.forEach((m,i)=>{
     const row = document.createElement('div');
     row.className = 'review-row pick-row';
-    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${cols[m.slot]}">${fmtSan(m.san, true, pos().side)}</span></div>`;
+    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${cols[m.slot]}">${chipSan(m.san, pos().side)}</span></div>`;
     const rm = document.createElement('button');
     rm.className = 'del-btn'; rm.textContent = '✕';
     rm.setAttribute('aria-label', 'Remove ' + fmtSan(m.san, false));
@@ -7267,7 +7267,7 @@ function renderFinal(){
     const row = document.createElement('div');
     row.className = 'rate-row';
     row.dataset.id = m.id; row.dataset.hint = m.id;
-    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${m.color}">${fmtSan(m.san, true, pos().side)}</span></div><span class="drag-handle" aria-hidden="true">⠿</span>`;
+    row.innerHTML = `<div class="move-tag"><span class="num">${i+1}</span><span class="move-chip" style="background:${m.color}">${chipSan(m.san, pos().side)}</span></div><span class="drag-handle" aria-hidden="true">⠿</span>`;
     rankedEl.appendChild(row);
     fadeAt(row, INTRO_START + i*INTRO_STEP);
   });
@@ -7569,6 +7569,9 @@ let localPieces = null;   // your language's piece letters (the app's language: 
 const FIGURINES = { K:'♚', Q:'♛', R:'♜', B:'♝', N:'♞' };   // the filled glyphs (where no picture can go: labels read aloud)
 // (html: the board's own piece, in the colour of the side that moved: side 'w'/'b', White when not given)
 const figHtml = (x, side, cls)=>`<span class="fig pc pc-${side==='b' ? 'b' : 'w'}${x}${cls ? ' ' + cls : ''}" aria-hidden="true"></span>`;
+// A move of the position's side shown on its own (Candidate moves, Move selection): Black's with the usual dots, so
+// …Qxc4 can't be read as White's
+const chipSan = (san, side)=>(side==='b' ? '…' : '') + fmtSan(san, true, side);
 function fmtSan(san, html = true, side){
   if(!san || settings.notation==='intl') return san;
   const sym = settings.notation==='symbols', map = sym ? FIGURINES : localPieces ? Object.fromEntries('KQRBN'.split('').map((k, i)=>[k, localPieces[i]])) : null;
