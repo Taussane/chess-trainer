@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Writes the board's piece images (the Caliente set, vendor/pieces/caliente/) into app/index.html, as
-# base64 data URIs between /*PIECE_CSS*/ and /*END PIECE_CSS*/. Run after changing the SVGs.
+# data URIs (and the other sets, by their files' addresses) between /*PIECE_CSS*/ and /*END PIECE_CSS*/. Run after changing the SVGs.
 import base64, pathlib, re
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 APP = ROOT / 'app/index.html'
@@ -12,7 +12,15 @@ for c in 'wb':
         assert "'" not in txt
         # URL-encoded rather than base64: a third smaller, and it compresses better
         enc = txt.replace('"', "'").replace('%', '%25').replace('#', '%23').replace('<', '%3C').replace('>', '%3E').replace('{', '%7B').replace('}', '%7D')
-        rules.append(f'.pc-{c}{t}{{background-image:url("data:image/svg+xml,{enc}")}}')
+        rules.append(f'.pc-{c}{t}, .pset-caliente.pset-caliente .pc-{c}{t}{{background-image:url("data:image/svg+xml,{enc}")}}')
+# The other sets (Settings, Pieces): served as files, chosen with html[data-pieces=…]; .pset-… shows one in a
+# preview (doubled: it wins over the set chosen for the page)
+SETS = ['cburnett', 'merida', 'chessnut']
+for k in SETS:
+    for c in 'wb':
+        for t in 'KQRBNP':
+            assert (ROOT / f'vendor/pieces/{k}/{c}{t}.svg').exists()
+            rules.append(f'html[data-pieces={k}] .pc-{c}{t}, .pset-{k}.pset-{k} .pc-{c}{t}{{background-image:url("/vendor/pieces/{k}/{c}{t}.svg")}}')
 css = '\n  '.join(rules)
 src = APP.read_text()
 src = re.sub(r'/\*PIECE_CSS\*/.*?/\*END PIECE_CSS\*/', lambda m: '/*PIECE_CSS*/\n  ' + css + '\n  /*END PIECE_CSS*/', src, flags=re.S)
