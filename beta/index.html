@@ -662,7 +662,7 @@
 
   .prompt{margin:0; font-size:1rem; line-height:1.45;}
   /* Repertoire (beta): the line so far, the prompt, the study's comment; the Review's list */
-  .wrap.ex > #app > .xp-sides.rep-mv{justify-content:flex-start; font-size:0.86rem; color:var(--text-mute);} .rep-mv > span{flex:1; min-width:0; overflow-x:hidden; white-space:nowrap; scrollbar-width:none;}   /* (the line so far, above the panel: one line, its end in view) */
+  .wrap.ex > #app > .xp-sides.rep-mv{justify-content:flex-start; font-size:0.86rem; color:var(--text-mute);} .rep-mv > span{flex:1; min-width:0; overflow-x:auto; overscroll-behavior-x:contain; white-space:nowrap; scrollbar-width:none;} .rep-mv > span::-webkit-scrollbar{display:none;}   /* (the line so far, above the panel: one line, its end in view, scrolls sideways when long) */
   .btn.secondary.rep-tg.on{background:var(--accent); color:#1b1b1b;} .rep-tg.rep-none svg{opacity:.4;}
   .title-chip.rep-sel{appearance:none; -webkit-appearance:none; padding-right:30px; background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center;} .title-chip + .title-chip.rep-sel{margin-left:8px;}   /* (Comment, Marks, Show move: on, in yellow) */
   .rep-prompt.rep-wrong{color:var(--bad);} .rep-prompt.rep-done{color:var(--good);}
@@ -11294,7 +11294,15 @@ function renderRepertoire(){
       <p class="prompt rep-prompt${d && d.msg ? ' rep-wrong' : d && d.done ? ' rep-done' : ''}">${prompt}</p>
       <p class="rep-note">${showNote ? escHtml(note) : ''}</p>
       <div class="actions-row split">${actions}</div>`, [])}`;
-  const mvEl = document.getElementById('repMv'); if(mvEl) mvEl.scrollLeft = mvEl.scrollWidth;   // (a long line: its end)
+  // a long line: its end in view, or where you scrolled it to (kept through redraws, until the next move); the
+  // mouse wheel scrolls it sideways
+  const mvEl = document.getElementById('repMv');
+  if(mvEl && d){
+    const n = d.sans.length; if(!d.mvScroll || d.mvScroll.n!==n) d.mvScroll = { n, x:null };
+    mvEl.scrollLeft = d.mvScroll.x==null ? mvEl.scrollWidth : d.mvScroll.x;
+    mvEl.onscroll = ()=>{ d.mvScroll.x = mvEl.scrollLeft >= mvEl.scrollWidth - mvEl.clientWidth - 2 ? null : mvEl.scrollLeft; };
+    mvEl.onwheel = e=>{ if(mvEl.scrollWidth <= mvEl.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; mvEl.scrollLeft += e.deltaY; e.preventDefault(); };
+  }
   const g = new Chess(p.fen), bs = boardObjFromGame(g);
   const live = d && !d.done && !d.wait && !d.wrong && p.side===d.c;
   const dest = live && d.sel ? g.moves({ square:d.sel, verbose:true }).map(m=>m.to) : [];
