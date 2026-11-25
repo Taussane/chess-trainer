@@ -44,8 +44,8 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   await tryMove('d2', 'd4'); await p.waitForFunction(() => /^Playable/.test(rep.drill.msg), null, { timeout: 60000 }).catch(() => {});
   check('the explanation shown while the move is on the board', await p.evaluate(() => !!rep.drill.wrong && /^Playable/.test(document.querySelector('.layer:not(.ghost) .rep-prompt').textContent)), null);
   await p.click('#repRetry');
-  const t0 = await p.evaluate(() => ({ back: repPos().fen === rep.drill.fens[0], btns: [...document.querySelectorAll('.layer:not(.ghost) .actions-row button')].map(b => b.id + (b.disabled ? ':off' : '')) }));
-  check('Try again: the position back, the toggles (Comment off: no comment at the start)', t0.back && t0.btns.join() === 'repComment:off,repMarks,repShow,repSkip', t0);
+  const t0 = await p.evaluate(() => ({ back: repPos().fen === rep.drill.fens[0], btns: [...document.querySelectorAll('.layer:not(.ghost) .actions-row button')].map(b => b.id + (b.disabled ? ':off' : '') + (b.classList.contains('rep-none') ? ':none' : '')) }));
+  check('Try again: the position back, the toggles (no comment at the start: still switchable, faded)', t0.back && t0.btns.join() === 'repComment:none,repMarks,repShow,repSkip', t0);
   await p.click('#repMarks');
   check('Marks: the study\'s arrows', await p.evaluate(() => document.querySelectorAll('#arrows line').length >= 1 && repStore.o.marks), null);
   await p.click('#repMarks');
