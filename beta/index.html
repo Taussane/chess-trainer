@@ -11201,9 +11201,9 @@ function repTry(mv){
 // "weaker"; less: "playable, but not your move".
 function repWhyNot(d, fen, m){
   const main = repMain(d.c, repKey(fen)), g0 = new Chess(fen), mm = main && g0.move(main[0]); if(!mm) return;
-  const uci = x=>x.from + x.to + (x.promotion || ''), tries = d.tries;
+  const uci = x=>x.from + x.to + (x.promotion || ''), wrong = d.wrong;   // (the explanation belongs to this wrong move, while it's on the board)
   bgEval(fen, { searchmoves:uci(m) + ' ' + uci(mm), multipv:2, movetime:700, depth:LIVE_DEPTH }).then(r=>{
-    if(evalFailed(r) || !r.lines || rep.drill!==d || d.tries!==tries) return;
+    if(evalFailed(r) || !r.lines || rep.drill!==d || d.wrong!==wrong) return;
     const cp = l=>l ? (l.mate!=null ? Math.sign(l.mate) * 1e4 : l.cp) : null;
     const lw = r.lines.find(l=>l.uci===uci(m)), lm = r.lines.find(l=>l.uci===uci(mm));
     if(!lw || !lm) return;

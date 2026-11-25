@@ -37,6 +37,12 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   await p.waitForFunction(() => rep.drill.msg !== 'Not your move here.', null, { timeout: 60000 }).catch(() => {});
   const w1b = await p.evaluate(() => rep.drill.msg);
   check('1.d4 instead of 1.e4: playable, not your move', /^Playable, but not your move/.test(w1b), w1b);
+  // Try again right away: the explanation still on its way stays with the wrong move, never over "Your move?"
+  await tryMove('g1', 'f3'); await p.click('#repRetry'); await p.waitForTimeout(2500);
+  const t1 = await p.evaluate(() => ({ msg: rep.drill.msg, prompt: document.querySelector('.layer:not(.ghost) .rep-prompt').textContent }));
+  check('Try again before the explanation: "Your move?" stays', !t1.msg && t1.prompt === 'Your move?', t1);
+  await tryMove('d2', 'd4'); await p.waitForFunction(() => /^Playable/.test(rep.drill.msg), null, { timeout: 60000 }).catch(() => {});
+  check('the explanation shown while the move is on the board', await p.evaluate(() => !!rep.drill.wrong && /^Playable/.test(document.querySelector('.layer:not(.ghost) .rep-prompt').textContent)), null);
   await p.click('#repRetry');
   const t0 = await p.evaluate(() => ({ back: repPos().fen === rep.drill.fens[0], btns: [...document.querySelectorAll('.layer:not(.ghost) .actions-row button')].map(b => b.id + (b.disabled ? ':off' : '')) }));
   check('Try again: the position back, the toggles (Comment off: no comment at the start)', t0.back && t0.btns.join() === 'repComment:off,repMarks,repShow,repSkip', t0);
