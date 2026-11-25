@@ -11237,7 +11237,7 @@ function repWhyNot(d, fen, m){
 }
 function repMovesText(d){
   const out = []; let no = 1, w = true;
-  d.sans.forEach(s=>{ out.push((w ? no + '.' : '') + '<b>' + escHtml(s) + '</b>'); if(!w) no++; w = !w; });   // (the moves in bold, the numbers as they are)
+  d.sans.forEach(s=>{ out.push((w ? no + '. ' : '') + '<b>' + escHtml(s) + '</b>'); if(!w) no++; w = !w; });   // (the moves in bold, the numbers as they are)
   return out.join(' ');
 }
 function repSummary(d){
