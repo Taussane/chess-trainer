@@ -659,6 +659,17 @@
   .score-label{color:var(--text-mute); font-size:0.86rem;}
 
   .prompt{margin:0; font-size:1rem; line-height:1.45;}
+  /* Repertoire (beta): the line so far, the prompt, the study's comment; the Review's list */
+  .rep-count{margin:0; font-size:0.8rem; color:var(--text-mute); font-variant-numeric:tabular-nums;}
+  .rep-line{margin:0; font-size:0.86rem; color:var(--text-mute); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; direction:ltr;} .rep-line b{color:var(--text); font-weight:600;}
+  .rep-prompt.rep-wrong{color:var(--bad);} .rep-prompt.rep-done{color:var(--good);}
+  .rep-note{margin:0; min-height:2.9em; font-size:0.88rem; line-height:1.45; color:var(--text-mute); overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;}
+  .rep-review{display:flex; flex-direction:column; gap:10px; max-width:720px; width:100%;} .rep-review h2{margin:14px 0 0; font-size:1.05rem;}
+  .rep-item{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;}
+  .rep-item-top{display:flex; align-items:center; gap:8px;} .rep-n{margin-left:auto; color:var(--text-mute); font-size:0.82rem;}
+  .rep-tag{font-size:0.74rem; font-weight:600; border:1px solid var(--border); border-radius:10px; padding:1px 8px;} .rep-tag.rep-punish{border-color:var(--accent); color:var(--accent);}
+  .rep-moves{margin:0; font-size:0.92rem;} .rep-sub{margin:0; font-size:0.84rem; color:var(--text-mute);}
+  .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
   .actions-row.pending{visibility:hidden;}
   .fade-in{animation:fadeIn .35s ease-out both;}
@@ -2483,7 +2494,7 @@ function moveOutcome(baseFen, uci, evalData){
 
 
 // Board seen from the side to play: when Black is to play, Black's pieces sit at the bottom.
-function boardFlipped(){ return screen==='explorer' && explorer ? explorer.flip : !settingsPreview && pos().side==='b'; }
+function boardFlipped(){ return screen==='repertoire' ? repFlip() : screen==='explorer' && explorer ? explorer.flip : !settingsPreview && pos().side==='b'; }
 function squareCenter(sq){
   const file = FILES.indexOf(sq[0]);
   const rank = parseInt(sq[1],10);
@@ -3050,7 +3061,7 @@ const TIME_CAP_MS = 15 * 60e3;   // a position left open longer than that (on sc
 // the time from a position first shown to its Check (s.t0, s.tc), or null
 const timeSpent = s=>{ if(!s || s.t0==null) return null; const ms = (s.tc!=null ? s.tc : activeNow()) - s.t0; return ms > 0 && ms <= TIME_CAP_MS ? Math.round(ms) : null; };
 // `store`: per track and per position, so leaving an exercise and coming back keeps what was entered.
-function pos(){ return screen==='explorer' && explorer ? explorerPos() : screen==='planq' && planq ? planq.p : curPos; }
+function pos(){ return screen==='repertoire' ? repPos() : screen==='explorer' && explorer ? explorerPos() : screen==='planq' && planq ? planq.p : curPos; }
 function st(activity){
   ensureTrack(ctx(activity));
   const p = pos(), bucket = store[ctx(activity)];
@@ -5025,6 +5036,7 @@ const SIDE_ICONS = {
   tests: actIcon('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 14h9"/>'),
   planq: actIcon('<path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/>'),
   explorer: actIcon('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'),
+  repertoire: actIcon('<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6"/>'),
   support: actIcon('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'),
 };
 // Leaving an exercise from the sidebar: as its own back arrow does (the routine remembers where it was).
@@ -5066,7 +5078,7 @@ function renderSide(){
     <div class="side-sec">Rush</div>
     ${item('rush:routine', RUSH_ICON, 'Mixed rush', progressLoaded && rushBest('mixed')!=null ? rushBest('mixed') : '', !rushCan('mixed'))}
     ${ROUTINE.map(a=>item('rush:' + a, `<span class="side-ic">${ACT_GLYPHS[a]}<span class="side-chrono">${RUSH_ICON}</span></span>`, ACT_NAMES[a], progressLoaded && rushBest(a)!=null ? rushBest(a) : '', !rushCan(a))).join('')}
-    <div class="side-sec">More</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}
+    <div class="side-sec">More</div>${item('explorer', SIDE_ICONS.explorer, 'Strategy explorer')}${repOn() ? item('repertoire', SIDE_ICONS.repertoire, 'Repertoire') : ''}
     <div class="side-sec">You</div>
     ${item('account', '<img class="side-app-icon" src="icons/icon.svg" alt="" aria-hidden="true">', displayName() || 'Profile')}
     ${item('settings', SIDE_ICONS.settings, 'Settings')}
@@ -5724,6 +5736,8 @@ function renderHome(){
         </button>`; }).join('')}
       <button class="card xp-entry" id="xpOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.explorer}</span>
           <span><span class="card-title">Strategy explorer</span><span class="card-desc">Imbalances, plans and game analysis.</span></span></button>
+      ${repOn() ? `<button class="card xp-entry" id="repOpen"><span class="card-glyph" aria-hidden="true">${SIDE_ICONS.repertoire}</span>
+          <span><span class="card-title">Repertoire</span><span class="card-desc">Your openings, line by line.</span></span></button>` : ''}
       ${isLand() ? donateHtml : ''}
     </div>
     ${isLand() ? '' : donateHtml}
@@ -5735,6 +5749,7 @@ function renderHome(){
   { const t = document.getElementById('rushToggle'); if(t) t.onclick = ()=>setRushOn(!rushOn); }
   document.getElementById('accountBtn').onclick = ()=>{ screen = 'account'; render(); };
   const xpOpen = document.getElementById('xpOpen'); if(xpOpen) xpOpen.onclick = ()=>{ screen = 'explorer'; render(); };
+  const repOpen = document.getElementById('repOpen'); if(repOpen) repOpen.onclick = ()=>{ screen = 'repertoire'; render(); };
   const rb = document.getElementById('routineBtn'); if(rb) rb.onclick = rushOn ? ()=>rushStart('mixed') : startRoutine;
   prefetchHome();
   progressJustLoaded = false;
@@ -11020,6 +11035,293 @@ function renderExplorer(){
   app.querySelectorAll('.panel .layer:not(.ghost) [data-mode]').forEach(b=>b.onclick = ()=>{ x.mode = b.dataset.mode; x.aspView = null; x.flash = {}; render(); });
   wireGameReview(x);
 }
+// ================= Repertoire (beta; the owner's own repertoire for now) =================
+// Your openings, from your Lichess studies (scripts/repertoire.py: one tree per colour, positions keyed so that
+// transpositions meet). A drill starts at a position where it's your move, the one most due, and goes to the end of
+// the line: you play your move, the opponent answers with the reply whose line most needs practice. A wrong move is
+// only said, you try again; Show move draws it. Each position you play comes back after 1, 3, 7, 21, 60, 150 days
+// (found first time: the next gap; after a retry: 1 day; shown: first in the pile). Nothing due: the next ones in
+// the same order, a line just played at the back. Your games: a Review lists the replies you have no line for (with
+// a move to add) and where you left your line.
+const REPERTOIRE = /*REPERTOIRE*/{"w":{"n":{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq":[["e4",1,0,0]],"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq":[["e5",0,1,0],["c5",0,2,1],["d5",0,3,2],["e6",0,4,3],["d6",0,5,4]],"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq":[["Nf3",1,6,0]],"rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq":[["Nc6",0,7,0],["Nf6",0,8,5],["d6",0,9,6]],"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq":[["d4",1,10,0]],"r1bqkbnr/pppp1ppp/2n5/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq":[["exd4",0,-1,0],["d6",0,11,7],["Nf6",0,12,7],["Nxd4",0,13,7]],"r1bqkbnr/pppp1ppp/2n5/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq":[["Nxd4",1,-1,0]],"r1bqkbnr/pppp1ppp/2n5/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq":[["Bc5",0,14,8],["Qf6",0,15,8],["Nf6",0,16,9],["Nxd4",0,17,10]],"r1bqk1nr/pppp1ppp/2n5/2b5/3NP3/8/PPP2PPP/RNBQKB1R w KQkq":[["Be3",1,18,8]],"r1bqk1nr/pppp1ppp/2n5/2b5/3NP3/4B3/PPP2PPP/RN1QKB1R b KQkq":[["Qf6",0,-1,8],["Nf6",0,-1,8]],"r1b1k1nr/pppp1ppp/2n2q2/2b5/3NP3/4B3/PPP2PPP/RN1QKB1R w KQkq":[["c3",1,-1,8]],"r1b1k1nr/pppp1ppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R b KQkq":[["Nge7",0,19,8]],"r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq":[["Bc4",1,20,8]],"r1b1k2r/ppppnppp/2n2q2/2b5/2BNP3/2P1B3/PP3PPP/RN1QK2R b KQkq":[["O-O",0,-1,8]],"r1b2rk1/ppppnppp/2n2q2/2b5/2BNP3/2P1B3/PP3PPP/RN1QK2R w KQ":[["O-O",1,-1,8]],"r1bqk2r/pppp1ppp/2n2n2/2b5/3NP3/4B3/PPP2PPP/RN1QKB1R w KQkq":[["Nxc6",1,-1,8]],"r1bqk2r/pppp1ppp/2N2n2/2b5/4P3/4B3/PPP2PPP/RN1QKB1R b KQkq":[["bxc6",0,-1,8],["dxc6",0,-1,8]],"r1bqk2r/p1pp1ppp/2p2n2/2b5/4P3/4B3/PPP2PPP/RN1QKB1R w KQkq":[["Bxc5",1,-1,8]],"r1bqk2r/ppp2ppp/2p2n2/2b5/4P3/4B3/PPP2PPP/RN1QKB1R w KQkq":[["Qxd8+",1,-1,8]],"r1bQk2r/ppp2ppp/2p2n2/2b5/4P3/4B3/PPP2PPP/RN2KB1R b KQkq":[["Kxd8",0,-1,8]],"r1bk3r/ppp2ppp/2p2n2/2b5/4P3/4B3/PPP2PPP/RN2KB1R w KQ":[["Bxc5",1,-1,8]],"r1b1kbnr/pppp1ppp/2n2q2/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq":[["Be3",1,-1,8],["c3",2,-1,8]],"r1b1kbnr/pppp1ppp/2n2q2/8/3NP3/4B3/PPP2PPP/RN1QKB1R b KQkq":[["Bc5",0,-1,8]],"r1b1kbnr/pppp1ppp/2n2q2/8/3NP3/2P5/PP3PPP/RNBQKB1R b KQkq":[["Bc5",0,-1,8]],"r1b1k1nr/pppp1ppp/2n2q2/2b5/3NP3/2P5/PP3PPP/RNBQKB1R w KQkq":[["Be3",1,-1,8]],"r1bqkb1r/pppp1ppp/2n2n2/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq":[["Nxc6",1,-1,9]],"r1bqkb1r/pppp1ppp/2N2n2/8/4P3/8/PPP2PPP/RNBQKB1R b KQkq":[["bxc6",0,-1,9],["dxc6",0,21,9]],"r1bqkb1r/p1pp1ppp/2p2n2/8/4P3/8/PPP2PPP/RNBQKB1R w KQkq":[["e5",1,22,9]],"r1bqkb1r/p1pp1ppp/2p2n2/4P3/8/8/PPP2PPP/RNBQKB1R b KQkq":[["Qe7",0,23,9],["Nd5",0,24,9]],"r1b1kb1r/p1ppqppp/2p2n2/4P3/8/8/PPP2PPP/RNBQKB1R w KQkq":[["Qe2",1,25,9]],"r1b1kb1r/p1ppqppp/2p2n2/4P3/8/8/PPP1QPPP/RNB1KB1R b KQkq":[["Nd5",0,-1,9]],"r1b1kb1r/p1ppqppp/2p5/3nP3/8/8/PPP1QPPP/RNB1KB1R w KQkq":[["c4",1,26,9]],"r1bqkb1r/p1pp1ppp/2p5/3nP3/8/8/PPP2PPP/RNBQKB1R w KQkq":[["c4",1,-1,9]],"r1bqkb1r/ppp2ppp/2p2n2/8/4P3/8/PPP2PPP/RNBQKB1R w KQkq":[["Qxd8+",1,-1,9]],"r1bQkb1r/ppp2ppp/2p2n2/8/4P3/8/PPP2PPP/RNB1KB1R b KQkq":[["Kxd8",0,-1,9]],"r1bk1b1r/ppp2ppp/2p2n2/8/4P3/8/PPP2PPP/RNB1KB1R w KQ":[["f3",1,-1,9]],"r1bqkbnr/pppp1ppp/8/8/3nP3/8/PPP2PPP/RNBQKB1R w KQkq":[["Qxd4",1,-1,10]],"r1bqkbnr/pppp1ppp/8/8/3QP3/8/PPP2PPP/RNB1KB1R b KQkq":[["Qf6",0,-1,10],["d6",0,27,10],["c5",0,28,10],["Nf6",0,29,10]],"r1b1kbnr/pppp1ppp/5q2/8/3QP3/8/PPP2PPP/RNB1KB1R w KQkq":[["e5",1,-1,10]],"r1b1kbnr/pppp1ppp/5q2/4P3/3Q4/8/PPP2PPP/RNB1KB1R b KQkq":[["Qb6",0,-1,10]],"r1b1kbnr/pppp1ppp/1q6/4P3/3Q4/8/PPP2PPP/RNB1KB1R w KQkq":[["Qxb6",1,-1,10]],"r1b1kbnr/pppp1ppp/1Q6/4P3/8/8/PPP2PPP/RNB1KB1R b KQkq":[["axb6",0,30,10]],"r1bqkbnr/ppp2ppp/3p4/8/3QP3/8/PPP2PPP/RNB1KB1R w KQkq":[["Nc3",1,-1,10]],"r1bqkbnr/ppp2ppp/3p4/8/3QP3/2N5/PPP2PPP/R1B1KB1R b KQkq":[["Nf6",0,-1,10]],"r1bqkb1r/ppp2ppp/3p1n2/8/3QP3/2N5/PPP2PPP/R1B1KB1R w KQkq":[["Bf4",1,-1,10]],"r1bqkb1r/ppp2ppp/3p1n2/8/3QPB2/2N5/PPP2PPP/R3KB1R b KQkq":[["Be7",0,-1,10]],"r1bqk2r/ppp1bppp/3p1n2/8/3QPB2/2N5/PPP2PPP/R3KB1R w KQkq":[["O-O-O",1,-1,10]],"r1bqk2r/ppp1bppp/3p1n2/8/3QPB2/2N5/PPP2PPP/2KR1B1R b kq":[["O-O",0,-1,10]],"r1bqkbnr/pp1p1ppp/8/2p5/3QP3/8/PPP2PPP/RNB1KB1R w KQkq":[["Qe3",1,-1,10]],"r1bqkb1r/pppp1ppp/5n2/8/3QP3/8/PPP2PPP/RNB1KB1R w KQkq":[["e5",1,-1,10]],"r1bqkbnr/ppp2ppp/2np4/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R w KQkq":[["d5",1,-1,7]],"r1bqkb1r/pppp1ppp/2n2n2/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R w KQkq":[["dxe5",1,-1,7]],"r1bqkb1r/pppp1ppp/2n2n2/4P3/4P3/5N2/PPP2PPP/RNBQKB1R b KQkq":[["Nxe4",0,-1,7]],"r1bqkb1r/pppp1ppp/2n5/4P3/4n3/5N2/PPP2PPP/RNBQKB1R w KQkq":[["Qe2",1,-1,7]],"r1bqkbnr/pppp1ppp/8/4p3/3nP3/5N2/PPP2PPP/RNBQKB1R w KQkq":[["Nxd4",1,-1,7]],"r1bqkbnr/pppp1ppp/8/4p3/3NP3/8/PPP2PPP/RNBQKB1R b KQkq":[["exd4",0,-1,7]],"r1bqkbnr/pppp1ppp/8/8/3pP3/8/PPP2PPP/RNBQKB1R w KQkq":[["Qxd4",1,-1,7]],"rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq":[["Nxe5",1,-1,5]],"rnbqkb1r/pppp1ppp/5n2/4N3/4P3/8/PPPP1PPP/RNBQKB1R b KQkq":[["d6",0,-1,5],["Nc6",0,31,5],["Nxe4",0,32,5]],"rnbqkb1r/ppp2ppp/3p1n2/4N3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq":[["Nf3",1,-1,5]],"rnbqkb1r/ppp2ppp/3p1n2/8/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq":[["Nxe4",0,-1,5]],"rnbqkb1r/ppp2ppp/3p4/8/4n3/5N2/PPPP1PPP/RNBQKB1R w KQkq":[["d4",1,33,5]],"r1bqkb1r/pppp1ppp/2n2n2/4N3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq":[["Nxc6",1,-1,5]],"rnbqkb1r/pppp1ppp/8/4N3/4n3/8/PPPP1PPP/RNBQKB1R w KQkq":[["Qe2",1,-1,5]],"rnbqkbnr/ppp2ppp/3p4/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq":[["d4",1,34,6]],"rnbqkbnr/ppp2ppp/3p4/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq":[["exd4",0,-1,6]],"rnbqkbnr/ppp2ppp/3p4/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq":[["Nxd4",1,-1,6]],"rnbqkbnr/ppp2ppp/3p4/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq":[["Nf6",0,-1,6]],"rnbqkb1r/ppp2ppp/3p1n2/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq":[["Nc3",1,-1,6]],"rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq":[["Nf3",1,-1,1]],"rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq":[["Nc6",0,-1,1],["d6",0,35,1]],"r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq":[["d4",1,36,1]],"r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq":[["cxd4",0,-1,1]],"r1bqkbnr/pp1ppppp/2n5/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq":[["Nxd4",1,-1,1]],"r1bqkbnr/pp1ppppp/2n5/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq":[["Nf6",0,-1,1]],"r1bqkb1r/pp1ppppp/2n2n2/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq":[["Nc3",1,-1,1]],"rnbqkbnr/pp2pppp/3p4/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq":[["d4",1,-1,1]],"rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq":[["exd5",1,-1,2]],"rnbqkbnr/ppp1pppp/8/3P4/8/8/PPPP1PPP/RNBQKBNR b KQkq":[["Qxd5",0,-1,2]],"rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq":[["Nc3",1,37,2]],"rnb1kbnr/ppp1pppp/8/3q4/8/2N5/PPPP1PPP/R1BQKBNR b KQkq":[["Qa5",0,-1,2]],"rnb1kbnr/ppp1pppp/8/q7/8/2N5/PPPP1PPP/R1BQKBNR w KQkq":[["d4",1,38,2]],"rnb1kbnr/ppp1pppp/8/q7/3P4/2N5/PPP2PPP/R1BQKBNR b KQkq":[["c6",0,39,2]],"rnb1kbnr/pp2pppp/2p5/q7/3P4/2N5/PPP2PPP/R1BQKBNR w KQkq":[["Bd2",1,40,2]],"rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq":[["d4",1,-1,3]],"rnbqkbnr/pppp1ppp/4p3/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq":[["d5",0,-1,3]],"rnbqkbnr/ppp2ppp/4p3/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq":[["Nc3",1,41,3]],"rnbqkbnr/ppp2ppp/4p3/3p4/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq":[["Nf6",0,-1,3]],"rnbqkb1r/ppp2ppp/4pn2/3p4/3PP3/2N5/PPP2PPP/R1BQKBNR w KQkq":[["e5",1,42,3]],"rnbqkb1r/ppp2ppp/4pn2/3pP3/3P4/2N5/PPP2PPP/R1BQKBNR b KQkq":[["Nfd7",0,-1,3]],"rnbqkb1r/pppn1ppp/4p3/3pP3/3P4/2N5/PPP2PPP/R1BQKBNR w KQkq":[["f4",1,43,3]],"rnbqkbnr/ppp1pppp/3p4/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq":[["d4",1,-1,4]],"rnbqkbnr/ppp1pppp/3p4/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq":[["Nf6",0,-1,4]],"rnbqkb1r/ppp1pppp/3p1n2/8/3PP3/8/PPP2PPP/RNBQKBNR w KQkq":[["Nc3",1,-1,4]],"rnbqkb1r/ppp1pppp/3p1n2/8/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq":[["g6",0,-1,4]],"rnbqkb1r/ppp1pp1p/3p1np1/8/3PP3/2N5/PPP2PPP/R1BQKBNR w KQkq":[["Nf3",1,44,4]],"rnbqkb1r/ppp1pp1p/3p1np1/8/3PP3/2N2N2/PPP2PPP/R1BQKB1R b KQkq":[["Bg7",0,45,4]],"rnbqk2r/ppp1ppbp/3p1np1/8/3PP3/2N2N2/PPP2PPP/R1BQKB1R w KQkq":[["Be2",1,46,4]]},"c":["That's the King's Pawn Game, leading to Open or Semi-open openings.","Most of the time, Black will respond with e5, going for the Open opening family.","That's the Sicilian Defense. Black creates imbalances in the position that makes it easier to counter-attack.","That's the Scandinavian Defense. Black challenges White’s center immediately.","That's the French Defense. Black wants to support the pawn push to d5 next move for stable anchor in the center.","That's the Pirc Defense. It's an hypermodern response where Black will apply pressure on the center from afar.","Then the King's Knight Opening is the most obvious follow-up.","To which Black will most likely answer with the Normal Variation. This will allow the usual Italian, Spanish or Scotch openings.","That's the Petrov's Defense. Instead of defending their pawn, Black decides to counter attack White’s pawn.","That's the Philidor Defense. It's a solid but somewhat passive opening for Black.","That's the Scotch Game. Most of the time the Pawn is traded.","We can simply push the pawn to attack the knight and take the center.","We can take the Pawn and attack the Knight.","Brings to Lolli Variation.","That's the Classical Variation. We need to fight for our only developed piece.","Other move orders can lead to the same final position.","That's the Schmidt Variation, it's the main line. We want to exchange Knights and then push the central Pawn.","Taking the Knight is a mistake, allowing the Queen to develop with no immediate threats.","The Knight could capture Black’s Knight with a tempo on the Queen and win the Bishop afterward.","Black moves the Knight to prepare for castling.","We’re moving the Bishop to prepare for castling as well.","Capturing with the Queen’s Pawn would simply trade Queens and lose castling rights, with no benefits.","That's the Mieses Variation. We expand in the center and attack the Knight.","The Queen defends the Knight by pinning the Pawn.","We can again attack the Knight with tempo.","The Queen shelters the King and unpins the Pawn.","Black can either pin the Pawn with the Bishop, threatening the Queen, or simply move the Knight to safety.","We'll simply develop and castle long.","It’s a useless attack; we simply move the Queen to safety.","Developing the Knight naturally is met with direct attacks.","We now just want to develop the Knight and Bishop, then castle long.","No good way to defend our Knight, so better to exchange.","We can attack the Knigth directly with the Queen.","Pawns have been traded, we continue with normal development taking the center.","We bring our second central pawn, generally leading to exchange variation.","The Modern Variation can lead to the same following sequence.","That's the Open variation.","Develops a Knight and win a tempo on the Queen.","Takes the center.","Prepare retreat square for the Queen.","Threat on the Queen that should retreat.","That's the Paulsen Variation. White develops a piece and defends the e4 pawn.","That's the Steinitz Variation. White takes the center and gains a tempo on the Knight.","Gains a significant space advantage.","That's the Classical Variation, developping our second Knight to control the center.","Developping the Bishop in fianchetto, a usual hypermodern move.","That's the Quiet System, just going for quick castlings on King side."],"ch":["Scotch Game: Scotch Game Opening","Alternatives after e4: Sicilian Defense","Alternatives after e4: Scandinavian Defense","Alternatives after e4: French Defense","Alternatives after e4: Pirc Defense","Alternatives after e4: Petrov's Defense","Alternatives after e4: Philidor Defense","Scotch Game: No take alternatives","Scotch Game: Classical Variation","Scotch Game: Schmidt Variation, Mieses Variation","Scotch Game: Lolli Variation"]},"b":{"n":{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq":[["e4",0,-1,0],["d4",0,0,0]],"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq":[["c6",1,1,0]],"rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq":[["d4",0,-1,0],["Nc3",0,-1,1],["Nf3",0,2,1]],"rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq":[["d5",1,3,0]],"rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq":[["e5",0,4,2],["Nc3",0,5,3],["Nd2",0,6,3],["exd5",0,7,4]],"rnbqkbnr/pp2pppp/2p5/3pP3/3P4/8/PPP2PPP/RNBQKBNR b KQkq":[["Bf5",1,-1,2]],"rn1qkbnr/pp2pppp/2p5/3pPb2/3P4/8/PPP2PPP/RNBQKBNR w KQkq":[["Nf3",0,-1,2],["h4",0,8,2]],"rn1qkbnr/pp2pppp/2p5/3pPb2/3P4/5N2/PPP2PPP/RNBQKB1R b KQkq":[["e6",1,-1,2]],"rn1qkbnr/pp3ppp/2p1p3/3pPb2/3P4/5N2/PPP2PPP/RNBQKB1R w KQkq":[["Be2",0,-1,2]],"rn1qkbnr/pp3ppp/2p1p3/3pPb2/3P4/5N2/PPP1BPPP/RNBQK2R b KQkq":[["c5",1,-1,2]],"rn1qkbnr/pp2pppp/2p5/3pPb2/3P3P/8/PPP2PP1/RNBQKBNR b KQkq":[["h5",1,-1,2]],"rnbqkbnr/pp2pppp/2p5/3p4/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq":[["dxe4",1,9,3]],"rnbqkbnr/pp2pppp/2p5/8/3Pp3/2N5/PPP2PPP/R1BQKBNR w KQkq":[["Nxe4",0,-1,3]],"rnbqkbnr/pp2pppp/2p5/8/3PN3/8/PPP2PPP/R1BQKBNR b KQkq":[["Bf5",1,-1,3]],"rn1qkbnr/pp2pppp/2p5/5b2/3PN3/8/PPP2PPP/R1BQKBNR w KQkq":[["Ng3",0,-1,3]],"rn1qkbnr/pp2pppp/2p5/5b2/3P4/6N1/PPP2PPP/R1BQKBNR b KQkq":[["Bg6",1,10,3]],"rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPPN1PPP/R1BQKBNR b KQkq":[["dxe4",1,-1,3]],"rnbqkbnr/pp2pppp/2p5/8/3Pp3/8/PPPN1PPP/R1BQKBNR w KQkq":[["Nxe4",0,-1,3]],"rnbqkbnr/pp2pppp/2p5/3P4/3P4/8/PPP2PPP/RNBQKBNR b KQkq":[["cxd5",1,-1,4]],"rnbqkbnr/pp2pppp/8/3p4/3P4/8/PPP2PPP/RNBQKBNR w KQkq":[["c4",0,-1,4],["Bd3",0,-1,4],["Nf3",0,-1,4]],"rnbqkbnr/pp2pppp/8/3p4/2PP4/8/PP3PPP/RNBQKBNR b KQkq":[["Nf6",1,-1,4]],"rnbqkb1r/pp2pppp/5n2/3p4/2PP4/8/PP3PPP/RNBQKBNR w KQkq":[["Nc3",0,-1,4]],"rnbqkb1r/pp2pppp/5n2/3p4/2PP4/2N5/PP3PPP/R1BQKBNR b KQkq":[["Nc6",1,-1,4]],"rnbqkbnr/pp2pppp/8/3p4/3P4/3B4/PPP2PPP/RNBQK1NR b KQkq":[["Nc6",1,-1,4]],"rnbqkbnr/pp2pppp/8/3p4/3P4/5N2/PPP2PPP/RNBQKB1R b KQkq":[["Nc6",1,-1,4]],"rnbqkbnr/pp1ppppp/2p5/8/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq":[["d5",1,-1,1]],"rnbqkbnr/pp2pppp/2p5/3p4/4P3/2N5/PPPP1PPP/R1BQKBNR w KQkq":[["Nf3",0,11,1],["d4",0,12,1]],"rnbqkbnr/pp2pppp/2p5/3p4/4P3/2N2N2/PPPP1PPP/R1BQKB1R b KQkq":[["dxe4",1,-1,1]],"rnbqkbnr/pp2pppp/2p5/8/4p3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq":[["Nxe4",0,-1,1]],"rnbqkbnr/pp2pppp/2p5/8/4N3/5N2/PPPP1PPP/R1BQKB1R b KQkq":[["Nf6",1,-1,1]],"rnbqkb1r/pp2pppp/2p2n2/8/4N3/5N2/PPPP1PPP/R1BQKB1R w KQkq":[["Nxf6+",0,-1,1]],"rnbqkb1r/pp2pppp/2p2N2/8/8/5N2/PPPP1PPP/R1BQKB1R b KQkq":[["exf6",1,13,1]],"rnbqkbnr/pp1ppppp/2p5/8/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq":[["d5",1,-1,1]],"rnbqkbnr/pp2pppp/2p5/3p4/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq":[["Nc3",0,-1,1]],"rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq":[["c6",1,-1,0]],"rnbqkbnr/pp1ppppp/2p5/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq":[["e4",0,-1,0],["c4",0,14,0]],"rnbqkbnr/pp1ppppp/2p5/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq":[["d5",1,15,0]],"rnbqkbnr/pp2pppp/2p5/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq":[["Nc3",0,-1,5],["Nf3",0,16,5],["cxd5",0,17,6]],"rnbqkbnr/pp2pppp/2p5/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq":[["Nf6",1,-1,5]],"rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR w KQkq":[["Nf3",0,-1,5]],"rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R b KQkq":[["dxc4",1,18,5],["Bf5",2,19,5]],"rnbqkb1r/pp2pppp/2p2n2/8/2pP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq":[["a4",0,20,5],["e4",0,21,5],["e3",0,22,5]],"rnbqkb1r/pp2pppp/2p2n2/8/P1pP4/2N2N2/1P2PPPP/R1BQKB1R b KQkq":[["Bf5",1,23,5]],"rnbqkb1r/pp2pppp/2p2n2/8/2pPP3/2N2N2/PP3PPP/R1BQKB1R b KQkq":[["b5",1,-1,5]],"rnbqkb1r/p3pppp/2p2n2/1p6/2pPP3/2N2N2/PP3PPP/R1BQKB1R w KQkq":[["a4",0,-1,5]],"rnbqkb1r/p3pppp/2p2n2/1p6/P1pPP3/2N2N2/1P3PPP/R1BQKB1R b KQkq":[["b4",1,-1,5]],"rnbqkb1r/pp2pppp/2p2n2/8/2pP4/2N1PN2/PP3PPP/R1BQKB1R b KQkq":[["b5",1,-1,5]],"rnbqkb1r/p3pppp/2p2n2/1p6/2pP4/2N1PN2/PP3PPP/R1BQKB1R w KQkq":[["a4",0,-1,5]],"rnbqkb1r/p3pppp/2p2n2/1p6/P1pP4/2N1PN2/1P3PPP/R1BQKB1R b KQkq":[["b4",1,-1,5]],"rn1qkb1r/pp2pppp/2p2n2/3p1b2/2PP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq":[["cxd5",0,-1,5]],"rn1qkb1r/pp2pppp/2p2n2/3P1b2/3P4/2N2N2/PP2PPPP/R1BQKB1R b KQkq":[["cxd5",1,-1,5]],"rn1qkb1r/pp2pppp/5n2/3p1b2/3P4/2N2N2/PP2PPPP/R1BQKB1R w KQkq":[["Qb3",0,-1,5]],"rnbqkbnr/pp2pppp/2p5/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq":[["Nf6",1,-1,5]],"rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq":[["Nc3",0,-1,5]],"rnbqkbnr/pp2pppp/2p5/3P4/3P4/8/PP2PPPP/RNBQKBNR b KQkq":[["cxd5",1,-1,6]],"rnbqkbnr/pp2pppp/8/3p4/3P4/8/PP2PPPP/RNBQKBNR w KQkq":[["Nc3",0,-1,6]],"rnbqkbnr/pp2pppp/8/3p4/3P4/2N5/PP2PPPP/R1BQKBNR b KQkq":[["Nf6",1,-1,6]],"rnbqkb1r/pp2pppp/5n2/3p4/3P4/2N5/PP2PPPP/R1BQKBNR w KQkq":[["Bf4",0,-1,6],["Nf3",0,24,6]],"rnbqkb1r/pp2pppp/5n2/3p4/3P1B2/2N5/PP2PPPP/R2QKBNR b KQkq":[["Nc6",1,-1,6],["Bf5",2,25,6]],"r1bqkb1r/pp2pppp/2n2n2/3p4/3P1B2/2N5/PP2PPPP/R2QKBNR w KQkq":[["Nf3",0,-1,6],["e3",0,26,6]],"r1bqkb1r/pp2pppp/2n2n2/3p4/3P1B2/2N2N2/PP2PPPP/R2QKB1R b KQkq":[["Bf5",1,-1,6]],"r1bqkb1r/pp2pppp/2n2n2/3p4/3P1B2/2N1P3/PP3PPP/R2QKBNR b KQkq":[["Bf5",1,-1,6]],"rn1qkb1r/pp2pppp/5n2/3p1b2/3P1B2/2N5/PP2PPPP/R2QKBNR w KQkq":[["Qb3",0,-1,6]],"rnbqkb1r/pp2pppp/5n2/3p4/3P4/2N2N2/PP2PPPP/R1BQKB1R b KQkq":[["Nc6",1,-1,6]],"r1bqkb1r/pp2pppp/2n2n2/3p4/3P4/2N2N2/PP2PPPP/R1BQKB1R w KQkq":[["Bf4",0,-1,6]]},"c":["Best move leads to the same position.","That's the Caro-Kann Defense. We're not directly fighting for the center, preparing d5 push.","Could lead to the same position.","We'll take this Pawn if we can.","That's the Advanced Variation. We'll develop the Bishop first, then push the e Pawn.","That's the Classical Variation.","Leads to the same position.","That's the Exchange Variation. We'll just want to develop Knights then Bishops.","This can trap the Pawn if we close the door with e6 directly.","No good developing moves so better to exchange the Pawn.","Pawn in h4 must be met with h6 to not trap the Bishop. Otherwise we want to develop our Knight to d7.","That's the Two Knights Attack Variation.","Returns to Classical Variation.","We want to develop our Bishop and castle.","Worse case scenario we end up in the great Queen's Gambit Slav Defense.","That's the Slav Defense. We support our Pawn with another Pawn, without blocking our light-square Bishop.","Ends up in the same position.","We can exchange Pawns, that was the whole purpose. Tends to end in symetrical positions.","That's the Slav Proper. Thanks to our Pawn in c6, the sacrificed Pawn will be harder to get back.","Developing our Bishop right away would lead to a double attack.","Better for White to prevent b5 right away. And now we can develop our Bishop.","The usual move to retrieve the Pawn can be defended and can lead to attack on the Knight.","Similar result with a safer move.","From there we'll just have to develop our second Bishop and then castle.","Would end with similar position.","Developing the Bishop right away ends up with a double attack.","White could also close the door directly, we would still develop our Bishop."],"ch":["Caro-Kann: Setup","Caro-Kann: Two Knights Attack","Caro-Kann: Advanced","Caro-Kann: Classical","Caro-Kann: Exchange","Slav Defense: Main Line","Slav Defense: Exchange Variation"]}};
+const repOn = ()=>BETA && isOwner();
+const REP_GAPS = [0, 1, 3, 7, 21, 60, 150], REP_DAY = 864e5, REP_PUNISH = 100;   // days by box; an opponent move losing a pawn or more: one to punish
+const repKey = fen=>fen.split(' ').slice(0, 3).join(' ');
+let rep = null;          // { c: 'w' | 'b' | 'both', drill, view: 'train' | 'review' }
+let repStore = null;     // { s: { 'w|key': [box, due, seen] }, add: [{ c, k, san, flag }], skip: ['w|key|san'] }
+function repLoad(){
+  if(repStore) return repStore;
+  try{ repStore = JSON.parse(localStorage.getItem('cst.rep') || 'null'); }catch(e){}
+  repStore = Object.assign({ s:{}, add:[], skip:[], c:'both' }, repStore || {});
+  return repStore;
+}
+function repSave(){ try{ localStorage.setItem('cst.rep', JSON.stringify(repStore)); }catch(e){} }
+// the moves at a position: [san, flag (0 opponent, 1 your move, 2 your sideline), comment, chapter]; your additions too
+function repMoves(c, k){
+  const base = (REPERTOIRE[c] && REPERTOIRE[c].n[k]) || [];
+  const add = repLoad().add.filter(a=>a.c===c && a.k===k && !base.some(m=>m[0]===a.san)).map(a=>[a.san, a.flag, -1, -1]);
+  return add.length ? base.concat(add) : base;
+}
+const repMain = (c, k)=>repMoves(c, k).find(m=>m[1]===1);
+const repComment = (c, m)=>m && m[2] >= 0 ? REPERTOIRE[c].c[m[2]] : '';
+const repChapter = (c, m)=>m && m[3] >= 0 ? REPERTOIRE[c].ch[m[3]] : '';
+// every position of a colour, from the start: the shortest way there (fens, sans, the chapter of each move)
+const repIdx = {};
+function repIndex(c){
+  const sig = repLoad().add.length; if(repIdx[c] && repIdx[c].sig===sig) return repIdx[c];
+  const at = {}, q = [{ fen:EXPLORER_START, sans:[], fens:[EXPLORER_START], moves:[], ch:'' }];
+  at[repKey(EXPLORER_START)] = q[0];
+  while(q.length){
+    const p = q.shift();
+    for(const m of repMoves(c, repKey(p.fen))){
+      const g = new Chess(p.fen), mv = g.move(m[0]); if(!mv) continue;
+      const k = repKey(g.fen()); if(at[k]) continue;
+      at[k] = { fen:g.fen(), sans:p.sans.concat(mv.san), fens:p.fens.concat(g.fen()), moves:p.moves.concat({ from:mv.from, to:mv.to }), ch:repChapter(c, m) || p.ch };
+      q.push(at[k]);
+    }
+  }
+  const mine = c==='w' ? 'w' : 'b';
+  const items = Object.keys(at).filter(k=>k.split(' ')[1]===mine && repMain(c, k));
+  return repIdx[c] = { sig, at, items };
+}
+// how often your games reach a position (your move), and leave your line there: a boost in the pile
+let repGames = null;
+function repGameStats(){
+  if(repGames && repGames.n===myGames.length) return repGames;
+  const reach = {}, gaps = {}, devs = {};
+  for(const g of myGames){
+    const c = g.me; if(c!=='w' && c!=='b' || !REPERTOIRE[c] || !g.sans) continue;
+    const ch = new Chess();
+    for(let i = 0; i < g.sans.length; i++){
+      const fen = ch.fen(), k = repKey(fen), moves = repMoves(c, k), san = g.sans[i];
+      if(!moves.length) break;   // (the end of your line: what follows is the middlegame)
+      if(fen.split(' ')[1]===c){
+        reach[c + '|' + k] = (reach[c + '|' + k] || 0) + 1;
+        const main = moves.find(m=>m[1]===1);
+        if(!main) break;
+        if(main[0]!==san){
+          if(i > 1){ const d = devs[c + '|' + k] = devs[c + '|' + k] || { c, k, sans:g.sans.slice(0, i), main:main[0], played:{}, n:0 }; d.n++; d.played[san] = (d.played[san] || 0) + 1; }   // (your very first move: another opening, not a forgotten line)
+          break;
+        }
+      } else if(!moves.some(m=>m[0]===san)){
+        const E = g.evals || [], before = i ? E[i - 1] : { cp:20 }, after = E[i];
+        const pov = e=>e ? (e.mate!=null ? Math.sign(e.mate) * 1e4 : e.cp) * (c==='w' ? 1 : -1) : null;
+        const swing = pov(after)!=null && pov(before)!=null ? pov(after) - pov(before) : 0;
+        const id = c + '|' + k + '|' + san, x = gaps[id] = gaps[id] || { id, c, k, san, sans:g.sans.slice(0, i + 1), replies:{}, n:0, punish:0 };
+        x.n++; if(swing >= REP_PUNISH) x.punish++;
+        if(g.sans[i + 1]) x.replies[g.sans[i + 1]] = (x.replies[g.sans[i + 1]] || 0) + 1;
+        break;
+      }
+      if(!ch.move(san)) break;
+    }
+  }
+  return repGames = { n:myGames.length, reach, gaps, devs };
+}
+// The pile: due first (shown ones first of all, then the most overdue), then the new ones (closest to the start
+// first, the ones your games reach often ahead), then the rest by when they're due (a line just played at the back)
+function repScore(c, k, now){
+  const st = repLoad().s[c + '|' + k], gs = repGameStats(), boost = Math.min(20, (gs.reach[c + '|' + k] || 0) + 5 * ((gs.devs[c + '|' + k] || {}).n || 0));
+  if(!st) return repIndex(c).at[k].sans.length - boost;
+  if(st[1] <= now) return (st[1] - now) / REP_DAY - 100;
+  return 1000 + (st[1] - now) / REP_DAY - boost / 10;
+}
+const repColours = ()=>rep.c==='both' ? ['w', 'b'] : [rep.c];
+function repCounts(){
+  const now = Date.now(); let due = 0, fresh = 0, total = 0;
+  for(const c of repColours()) for(const k of repIndex(c).items){ total++; const st = repStore.s[c + '|' + k]; if(!st) fresh++; else if(st[1] <= now) due++; }
+  return { due, fresh, total };
+}
+function repPick(){
+  const now = Date.now(), all = [];
+  for(const c of repColours()) for(const k of repIndex(c).items) all.push({ c, k, s: repScore(c, k, now) });
+  all.sort((a, b)=>a.s - b.s);
+  const top = all.slice(0, all[0] && all[0].s < 0 ? 1 : 3);   // (something due: that one; otherwise one of the next three, for variety)
+  return top[Math.floor(Math.random() * top.length)];
+}
+// the opponent's reply: the one whose line holds the position most due (a little chance for the others)
+function repReply(c, fen){
+  const now = Date.now(), opts = repMoves(c, repKey(fen)).filter(m=>m[1]===0);
+  if(!opts.length) return null;
+  const best = (f, seen, d)=>{ const k = repKey(f); if(seen.has(k) || d > 40) return 1e9; seen.add(k);
+    let s = k.split(' ')[1]===c && repMain(c, k) ? repScore(c, k, now) : 1e9;
+    for(const m of repMoves(c, k)){ if(m[1]===2) continue; const g = new Chess(f); if(g.move(m[0])) s = Math.min(s, best(g.fen(), seen, d + 1)); }
+    return s; };
+  const scored = opts.map(m=>{ const g = new Chess(fen); g.move(m[0]); return { m, s: best(g.fen(), new Set(), 0) + Math.random() * 2 }; }).sort((a, b)=>a.s - b.s);
+  return scored[0].m;
+}
+function repStart(){
+  const it = repPick(); if(!it){ rep.drill = null; return; }
+  const p = repIndex(it.c).at[it.k];
+  rep.drill = { c:it.c, fens:p.fens.slice(), sans:p.sans.slice(), moves:p.moves.slice(), ch:p.ch, tries:0, shown:false, msg:'', note:'', marks:[], sel:null, done:false };
+}
+function repGrade(d, k){
+  const st = repStore.s[d.c + '|' + k] || [0, 0, 0], now = Date.now(), due = !st[2] || st[1] <= now;
+  const r = d.shown ? 0 : d.tries ? 1 : 2;   // shown, found after a retry, found first time
+  if(r===2){ const box = due ? Math.min(REP_GAPS.length - 1, st[0] + 1) : Math.max(1, st[0]); repStore.s[d.c + '|' + k] = [box, now + REP_GAPS[box] * REP_DAY, st[2] + 1]; }
+  else if(r===1) repStore.s[d.c + '|' + k] = [1, now + REP_DAY, st[2] + 1];
+  else repStore.s[d.c + '|' + k] = [0, now - 30 * REP_DAY, st[2] + 1];   // (first in the pile)
+  repSave(); d.marks.push(r);
+}
+function repPush(d, mv, g){
+  d.fens.push(g.fen()); d.sans.push(mv.san); d.moves.push({ from:mv.from, to:mv.to });
+}
+function repTry(mv){
+  const d = rep.drill, fen = d.fens[d.fens.length - 1], k = repKey(fen), moves = repMoves(d.c, k);
+  const g = new Chess(fen), m = g.move(mv); if(!m) return;
+  const hit = moves.find(x=>x[0]===m.san);
+  d.sel = null;
+  if(!hit || hit[1]!==1){
+    d.tries++;
+    d.msg = hit ? 'Not this one: it’s a line you noted to avoid.' : 'Not your move here. Try again.';
+    d.note = hit ? repComment(d.c, hit) : '';
+    render(); return;
+  }
+  repGrade(d, k); repPush(d, m, g);
+  d.ch = repChapter(d.c, hit) || d.ch; d.note = repComment(d.c, hit); d.msg = ''; d.tries = 0; d.shown = false;
+  const reply = repReply(d.c, g.fen());
+  if(!reply){ d.done = true; render(); return; }
+  d.wait = true; render();
+  setTimeout(()=>{
+    if(!rep || rep.drill!==d) return;
+    const g2 = new Chess(g.fen()), r = g2.move(reply[0]); d.wait = false;
+    if(!r){ d.done = true; render(); return; }
+    repPush(d, r, g2); d.ch = repChapter(d.c, reply) || d.ch;
+    const c2 = repComment(d.c, reply); if(c2) d.note = c2;
+    if(!repMain(d.c, repKey(g2.fen()))) d.done = true;
+    if(screen==='repertoire') render();
+  }, 450);
+}
+function repMovesText(d){
+  const out = []; let no = 1, w = true;
+  d.sans.forEach(s=>{ out.push(w ? no + '.' + s : s); if(!w) no++; w = !w; });
+  return out.join(' ');
+}
+function repSummary(d){
+  const n = [2, 1, 0].map(r=>d.marks.filter(x=>x===r).length);
+  return [n[0] ? `${n[0]} found` : '', n[1] ? `${n[1]} after a retry` : '', n[2] ? `${n[2]} shown` : ''].filter(Boolean).join(', ') || 'Nothing to play in this line.';
+}
+function repPos(){
+  const d = rep && rep.drill, fen = d ? d.fens[d.fens.length - 1] : EXPLORER_START, m = d && d.moves[d.moves.length - 1];
+  return { key:'rep:' + fen, fen, side: fen.split(' ')[1], moveNo: +fen.split(' ')[5], last: m ? { squares:[m.from, m.to] } : null, hist:{} };
+}
+const repFlip = ()=>!!(rep && rep.drill && rep.drill.c==='b');
+function renderRepertoire(){
+  repLoad();
+  if(!rep) rep = { c: repStore.c, drill:null, view:'train' };
+  if(rep.view==='review') return renderRepReview();
+  if(!rep.drill) repStart();
+  const app = document.getElementById('app'), d = rep.drill, p = repPos(), cn = repCounts();
+  const tabs = `<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Colour">${[['w', 'White'], ['b', 'Black'], ['both', 'Both']].map(([k, l])=>
+    `<button class="seg-btn${rep.c===k ? ' active' : ''}" data-repc="${k}" role="radio" aria-checked="${rep.c===k}"><span>${l}</span><span class="seg-w" aria-hidden="true">${l}</span></button>`).join('')}</div>`;
+  const prompt = !d ? 'No lines in your repertoire yet.' : d.done ? `Line complete: ${repSummary(d)}.` : d.wait ? '…' : d.msg || (d.shown ? 'Play the move shown.' : 'Your move?');
+  const actions = !d ? '' : d.done
+    ? `<a class="btn secondary lichess-open icon-only xp-li" href="https://lichess.org/analysis/pgn/${d.sans.map(s=>encodeURIComponent(s.replace(/[+#]/g, ''))).join('_')}?color=${d.c==='b' ? 'black' : 'white'}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn" id="repNext">Next line</button>`
+    : `<button class="btn secondary" id="repShow" ${d.shown || d.wait ? 'disabled' : ''}>Show move</button><button class="btn secondary" id="repSkip">Skip line</button>`;
+  app.innerHTML = `
+    <div class="title-row">
+      <button class="icon-btn back" id="homeBtn" aria-label="Back">${BACK_ARROW}</button>
+      <h1>Repertoire</h1>
+      <button class="title-chip" id="repReview">Review</button>
+    </div>
+    <div class="stage"><div class="board-col"><div class="pl-line xp-top"></div><div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div><div class="pl-line xp-bottom"></div></div></div>
+    ${stackedPanel(`${tabs}
+      <p class="rep-count">${cn.due} to revise · ${cn.fresh} new</p>
+      <p class="rep-line">${d ? `${d.ch ? `<b>${escHtml(d.ch)}</b> · ` : ''}${escHtml(repMovesText(d)) || 'Start position'}` : ''}</p>
+      <p class="prompt rep-prompt${d && d.msg ? ' rep-wrong' : d && d.done ? ' rep-done' : ''}">${prompt}</p>
+      <p class="rep-note">${escHtml(d && d.note || '')}</p>
+      <div class="actions-row split">${actions}</div>`, [])}`;
+  const g = new Chess(p.fen), bs = boardObjFromGame(g);
+  const live = d && !d.done && !d.wait && p.side===d.c;
+  const dest = live && d.sel ? g.moves({ square:d.sel, verbose:true }).map(m=>m.to) : [];
+  renderBoard(document.getElementById('board'), bs, p.last, { selectedSq: d && d.sel, destSquares: dest, onSquareClick: sq=>{
+    if(!live) return;
+    if(d.sel && dest.includes(sq)){
+      const legal = g.moves({ square:d.sel, verbose:true }).filter(m=>m.to===sq);
+      if(legal.some(m=>m.promotion)){ promoPending = { from:d.sel, to:sq }; render(); return; }
+      repTry(legal[0]); return;
+    }
+    const pc = bs[sq]; d.sel = pc && colorOf(pc)===p.side && sq!==d.sel ? sq : null; render();
+  } });
+  if(promoPending && live) showPromotionPicker(g, mv=>{ promoPending = null; repTry(mv); });
+  if(d && d.shown && !d.done){
+    const main = repMain(d.c, repKey(p.fen)), mv = main && new Chess(p.fen).move(main[0]);
+    if(mv) drawArrows(document.getElementById('arrows'), [{ from:mv.from, to:mv.to, color:'var(--system)' }], 'rp_');
+  }
+  const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
+  on('homeBtn', ()=>{ screen = 'home'; render(); });
+  on('repReview', ()=>{ rep.view = 'review'; render(); });
+  on('repNext', ()=>{ repStart(); render(); });
+  on('repSkip', ()=>{ repStart(); render(); });
+  on('repShow', ()=>{ d.shown = true; d.msg = ''; render(); });
+  app.querySelectorAll('[data-repc]').forEach(b=>b.onclick = ()=>{ rep.c = repStore.c = b.dataset.repc; repSave(); repStart(); render(); });
+}
+// ---- Review: your games against your repertoire. Replies you have no line for (2 games or more, or a move that
+// lost a pawn or more: to punish), with a move to add (the one you played most, if it's within 0.3 of
+// Stockfish's best, else the best); where you left your line (those positions come up first in practice).
+const repProposals = new Map();   // gap id -> { san, cp } once searched
+function repPropose(x){
+  if(repProposals.has(x.id)) return repProposals.get(x.id);
+  repProposals.set(x.id, null);
+  const g = new Chess(); x.sans.forEach(s=>g.move(s)); const fen = g.fen();
+  bgEval(fen, { multipv:5, movetime:1000, depth:LIVE_DEPTH }).then(r=>{
+    if(evalFailed(r) || !r.lines || !r.lines.length) return;
+    const san = u=>{ const m = new Chess(fen).move({ from:u.slice(0, 2), to:u.slice(2, 4), promotion:u[4] }); return m && m.san; };
+    const best = r.lines[0], cp = l=>l.mate!=null ? Math.sign(l.mate) * 1e4 : l.cp;
+    const mostPlayed = Object.entries(x.replies).sort((a, b)=>b[1] - a[1])[0];
+    const yours = mostPlayed && r.lines.find(l=>san(l.uci)===mostPlayed[0]);
+    const pick = yours && cp(best) - cp(yours) <= 30 ? yours : best;
+    repProposals.set(x.id, { san: san(pick.uci), cp: cp(pick) * (fen.split(' ')[1]==='w' ? 1 : -1), yours: pick===yours });
+    if(screen==='repertoire' && rep.view==='review') render();
+  });
+  return null;
+}
+function repLineText(sans){ return sans.map((s, i)=>i % 2 ? s : (i / 2 + 1) + '.' + s).join(' '); }
+function renderRepReview(){
+  const app = document.getElementById('app'), gs = repGameStats(), st = repLoad();
+  const gaps = Object.values(gs.gaps).filter(x=>(x.n >= 2 || x.punish) && !st.skip.includes(x.id) && !repMoves(x.c, x.k).some(m=>m[0]===x.san))
+    .sort((a, b)=>(b.punish ? 1 : 0) - (a.punish ? 1 : 0) || b.n - a.n).slice(0, 12);
+  const devs = Object.values(gs.devs).filter(x=>x.n >= 1).sort((a, b)=>b.n - a.n).slice(0, 8);
+  const side = c=>c==='w' ? 'White' : 'Black';
+  const gapRow = x=>{ const p = repPropose(x), yours = Object.entries(x.replies).sort((a, b)=>b[1] - a[1]).map(([s, n])=>`${s} (${n})`).join(', ');
+    return `<div class="rep-item">
+      <div class="rep-item-top"><span class="rep-tag">${side(x.c)}</span>${x.punish ? '<span class="rep-tag rep-punish">To punish</span>' : ''}<span class="rep-n">${x.n} ${x.n > 1 ? 'games' : 'game'}</span></div>
+      <p class="rep-moves">${escHtml(repLineText(x.sans))}</p>
+      ${yours ? `<p class="rep-sub">You played ${escHtml(yours)}</p>` : ''}
+      <div class="rep-item-act"><span class="rep-prop">${p ? `Add <b>${escHtml(p.san)}</b>${p.yours ? ' (yours)' : ''} <span class="move-eval">${fmtSigned({ cp:p.cp })}</span>` : 'Searching…'}</span>
+        <button class="btn secondary" data-rskip="${escHtml(x.id)}">Skip</button><button class="btn" data-radd="${escHtml(x.id)}" ${p ? '' : 'disabled'}>Add</button></div>
+    </div>`; };
+  const devRow = x=>`<div class="rep-item">
+      <div class="rep-item-top"><span class="rep-tag">${side(x.c)}</span><span class="rep-n">${x.n} ${x.n > 1 ? 'games' : 'game'}</span></div>
+      <p class="rep-moves">${escHtml(repLineText(x.sans))}</p>
+      <p class="rep-sub">Your line: <b>${escHtml(x.main)}</b> · you played ${escHtml(Object.entries(x.played).map(([s, n])=>`${s} (${n})`).join(', '))}</p>
+    </div>`;
+  const added = st.add.filter(a=>a.flag===1);
+  app.innerHTML = `
+    <div class="title-row">
+      <button class="icon-btn back keep" id="repBack" aria-label="Back">${BACK_ARROW}</button>
+      <h1>Review</h1>
+    </div>
+    <div class="rep-review">
+      ${!myGames.length ? `<p class="rep-sub">Connect your Lichess or Chess.com account in your profile: your games are compared with your repertoire.</p>` : ''}
+      <h2>No line yet</h2>
+      ${gaps.length ? gaps.map(gapRow).join('') : '<p class="rep-sub">Every reply in your games is in your repertoire.</p>'}
+      <h2>You left your line</h2>
+      <p class="rep-sub">These positions come up first in practice.</p>
+      ${devs.length ? devs.map(devRow).join('') : '<p class="rep-sub">You followed your lines in every game.</p>'}
+      ${added.length ? `<h2>Added</h2>${added.map(a=>`<p class="rep-moves">${escHtml(repLineText(a.line))}</p>`).join('')}
+        <div class="actions-row"><button class="btn secondary" id="repCopy">Copy for Lichess</button></div>` : ''}
+    </div>`;
+  const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
+  on('repBack', ()=>{ rep.view = 'train'; render(); });
+  on('repCopy', ()=>{ const t = added.map(a=>repLineText(a.line)).join('\n'); try{ navigator.clipboard.writeText(t); }catch(e){} const b = document.getElementById('repCopy'); if(b) b.textContent = 'Copied'; });
+  app.querySelectorAll('[data-rskip]').forEach(b=>b.onclick = ()=>{ st.skip.push(b.dataset.rskip); repSave(); render(); });
+  app.querySelectorAll('[data-radd]').forEach(b=>b.onclick = ()=>{
+    const x = gs.gaps[b.dataset.radd], p = repProposals.get(x.id); if(!x || !p) return;
+    const g = new Chess(); x.sans.forEach(s=>g.move(s));
+    st.add.push({ c:x.c, k:x.k, san:x.san, flag:0 }, { c:x.c, k:repKey(g.fen()), san:p.san, flag:1, line:x.sans.concat(p.san) });
+    repSave(); repGames = null; render();
+  });
+}
 // ================= Plan finder =================
 // Two phases on a position, in the order the books teach (each of the four rows a quarter of the score).
 // Phase 1: anything urgent for the side to play (it can win something, it's quiet, or it must defend: our
@@ -11959,7 +12261,7 @@ function openShared(code){
 function renderScreen(){
   syncPos();
   const wrap = document.querySelector('.wrap');
-  wrap.classList.toggle('ex', ACTIVITIES.includes(screen) || screen==='explorer' || screen==='planq');
+  wrap.classList.toggle('ex', ACTIVITIES.includes(screen) || screen==='explorer' || screen==='planq' || screen==='repertoire' && !(rep && rep.view==='review'));
   wrap.classList.toggle('home', screen==='home');
   wrap.dataset.scr = onProfile() ? 'account' : screen;
   renderSide();
@@ -11971,6 +12273,7 @@ function renderScreen(){
   else if(screen==='support') renderSupport();
   else if(screen==='metrics') renderMetrics();
   else if(screen==='explorer') renderExplorer();
+  else if(screen==='repertoire') renderRepertoire();
   else if(screen==='planq') renderPlanq();
   else if(screen==='rush') renderRush();
   else if(screen==='imbalances') renderImbalances();

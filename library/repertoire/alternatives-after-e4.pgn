@@ -1,0 +1,131 @@
+[Event "Alternatives after e4: Normal Variation"]
+[Date "2026.08.02"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C44"]
+[Opening "King's Knight Opening: Normal Variation"]
+[StudyName "Alternatives after e4"]
+[ChapterName "Normal Variation"]
+[ChapterURL "https://lichess.org/study/t3nIs6NV/N8LhJMkY"]
+[Annotator "https://lichess.org/@/Taussane"]
+[UTCDate "2026.08.02"]
+[UTCTime "13:35:21"]
+[Orientation "white"]
+
+{ In this study we'll review basic plans for less common answers to the classic Normal Variation. } 1. e4 { That's the King's Pawn Game, leading to Open or Semi-open openings. } { [%csl Ge4][%cal Ge4d5] } (1. d4 { Queen's Pawn Game leads to Closed openings. } { [%csl Gd4][%cal Gd4e5,Gd7d5] }) 1... e5 { Most of the time, Black will respond with e5, going for the Open opening family. } { [%csl Ge5][%cal Ge5d4] } 2. Nf3 { Then the King's Knight Opening is the most obvious follow-up. } { [%cal Gf3e5,Gf3d4] } 2... Nc6 { To which Black will most likely answer with the Normal Variation. This will allow the usual Italian, Spanish or Scotch openings. } { [%cal Gc6e5,Gc6d4] } *
+
+
+[Event "Alternatives after e4: Petrov's Defense"]
+[Date "2026.08.02"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C42"]
+[Opening "Petrov's Defense: Classical Attack"]
+[StudyName "Alternatives after e4"]
+[ChapterName "Petrov's Defense"]
+[ChapterURL "https://lichess.org/study/t3nIs6NV/WmcAJib0"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"]
+[SetUp "1"]
+[UTCDate "2026.08.02"]
+[UTCTime "14:01:51"]
+[Orientation "white"]
+
+2... Nf6 { That's the Petrov's Defense. Instead of defending their pawn, Black decides to counter attack White’s pawn. } { [%cal Gf6e4] } 3. Nxe5 d6 { [%cal Gd6e5] } (3... Nc6 { No good way to defend our Knight, so better to exchange. } 4. Nxc6) (3... Nxe4 { We can attack the Knigth directly with the Queen. } 4. Qe2) 4. Nf3 Nxe4 5. d4 { Pawns have been traded, we continue with normal development taking the center. } { [%csl Gd4][%cal Gd4e5] } *
+
+
+[Event "Alternatives after e4: Philidor Defense"]
+[Date "2026.08.02"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C41"]
+[Opening "Philidor Defense: Exchange Variation"]
+[StudyName "Alternatives after e4"]
+[ChapterName "Philidor Defense"]
+[ChapterURL "https://lichess.org/study/t3nIs6NV/Ow0G2yAS"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"]
+[SetUp "1"]
+[UTCDate "2026.08.02"]
+[UTCTime "14:33:08"]
+[Orientation "white"]
+
+2... d6 { That's the Philidor Defense. It's a solid but somewhat passive opening for Black. } { [%cal Gd6e5] } 3. d4 { We bring our second central pawn, generally leading to exchange variation. } { [%csl Gd4][%cal Gd4e5] } 3... exd4 4. Nxd4 Nf6 { [%cal Gf6e4] } 5. Nc3 { [%cal Gc3e4] } *
+
+
+[Event "Alternatives after e4: Sicilian Defense"]
+[Date "2026.08.02"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "B33"]
+[Opening "Sicilian Defense: Open"]
+[StudyName "Alternatives after e4"]
+[ChapterName "Sicilian Defense"]
+[ChapterURL "https://lichess.org/study/t3nIs6NV/CsnFcku7"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"]
+[SetUp "1"]
+[UTCDate "2026.08.02"]
+[UTCTime "14:54:31"]
+[Orientation "white"]
+
+1... c5 { That's the Sicilian Defense. Black creates imbalances in the position that makes it easier to counter-attack. } { [%cal Gc5d4] } 2. Nf3 { [%cal Gf3e5,Gf3d4] } 2... Nc6 { [%cal Gc6d4,Gc6e5] } (2... d6 { The Modern Variation can lead to the same following sequence. } { [%cal Gd6e5,Gg8f6] } 3. d4) 3. d4 { That's the Open variation. } { [%cal Gd4c5] } 3... cxd4 4. Nxd4 Nf6 { [%cal Gf6e4] } 5. Nc3 { [%cal Gc3e4] } *
+
+
+[Event "Alternatives after e4: Scandinavian Defense"]
+[Date "2026.08.02"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "B01"]
+[Opening "Scandinavian Defense: Main Line"]
+[StudyName "Alternatives after e4"]
+[ChapterName "Scandinavian Defense"]
+[ChapterURL "https://lichess.org/study/t3nIs6NV/dWbDMC0J"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"]
+[SetUp "1"]
+[UTCDate "2026.08.02"]
+[UTCTime "14:55:29"]
+[Orientation "white"]
+
+1... d5 { That's the Scandinavian Defense. Black challenges White’s center immediately. } { [%cal Gd5e4] } 2. exd5 Qxd5 3. Nc3 { Develops a Knight and win a tempo on the Queen. } { [%cal Gc3d5] } 3... Qa5 4. d4 { Takes the center. } { [%csl Gd4][%cal Gd4e5] } 4... c6 { Prepare retreat square for the Queen. } { [%cal Ga5c7] } 5. Bd2 { Threat on the Queen that should retreat. } { [%cal Ga5c7,Gd2a5] } *
+
+
+[Event "Alternatives after e4: French Defense"]
+[Date "2026.08.02"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C11"]
+[Opening "French Defense: Classical Variation, Steinitz Variation"]
+[StudyName "Alternatives after e4"]
+[ChapterName "French Defense"]
+[ChapterURL "https://lichess.org/study/t3nIs6NV/YwUiLrgV"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"]
+[SetUp "1"]
+[UTCDate "2026.08.02"]
+[UTCTime "14:53:57"]
+[Orientation "white"]
+
+1... e6 { That's the French Defense. Black wants to support the pawn push to d5 next move for stable anchor in the center. } { [%cal Gd7d5] } 2. d4 d5 3. Nc3 { That's the Paulsen Variation. White develops a piece and defends the e4 pawn. } { [%cal Gc3e4] } 3... Nf6 { [%cal Gf6e4] } 4. e5 { That's the Steinitz Variation. White takes the center and gains a tempo on the Knight. } { [%cal Ge5f6] } 4... Nfd7 5. f4 { Gains a significant space advantage. } { [%cal Gf4e5] } *
+
+
+[Event "Alternatives after e4: Pirc Defense"]
+[Date "2026.09.12"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "B08"]
+[Opening "Pirc Defense: Classical Variation, Quiet System"]
+[StudyName "Alternatives after e4"]
+[ChapterName "Pirc Defense"]
+[ChapterURL "https://lichess.org/study/t3nIs6NV/Bk5yZjF7"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"]
+[SetUp "1"]
+[UTCDate "2026.09.12"]
+[UTCTime "16:50:40"]
+[Orientation "white"]
+
+1... d6 { That's the Pirc Defense. It's an hypermodern response where Black will apply pressure on the center from afar. } { [%cal Gf8g7,Gg7d4] } 2. d4 Nf6 { [%cal Gf6e4,Gf6d5] } 3. Nc3 { [%cal Gc3e4,Gc3d5] } 3... g6 4. Nf3 { That's the Classical Variation, developping our second Knight to control the center. } { [%cal Gf3e5,Gf3d4] } 4... Bg7 { Developping the Bishop in fianchetto, a usual hypermodern move. } { [%cal Gg7d4] } 5. Be2 { That's the Quiet System, just going for quick castlings on King side. } { [%cal Ge1g1,Ge8g8] } *
+
+

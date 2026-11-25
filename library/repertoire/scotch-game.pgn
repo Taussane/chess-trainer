@@ -1,0 +1,93 @@
+[Event "Scotch Game: Scotch Game Opening"]
+[Date "2025.10.09"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C45"]
+[Opening "Scotch Game"]
+[StudyName "Scotch Game"]
+[ChapterName "Scotch Game Opening"]
+[ChapterURL "https://lichess.org/study/ynIzoTxW/cr7nOxYu"]
+[Annotator "https://lichess.org/@/Taussane"]
+[UTCDate "2025.10.09"]
+[UTCTime "01:10:17"]
+[Orientation "white"]
+
+{ White aims for an early strike in the center. } { [%cal Ge2e4,Gd2d4,Gg1f3] } 1. e4 { [%csl Ge4][%cal Ge4d5] } 1... e5 { [%csl Ge5][%cal Ge5d4] } 2. Nf3 { [%cal Gf3e5,Gf3d4] } 2... Nc6 { [%cal Gc6e5,Gc6d4] } 3. d4 { That's the Scotch Game. Most of the time the Pawn is traded. } { [%cal Ge5d4,Gf3d4] } 3... exd4 4. Nxd4 *
+
+
+[Event "Scotch Game: Classical Variation"]
+[Date "2025.10.09"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C45"]
+[Opening "Scotch Game: Classical Variation"]
+[StudyName "Scotch Game"]
+[ChapterName "Classical Variation"]
+[ChapterURL "https://lichess.org/study/ynIzoTxW/Wh6jbVcr"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "r1bqkbnr/pppp1ppp/2n5/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4"]
+[SetUp "1"]
+[UTCDate "2025.10.09"]
+[UTCTime "02:30:34"]
+[Orientation "white"]
+
+4... Bc5 { That's the Classical Variation. We need to fight for our only developed piece. } (4... Qf6 { Other move orders can lead to the same final position. } 5. Be3 (5. c3 Bc5 6. Be3) 5... Bc5 6. c3) 5. Be3 { The Knight could capture Black’s Knight with a tempo on the Queen and win the Bishop afterward. } { [%csl Gc6][%cal Ge3c5,Gc6d8] } 5... Qf6 (5... Nf6 6. Nxc6 bxc6 (6... dxc6 7. Qxd8+ Kxd8 8. Bxc5) 7. Bxc5) 6. c3 Nge7 { Black moves the Knight to prepare for castling. } { [%cal Ge8h8] } 7. Bc4 { We’re moving the Bishop to prepare for castling as well. } { [%cal Ge1h1] } 7... O-O 8. O-O *
+
+
+[Event "Scotch Game: Schmidt Variation, Mieses Variation"]
+[Date "2025.10.09"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C45"]
+[Opening "Scotch Game: Mieses Variation"]
+[StudyName "Scotch Game"]
+[ChapterName "Schmidt Variation, Mieses Variation"]
+[ChapterURL "https://lichess.org/study/ynIzoTxW/foxIfq9A"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "r1bqkbnr/pppp1ppp/2n5/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4"]
+[SetUp "1"]
+[UTCDate "2025.10.09"]
+[UTCTime "02:23:14"]
+[Orientation "white"]
+
+4... Nf6 { That's the Schmidt Variation, it's the main line. We want to exchange Knights and then push the central Pawn. } { [%cal Gd4c6,Ge4e5] } 5. Nxc6 bxc6 (5... dxc6 { Capturing with the Queen’s Pawn would simply trade Queens and lose castling rights, with no benefits. } 6. Qxd8+ Kxd8 7. f3 { [%cal Gf3e4] }) 6. e5 { That's the Mieses Variation. We expand in the center and attack the Knight. } { [%cal Ge5f6] } 6... Qe7 { The Queen defends the Knight by pinning the Pawn. } { [%cal Ge7e1] } (6... Nd5 { We can again attack the Knight with tempo. } 7. c4 { [%cal Gd5b6,Gd5e7] }) 7. Qe2 { The Queen shelters the King and unpins the Pawn. } { [%cal Ge5f6] } 7... Nd5 8. c4 { Black can either pin the Pawn with the Bishop, threatening the Queen, or simply move the Knight to safety. } { [%csl Gc4][%cal Gc8a6,Ga6e2,Gd5b6] } *
+
+
+[Event "Scotch Game: Lolli Variation"]
+[Date "2026.01.05"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C44"]
+[Opening "Scotch Game: Lolli Variation"]
+[StudyName "Scotch Game"]
+[ChapterName "Lolli Variation"]
+[ChapterURL "https://lichess.org/study/ynIzoTxW/FrBgGrSz"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "r1bqkbnr/pppp1ppp/2n5/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4"]
+[SetUp "1"]
+[UTCDate "2026.01.05"]
+[UTCTime "21:52:15"]
+[Orientation "white"]
+
+4... Nxd4 { Taking the Knight is a mistake, allowing the Queen to develop with no immediate threats. } 5. Qxd4 Qf6 (5... d6 { We'll simply develop and castle long. } 6. Nc3 Nf6 7. Bf4 Be7 8. O-O-O O-O) (5... c5 { It’s a useless attack; we simply move the Queen to safety. } 6. Qe3) (5... Nf6 { Developing the Knight naturally is met with direct attacks. } 6. e5) 6. e5 Qb6 7. Qxb6 axb6 { We now just want to develop the Knight and Bishop, then castle long. } { [%cal Gb1c3,Gc1f4] } *
+
+
+[Event "Scotch Game: No take alternatives"]
+[Date "2026.01.05"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "Scotch Game"]
+[ChapterName "No take alternatives"]
+[ChapterURL "https://lichess.org/study/ynIzoTxW/9RojOr7O"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "r1bqkbnr/pppp1ppp/2n5/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3"]
+[SetUp "1"]
+[UTCDate "2026.01.05"]
+[UTCTime "22:32:29"]
+[Orientation "white"]
+
+3... d6 { We can simply push the pawn to attack the knight and take the center. } (3... Nf6 { We can take the Pawn and attack the Knight. } 4. dxe5 Nxe4 5. Qe2) (3... Nxd4 { Brings to Lolli Variation. } 4. Nxd4 exd4 5. Qxd4) 4. d5 *
+
+

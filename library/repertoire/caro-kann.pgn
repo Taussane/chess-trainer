@@ -1,0 +1,93 @@
+[Event "Caro-Kann: Setup"]
+[Date "2026.01.26"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "B12"]
+[Opening "Caro-Kann Defense"]
+[StudyName "Caro-Kann"]
+[ChapterName "Setup"]
+[ChapterURL "https://lichess.org/study/jrJsbfGa/48t0RLJx"]
+[Annotator "https://lichess.org/@/Taussane"]
+[UTCDate "2026.01.26"]
+[UTCTime "02:30:04"]
+[Orientation "black"]
+
+1. e4 { [%csl Ge4][%cal Ge4d5] } (1. d4 { Best move leads to the same position. } 1... c6 2. e4 (2. c4 { Worse case scenario we end up in the great Queen's Gambit Slav Defense. } 2... d5 { [%cal Gb1c3,Gg8f6,Gg1f3,Ge7e6] }) 2... d5) 1... c6 { That's the Caro-Kann Defense. We're not directly fighting for the center, preparing d5 push. } { [%cal Gd7d5] } 2. d4 { [%csl Gd4][%cal Gd4e5] } 2... d5 { We'll take this Pawn if we can. } { [%csl Gd5][%cal Gd5e4] } *
+
+
+[Event "Caro-Kann: Advanced"]
+[Date "2026.01.26"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "B12"]
+[Opening "Caro-Kann Defense: Advance Variation, Short Variation"]
+[StudyName "Caro-Kann"]
+[ChapterName "Advanced"]
+[ChapterURL "https://lichess.org/study/jrJsbfGa/bnwPmyzz"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3"]
+[SetUp "1"]
+[UTCDate "2026.01.26"]
+[UTCTime "02:43:41"]
+[Orientation "black"]
+
+3. e5 { That's the Advanced Variation. We'll develop the Bishop first, then push the e Pawn. } { [%cal Gc8f5,Ge7e6] } 3... Bf5 4. Nf3 (4. h4 { This can trap the Pawn if we close the door with e6 directly. } { [%cal Ge7e6,Gg2g4] } 4... h5) 4... e6 5. Be2 c5 { [%cal Gc1e3,Gb8d7] } *
+
+
+[Event "Caro-Kann: Classical"]
+[Date "2026.01.26"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "B18"]
+[Opening "Caro-Kann Defense: Classical Variation"]
+[StudyName "Caro-Kann"]
+[ChapterName "Classical"]
+[ChapterURL "https://lichess.org/study/jrJsbfGa/qeAbPMHn"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3"]
+[SetUp "1"]
+[UTCDate "2026.01.26"]
+[UTCTime "02:44:53"]
+[Orientation "black"]
+
+3. Nc3 { That's the Classical Variation. } (3. Nd2 { Leads to the same position. } 3... dxe4 4. Nxe4) 3... dxe4 { No good developing moves so better to exchange the Pawn. } 4. Nxe4 Bf5 { [%cal Gf5e4] } 5. Ng3 { [%cal Gg3f5] } 5... Bg6 { Pawn in h4 must be met with h6 to not trap the Bishop. Otherwise we want to develop our Knight to d7. } { [%cal Gh2h4,Gh7h6,Gg1f3,Gb8d7] } *
+
+
+[Event "Caro-Kann: Exchange"]
+[Date "2026.01.26"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "B13"]
+[Opening "Caro-Kann Defense: Panov Attack, Modern Defense"]
+[StudyName "Caro-Kann"]
+[ChapterName "Exchange"]
+[ChapterURL "https://lichess.org/study/jrJsbfGa/SXcZBEY3"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3"]
+[SetUp "1"]
+[UTCDate "2026.01.26"]
+[UTCTime "02:45:23"]
+[Orientation "black"]
+
+3. exd5 { That's the Exchange Variation. We'll just want to develop Knights then Bishops. } { [%cal Gg8f6,Gb8c6] } 3... cxd5 4. c4 (4. Bd3 Nc6) (4. Nf3 Nc6) 4... Nf6 5. Nc3 Nc6 { [%cal Gg1f3,Gc8g4] } *
+
+
+[Event "Caro-Kann: Two Knights Attack"]
+[Date "2026.01.26"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "B10"]
+[Opening "Caro-Kann Defense: Two Knights Attack"]
+[StudyName "Caro-Kann"]
+[ChapterName "Two Knights Attack"]
+[ChapterURL "https://lichess.org/study/jrJsbfGa/aRPHirmV"]
+[Annotator "https://lichess.org/@/Taussane"]
+[FEN "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"]
+[SetUp "1"]
+[UTCDate "2026.01.26"]
+[UTCTime "03:07:20"]
+[Orientation "black"]
+
+2. Nc3 { [%cal Gg1f3] } (2. Nf3 { Could lead to the same position. } { [%cal Gb1c3] } 2... d5 3. Nc3) 2... d5 { [%csl Gd5][%cal Gd5e4] } 3. Nf3 { That's the Two Knights Attack Variation. } (3. d4 { Returns to Classical Variation. }) 3... dxe4 4. Nxe4 Nf6 5. Nxf6+ exf6 { We want to develop our Bishop and castle. } { [%cal Gf8d6,Ge8g8] } *
+
+
