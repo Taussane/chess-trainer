@@ -8,8 +8,9 @@ Writes:
 Rules (objective, so a new study merges the same way):
   - chapters starting from a FEN are grafted where the merged tree first reaches that position;
   - the same move from the same node is merged: comments joined (no duplicates), arrows and squares deduplicated;
-  - at a position where it's your move, the main line (first variation) is your move; your other moves are
-    sidelines ("not your line", their comment shown when played);
+  - one move to play in every position: where it's your move, the main line (first variation) is your move; your
+    other moves are kept only for the trainer, as moves to avoid (their comment and the opponent's answer, up to
+    3 moves, shown when played; '=' when that answer transposes back into your line), and left out of the study; the opponent keeps all their variations;
   - DROP: lines removed by decision (see below).
 Graph: positions keyed by placement, side and castling (no en passant square, no clocks), so transpositions meet.
 """
@@ -87,7 +88,14 @@ def graph(root, colour):
             if old:
                 if flag == 1: old[1] = 1   # (your main move somewhere wins over a sideline elsewhere)
                 continue
-            lst.append([san, flag, cid(text(v.comment)), names.index(ch)])
+            row = [san, flag, cid(text(v.comment)), names.index(ch)]
+            if flag == 2:   # a move to avoid: the answer your study gives to it
+                bb, ref, x = v.board(), [], v
+                while x.variations and len(ref) < 3:
+                    x = x.variations[0]; ref.append((bb.fullmove_number, bb.turn, bb.san(x.move))); bb.push(x.move)
+                same = sum(1 for y in walk(root) if key(y.board()) == key(bb)) > 1   # (it transposes back into your line)
+                row.append('=' if same else ' '.join((f'{n}.' if t else (f'{n}...' if i == 0 else '')) + m for i, (n, t, m) in enumerate(ref)))
+            lst.append(row)
     for k, lst in nodes.items():   # your move at a transposition reached from two chapters: one main move only
         mains = [m for m in lst if m[1] == 1]
         for m in mains[1:]: m[1] = 2
@@ -99,7 +107,11 @@ def main():
         root = build(colour)
         root.headers.clear(); root.headers['Event'] = f'Repertoire: {title}'
         root.headers['ChapterName'] = title; root.headers['Orientation'] = 'white' if colour == 'w' else 'black'
-        out.append(str(root)); data[colour] = graph(root, colour)
+        data[colour] = graph(root, colour)
+        me = chess.WHITE if colour == 'w' else chess.BLACK
+        for n in list(walk(root)):   # the study: one move to play in every position
+            if n.board().turn == me: n.variations[1:] = []
+        out.append(str(root))
     with open(os.path.join(ROOT, 'data/repertoire-study.pgn'), 'w') as f: f.write('\n\n\n'.join(out) + '\n')
     app = os.path.join(ROOT, 'app/index.html'); s = open(app).read()
     js = json.dumps(data, separators=(',', ':'), ensure_ascii=False)

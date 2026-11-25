@@ -34,6 +34,9 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   await tryMove('d2', 'd4');
   const w1 = await p.evaluate(() => ({ n: rep.drill.sans.length, msg: rep.drill.msg, tries: rep.drill.tries }));
   check('a move not in your line: said, the board stays', w1.n === 0 && /Not your move/.test(w1.msg) && w1.tries === 1, w1);
+  await p.waitForFunction(() => rep.drill.msg !== 'Not your move here. Try again.', null, { timeout: 60000 }).catch(() => {});
+  const w1b = await p.evaluate(() => rep.drill.msg);
+  check('1.d4 instead of 1.e4: playable, not your move', /^Playable, but not your move/.test(w1b), w1b);
   await p.click('#repShow');
   check('Show move: an arrow', await p.evaluate(() => document.querySelectorAll('#arrows *').length > 0), null);
   await tryMove('e2', 'e4'); await p.waitForTimeout(700);
@@ -55,6 +58,12 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   const b0 = await p.evaluate(() => ({ side: repPos().side, sans: rep.drill.sans, flip: boardFlipped() }));
   check('Black: your move, the board turned', b0.side === 'b' && b0.flip && b0.sans.length >= 1, b0);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk.png' });
+  // a move your study says to avoid: what your study answers with (the Slav's 4...Bf5)
+  await p.evaluate(() => { const it = repIndex('b').at[repKey(new Chess('rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R b KQkq - 3 4').fen())]; rep.c = 'b'; repStart(); Object.assign(rep.drill, { fens:it.fens.slice(), sans:it.sans.slice(), moves:it.moves.slice(), tries:0 }); render(); });
+  await tryMove('c8', 'f5');
+  const av = await p.evaluate(() => ({ msg: rep.drill.msg, note: rep.drill.note }));
+  check('a move to avoid: what your study answers with', /^Not the move: met by 5\.cxd5 cxd5 6\.Qb3/.test(av.msg) && /double attack/.test(av.note), av);
+  if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-avoid.png' });
   // Review: a reply out of the repertoire in two games (1.d4 c6 2.Bf4) is listed, with a move to add
   await p.evaluate(() => { myGames.push({ id: 't1', me: 'b', sans: ['d4', 'c6', 'Bf4', 'd5', 'e3'], evals: [] }, { id: 't2', me: 'b', sans: ['d4', 'c6', 'Bf4', 'd5', 'Nf3'], evals: [] }, { id: 't3', me: 'b', sans: ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'Nxe4', 'Bf5', 'Bd3', 'Qxd4'], evals: [] }); repGames = null; rep.view = 'review'; render(); });
   const r0 = await p.evaluate(() => [...document.querySelectorAll('.rep-item .rep-moves')].map(e => e.textContent));
