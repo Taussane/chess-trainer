@@ -7320,9 +7320,20 @@ document.addEventListener('pointerdown', e=>{
   if(e.button || !e.target.closest || !e.target.closest('#app button, #app .card, #app [role=radio], #side button')) return;
   holdRender(); clearTimeout(holdRender.safety); holdRender.safety = setTimeout(releaseRender, 2000);
 }, true);
+// A dropdown open: no redraw either (it would close it); until a choice, Escape, or a press elsewhere (30 s at most)
+let selHold = false;
+const releaseSel = ()=>{ if(!selHold) return; selHold = false; clearTimeout(releaseSel.safety); if(renderWaiting && !renderHeld){ renderWaiting = false; setTimeout(render, 0); } };
+document.addEventListener('pointerdown', e=>{
+  const s = e.target.closest && e.target.closest('#app select');
+  if(!s || selHold){ releaseSel(); return; }   // (a press on it again closes it)
+  selHold = true; releaseSel.safety = setTimeout(releaseSel, 30000);
+}, true);
+document.addEventListener('change', e=>{ if(e.target.tagName==='SELECT') releaseSel(); }, true);
+document.addEventListener('focusout', e=>{ if(e.target.tagName==='SELECT') releaseSel(); }, true);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' || e.key==='Enter') releaseSel(); }, true);
 function render(){
   for(const id of ['fbModal', 'gpModal', 'flModal', 'cnModal']){ const m = document.getElementById(id); if(m && m.dataset.scr!==screen) m.remove(); }
-  if(renderHeld){ renderWaiting = true; return; }
+  if(renderHeld || selHold){ renderWaiting = true; return; }
   if(firstVisit && screen!=='final') firstVisit = null;   // (the first visit's way in is over once the player goes elsewhere)
   // The page is redrawn often (e.g. while your games are analysed): text being typed, and the
   // focus and cursor in it, carry over to the redrawn page.
@@ -11202,8 +11213,9 @@ function repPos(){
   return { key:'rep:' + fen, fen, side: fen.split(' ')[1], moveNo: +fen.split(' ')[5], last: m ? { squares:[m.from, m.to] } : null, hist:{} };
 }
 const repFlip = ()=>!!(rep && rep.drill && rep.drill.c==='b');
-// The study's marks on a position: 'Ge2e4' an arrow, 'Re4' a circled square (green, red, yellow, blue)
-const REP_MARK = { G:'var(--good)', R:'var(--bad)', Y:'var(--accent)', B:'#4f8fdb' };
+// The study's marks on a position: 'Ge2e4' an arrow, 'Re4' a circled square; green, red, blue, yellow: the 1st to
+// 4th arrow colours of Settings (the same by default)
+const REP_MARK = { G:'var(--pick1)', R:'var(--pick2)', B:'var(--pick3)', Y:'var(--system)' };
 const repMarks = (c, fen)=>(REPERTOIRE[c].mk || {})[repKey(fen)] || [];
 // Above the board, as an exercise: the study and its chapter, then who is to play; beside it, White and Black with
 // the material difference (the drill's colour at the bottom)
