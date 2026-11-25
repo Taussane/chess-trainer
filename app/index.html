@@ -633,7 +633,8 @@
   .wrap.ex > #app > .xp-sides.rep-mv{justify-content:flex-start; font-size:0.86rem; color:var(--text-mute);} .rep-mv > span{flex:1; min-width:0; overflow-x:hidden; white-space:nowrap; scrollbar-width:none;}   /* (the line so far, above the panel: one line, its end in view) */
   .btn.secondary.rep-tg.on{background:var(--accent); color:#1b1b1b;}   /* (Comment, Marks, Show move: on, in yellow) */
   .rep-prompt.rep-wrong{color:var(--bad);} .rep-prompt.rep-done{color:var(--good);}
-  .rep-note{margin:0; min-height:2.9em; font-size:0.88rem; line-height:1.45; color:var(--text-mute); overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;}
+  .rep-prompt{height:2.9em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;} .rep-checking{color:var(--text-mute); font-size:0.88rem; white-space:nowrap;}
+  .rep-note{margin:0; height:2.9em; font-size:0.88rem; line-height:1.45; color:var(--text-mute); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}   /* (prompt and comment: two lines each, the panel never grows) */
   .rep-review{display:flex; flex-direction:column; gap:10px; max-width:720px; width:100%;} .rep-review h2{margin:14px 0 0; font-size:1.05rem;}
   .rep-item{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;}
   .rep-item-top{display:flex; align-items:center; gap:8px;} .rep-n{margin-left:auto; color:var(--text-mute); font-size:0.82rem;}
@@ -11145,7 +11146,7 @@ function repTry(mv){
     d.tries++; if(!d.wrong) d.noteBefore = d.note; d.note = hit ? repComment(d.c, hit) : '';
     // a move your study answers: what it answers with (or that it comes back to your line); any other: Stockfish's verdict
     d.msg = !hit ? 'Not your move here.' : hit[4]==='=' ? 'Playable, but not your move: it transposes.' : `Not the move: met by ${hit[4]}.`;
-    d.wrong = { fen:g.fen(), from:m.from, to:m.to };   // (it stays on the board until Try again)
+    d.wrong = { fen:g.fen(), from:m.from, to:m.to, checking:!hit };   // (it stays on the board until Try again; not in the study: the engine looks at it)
     if(!hit) repWhyNot(d, fen, m); render(); return;
   }
   repGrade(d, k); repPush(d, m, g);
@@ -11167,13 +11168,15 @@ function repTry(mv){
 // the engine's line. A pawn or more: "it loses"; 0.3 or more:
 // "weaker"; less: "playable, but not your move".
 function repWhyNot(d, fen, m){
-  const main = repMain(d.c, repKey(fen)), g0 = new Chess(fen), mm = main && g0.move(main[0]); if(!mm) return;
+  const main = repMain(d.c, repKey(fen)), g0 = new Chess(fen), mm = main && g0.move(main[0]); if(!mm){ if(d.wrong) d.wrong.checking = false; return; }
   const uci = x=>x.from + x.to + (x.promotion || ''), wrong = d.wrong;   // (the explanation belongs to this wrong move, while it's on the board)
   bgEval(fen, { searchmoves:uci(m) + ' ' + uci(mm), multipv:2, movetime:700, depth:LIVE_DEPTH }).then(r=>{
-    if(evalFailed(r) || !r.lines || rep.drill!==d || d.wrong!==wrong) return;
+    if(rep.drill!==d || d.wrong!==wrong) return;
+    wrong.checking = false;
+    if(evalFailed(r) || !r.lines){ if(screen==='repertoire' && rep.view!=='review') render(); return; }
     const cp = l=>l ? (l.mate!=null ? Math.sign(l.mate) * 1e4 : l.cp) : null;
     const lw = r.lines.find(l=>l.uci===uci(m)), lm = r.lines.find(l=>l.uci===uci(mm));
-    if(!lw || !lm) return;
+    if(!lw || !lm){ if(screen==='repertoire' && rep.view!=='review') render(); return; }
     const drop = cp(lm) - cp(lw);
     let after = '';
     if(lw.pv){ const g = new Chess(fen); g.move(m); const out = [];
@@ -11222,7 +11225,7 @@ function renderRepertoire(){
   const app = document.getElementById('app'), d = rep.drill, p = repPos(), cn = repCounts(), o = repStore.o;
   const tabs = `<div class="seg seg-sm xp-modes" role="radiogroup" aria-label="Colour">${[['w', 'White'], ['b', 'Black'], ['both', 'Both']].map(([k, l])=>
     `<button class="seg-btn${rep.c===k ? ' active' : ''}" data-repc="${k}" role="radio" aria-checked="${rep.c===k}"><span>${l}</span><span class="seg-w" aria-hidden="true">${l}</span></button>`).join('')}</div>`;
-  const prompt = !d ? 'No lines in your repertoire yet.' : d.done ? `Line complete: ${repSummary(d)}.` : d.wait ? '…' : d.msg || (d.showOn ? 'Play the move shown.' : 'Your move?');
+  const prompt = !d ? 'No lines in your repertoire yet.' : d.done ? `Line complete: ${repSummary(d)}.` : d.wait ? '…' : (d.msg || (d.showOn ? 'Play the move shown.' : 'Your move?')) + (d.wrong && d.wrong.checking ? ' <span class="rep-checking">The engine is looking at it…</span>' : '');
   const fen = d ? d.fens[d.fens.length - 1] : EXPLORER_START, marks = d ? repMarks(d.c, fen) : [];
   // the comment: the study's, on the move just played (a wrong move: the study's word on it, if any, shown at once)
   const note = d && d.note || '', showNote = d && (d.wrong ? !!note : o.comment && !!note);
