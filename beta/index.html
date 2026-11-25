@@ -11181,6 +11181,18 @@ function repGrade(d, k){
   else repStore.s[d.c + '|' + k] = [0, now - 30 * REP_DAY, st[2] + 1];   // (first in the pile)
   repSave(); d.marks.push(r);
 }
+// Moves slide and sound as in the explorer (taken back: slides back, silent; a new line: its last move played
+// again after a short wait, as an exercise's)
+function repSlide(m, back = false, delay = 0){
+  const rank = m.color==='w' ? '1' : '8', rook = /k/.test(m.flags) ? ['h' + rank, 'f' + rank] : /q/.test(m.flags) ? ['a' + rank, 'd' + rank] : null;
+  const paths = [[m.from, m.to]].concat(rook ? [rook] : []);
+  explorerSlide(back ? paths.map(([a, b])=>[b, a]) : paths, delay);
+  if(!back){ const d = rep && rep.drill; delay ? setTimeout(()=>{ if(rep && rep.drill===d && screen==='repertoire') explorerSound(!!m.captured); }, delay) : explorerSound(!!m.captured); }
+}
+function repIntro(){
+  const d = rep && rep.drill; if(!d || !d.sans.length) return;
+  const g = new Chess(d.fens[d.fens.length - 2]), m = g.move(d.sans[d.sans.length - 1]); if(m) repSlide(m, false, INTRO_DELAY);
+}
 function repPush(d, mv, g){
   d.fens.push(g.fen()); d.sans.push(mv.san); d.moves.push({ from:mv.from, to:mv.to });
 }
@@ -11193,10 +11205,11 @@ function repTry(mv){
     d.tries++; if(!d.wrong) d.noteBefore = d.note; d.note = hit ? repComment(d.c, hit) : '';
     // a move your study answers: what it answers with (or that it comes back to your line); any other: Stockfish's verdict
     d.msg = !hit ? 'Not your move here.' : hit[4]==='=' ? 'Playable, but not your move: it transposes.' : `Not the move: met by ${hit[4]}.`;
-    d.wrong = { fen:g.fen(), from:m.from, to:m.to, checking:!hit };   // (it stays on the board until Try again; not in the study: the engine looks at it)
+    d.wrong = { fen:g.fen(), from:m.from, to:m.to, checking:!hit, m };   // (it stays on the board until Try again; not in the study: the engine looks at it)
+    repSlide(m);
     if(!hit) repWhyNot(d, fen, m); render(); return;
   }
-  repGrade(d, k); repPush(d, m, g);
+  repGrade(d, k); repPush(d, m, g); repSlide(m);
   d.ch = repChapter(d.c, hit) || d.ch; d.note = repComment(d.c, hit); d.msg = ''; d.tries = 0; d.shown = false; d.showOn = false;
   const reply = repReply(d.c, g.fen());
   if(!reply){ d.done = true; render(); return; }
@@ -11205,7 +11218,7 @@ function repTry(mv){
     if(!rep || rep.drill!==d) return;
     const g2 = new Chess(g.fen()), r = g2.move(reply[0]); d.wait = false;
     if(!r){ d.done = true; render(); return; }
-    repPush(d, r, g2); d.ch = repChapter(d.c, reply) || d.ch;
+    repPush(d, r, g2); d.ch = repChapter(d.c, reply) || d.ch; if(screen==='repertoire') repSlide(r);
     const c2 = repComment(d.c, reply); if(c2) d.note = c2;
     if(!repMain(d.c, repKey(g2.fen()))) d.done = true;
     if(screen==='repertoire') render();
@@ -11269,7 +11282,7 @@ function renderRepertoire(){
   repLoad();
   if(!rep) rep = { c: repStore.c, drill:null, view:'train' };
   if(rep.view==='review') return renderRepReview();
-  if(!rep.drill) repStart();
+  if(!rep.drill){ repStart(); repIntro(); }
   const app = document.getElementById('app'), d = rep.drill, p = repPos(), cn = repCounts(), o = repStore.o;
   const colourSel = `<select class="title-chip rep-sel" id="repColour" aria-label="Colour">${[['w', 'White'], ['b', 'Black'], ['both', 'Both']].map(([k, l])=>
     `<option value="${k}"${rep.c===k ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
@@ -11333,13 +11346,13 @@ function renderRepertoire(){
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('homeBtn', ()=>{ screen = 'home'; render(); });
   on('repReview', ()=>{ rep.view = 'review'; render(); });
-  on('repNext', ()=>{ repStart(); render(); });
-  on('repSkip', ()=>{ repStart(); render(); });
-  on('repRetry', ()=>{ d.wrong = null; d.msg = ''; d.note = d.noteBefore || ''; render(); });
+  on('repNext', ()=>{ repStart(); repIntro(); render(); });
+  on('repSkip', ()=>{ repStart(); repIntro(); render(); });
+  on('repRetry', ()=>{ if(d.wrong.m) repSlide(d.wrong.m, true); d.wrong = null; d.msg = ''; d.note = d.noteBefore || ''; render(); });
   on('repShow', ()=>{ d.showOn = !d.showOn; if(d.showOn) d.shown = true; render(); });   // (once shown, the position counts as shown)
   on('repComment', ()=>{ o.comment = !o.comment; repSave(); render(); });
   on('repMarks', ()=>{ o.marks = !o.marks; repSave(); render(); });
-  const sel = document.getElementById('repColour'); if(sel) sel.onchange = ()=>{ rep.c = repStore.c = sel.value; repSave(); repStart(); render(); };
+  const sel = document.getElementById('repColour'); if(sel) sel.onchange = ()=>{ rep.c = repStore.c = sel.value; repSave(); repStart(); repIntro(); render(); };
 }
 // ---- Review: your games against your repertoire. Replies you have no line for (2 games or more, or a move that
 // lost a pawn or more: to punish), with a move to add (the one you played most, if it's within 0.3 of
