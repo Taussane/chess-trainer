@@ -662,7 +662,7 @@
 
   .prompt{margin:0; font-size:1rem; line-height:1.45;}
   /* Repertoire (beta): the line so far, the prompt, the study's comment; the Review's list */
-  .wrap.ex > #app > .xp-sides.rep-mv{justify-content:flex-start; font-size:0.86rem; color:var(--text-mute);} .rep-mv > span{flex:1; min-width:0; overflow-x:auto; overscroll-behavior-x:contain; white-space:nowrap; scrollbar-width:none;} .rep-mv > span::-webkit-scrollbar{display:none;}
+  .wrap.ex > #app > .xp-sides.rep-mv{justify-content:flex-start; font-size:0.86rem; color:var(--text-mute);} .rep-mv > span{flex:1; min-width:0; overflow-x:auto; overscroll-behavior-x:contain; white-space:nowrap; scrollbar-width:none;} .rep-mv > span::-webkit-scrollbar{display:none;} .rep-mv b{font-weight:600;}
   .rep-mv > span.fade-l{-webkit-mask-image:linear-gradient(to right, transparent, #000 32px); mask-image:linear-gradient(to right, transparent, #000 32px);}
   .rep-mv > span.fade-r{-webkit-mask-image:linear-gradient(to left, transparent, #000 32px); mask-image:linear-gradient(to left, transparent, #000 32px);}
   .rep-mv > span.fade-l.fade-r{-webkit-mask-image:linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent); mask-image:linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);}   /* (more of the line that way: its edge fades) */   /* (the line so far, above the panel: one line, its end in view, scrolls sideways when long) */
@@ -11237,7 +11237,7 @@ function repWhyNot(d, fen, m){
 }
 function repMovesText(d){
   const out = []; let no = 1, w = true;
-  d.sans.forEach(s=>{ out.push(w ? no + '.' + s : s); if(!w) no++; w = !w; });
+  d.sans.forEach(s=>{ out.push((w ? no + '.' : '') + '<b>' + escHtml(s) + '</b>'); if(!w) no++; w = !w; });   // (the moves in bold, the numbers as they are)
   return out.join(' ');
 }
 function repSummary(d){
@@ -11292,7 +11292,7 @@ function renderRepertoire(){
     </div>
     <div class="posbar"><div class="pos-title">${cn.total - cn.due - cn.fresh}/${cn.total} checked · ${repSource(d)}<br>${toPlay(p)}</div></div>
     <div class="stage"><div class="board-col">${repPlayer(p.fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(p.fen, top==='w' ? 'b' : 'w')}</div></div>
-    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${d ? escHtml(repMovesText(d)) || 'Start position' : ''}</span></div>
+    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${d ? repMovesText(d) || 'Start position' : ''}</span></div>
     ${stackedPanel(`
       <p class="prompt rep-prompt${d && d.msg ? ' rep-wrong' : d && d.done ? ' rep-done' : ''}">${prompt}</p>
       <p class="rep-note">${showNote ? escHtml(note) : ''}</p>
