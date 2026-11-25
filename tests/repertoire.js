@@ -74,7 +74,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   await p.evaluate(() => { const it = repIndex('b').at[repKey(new Chess('rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R b KQkq - 3 4').fen())]; rep.c = 'b'; repStart(); Object.assign(rep.drill, { fens:it.fens.slice(), sans:it.sans.slice(), moves:it.moves.slice(), tries:0 }); render(); });
   await tryMove('c8', 'f5');
   const av = await p.evaluate(() => ({ msg: rep.drill.msg, note: rep.drill.note }));
-  check('a move to avoid: what your study answers with', /^Not the move: met by 5\.cxd5 cxd5 6\.Qb3/.test(av.msg) && /double attack/.test(av.note), av);
+  check('a move to avoid: what your study answers with', /^Not the move: met by 5\. <b>cxd5<\/b> <b>cxd5<\/b> 6\. <b>Qb3<\/b>/.test(av.msg) && /double attack/.test(av.note), av);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-avoid.png' });
   // Review: a reply out of the repertoire in two games (1.d4 c6 2.Bf4) is listed, with a move to add
   await p.evaluate(() => { myGames.push({ id: 't1', me: 'b', sans: ['d4', 'c6', 'Bf4', 'd5', 'e3'], evals: [] }, { id: 't2', me: 'b', sans: ['d4', 'c6', 'Bf4', 'd5', 'Nf3'], evals: [] }, { id: 't3', me: 'b', sans: ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'Nxe4', 'Bf5', 'Bd3', 'Qxd4'], evals: [] }); repGames = null; rep.view = 'review'; render(); });
