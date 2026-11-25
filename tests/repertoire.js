@@ -32,13 +32,19 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   // moves through the drill's own handler (the board's clicks are the explorer's, tested there)
   const tryMove = (from, to) => p.evaluate(([f, t]) => { const g = new Chess(rep.drill.fens[rep.drill.fens.length - 1]); repTry(g.moves({ verbose: true }).find(m => m.from === f && m.to === t)); }, [from, to]);
   await tryMove('d2', 'd4');
-  const w1 = await p.evaluate(() => ({ n: rep.drill.sans.length, msg: rep.drill.msg, tries: rep.drill.tries }));
-  check('a move not in your line: said, the board stays', w1.n === 0 && /Not your move/.test(w1.msg) && w1.tries === 1, w1);
-  await p.waitForFunction(() => rep.drill.msg !== 'Not your move here. Try again.', null, { timeout: 60000 }).catch(() => {});
+  const w1 = await p.evaluate(() => ({ n: rep.drill.sans.length, msg: rep.drill.msg, tries: rep.drill.tries, kept: repPos().fen.split(' ')[0] !== rep.drill.fens[0].split(' ')[0], btns: [...document.querySelectorAll('.layer:not(.ghost) .actions-row button')].map(b => b.id) }));
+  check('a move not in your line: said, kept on the board, Try again and Skip line', w1.n === 0 && /Not your move/.test(w1.msg) && w1.tries === 1 && w1.kept && w1.btns.join() === 'repRetry,repSkip', w1);
+  await p.waitForFunction(() => rep.drill.msg !== 'Not your move here.', null, { timeout: 60000 }).catch(() => {});
   const w1b = await p.evaluate(() => rep.drill.msg);
   check('1.d4 instead of 1.e4: playable, not your move', /^Playable, but not your move/.test(w1b), w1b);
+  await p.click('#repRetry');
+  const t0 = await p.evaluate(() => ({ back: repPos().fen === rep.drill.fens[0], btns: [...document.querySelectorAll('.layer:not(.ghost) .actions-row button')].map(b => b.id + (b.disabled ? ':off' : '')) }));
+  check('Try again: the position back, the toggles (Comment off: no comment at the start)', t0.back && t0.btns.join() === 'repComment:off,repMarks,repShow,repSkip', t0);
+  await p.click('#repMarks');
+  check('Marks: the study\'s arrows', await p.evaluate(() => document.querySelectorAll('#arrows line').length >= 1 && repStore.o.marks), null);
+  await p.click('#repMarks');
   await p.click('#repShow');
-  check('Show move: an arrow', await p.evaluate(() => document.querySelectorAll('#arrows *').length > 0), null);
+  check('Show move: an arrow, the toggle on', await p.evaluate(() => document.querySelectorAll('#arrows line').length === 1 && document.getElementById('repShow').classList.contains('on')), null);
   await tryMove('e2', 'e4'); await p.waitForTimeout(700);
   const w2 = await p.evaluate(() => ({ sans: rep.drill.sans, mark: rep.drill.marks, st: repStore.s['w|' + repKey(EXPLORER_START)] }));
   check('your move, then the opponent’s reply from the repertoire', w2.sans.length === 2 && w2.sans[0] === 'e4' && w2.mark[0] === 0, w2.sans);

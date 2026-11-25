@@ -7,7 +7,8 @@ Writes:
 
 Rules (objective, so a new study merges the same way):
   - chapters starting from a FEN are grafted where the merged tree first reaches that position;
-  - the same move from the same node is merged: comments joined (no duplicates), arrows and squares deduplicated;
+  - the same move from the same node is merged: comments joined (no duplicates), arrows and squares deduplicated
+    (the graph keeps them by position, 'mk', for the trainer's Marks);
   - one move to play in every position: where it's your move, the main line (first variation) is your move; your
     other moves are kept only for the trainer, as moves to avoid (their comment and the opponent's answer, up to
     3 moves, shown when played; '=' when that answer transposes back into your line), and left out of the study; the opponent keeps all their variations;
@@ -72,13 +73,16 @@ def build(colour):
 
 def graph(root, colour):
     me = chess.WHITE if colour == 'w' else chess.BLACK
-    nodes, comments, names = {}, [], []
+    nodes, comments, names, marks = {}, [], [], {}
     def cid(c):
         if not c: return -1
         if c not in comments: comments.append(c)
         return comments.index(c)
     for n in walk(root):
         b = n.board(); k = key(b); lst = nodes.setdefault(k, [])
+        for a in n.arrows():   # the study's marks on this position: 'Ge2e4' an arrow, 'Re4' a circled square (colour's initial)
+            sq = chess.square_name; m = a.color[0].upper() + sq(a.tail) + ('' if a.tail == a.head else sq(a.head))
+            if m not in marks.setdefault(k, []): marks[k].append(m)
         for i, v in enumerate(n.variations):
             san = b.san(v.move)
             flag = (1 if i == 0 else 2) if b.turn == me else 0
@@ -99,7 +103,7 @@ def graph(root, colour):
     for k, lst in nodes.items():   # your move at a transposition reached from two chapters: one main move only
         mains = [m for m in lst if m[1] == 1]
         for m in mains[1:]: m[1] = 2
-    return { 'n': {k: v for k, v in nodes.items() if v}, 'c': comments, 'ch': names }
+    return { 'n': {k: v for k, v in nodes.items() if v}, 'c': comments, 'ch': names, 'mk': marks }
 
 def main():
     out, data = [], {}
