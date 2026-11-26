@@ -48,10 +48,10 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   check('Explore: the line and the wrong move in the explorer, back to the drill as it was', xp.screen === 'explorer' && !xp.flip && xp.n === 'd4' && xp.at === 1 && xp.back === 'repertoire' && xp.wrong, xp);
   await p.click('#repRetry');
   const t0 = await p.evaluate(() => ({ back: repPos().fen === rep.drill.fens[0], btns: [...document.querySelectorAll('.layer:not(.ghost) .actions-row button')].map(b => b.id + (b.disabled ? ':off' : '') + (b.classList.contains('rep-none') ? ':none' : '')) }));
-  check('Try again: the position back, the toggles (no comment at the start: still switchable, faded)', t0.back && t0.btns.join() === 'repComment:none,repMarks,repShow,repSkip', t0);
-  await p.click('#repMarks');
-  check('Marks: the study\'s arrows', await p.evaluate(() => document.querySelectorAll('#arrows line').length >= 1 && repStore.o.marks), null);
-  await p.click('#repMarks');
+  check('Try again: the position back, the toggles (Comment and marks, Show move; no Skip line)', t0.back && t0.btns.join() === 'repComment,repShow', t0);
+  await p.click('#repComment');
+  check('Comment and marks: the study\'s arrows too', await p.evaluate(() => document.querySelectorAll('#arrows line').length >= 1 && repStore.o.comment), null);
+  await p.click('#repComment');
   await p.click('#repShow');
   check('Show move: an arrow, the toggle on', await p.evaluate(() => document.querySelectorAll('#arrows line').length === 1 && document.getElementById('repShow').classList.contains('on')), null);
   await tryMove('e2', 'e4'); await p.waitForTimeout(700);
