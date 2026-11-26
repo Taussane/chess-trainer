@@ -11174,11 +11174,63 @@ function repRoundCheck(){
   if(done){ st.r = { t:Date.now(), seed:Math.floor(Math.random() * 1e9) }; repSave(); }
 }
 const repColours = ()=>rep.c==='both' ? ['w', 'b'] : [rep.c];
+// Lines: every way through your study (your move where it's yours, each of the opponent's replies), cut where its
+// chapter changes; a chunk, one of those pieces, is what a drill plays: from your first move in it to its end (the
+// moves before it skipped, the one just before it played on the board). Checked: all your positions in it checked.
+const repChunkIdx = {};
+function repChunks(c){
+  const idx = repIndex(c); if(repChunkIdx[c] && repChunkIdx[c].idx===idx) return repChunkIdx[c].list;
+  const list = [], seenChunk = new Set();
+  const walk = (fen, path, seen)=>{
+    const k = repKey(fen), mine = k.split(' ')[1]===c, ms = seen.has(k) || path.length > 80 ? [] : repMoves(c, k).filter(m=>mine ? m[1]===1 : m[1]===0);
+    if(!ms.length){ cut(path); return; }
+    const seen2 = new Set(seen); seen2.add(k);
+    for(const m of ms){ const g = new Chess(fen), mv = g.move(m[0]); if(mv) walk(g.fen(), path.concat({ m, san:mv.san, fen, mine }), seen2); }
+  };
+  const cut = path=>{
+    let ch = '', a = 0, prevA = 0;
+    const chs = path.map(x=>ch = repChapter(c, x.m) || ch);
+    for(let i = 1; i <= path.length; i++){
+      if(i < path.length && chs[i]===chs[i - 1]) continue;
+      // (one move of yours only: the chunk starts with the one before it, not out of nowhere)
+      const from = path.slice(a, i).filter(x=>x.mine).length < 2 ? prevA : a;
+      const start = path.findIndex((x, j)=>j >= from && j < i && x.mine);
+      const key = path.slice(0, i).map(x=>x.san).join(' ');
+      if(start >= 0 && !seenChunk.has(key)){ seenChunk.add(key);
+        list.push({ c, key, ch:chs[i - 1], sans:path.slice(0, i).map(x=>x.san), start,
+          plan:Object.fromEntries(path.slice(start, i).filter(x=>!x.mine).map(x=>[repKey(x.fen), x.m])),
+          pos:path.slice(start, i).filter(x=>x.mine).map(x=>repKey(x.fen)) }); }
+      prevA = a; a = i;
+    }
+  };
+  walk(EXPLORER_START, [], new Set());
+  // (a piece of a chapter that another chunk of it goes on from: only the longer one, e.g. 1.e4 alone in the Scotch's
+  // opening moves, where the Sicilian's chapter takes over)
+  const pre = (x, y)=>x!==y && x.ch===y.ch && y.sans.length > x.sans.length && x.sans.every((s, i)=>y.sans[i]===s);
+  for(let i = list.length - 1; i >= 0; i--) if(list.some(y=>pre(list[i], y))) list.splice(i, 1);
+  // (the same positions to play reached by another move order: once)
+  const seenPos = new Set();
+  for(let i = 0; i < list.length; i++){ const k = list[i].pos.slice().sort().join('|'); if(seenPos.has(k)){ list.splice(i--, 1); continue; } seenPos.add(k); }
+  repChunkIdx[c] = { idx, list };
+  return list;
+}
+const repChunkChecked = (ch, now)=>ch.pos.every(k=>{ const st = repStore.s[ch.c + '|' + k]; return st && st[1] > now; });
 function repCounts(){
   repRoundCheck();
-  const now = Date.now(); let due = 0, fresh = 0, total = 0;
-  for(const c of repColours()) for(const k of repIndex(c).items){ total++; const st = repStore.s[c + '|' + k]; if(!st) fresh++; else if(st[1] <= now) due++; }
-  return { due, fresh, total };
+  const now = Date.now(); let checked = 0, total = 0;
+  for(const c of repColours()) for(const ch of repChunks(c)){ total++; if(repChunkChecked(ch, now)) checked++; }
+  return { checked, total };
+}
+// The next chunk: the pile's order on its positions (the one most in need), not the chapter just played if another
+// as much in need
+function repPickChunk(){
+  repRoundCheck();
+  const now = Date.now(), all = [];
+  for(const c of repColours()) for(const ch of repChunks(c)) all.push({ ch, s: Math.min(...ch.pos.map(k=>repScore(c, k, now))) });
+  if(!all.length) return null;
+  all.sort((a, b)=>a.s - b.s);
+  const tier = x=>Math.floor((x.s + 500) / 1000), last = rep.lastCh;
+  return (all.find(x=>tier(x)===tier(all[0]) && x.ch.ch!==last) || all[0]).ch;
 }
 function repPick(){
   repRoundCheck();
@@ -11199,28 +11251,16 @@ function repReply(c, fen){
   return scored[0].m;
 }
 function repStart(){
-  const it = repPick(); if(!it){ rep.drill = null; return; }
-  const p = repIndex(it.c).at[it.k];
-  rep.drill = { c:it.c, fens:p.fens.slice(), sans:p.sans.slice(), moves:p.moves.slice(), ch:p.ch, tries:0, shown:false, msg:'', note:'', marks:[], sel:null, done:false };
-  repPlan(rep.drill);
+  const ch = repPickChunk(); if(!ch){ rep.drill = null; return; }
+  const g = new Chess(), fens = [g.fen()], moves = [];
+  for(const san of ch.sans.slice(0, ch.start)){ const m = g.move(san); moves.push({ from:m.from, to:m.to }); fens.push(g.fen()); }
+  rep.drill = { c:ch.c, fens, sans:ch.sans.slice(0, ch.start), moves, ch:ch.ch, chunk:ch, plan:ch.plan, end:ch.sans.length, tries:0, shown:false, msg:'', note:'', marks:[], sel:null, done:false };
+  rep.lastCh = ch.ch;
 }
-// The line is picked from the start (the opponent's replies chosen in advance), so the study and chapter shown are
-// the line's own from the first move: the chapter of its last move that has one
 // Lichess and Explore, as in the exercises' reviews (the line, and a wrong move on the board; back here after)
 function repLinks(d){
   const sans = d.sans.concat(d.wrong && d.wrong.m ? d.wrong.m.san : []);
   return `<a class="btn secondary lichess-open icon-only xp-li" href="https://lichess.org/analysis/pgn/${sans.map(s=>encodeURIComponent(s.replace(/[+#]/g, ''))).join('_')}?color=${d.c==='b' ? 'black' : 'white'}#${sans.length}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn secondary lichess-open icon-only" id="repXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button>`;
-}
-function repPlan(d){
-  d.plan = {}; let fen = d.fens[d.fens.length - 1], ch = '';
-  for(let i = 0; i < 80; i++){
-    const k = repKey(fen), mine = k.split(' ')[1]===d.c, m = mine ? repMain(d.c, k) : repReply(d.c, fen);
-    if(!m) break;
-    const g = new Chess(fen); if(!g.move(m[0])) break;
-    if(!mine) d.plan[k] = m;
-    ch = repChapter(d.c, m) || ch; fen = g.fen();
-  }
-  d.ch = ch || d.ch;
 }
 function repGrade(d, k){
   const st = repStore.s[d.c + '|' + k] || [0, 0, 0, 0, 0], now = Date.now(), checked = st[2] && st[1] > now, gaps = repGaps(), day = repMidnight(now);
@@ -11266,8 +11306,7 @@ function repTry(mv){
   }
   repGrade(d, k); repPush(d, m, g); repSlide(m);
   d.note = repComment(d.c, hit); d.msg = ''; d.tries = 0; d.shown = false; d.showOn = false;
-  if(!d.plan || !(repKey(g.fen()) in d.plan)) repPlan(d);   // (off the planned line: planned again from here)
-  const reply = d.plan[repKey(g.fen())] || null;
+  const reply = d.sans.length < d.end && d.plan[repKey(g.fen())] || null;   // (the chunk's own reply; its end: done)
   if(!reply){ d.done = true; render(); return; }
   d.wait = true; render();
   setTimeout(()=>{
@@ -11276,7 +11315,7 @@ function repTry(mv){
     if(!r){ d.done = true; render(); return; }
     repPush(d, r, g2); if(screen==='repertoire') repSlide(r);
     const c2 = repComment(d.c, reply); if(c2) d.note = c2;
-    if(!repMain(d.c, repKey(g2.fen()))) d.done = true;
+    if(d.sans.length >= d.end || !repMain(d.c, repKey(g2.fen()))) d.done = true;
     if(screen==='repertoire') render();
   }, 450);
 }
@@ -11367,7 +11406,7 @@ function renderRepertoire(){
       <h1>Repertoire</h1>
       <button class="title-chip" id="repReview">Review</button>${colourSel}
     </div>
-    <div class="posbar"><div class="pos-title">${cn.total - cn.due - cn.fresh} positions checked out of ${cn.total}<br>${repSource(d)}</div></div>
+    <div class="posbar"><div class="pos-title">${cn.checked} lines checked out of ${cn.total}<br>${repSource(d)}</div></div>
     <div class="stage"><div class="board-col">${repPlayer(p.fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(p.fen, top==='w' ? 'b' : 'w')}</div></div>
     <div class="xp-sides sides-desk rep-mv"><span id="repMv">${d ? repMovesText(d) || 'Start position' : ''}</span></div>
     ${stackedPanel(`

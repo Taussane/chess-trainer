@@ -25,7 +25,8 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   const p = await open(b, { width: 1440, height: 900 });
   check('the owner sees it in the menu', await p.evaluate(() => !!document.querySelector('[data-side="repertoire"]')), null);
   // White only: nothing played yet, one of the three new positions closest to the start; here, the start itself
-  await p.evaluate(() => { rep.c = 'w'; repStart(); const it = repIndex('w').at[repKey(EXPLORER_START)]; rep.drill = Object.assign(rep.drill, { fens:it.fens.slice(), sans:[], moves:[] }); render(); });
+  // (the chunk from move 1: the Scotch's opening moves)
+  await p.evaluate(() => { rep.c = 'w'; repStart(); const ch = repChunks('w').find(x => x.start === 0 && x.sans[1] === 'e5'); rep.drill = Object.assign(rep.drill, { fens:[EXPLORER_START], sans:[], moves:[], chunk:ch, plan:ch.plan, end:ch.sans.length, ch:ch.ch }); render(); });
   const d0 = await p.evaluate(() => ({ c: rep.drill.c, n: rep.drill.sans.length, prompt: document.querySelector('.layer:not(.ghost) .rep-prompt').textContent }));
   check('White: starts at the start, your move', d0.c === 'w' && d0.n === 0 && d0.prompt === 'Your move?', d0);
   const sqAttr = await p.evaluate(() => { const el = document.querySelector('#board > *'); return el ? [...el.attributes].map(a => a.name) : []; });
@@ -74,10 +75,14 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
     const p3 = repPick(), newRound = repStore.r.t !== r0, cn = repCounts();
     const gaps = repGaps();
     repStore = JSON.parse(save); rep.c = c;
-    return { ok1: first === b, ok2: second === items[3], newRound, checked: cn.total - cn.due - cn.fresh === cn.total, gaps };
+    return { ok1: first === b, ok2: second === items[3], newRound, checked: cn.checked === cn.total, gaps };
   });
   check('the pile: not checked, then not played this round, then a new round with all checked', pile.ok1 && pile.ok2 && pile.newRound && pile.checked, pile);
   check('no position past a move to avoid (4...Qf6 5.c3 Bc5: only as 5.Be3 Bc5 6.c3)', await p.evaluate(() => repIndex('w').items.every(k => { const it = repIndex('w').at[k]; return !it.sans.join(' ').startsWith('e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Qf6 c3'); })), null);
+  const chunks = await p.evaluate(() => ['w', 'b'].map(c => { const l = repChunks(c); return { n: l.length, ok: l.every(x => x.pos.length > 0 && x.sans.length > x.start), setup: l.some(x => x.ch === 'Caro-Kann: Setup') }; }));
+  check('lines: chunks by chapter, each with a move of yours (Caro-Kann setup its own)', chunks.every(x => x.n > 20 && x.ok) && chunks[1].setup, chunks);
+  const nx = await p.evaluate(() => { const save = JSON.stringify(repStore); rep.c = 'b'; const out = []; for (let i = 0; i < 6; i++) { repStart(); const d = rep.drill; out.push({ ch: d.ch, start: d.sans.length, mine: d.fens[d.fens.length - 1].split(' ')[1] === 'b' }); d.chunk.pos.forEach(k => { repStore.s['b|' + k] = [1, Date.now() + REP_DAY, 1, Date.now(), 0]; }); } repStore = JSON.parse(save); rep.c = 'w'; return out; });
+  check('next lines: each from your first move in its chunk, never the same chapter twice in a row', nx.every((x, i) => x.mine && (i === 0 || x.ch !== nx[i - 1].ch)), nx);
   check('gaps follow the repertoire: about 3 weeks at most here', pile.gaps[pile.gaps.length - 1] >= 14 && pile.gaps[pile.gaps.length - 1] <= 30, pile.gaps);
   // play the line to its end with the right moves
   for (let i = 0; i < 30; i++) {
