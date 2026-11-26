@@ -11201,6 +11201,20 @@ function repStart(){
   const it = repPick(); if(!it){ rep.drill = null; return; }
   const p = repIndex(it.c).at[it.k];
   rep.drill = { c:it.c, fens:p.fens.slice(), sans:p.sans.slice(), moves:p.moves.slice(), ch:p.ch, tries:0, shown:false, msg:'', note:'', marks:[], sel:null, done:false };
+  repPlan(rep.drill);
+}
+// The line is picked from the start (the opponent's replies chosen in advance), so the study and chapter shown are
+// the line's own from the first move: the chapter of its last move that has one
+function repPlan(d){
+  d.plan = {}; let fen = d.fens[d.fens.length - 1], ch = '';
+  for(let i = 0; i < 80; i++){
+    const k = repKey(fen), mine = k.split(' ')[1]===d.c, m = mine ? repMain(d.c, k) : repReply(d.c, fen);
+    if(!m) break;
+    const g = new Chess(fen); if(!g.move(m[0])) break;
+    if(!mine) d.plan[k] = m;
+    ch = repChapter(d.c, m) || ch; fen = g.fen();
+  }
+  d.ch = ch || d.ch;
 }
 function repGrade(d, k){
   const st = repStore.s[d.c + '|' + k] || [0, 0, 0, 0, 0], now = Date.now(), checked = st[2] && st[1] > now, gaps = repGaps(), day = repMidnight(now);
@@ -11244,15 +11258,15 @@ function repTry(mv){
     if(!hit) repWhyNot(d, fen, m); render(); return;
   }
   repGrade(d, k); repPush(d, m, g); repSlide(m);
-  d.ch = repChapter(d.c, hit) || d.ch; d.note = repComment(d.c, hit); d.msg = ''; d.tries = 0; d.shown = false; d.showOn = false;
-  const reply = repReply(d.c, g.fen());
+  d.note = repComment(d.c, hit); d.msg = ''; d.tries = 0; d.shown = false; d.showOn = false;
+  const reply = (d.plan && d.plan[repKey(g.fen())]) || repReply(d.c, g.fen());
   if(!reply){ d.done = true; render(); return; }
   d.wait = true; render();
   setTimeout(()=>{
     if(!rep || rep.drill!==d) return;
     const g2 = new Chess(g.fen()), r = g2.move(reply[0]); d.wait = false;
     if(!r){ d.done = true; render(); return; }
-    repPush(d, r, g2); d.ch = repChapter(d.c, reply) || d.ch; if(screen==='repertoire') repSlide(r);
+    repPush(d, r, g2); if(screen==='repertoire') repSlide(r);
     const c2 = repComment(d.c, reply); if(c2) d.note = c2;
     if(!repMain(d.c, repKey(g2.fen()))) d.done = true;
     if(screen==='repertoire') render();
