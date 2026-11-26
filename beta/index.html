@@ -11576,8 +11576,9 @@ function renderRepReview(){
   const rows = groups.flatMap(gr=>gr.rows);
   for(const x of gaps){ const row = rows.find(r=>r.ch.c===x.c && r.keys.has(x.k)); if(row){ row.props.push(x); where[x.id] = row; } }
   const loose = gaps.filter(x=>!where[x.id]);
-  const propRow = x=>{ const pr = repPropose(x), ans = pr.line.slice(x.sans.length - 1);
-    return `<button class="rep-prop-row" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(pr.line, x.sans.length - 1)}${pr.done ? '' : ' …'}</span>
+  // (their move only: the line is searched once you open it)
+  const propRow = x=>{
+    return `<button class="rep-prop-row" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(x.sans, x.sans.length - 1)}</span>
       ${x.punish ? '<span class="rep-tag rep-punish">To punish</span>' : ''}<span class="rep-n">${x.n} ${x.n > 1 ? 'games' : 'game'}</span></button>`; };
   const devs = Object.values(gs.devs).filter(x=>repColours().includes(x.c) && x.n >= 1).sort((a, b)=>b.n - a.n).slice(0, 8);
   const devRow = x=>`<div class="rep-item">
