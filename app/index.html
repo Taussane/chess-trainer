@@ -11157,19 +11157,17 @@ function repChunks(c){
     for(const m of ms){ const g = new Chess(fen), mv = g.move(m[0]); if(mv) walk(g.fen(), path.concat({ m, san:mv.san, fen, mine }), seen2); }
   };
   const cut = path=>{
-    let ch = '', a = 0, prevA = 0;
+    let ch = '', a = 0;
     const chs = path.map(x=>ch = repChapter(c, x.m) || ch);
     for(let i = 1; i <= path.length; i++){
       if(i < path.length && chs[i]===chs[i - 1]) continue;
-      // (one move of yours only: the chunk starts with the one before it, not out of nowhere)
-      const from = path.slice(a, i).filter(x=>x.mine).length < 2 ? prevA : a;
-      const start = path.findIndex((x, j)=>j >= from && j < i && x.mine);
+      const start = path.findIndex((x, j)=>j >= a && j < i && x.mine);
       const key = path.slice(0, i).map(x=>x.san).join(' ');
       if(start >= 0 && !seenChunk.has(key)){ seenChunk.add(key);
         list.push({ c, key, ch:chs[i - 1], sans:path.slice(0, i).map(x=>x.san), start,
           plan:Object.fromEntries(path.slice(start, i).filter(x=>!x.mine).map(x=>[repKey(x.fen), x.m])),
           pos:path.slice(start, i).filter(x=>x.mine).map(x=>repKey(x.fen)) }); }
-      prevA = a; a = i;
+      a = i;
     }
   };
   walk(EXPLORER_START, [], new Set());
