@@ -666,7 +666,8 @@
   .rep-mv > span.fade-l{-webkit-mask-image:linear-gradient(to right, transparent, #000 32px); mask-image:linear-gradient(to right, transparent, #000 32px);}
   .rep-mv > span.fade-r{-webkit-mask-image:linear-gradient(to left, transparent, #000 32px); mask-image:linear-gradient(to left, transparent, #000 32px);}
   .rep-mv > span.fade-l.fade-r{-webkit-mask-image:linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent); mask-image:linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);}   /* (more of the line that way: its edge fades) */   /* (the line so far, above the panel: one line, its end in view, scrolls sideways when long) */
-  .btn.secondary.rep-tg.on{background:var(--accent); color:#1b1b1b;} .rep-tg.rep-none svg{opacity:.4;}
+  .btn.secondary.rep-tg.on{background:var(--accent); color:#1b1b1b;} .rep-tg.rep-none svg{opacity:.4;} .rep-tg.rep-li{text-decoration:none;}
+  .actions-row.split > .btn.icon-only.rep-fix{flex:none !important; width:var(--pn-btn, 41px);} .actions-row.split > .btn.rep-wide{flex:1 1 0;}   /* (a wrong move: Lichess and Explore square, Try again and Skip line share the rest) */ .rep-tg .li-logo{width:17px; height:17px;}
   .title-chip.rep-sel{appearance:none; -webkit-appearance:none; padding-right:30px; background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center;} .title-chip + .title-chip.rep-sel{margin-left:8px;}   /* (Comment, Marks, Show move: on, in yellow) */
   .rep-prompt.rep-wrong{color:var(--bad);} .rep-prompt.rep-done{color:var(--good);}
   .rep-prompt b{font-weight:600;} .rep-prompt{height:2.9em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
@@ -3529,6 +3530,7 @@ async function sendReport(a, p){
 // The whole game on Lichess, opened at this position (#ply), from the side to play; test positions
 // (no game) open on their own.
 function gameSans(p){
+  if(p.sans) return p.sans;   // (a line of moves given as it is: the repertoire's)
   if(p.gameId){ const g = myGames.find(x=>x.id===p.gameId); return g && Array.isArray(g.sans) ? g.sans : null; }
   return p.game && GAME_MOVES[p.game] ? GAME_MOVES[p.game].split(' ') : null;
 }
@@ -11207,6 +11209,11 @@ function repStart(){
 }
 // The line is picked from the start (the opponent's replies chosen in advance), so the study and chapter shown are
 // the line's own from the first move: the chapter of its last move that has one
+// The wrong move's position, on Lichess and in the explorer (the line and that move; back here after)
+function repLinks(d){
+  const sans = d.sans.concat(d.wrong.m ? d.wrong.m.san : []);
+  return `<a class="btn secondary icon-only rep-tg rep-li rep-fix" href="https://lichess.org/analysis/pgn/${sans.map(s=>encodeURIComponent(s.replace(/[+#]/g, ''))).join('_')}?color=${d.c==='b' ? 'black' : 'white'}#${sans.length}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn secondary icon-only rep-tg rep-fix" id="repXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button>`;
+}
 function repPlan(d){
   d.plan = {}; let fen = d.fens[d.fens.length - 1], ch = '';
   for(let i = 0; i < 80; i++){
@@ -11254,6 +11261,7 @@ function repTry(mv){
   if(!hit || hit[1]!==1){
     d.tries++; if(!d.wrong) d.noteBefore = d.note; d.note = hit ? repComment(d.c, hit) : '';
     // a move your study answers: what it answers with (or that it comes back to your line); any other: Stockfish's verdict
+    d.msgOk = !!(hit && hit[4]==='=');
     d.msg = !hit ? 'Not your move here.' : hit[4]==='=' ? 'Playable, but not your move: it transposes.' : `Not the move: met by ${repLineHtml(hit[4])}.`;
     d.wrong = { fen:g.fen(), from:m.from, to:m.to, checking:!hit, m };   // (it stays on the board until Try again; not in the study: the engine looks at it)
     repSlide(m);
@@ -11287,14 +11295,15 @@ function repWhyNot(d, fen, m){
     const cp = l=>l ? (l.mate!=null ? Math.sign(l.mate) * 1e4 : l.cp) : null;
     const lw = r.lines.find(l=>l.uci===uci(m)), lm = r.lines.find(l=>l.uci===uci(mm));
     if(!lw || !lm){ if(screen==='repertoire' && rep.view!=='review') render(); return; }
-    const drop = cp(lm) - cp(lw);
+    // graded as the reviews grade a move (winning chances given up), against the study's move
+    const { label } = labelFromWinDrop(winPercent(cp(lm)) - winPercent(cp(lw)), cp(lw) >= cp(lm));
+    const grade = `<b style="color:${labelColor(label)}">${label}</b>`;
     let after = '';
     if(lw.pv){ const g = new Chess(fen); g.move(m); const out = [];
       for(const u of lw.pv.slice(1, 4)){ const f = g.fen().split(' '), x = g.move({ from:u.slice(0, 2), to:u.slice(2, 4), promotion:u[4] }); if(!x) break; out.push((f[1]==='w' ? f[5] + '. ' : out.length ? '' : f[5] + '... ') + '<b>' + x.san + '</b>'); }   // (as the line above: a space after the number, the moves in bold)
       after = out.join(' '); }
-    d.msg = drop >= 100 ? `Not the move: it loses${after ? ' after ' + after : ''}.`
-      : drop >= 30 ? `Not the move: weaker${after ? ' after ' + after : ''}.`
-      : 'Playable, but not your move.';
+    d.msg = BAD_GRADES.includes(label) ? `Not the move: ${grade}${after ? ' after ' + after : ''}.` : `${grade}, but not your move.`;
+    d.msgOk = !BAD_GRADES.includes(label);   // (not in red then)
     if(screen==='repertoire' && rep.view!=='review') render();
   });
 }
@@ -11344,7 +11353,7 @@ function renderRepertoire(){
   const tg = (id, k, on, off, label)=>`<button class="btn secondary icon-only rep-tg${on ? ' on' : ''}${off ? ' rep-none' : ''}" id="${id}" aria-pressed="${!!on}" ${off==='wait' ? 'disabled' : ''} aria-label="${label}" title="${label}">${REP_ICONS[k]}</button>`;
   const actions = !d ? '' : d.done
     ? `<a class="btn secondary lichess-open icon-only xp-li" href="https://lichess.org/analysis/pgn/${d.sans.map(s=>encodeURIComponent(s.replace(/[+#]/g, ''))).join('_')}?color=${d.c==='b' ? 'black' : 'white'}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn" id="repNext">Next line</button>`
-    : d.wrong ? `<button class="btn" id="repRetry">Try again</button><button class="btn secondary" id="repSkip">Skip line</button>`
+    : d.wrong ? `${repLinks(d)}<button class="btn rep-wide" id="repRetry">Try again</button><button class="btn secondary rep-wide" id="repSkip">Skip line</button>`
     : `${tg('repComment', 'comment', o.comment, !note, 'Comment')}${tg('repMarks', 'marks', o.marks, !marks.length, 'Marks')}${tg('repShow', 'show', d.showOn, d.wait && 'wait', 'Show move')}<button class="btn secondary" id="repSkip">Skip line</button>`;
   const top = d && d.c==='b' ? 'w' : 'b';
   app.innerHTML = `
@@ -11357,7 +11366,7 @@ function renderRepertoire(){
     <div class="stage"><div class="board-col">${repPlayer(p.fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(p.fen, top==='w' ? 'b' : 'w')}</div></div>
     <div class="xp-sides sides-desk rep-mv"><span id="repMv">${d ? repMovesText(d) || 'Start position' : ''}</span></div>
     ${stackedPanel(`
-      <p class="prompt rep-prompt${d && d.msg ? ' rep-wrong' : d && d.done ? ' rep-done' : ''}">${prompt}</p>
+      <p class="prompt rep-prompt${d && d.msg && !d.msgOk ? ' rep-wrong' : d && d.done ? ' rep-done' : ''}">${prompt}</p>
       <p class="rep-note">${showNote ? escHtml(note) : ''}</p>
       <div class="actions-row split">${actions}</div>`, [])}`;
   // a long line: its end in view, or where you scrolled it to (kept through redraws, until the next move); the
@@ -11397,6 +11406,7 @@ function renderRepertoire(){
   on('homeBtn', ()=>{ screen = 'home'; render(); });
   on('repReview', ()=>{ rep.view = 'review'; render(); });
   on('repNext', ()=>{ repStart(); repIntro(); render(); });
+  on('repXp', ()=>{ const sans = d.sans.concat(d.wrong.m.san); exploreFrom({ fen:d.wrong.fen, sans, ply:sans.length }); });
   on('repSkip', ()=>{ repStart(); repIntro(); render(); });
   on('repRetry', ()=>{ if(d.wrong.m) repSlide(d.wrong.m, true); d.wrong = null; d.msg = ''; d.note = d.noteBefore || ''; render(); });
   on('repShow', ()=>{ d.showOn = !d.showOn; if(d.showOn) d.shown = true; render(); });   // (once shown, the position counts as shown)
