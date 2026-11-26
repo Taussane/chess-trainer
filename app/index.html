@@ -11333,7 +11333,7 @@ function repTry(mv){
 function repWhyNot(d, fen, m){
   const main = repMain(d.c, repKey(fen)), g0 = new Chess(fen), mm = main && g0.move(main[0]); if(!mm){ if(d.wrong) d.wrong.checking = false; return; }
   const uci = x=>x.from + x.to + (x.promotion || ''), wrong = d.wrong;   // (the explanation belongs to this wrong move, while it's on the board)
-  bgEval(fen, { searchmoves:uci(m) + ' ' + uci(mm), multipv:2, movetime:700, depth:LIVE_DEPTH }).then(r=>{
+  repEval(fen, { searchmoves:uci(m) + ' ' + uci(mm), multipv:2, movetime:700, depth:LIVE_DEPTH }).then(r=>{
     if(rep.drill!==d || d.wrong!==wrong) return;
     wrong.checking = false;
     if(evalFailed(r) || !r.lines){ if(screen==='repertoire' && rep.view!=='review') render(); return; }
@@ -11471,7 +11471,17 @@ function renderRepertoire(){
 // as good, within 0.3, otherwise the engine's) and, for their replies, what your opponents played most, else the
 // engine's; at least two moves of yours, up to move 5, longer while their reply is forced (one legal move, or the
 // only one within 1.5). Searched one at a time, kept with the repertoire (searched again when new games add to it).
+// The repertoire's searches: someone is waiting for them, so they go before your games' analysis (taking turns
+// with it, like an exercise's quick searches), not behind it
+function repEval(fen, opts){
+  return new Promise(resolve=>{
+    if(sfState==='error'){ resolve(FAILED); return; }
+    queueJob({ fen, searchmoves:opts.searchmoves, multipv:opts.multipv, movetime:opts.movetime, depth:opts.depth, resolve });
+    pumpEngineQueue();
+  });
+}
 let repBuildQ = Promise.resolve();
+const repBuilding = new Set();   // (searches under way in this page: a stored line half searched is searched again)
 function repGamesNext(c, sans){
   const n = {};
   for(const g of myGames){ if(g.me!==c || !g.sans || g.sans.length <= sans.length) continue;
@@ -11481,9 +11491,10 @@ function repGamesNext(c, sans){
 }
 function repPropose(x){
   const st = repLoad(), pr = st.prop[x.id];
-  if(pr && pr.n===x.n && (pr.done || pr.busy)) return pr;
-  st.prop[x.id] = { n:x.n, line:x.sans.slice(), yours:[], cp:null, done:false, busy:true };
-  repBuildQ = repBuildQ.then(()=>repBuildLine(x)).catch(()=>{});
+  if(pr && pr.n===x.n && (pr.done || pr.failed || repBuilding.has(x.id))) return pr;
+  st.prop[x.id] = { n:x.n, line:x.sans.slice(), yours:[], cp:null, done:false };
+  repBuilding.add(x.id);
+  repBuildQ = repBuildQ.then(()=>repBuildLine(x)).catch(()=>{}).then(()=>repBuilding.delete(x.id));
   return st.prop[x.id];
 }
 async function repBuildLine(x){
@@ -11492,8 +11503,9 @@ async function repBuildLine(x){
   for(let guard = 0; guard < 16; guard++){
     const g = new Chess(); line.forEach(s=>g.move(s)); const fen = g.fen(), legal = g.moves();
     if(!legal.length) break;
-    const r = await bgEval(fen, { multipv:3, movetime:800, depth:LIVE_DEPTH });
-    if(evalFailed(r) || !r.lines || !r.lines.length) break;
+    // (an engine that doesn't answer within 15 s: the search stops there)
+    const r = await Promise.race([repEval(fen, { multipv:3, movetime:800, depth:LIVE_DEPTH }), new Promise(ok=>setTimeout(()=>ok(FAILED), 15000))]);
+    if(evalFailed(r) || !r.lines || !r.lines.length){ if(line.length===x.sans.length){ out.failed = true; repBuilding.delete(x.id); if(screen==='repertoire' && rep.view!=='train') render(); return; } break; }
     const sanOf = u=>{ const m = new Chess(fen).move({ from:u.slice(0, 2), to:u.slice(2, 4), promotion:u[4] }); return m && m.san; };
     const best = r.lines[0], top = Object.entries(repGamesNext(c, line)).sort((a, b)=>b[1] - a[1])[0];
     const played = top && r.lines.find(l=>sanOf(l.uci)===top[0]);
@@ -11513,7 +11525,7 @@ async function repBuildLine(x){
   }
   // (a line ending on their move: their last reply dropped, your move ends it)
   if(line.length > x.sans.length && ((line.length - 1) % 2===0) !== (c==='w')) line.pop();
-  Object.assign(out, { line, yours, cp, done:true, busy:false }); repSave();
+  Object.assign(out, { line, yours, cp, done:true }); repSave();
   if(screen==='repertoire' && rep.view!=='train') render();
 }
 function repLineText(sans){ return sans.map((s, i)=>i % 2 ? s : (i / 2 + 1) + '.' + s).join(' '); }
@@ -11575,7 +11587,9 @@ function renderRepReview(){
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('repBack', ()=>{ rep.view = 'train'; render(); });
   on('repCopy', ()=>{ const t = added.map(a=>repLineText(a.line)).join('\n'); try{ navigator.clipboard.writeText(t); }catch(e){} const b = document.getElementById('repCopy'); if(b) b.textContent = 'Copied'; });
-  app.querySelectorAll('[data-rline]').forEach(b=>b.onclick = ()=>{ const x = gs.gaps[b.dataset.rline]; if(!x) return; rep.view = 'line'; rep.lv = { id:x.id, ply:x.sans.length }; render(); });
+  app.querySelectorAll('[data-rline]').forEach(b=>b.onclick = ()=>{ const x = gs.gaps[b.dataset.rline]; if(!x) return;
+    const pr = st.prop[x.id]; if(pr && pr.failed) delete st.prop[x.id];   // (a search that failed: again)
+    rep.view = 'line'; rep.lv = { id:x.id, ply:x.sans.length }; render(); });
 }
 // A chapter's lines as a tree: the moves they share once, then each branch on its own line, indented where it
 // differs (a black move starting a line: "5… Nf6"); a proposal as a branch of its own, in its box, where it leaves
@@ -11623,7 +11637,7 @@ function renderRepLine(){
     <div class="stage"><div class="board-col">${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
     <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1)}${pr.done ? '' : ' …'}</span></div>
     ${stackedPanel(`
-      <p class="prompt rep-prompt">${pr.done ? `Your line ends ${pr.cp==null ? '' : `at <b>${fmtSigned({ cp:pr.cp })}</b> for you`}.` : 'Searching the line…'}</p>
+      <p class="prompt rep-prompt">${pr.done ? `Your line ends ${pr.cp==null ? '' : `at <b>${fmtSigned({ cp:pr.cp })}</b> for you`}.` : pr.failed ? 'The engine didn\'t answer: open the line again to retry.' : 'Searching the line…'}</p>
       <p class="rep-note">${escHtml(x.san)} isn't in your study. Your moves: ${pr.yours.some(Boolean) ? 'yours where as good as the engine\'s, else the engine\'s' : 'the engine\'s'}.</p>
       <div class="actions-row split">
         <button class="btn secondary icon-only" id="repPrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="btn secondary icon-only" id="repNextMv" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button><a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a>
