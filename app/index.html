@@ -648,7 +648,7 @@
   .rep-branch{margin-left:calc(min(var(--d), 6) * 14px); padding-left:8px; border-left:1px solid var(--border);} .rep-branch[style*="--d:0"]{border-left:0; padding-left:0;}   /* (a branch: indented where it leaves the line above) */
   .rep-prop-row{display:flex; align-items:center; gap:8px; width:fit-content; min-width:min(100%, 300px); max-width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
   .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-plus{color:var(--accent); font-weight:700;} .rep-cur{color:var(--accent);} #repMv [data-ply]{cursor:pointer;}
-  .actions-row.split > .btn.rep-half{flex:1 1 0;} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
+  .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg{width:20px; height:20px;} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
   .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
   .actions-row.pending{visibility:hidden;}
@@ -11636,15 +11636,15 @@ function renderRepLine(){
       <h1>New line</h1>
       <button class="title-chip" id="repSkipLine">Skip</button><button class="title-chip rep-add" id="repAddLine" ${line.length > gapN ? '' : 'disabled'}>Add</button>
     </div>
-    <div class="posbar"><div class="pos-title"><b>${no(gapN - 1)}${escHtml(x.san)}</b> isn't in your study${x.punish ? ' (to punish)' : ''}<br>${x.n} ${x.n > 1 ? 'games' : 'game'} against it</div></div>
+    <div class="posbar"><div class="pos-title">${no(gapN - 1)}${escHtml(x.san)} isn't in your study${x.punish ? ' (to punish)' : ''}<br>${x.n} ${x.n > 1 ? 'games' : 'game'} against it</div></div>
     <div class="stage"><div class="board-col"><div class="pl-line xp-hbar-line"><div class="xp-hbar${x.c==='b' ? ' flip' : ''}" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" style="--w:${pct}%"></div><span class="xp-hbar-num ${pct >= 50 ? 'w' : 'b'}">${num}</span></div></div>${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
     <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1)}</span></div>
     ${stackedPanel(`
       <p class="prompt rep-prompt">${line.length > gapN ? `New line ends at <b>${endInfo ? fmtSigned(mine(endInfo)) : '…'}</b> for you.` : 'Play your answer.'}</p>
-      <p class="rep-note">${info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${fmtSigned(info)}). ` : ''}${played}</p>
-      <div class="actions-row split">
-        <a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn secondary lichess-open icon-only" id="repLineXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><span class="btn secondary icon-only rep-gap" aria-hidden="true"></span>
-        <button class="btn secondary rep-half" id="repPrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="btn secondary rep-half" id="repNextMv" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button>
+      <p class="rep-note">${info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${fmtSigned(info)}). ` : ''}${ply===gapN ? played : ''}</p>
+      <div class="actions-row xp-nav">
+        <a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="icon-btn" id="repLineXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button>
+        <span class="xp-steps"><button class="icon-btn" id="repPrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="repNextMv" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
       </div>`, [])}`;
   // the board: from their move on, play a move (either side) to change the line there or go on with it
   const bs = boardObjFromGame(g), live = ply >= gapN && !g.game_over();
@@ -11661,6 +11661,7 @@ function renderRepLine(){
   } });
   if(promoPending && live) showPromotionPicker(g, mv=>{ promoPending = null; playMv(mv); });
   if(info && info.uci) drawArrows(document.getElementById('arrows'), [{ from:info.uci.slice(0, 2), to:info.uci.slice(2, 4), color:'var(--system)' }], 'rl_');
+  const li = app.querySelector('.layer:not(.ghost) .xp-li') || app.querySelector('.xp-li'); if(li && li.offsetHeight) app.style.setProperty('--xp-btn-h', li.offsetHeight + 'px');   // (the row's buttons as tall as Lichess's, as in the explorer)
   const mvEl = document.getElementById('repMv');
   if(mvEl){ const cur = mvEl.querySelector('.rep-cur'); if(cur) mvEl.scrollLeft = Math.max(0, cur.offsetLeft - mvEl.clientWidth / 2);
     mvEl.querySelectorAll('[data-ply]').forEach(b=>b.onclick = ()=>{ lv.ply = +b.dataset.ply; lv.sel = null; render(); }); }
