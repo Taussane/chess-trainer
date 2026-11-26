@@ -75,7 +75,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
     const p3 = repPick(), newRound = repStore.r.t !== r0, cn = repCounts();
     const gaps = repGaps();
     repStore = JSON.parse(save); rep.c = c;
-    return { ok1: first === b, ok2: second === items[3], newRound, checked: cn.checked === cn.total, gaps };
+    return { ok1: first === b, ok2: second === items[3], newRound, checked: cn.due === 0, gaps };
   });
   check('the pile: not checked, then not played this round, then a new round with all checked', pile.ok1 && pile.ok2 && pile.newRound && pile.checked, pile);
   check('no position past a move to avoid (4...Qf6 5.c3 Bc5: only as 5.Be3 Bc5 6.c3)', await p.evaluate(() => repIndex('w').items.every(k => { const it = repIndex('w').at[k]; return !it.sans.join(' ').startsWith('e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Qf6 c3'); })), null);

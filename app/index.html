@@ -11184,9 +11184,12 @@ function repChunks(c){
 const repChunkChecked = (ch, now)=>ch.pos.every(k=>{ const st = repStore.s[ch.c + '|' + k]; return st && st[1] > now; });
 function repCounts(){
   repRoundCheck();
-  const now = Date.now(); let checked = 0, total = 0;
-  for(const c of repColours()) for(const ch of repChunks(c)){ total++; if(repChunkChecked(ch, now)) checked++; }
-  return { checked, total };
+  // lines, checked today (all your moves in it played since midnight), due (one of them not checked)
+  const now = Date.now(), day = repMidnight(now); let today = 0, due = 0, total = 0;
+  for(const c of repColours()) for(const ch of repChunks(c)){ total++;
+    if(!repChunkChecked(ch, now)) due++;
+    if(ch.pos.every(k=>{ const st = repStore.s[c + '|' + k]; return st && (st[3] || 0) >= day; })) today++; }
+  return { today, due, total };
 }
 // The next chunk: the pile's order on its positions (the one most in need), not the chapter just played if another
 // as much in need
@@ -11386,7 +11389,7 @@ function renderRepertoire(){
       <h1>Repertoire</h1>
       <button class="title-chip" id="repReview">Review</button>${colourSel}
     </div>
-    <div class="posbar"><div class="pos-title">${cn.checked} lines checked out of ${cn.total}<br>${repSource(d)}</div></div>
+    <div class="posbar"><div class="pos-title">${cn.total} lines · ${cn.today} checked today · ${cn.due} due<br>${repSource(d)}</div></div>
     <div class="stage"><div class="board-col">${repPlayer(p.fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(p.fen, top==='w' ? 'b' : 'w')}</div></div>
     <div class="xp-sides sides-desk rep-mv"><span id="repMv">${d ? repMovesText(d) || 'Start position' : ''}</span></div>
     ${stackedPanel(`
