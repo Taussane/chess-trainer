@@ -113,7 +113,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   // Review: a reply out of the repertoire in two games (1.d4 c6 2.Bf4) is listed, with a move to add
   await p.evaluate(() => { myGames.push({ id: 't1', me: 'b', sans: ['d4', 'c6', 'Bf4', 'd5', 'e3'], evals: [] }, { id: 't2', me: 'b', sans: ['d4', 'c6', 'Bf4', 'd5', 'Nf3'], evals: [] }, { id: 't3', me: 'b', sans: ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'Nxe4', 'Bf5', 'Bd3', 'Qxd4'], evals: [] }); repGames = null; rep.view = 'review'; render(); });
   // (the proposed line given, as the engine would: 2...d5 3.e3 Bf5)
-  const stub = n => p.evaluate(n => { const x = Object.values(repGameStats().gaps).find(g => g.san === 'Bf4'); repStore.prop[x.id] = { n: x.n, line: ['d4', 'c6', 'Bf4', 'd5', 'e3', 'Bf5'], yours: [true, false], cp: 20, done: true }; render(); return x.id; }, n);
+  const stub = n => p.evaluate(n => { const x = Object.values(repGameStats().gaps).find(g => g.san === 'Bf4'); repStore.prop[x.id] = { line: ['d4', 'c6', 'Bf4', 'd5', 'e3', 'Bf5'], auto: false }; render(); return x.id; }, n);
   check('the list searches nothing (a line is searched when opened)', await p.evaluate(() => Object.keys(repStore.prop).length === 0), null);
   const id = await stub();
   const r0 = await p.evaluate(() => { const row = document.querySelector('.layer:not(.ghost) [data-rline]') || document.querySelector('[data-rline]'); const h = row && row.closest('.rep-lines').previousElementSibling; return { text: row && row.textContent.replace(/\s+/g, ' ').trim(), head: h && h.textContent, lines: document.querySelectorAll('.rep-lines .rep-moves').length }; });
@@ -121,10 +121,16 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-review.png' });
   await p.click('[data-rline]');
   const l0 = await p.evaluate(() => ({ view: rep.view, top: document.querySelector('.pos-title').textContent, ply: rep.lv.ply, cur: (document.querySelector('#repMv .rep-cur') || {}).textContent }));
-  check('the line on the board: games against it, at their move', l0.view === 'line' && /2 games against it/.test(l0.top) && l0.ply === 3 && l0.cur === 'Bf4', l0);
+  check('the line on the board: their move not in your study, games against it, at their move', l0.view === 'line' && /2\. Bf4 isn't in your study/.test(l0.top) && /2 games against it/.test(l0.top) && l0.ply === 3 && l0.cur === 'Bf4', l0);
   await p.click('#repNextMv'); await p.keyboard.press('ArrowRight'); await p.keyboard.press('ArrowLeft');
   check('back and forth through it (buttons, arrow keys)', await p.evaluate(() => rep.lv.ply === 4), null);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-line.png' });
+  // your own move at their move: the line changed from there
+  await p.evaluate(() => { rep.lv.ply = 3; render(); });
+  const sq = s => p.evaluate(s => { const sqs = [...document.querySelectorAll('#board .sq')]; const f = 'abcdefgh'.indexOf(s[0]), r = +s[1]; sqs[boardFlipped() ? (r - 1) * 8 + (7 - f) : (8 - r) * 8 + f].click(); }, s);
+  await sq('g8'); await sq('f6');
+  const own = await p.evaluate(() => { const x = Object.values(repGameStats().gaps).find(g => g.san === 'Bf4'); return { line: repStore.prop[x.id].line.join(' '), ply: rep.lv.ply }; });
+  check('your own move: the line from there is yours', own.line === 'd4 c6 Bf4 Nf6' && own.ply === 4, own);
   await p.click('#repSkipLine');
   check('Skip: no longer proposed', await p.evaluate(() => rep.view === 'review' && !document.querySelector('[data-rline]')), null);
   await p.evaluate(() => { myGames.push({ id: 't4', me: 'b', sans: ['d4', 'c6', 'Bf4', 'Qb6'], evals: [] }); repGames = null; render(); });

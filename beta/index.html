@@ -681,7 +681,7 @@
   .rep-branch{margin-left:calc(min(var(--d), 6) * 14px); padding-left:8px; border-left:1px solid var(--border);} .rep-branch[style*="--d:0"]{border-left:0; padding-left:0;}   /* (a branch: indented where it leaves the line above) */
   .rep-prop-row{display:flex; align-items:center; gap:8px; width:fit-content; min-width:min(100%, 300px); max-width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
   .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-plus{color:var(--accent); font-weight:700;} .rep-cur{color:var(--accent);} #repMv [data-ply]{cursor:pointer;}
-  .actions-row.split > .btn.rep-half{flex:1 1 0;}   /* (a proposed line: Skip and Add share the half) */
+  .actions-row.split > .btn.rep-half{flex:1 1 0;} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
   .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
   .actions-row.pending{visibility:hidden;}
@@ -11500,10 +11500,6 @@ function renderRepertoire(){
 // ---- Review: your games against your repertoire. Replies you have no line for (2 games or more, or a move that
 // lost a pawn or more: to punish), with a move to add (the one you played most, if it's within 0.3 of
 // Stockfish's best, else the best); where you left your line (those positions come up first in practice).
-// A proposed line for a reply your study has no answer to: their move, then your answer (yours from your games if
-// as good, within 0.3, otherwise the engine's) and, for their replies, what your opponents played most, else the
-// engine's; at least two moves of yours, up to move 5, longer while their reply is forced (one legal move, or the
-// only one within 1.5). Searched one at a time, kept with the repertoire (searched again when new games add to it).
 // The repertoire's searches: someone is waiting for them, so they go before your games' analysis (taking turns
 // with it, like an exercise's quick searches), not behind it
 function repEval(fen, opts){
@@ -11513,53 +11509,42 @@ function repEval(fen, opts){
     pumpEngineQueue();
   });
 }
-let repBuildQ = Promise.resolve();
-const repBuilding = new Set();   // (searches under way in this page: a stored line half searched is searched again)
-function repGamesNext(c, sans){
-  const n = {};
-  for(const g of myGames){ if(g.me!==c || !g.sans || g.sans.length <= sans.length) continue;
-    let ok = true; for(let i = 0; i < sans.length; i++) if(g.sans[i]!==sans[i]){ ok = false; break; }
-    if(ok) n[g.sans[sans.length]] = (n[g.sans[sans.length]] || 0) + 1; }
-  return n;
+// The engine on a position, for the line builder: its evaluation (White's side) and its top move, searched once
+const repInfo = new Map();
+function repFenInfo(fen){
+  const k = fen.split(' ').slice(0, 4).join(' ');
+  if(repInfo.has(k)) return repInfo.get(k);
+  repInfo.set(k, null);
+  const g = new Chess(fen);
+  if(!g.moves().length){ const v = g.in_checkmate ? (g.in_checkmate() ? { mate:0 } : { cp:0 }) : { cp:0 }; repInfo.set(k, v); return v; }
+  repEval(fen, { multipv:1, movetime:800, depth:LIVE_DEPTH }).then(r=>{
+    if(evalFailed(r) || !r.lines || !r.lines.length){ repInfo.delete(k); return; }
+    const l = r.lines[0], sgn = fen.split(' ')[1]==='w' ? 1 : -1, m = new Chess(fen).move({ from:l.uci.slice(0, 2), to:l.uci.slice(2, 4), promotion:l.uci[4] });
+    repInfo.set(k, { cp:l.mate!=null ? null : l.cp * sgn, mate:l.mate!=null ? l.mate * sgn : null, uci:l.uci, san:m && m.san, stmCp:l.mate!=null ? Math.sign(l.mate) * 1e4 : l.cp });
+    if(screen==='repertoire' && rep && rep.view==='line') render();
+  });
+  return null;
 }
-function repPropose(x){
-  const st = repLoad(), pr = st.prop[x.id];
-  if(pr && pr.n===x.n && (pr.done || pr.failed || repBuilding.has(x.id))) return pr;
-  st.prop[x.id] = { n:x.n, line:x.sans.slice(), yours:[], cp:null, done:false };
-  repBuilding.add(x.id);
-  repBuildQ = repBuildQ.then(()=>repBuildLine(x)).catch(()=>{}).then(()=>repBuilding.delete(x.id));
-  return st.prop[x.id];
-}
-async function repBuildLine(x){
-  const st = repLoad(), c = x.c, out = st.prop[x.id], line = x.sans.slice(), yours = []; let mine = 0, cp = null;
+// Your answers in your games to their move, graded against the engine's top move there (as the reviews grade)
+const repAnswers = new Map();
+function repGapAnswers(x){
+  if(repAnswers.has(x.id)) return repAnswers.get(x.id);
+  repAnswers.set(x.id, null);
+  const g = new Chess(); x.sans.forEach(m=>g.move(m)); const fen = g.fen(), sgn = fen.split(' ')[1]==='w' ? 1 : -1;
+  const mv = Object.entries(x.replies).sort((a, b)=>b[1] - a[1]).map(([m])=>new Chess(fen).move(m)).filter(Boolean);
+  if(!mv.length){ repAnswers.set(x.id, []); return []; }
   const val = l=>l.mate!=null ? Math.sign(l.mate) * 1e4 : l.cp;
-  for(let guard = 0; guard < 16; guard++){
-    const g = new Chess(); line.forEach(s=>g.move(s)); const fen = g.fen(), legal = g.moves();
-    if(!legal.length) break;
-    // (an engine that doesn't answer within 15 s: the search stops there)
-    const r = await Promise.race([repEval(fen, { multipv:3, movetime:800, depth:LIVE_DEPTH }), new Promise(ok=>setTimeout(()=>ok(FAILED), 15000))]);
-    if(evalFailed(r) || !r.lines || !r.lines.length){ if(line.length===x.sans.length){ out.failed = true; repBuilding.delete(x.id); if(screen==='repertoire' && rep.view!=='train') render(); return; } break; }
-    const sanOf = u=>{ const m = new Chess(fen).move({ from:u.slice(0, 2), to:u.slice(2, 4), promotion:u[4] }); return m && m.san; };
-    const best = r.lines[0], top = Object.entries(repGamesNext(c, line)).sort((a, b)=>b[1] - a[1])[0];
-    const played = top && r.lines.find(l=>sanOf(l.uci)===top[0]);
-    if(fen.split(' ')[1]===c){
-      const pick = played && val(best) - val(played) <= 30 ? played : best;
-      line.push(sanOf(pick.uci)); yours.push(pick===played); mine++;
-      cp = val(pick) * (c==='w' ? 1 : -1);   // (yours to gain: + good for you)
-      if(mine >= 8) break;
-    } else {
-      const forced = legal.length===1 || (r.lines.length > 1 && val(r.lines[0]) - val(r.lines[1]) >= 150);
-      const lastNo = Math.floor((line.length - 1) / 2) + 1;   // (your last move's number)
-      if(mine >= 2 && lastNo >= 5 && !forced) break;
-      line.push(sanOf((played || best).uci));
-    }
-    Object.assign(out, { line:line.slice(), yours:yours.slice(), cp });
-    if(screen==='repertoire' && rep.view!=='train') render();
-  }
-  // (a line ending on their move: their last reply dropped, your move ends it)
-  if(line.length > x.sans.length && ((line.length - 1) % 2===0) !== (c==='w')) line.pop();
-  Object.assign(out, { line, yours, cp, done:true }); repSave();
-  if(screen==='repertoire' && rep.view!=='train') render();
+  Promise.all([repEval(fen, { multipv:1, movetime:800, depth:LIVE_DEPTH }), repEval(fen, { searchmoves:mv.map(m=>m.from + m.to + (m.promotion || '')).join(' '), multipv:mv.length, movetime:800, depth:LIVE_DEPTH })]).then(([b, r])=>{
+    if(evalFailed(b) || evalFailed(r) || !b.lines.length){ repAnswers.delete(x.id); return; }
+    const best = b.lines[0], bm = new Chess(fen).move({ from:best.uci.slice(0, 2), to:best.uci.slice(2, 4), promotion:best.uci[4] });
+    // (the same numbers everywhere: this search is the position's top move too, and the top move's own grade reads it)
+    repInfo.set(fen.split(' ').slice(0, 4).join(' '), { cp:best.mate!=null ? null : best.cp * sgn, mate:best.mate!=null ? best.mate * sgn : null, uci:best.uci, san:bm && bm.san });
+    repAnswers.set(x.id, mv.map(m=>{ let l = r.lines.find(z=>z.uci.slice(0, 4)===m.from + m.to); if(!l) return null; if(l.uci===best.uci) l = best;
+      const { label } = labelFromWinDrop(Math.max(0, winPercent(val(best)) - winPercent(val(l))), l.uci===best.uci);
+      return { san:m.san, label, info:l.mate!=null ? { mate:l.mate * sgn } : { cp:l.cp * sgn } }; }).filter(Boolean));
+    if(screen==='repertoire' && rep && rep.view==='line') render();
+  });
+  return null;
 }
 function repLineText(sans){ return sans.map((s, i)=>i % 2 ? s : (i / 2 + 1) + '.' + s).join(' '); }
 // The proposals worth showing: a reply your study has no answer to, met in 2 games or more (or one to punish), not
@@ -11621,7 +11606,6 @@ function renderRepReview(){
   on('repBack', ()=>{ rep.view = 'train'; render(); });
   on('repCopy', ()=>{ const t = added.map(a=>repLineText(a.line)).join('\n'); try{ navigator.clipboard.writeText(t); }catch(e){} const b = document.getElementById('repCopy'); if(b) b.textContent = 'Copied'; });
   app.querySelectorAll('[data-rline]').forEach(b=>b.onclick = ()=>{ const x = gs.gaps[b.dataset.rline]; if(!x) return;
-    const pr = st.prop[x.id]; if(pr && pr.failed) delete st.prop[x.id];   // (a search that failed: again)
     rep.view = 'line'; rep.lv = { id:x.id, ply:x.sans.length }; render(); });
 }
 // A chapter's lines as a tree: the moves they share once, then each branch on its own line, indented where it
@@ -11650,52 +11634,86 @@ function repTreeHtml(gr, st, propRow){
   for(const k of root.kids) chain(k, 0);
   return out.join('');
 }
-// A proposed line on the board: step through it (◀ ▶, the arrow keys, or a move), see how often you met it, add it to
-// your repertoire or skip it (offered again once more games meet it)
+// A new line, built on the board from their move your study has no answer to: the engine's top answer proposed (its
+// move shown at every step, with the evaluation bar), your answers in your games graded under it; play your own
+// moves (either side) to change or extend the line, step through it, then add it or skip it (offered again once
+// more games meet it)
 function renderRepLine(){
   const app = document.getElementById('app'), gs = repGameStats(), st = repLoad(), lv = rep.lv, x = lv && gs.gaps[lv.id];
   if(!x){ rep.view = 'review'; return renderRepReview(); }
-  const pr = repPropose(x), line = pr.line, ply = Math.max(0, Math.min(lv.ply, line.length));
-  const g = new Chess(); let last = null; line.slice(0, ply).forEach(m=>{ const mv = g.move(m); last = mv; });
-  const fen = g.fen(), top = x.c==='b' ? 'w' : 'b';
-  const yours = Object.entries(x.replies).sort((a, b)=>b[1] - a[1]).map(([m, n])=>`${escHtml(m)} (${n})`).join(', ');
+  let pr = st.prop[x.id];
+  if(!pr || !Array.isArray(pr.line) || 'done' in pr || pr.line.slice(0, x.sans.length).join(' ')!==x.sans.join(' ')) pr = st.prop[x.id] = { line:x.sans.slice(), auto:true };
+  const gapN = x.sans.length, gFen = (()=>{ const g = new Chess(); x.sans.forEach(m=>g.move(m)); return g.fen(); })();
+  // (the engine's top answer, proposed until you play a move of your own)
+  const gi = repFenInfo(gFen);
+  if(pr.auto && pr.line.length===gapN && gi && gi.san){ pr.line.push(gi.san); repSave(); }
+  const line = pr.line, ply = lv.ply = Math.max(0, Math.min(lv.ply, line.length));
+  const g = new Chess(); let last = null; line.slice(0, ply).forEach(m=>{ last = g.move(m); });
+  const fen = g.fen(), top = x.c==='b' ? 'w' : 'b', info = repFenInfo(fen);
+  // (the line's end: when its last move is the engine's top move, that search's evaluation, the same number as shown)
+  const endG = new Chess(); line.slice(0, -1).forEach(m=>endG.move(m)); const prevInfo = line.length > gapN ? repFenInfo(endG.fen()) : null;
+  endG.move(line[line.length - 1]);
+  const endInfo = line.length <= gapN ? null : prevInfo && prevInfo.san===line[line.length - 1] ? prevInfo : repFenInfo(endG.fen());
+  const mine = v=>v && (v.mate!=null ? { mate:v.mate * (x.c==='w' ? 1 : -1) } : { cp:v.cp * (x.c==='w' ? 1 : -1) });
+  const ans = repGapAnswers(x);
+  const no = i=>Math.floor(i / 2) + 1 + (i % 2 ? '… ' : '. ');
+  const pct = info ? (info.mate===0 ? (fen.split(' ')[1]==='b' ? 99 : 1) : cpToPct(info.cp, info.mate)) : 50;
+  const num = info ? (info.mate!=null ? '#' + Math.abs(info.mate) : fmtBarScore(info)) : '…';
   const sansL = line.slice(0, ply);
   const lichess = `https://lichess.org/analysis/pgn/${sansL.map(m=>encodeURIComponent(m.replace(/[+#]/g, ''))).join('_')}?color=${x.c==='b' ? 'black' : 'white'}#${ply}`;
+  const played = !Object.keys(x.replies).length ? 'Not answered in your games.'
+    : `You played ${ans ? ans.map(a=>`<b>${escHtml(a.san)}</b> (<span style="color:${labelColor(a.label)}">${a.label}</span> ${fmtSigned(a.info)})`).join(', ') : Object.keys(x.replies).map(escHtml).join(', ') + ' …'}.`;
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back keep" id="repLineBack" aria-label="Back">${BACK_ARROW}</button>
-      <h1>Proposed line</h1>
+      <h1>New line</h1>
+      <button class="title-chip" id="repSkipLine">Skip</button><button class="title-chip rep-add" id="repAddLine" ${line.length > gapN ? '' : 'disabled'}>Add</button>
     </div>
-    <div class="posbar"><div class="pos-title">${x.n} ${x.n > 1 ? 'games' : 'game'} against it${x.punish ? ' · to punish' : ''}<br>${yours ? 'You played ' + yours : 'Not answered in your games'}</div></div>
-    <div class="stage"><div class="board-col">${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
-    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1)}${pr.done ? '' : ' …'}</span></div>
+    <div class="posbar"><div class="pos-title"><b>${no(gapN - 1)}${escHtml(x.san)}</b> isn't in your study${x.punish ? ' (to punish)' : ''}<br>${x.n} ${x.n > 1 ? 'games' : 'game'} against it</div></div>
+    <div class="stage"><div class="board-col"><div class="pl-line xp-hbar-line"><div class="xp-hbar${x.c==='b' ? ' flip' : ''}" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" style="--w:${pct}%"></div><span class="xp-hbar-num ${pct >= 50 ? 'w' : 'b'}">${num}</span></div></div>${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
+    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1)}</span></div>
     ${stackedPanel(`
-      <p class="prompt rep-prompt">${pr.done ? `Your line ends ${pr.cp==null ? '' : `at <b>${fmtSigned({ cp:pr.cp })}</b> for you`}.` : pr.failed ? 'The engine didn\'t answer: open the line again to retry.' : 'Searching the line…'}</p>
-      <p class="rep-note">${escHtml(x.san)} isn't in your study. Your moves: ${pr.yours.some(Boolean) ? 'yours where as good as the engine\'s, else the engine\'s' : 'the engine\'s'}.</p>
+      <p class="prompt rep-prompt">${line.length > gapN ? `New line ends at <b>${endInfo ? fmtSigned(mine(endInfo)) : '…'}</b> for you.` : 'Play your answer.'}</p>
+      <p class="rep-note">${info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${fmtSigned(info)}). ` : ''}${played}</p>
       <div class="actions-row split">
-        <button class="btn secondary icon-only" id="repPrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="btn secondary icon-only" id="repNextMv" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button><a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a>
-        <button class="btn secondary rep-half" id="repSkipLine">Skip</button><button class="btn rep-half" id="repAddLine" ${pr.done ? '' : 'disabled'}>Add</button>
+        <a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn secondary lichess-open icon-only" id="repLineXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><span class="btn secondary icon-only rep-gap" aria-hidden="true"></span>
+        <button class="btn secondary rep-half" id="repPrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="btn secondary rep-half" id="repNextMv" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button>
       </div>`, [])}`;
-  renderBoard(document.getElementById('board'), boardObjFromGame(g), last ? { squares:[last.from, last.to] } : null, {});
+  // the board: from their move on, play a move (either side) to change the line there or go on with it
+  const bs = boardObjFromGame(g), live = ply >= gapN && !g.game_over();
+  const dest = live && lv.sel ? g.moves({ square:lv.sel, verbose:true }).map(m=>m.to) : [];
+  const playMv = mv=>{ pr.line = line.slice(0, ply).concat(mv.san); pr.auto = false; lv.ply = ply + 1; lv.sel = null; repSave(); repSlide(mv); render(); };
+  renderBoard(document.getElementById('board'), bs, last ? { squares:[last.from, last.to] } : null, { selectedSq:lv.sel, destSquares:dest, onSquareClick: sq=>{
+    if(!live) return;
+    if(lv.sel && dest.includes(sq)){
+      const legal = g.moves({ square:lv.sel, verbose:true }).filter(m=>m.to===sq);
+      if(legal.some(m=>m.promotion)){ promoPending = { from:lv.sel, to:sq }; render(); return; }
+      playMv(legal[0]); return;
+    }
+    const pc = bs[sq]; lv.sel = pc && colorOf(pc)===g.turn() && sq!==lv.sel ? sq : null; render();
+  } });
+  if(promoPending && live) showPromotionPicker(g, mv=>{ promoPending = null; playMv(mv); });
+  if(info && info.uci) drawArrows(document.getElementById('arrows'), [{ from:info.uci.slice(0, 2), to:info.uci.slice(2, 4), color:'var(--system)' }], 'rl_');
   const mvEl = document.getElementById('repMv');
   if(mvEl){ const cur = mvEl.querySelector('.rep-cur'); if(cur) mvEl.scrollLeft = Math.max(0, cur.offsetLeft - mvEl.clientWidth / 2);
-    mvEl.querySelectorAll('[data-ply]').forEach(b=>b.onclick = ()=>{ lv.ply = +b.dataset.ply; render(); }); }
+    mvEl.querySelectorAll('[data-ply]').forEach(b=>b.onclick = ()=>{ lv.ply = +b.dataset.ply; lv.sel = null; render(); }); }
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
-  const step = dl=>{ const n = Math.max(0, Math.min(line.length, ply + dl)); if(n===ply) return; lv.ply = n;
+  const step = dl=>{ const n = Math.max(0, Math.min(line.length, ply + dl)); if(n===ply) return; lv.ply = n; lv.sel = null;
     if(dl > 0){ const mv = new Chess(fen).move(line[ply]); if(mv) repSlide(mv); } render(); };
   on('repLineBack', ()=>{ rep.view = 'review'; render(); });
   on('repPrev', ()=>step(-1)); on('repNextMv', ()=>step(1));
+  on('repLineXp', ()=>exploreFrom({ fen, sans:sansL, ply, flip:x.c==='b' }));
   repLineKeys.step = step;
   on('repSkipLine', ()=>{ st.skip = st.skip.filter(k=>k.id!==x.id).concat({ id:x.id, n:x.n }); repSave(); rep.view = 'review'; render(); });
   on('repAddLine', ()=>{
     const g2 = new Chess();
     line.forEach((m, i)=>{ const k = repKey(g2.fen()), side = g2.turn(); g2.move(m);
-      if(i >= x.sans.length - 1 && !repMoves(x.c, k).some(a=>a[0]===m)) st.add.push({ c:x.c, k, san:m, flag:side===x.c ? 1 : 0 }); });
+      if(i >= gapN - 1 && !repMoves(x.c, k).some(a=>a[0]===m)) st.add.push({ c:x.c, k, san:m, flag:side===x.c ? 1 : 0 }); });
     (st.lines = st.lines || []).push({ c:x.c, line:line.slice() });
-    repSave(); repGames = null; rep.view = 'review'; render();
+    delete st.prop[x.id]; repSave(); repGames = null; rep.view = 'review'; render();
   });
 }
-// ← and → step through a proposed line
+// ← and → step through a new line
 const repLineKeys = { step:null };
 document.addEventListener('keydown', e=>{
   if(screen!=='repertoire' || !rep || rep.view!=='line' || !repLineKeys.step || e.target.closest('input, select, textarea')) return;
