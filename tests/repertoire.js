@@ -33,7 +33,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   const tryMove = (from, to) => p.evaluate(([f, t]) => { const g = new Chess(rep.drill.fens[rep.drill.fens.length - 1]); repTry(g.moves({ verbose: true }).find(m => m.from === f && m.to === t)); }, [from, to]);
   await tryMove('d2', 'd4');
   const w1 = await p.evaluate(() => ({ n: rep.drill.sans.length, msg: rep.drill.msg, tries: rep.drill.tries, kept: repPos().fen.split(' ')[0] !== rep.drill.fens[0].split(' ')[0], btns: [...document.querySelectorAll('.layer:not(.ghost) .actions-row button')].map(b => b.id) }));
-  check('a move not in your line: said, kept on the board, Try again (no Skip line)', w1.n === 0 && /Not your move/.test(w1.msg) && w1.tries === 1 && w1.kept && w1.btns.join() === 'repXp,repRetry', w1);
+  check('a move not in your line: said, kept on the board, Try again (no Skip line)', w1.n === 0 && /Not your move/.test(w1.msg) && w1.tries === 1 && w1.kept && w1.btns.join() === 'repXp,repComment,repRetry', w1);
   await p.waitForFunction(() => rep.drill.msg !== 'Not your move here.', null, { timeout: 60000 }).catch(() => {});
   const w1b = await p.evaluate(() => rep.drill.msg);
   check('1.d4 instead of 1.e4: graded as the reviews grade (Best/Good/Ok), not your move', /^<b style="color:[^"]+">(Good|Ok)<\/b>, but not your move/.test(w1b), w1b);
@@ -42,7 +42,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   const t1 = await p.evaluate(() => ({ msg: rep.drill.msg, prompt: document.querySelector('.layer:not(.ghost) .rep-prompt').textContent }));
   check('Try again before the explanation: "Your move?" stays', !t1.msg && t1.prompt === 'Your move?', t1);
   await tryMove('d2', 'd4'); await p.waitForFunction(() => /not your move\.$/.test(rep.drill.msg), null, { timeout: 60000 }).catch(() => {});
-  check('the explanation shown while the move is on the board, with Lichess and Explore', await p.evaluate(() => !!rep.drill.wrong && /^(Good|Ok), but not your move/.test(document.querySelector('.layer:not(.ghost) .rep-prompt').textContent) && !!document.querySelector('.layer:not(.ghost) .actions-row a.rep-li[href*="d4"]')), null);
+  check('the explanation shown while the move is on the board, with Lichess and Explore', await p.evaluate(() => !!rep.drill.wrong && /^(Good|Ok), but not your move/.test(document.querySelector('.layer:not(.ghost) .rep-prompt').textContent) && !!document.querySelector('.layer:not(.ghost) .actions-row a.xp-li[href*="d4"]')), null);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-grade.png' });
   const xp = await p.evaluate(() => { document.querySelector('.layer:not(.ghost) #repXp').click(); const r = { screen, at: explorer.at, n: explorer.sans.join(' '), flip: explorer.flip }; exploreReturn(); return Object.assign(r, { back: screen, wrong: !!rep.drill.wrong }); });
   check('Explore: the line and the wrong move in the explorer, back to the drill as it was', xp.screen === 'explorer' && !xp.flip && xp.n === 'd4' && xp.at === 1 && xp.back === 'repertoire' && xp.wrong, xp);
@@ -86,7 +86,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   }
   const w3 = await p.evaluate(() => ({ done: rep.drill.done, prompt: document.querySelector('.layer:not(.ghost) .rep-prompt').textContent, line: rep.drill.sans.join(' ') }));
   check('a line goes to its end', w3.done && /^Line complete/.test(w3.prompt), w3);
-  const xd = await p.evaluate(() => { const n = rep.drill.sans.length; document.querySelector('.layer:not(.ghost) #repXpDone').click(); const r = { screen, at: explorer.at, n: explorer.sans.length, want: n }; exploreReturn(); return Object.assign(r, { back: screen, done: rep.drill.done }); });
+  const xd = await p.evaluate(() => { const n = rep.drill.sans.length; document.querySelector('.layer:not(.ghost) #repXp').click(); const r = { screen, at: explorer.at, n: explorer.sans.length, want: n }; exploreReturn(); return Object.assign(r, { back: screen, done: rep.drill.done }); });
   check('line complete: Explore opens it at its end, back to it', xd.screen === 'explorer' && xd.at === xd.want && xd.n === xd.want && xd.back === 'repertoire' && xd.done, xd);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-done.png' });
   await p.click('#repNext');

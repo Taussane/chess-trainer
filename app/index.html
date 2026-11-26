@@ -633,8 +633,7 @@
   .rep-mv > span.fade-l{-webkit-mask-image:linear-gradient(to right, transparent, #000 32px); mask-image:linear-gradient(to right, transparent, #000 32px);}
   .rep-mv > span.fade-r{-webkit-mask-image:linear-gradient(to left, transparent, #000 32px); mask-image:linear-gradient(to left, transparent, #000 32px);}
   .rep-mv > span.fade-l.fade-r{-webkit-mask-image:linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent); mask-image:linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);}   /* (more of the line that way: its edge fades) */   /* (the line so far, above the panel: one line, its end in view, scrolls sideways when long) */
-  .btn.secondary.rep-tg.on{background:var(--accent); color:#1b1b1b;} .rep-tg.rep-none svg{opacity:.4;} .rep-tg.rep-li{text-decoration:none;}
-  .actions-row.split > .btn.icon-only.rep-fix{flex:none !important; width:var(--pn-btn, 41px);} .actions-row.split > .btn.rep-wide{flex:1 1 0;}   /* (a wrong move: Lichess and Explore square, Try again and Skip line share the rest) */ .rep-tg .li-logo{width:17px; height:17px;}
+  .btn.secondary.rep-tg.on{background:var(--accent); color:#1b1b1b;} .rep-tg.rep-none svg{opacity:.4;} .rep-gap{visibility:hidden;}   /* (Lichess and Explore's places, kept while you play) */ .rep-tg .li-logo{width:17px; height:17px;}
   .title-chip.rep-sel{appearance:none; -webkit-appearance:none; padding-right:30px; background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center;} .title-chip + .title-chip.rep-sel{margin-left:8px;}   /* (Comment, Marks, Show move: on, in yellow) */
   .rep-prompt.rep-wrong{color:var(--bad);} .rep-prompt.rep-done{color:var(--good);}
   .rep-prompt b{font-weight:600;} .rep-prompt{height:2.9em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
@@ -11176,10 +11175,10 @@ function repStart(){
 }
 // The line is picked from the start (the opponent's replies chosen in advance), so the study and chapter shown are
 // the line's own from the first move: the chapter of its last move that has one
-// The wrong move's position, on Lichess and in the explorer (the line and that move; back here after)
+// Lichess and Explore, as in the exercises' reviews (the line, and a wrong move on the board; back here after)
 function repLinks(d){
-  const sans = d.sans.concat(d.wrong.m ? d.wrong.m.san : []);
-  return `<a class="btn secondary icon-only rep-tg rep-li rep-fix" href="https://lichess.org/analysis/pgn/${sans.map(s=>encodeURIComponent(s.replace(/[+#]/g, ''))).join('_')}?color=${d.c==='b' ? 'black' : 'white'}#${sans.length}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn secondary icon-only rep-tg rep-fix" id="repXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button>`;
+  const sans = d.sans.concat(d.wrong && d.wrong.m ? d.wrong.m.san : []);
+  return `<a class="btn secondary lichess-open icon-only xp-li" href="https://lichess.org/analysis/pgn/${sans.map(s=>encodeURIComponent(s.replace(/[+#]/g, ''))).join('_')}?color=${d.c==='b' ? 'black' : 'white'}#${sans.length}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn secondary lichess-open icon-only" id="repXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button>`;
 }
 function repPlan(d){
   d.plan = {}; let fen = d.fens[d.fens.length - 1], ch = '';
@@ -11315,15 +11314,21 @@ function renderRepertoire(){
   const colourSel = `<select class="title-chip rep-sel" id="repColour" aria-label="Colour">${[['w', 'White'], ['b', 'Black'], ['both', 'Both']].map(([k, l])=>
     `<option value="${k}"${rep.c===k ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
   const prompt = !d ? 'No lines in your repertoire yet.' : d.done ? `Line complete: ${repSummary(d)}.` : d.wait ? '…' : (d.wrong && d.wrong.checking ? 'Not the move: evaluating…' : d.msg || 'Your move?');
-  const fen = d ? d.fens[d.fens.length - 1] : EXPLORER_START, marks = d ? repMarks(d.c, fen) : [];
-  // the comment: the study's, on the move just played (a wrong move: the study's word on it, if any, shown at once)
-  const note = d && d.note || '', showNote = d && (d.wrong ? !!note : o.comment && !!note);
+  const fen = d ? d.fens[d.fens.length - 1] : EXPLORER_START, marks = d ? repMarks(d.c, d.wrong ? d.wrong.fen : fen) : [];
+  // the comment: the study's, on the move just played (a wrong move: the study's word on it), with its marks; one
+  // toggle, at all times
+  const note = d && d.note || '', showNote = d && o.comment && !!note;
   // (nothing to show here: the toggle stays on or off, and switchable, its icon faded)
   const tg = (id, k, on, off, label)=>`<button class="btn secondary icon-only rep-tg${on ? ' on' : ''}${off ? ' rep-none' : ''}" id="${id}" aria-pressed="${!!on}" ${off==='wait' ? 'disabled' : ''} aria-label="${label}" title="${label}">${REP_ICONS[k]}</button>`;
-  const actions = !d ? '' : d.done
-    ? `<a class="btn secondary lichess-open icon-only xp-li" href="https://lichess.org/analysis/pgn/${d.sans.map(s=>encodeURIComponent(s.replace(/[+#]/g, ''))).join('_')}?color=${d.c==='b' ? 'black' : 'white'}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn secondary icon-only" id="repXpDone" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><button class="btn" id="repNext">Next line</button>`
-    : d.wrong ? `${repLinks(d)}<button class="btn rep-wide" id="repRetry">Try again</button>`
-    : `${tg('repComment', 'comment', o.comment, !note && !marks.length, 'Comment and marks')}${tg('repShow', 'show', d.showOn, d.wait && 'wait', 'Show move')}`;   // (the study's comment and its arrows and circles: one toggle)
+  // the row, as the exercises': three icons in its first half (Lichess, Explore: once the line is complete or a move
+  // is wrong, their places kept empty while you play; Comment and marks, always third), then Next line, Try again or
+  // Show move
+  const gap = '<span class="btn secondary icon-only rep-gap" aria-hidden="true"></span>';
+  const comment = tg('repComment', 'comment', o.comment, !note && !marks.length, 'Comment and marks');
+  const actions = !d ? '' : (d.done || d.wrong ? repLinks(d) : gap + gap) + comment
+    + (d.done ? '<button class="btn" id="repNext">Next line</button>'
+      : d.wrong ? '<button class="btn" id="repRetry">Try again</button>'
+      : `<button class="btn secondary rep-tg${d.showOn ? ' on' : ''}" id="repShow" aria-pressed="${!!d.showOn}"${d.wait ? ' disabled' : ''}>Show move</button>`);
   const top = d && d.c==='b' ? 'w' : 'b';
   app.innerHTML = `
     <div class="title-row">
@@ -11363,11 +11368,11 @@ function renderRepertoire(){
     const pc = bs[sq]; d.sel = pc && colorOf(pc)===p.side && sq!==d.sel ? sq : null; render();
   } });
   if(promoPending && live) showPromotionPicker(g, mv=>{ promoPending = null; repTry(mv); });
-  // arrows: the move to play (Show move), the study's marks (Marks); not over a wrong move
-  if(d && !d.done && !d.wrong){
+  // arrows: the study's marks (with the comment), the move to play (Show move, while you play)
+  if(d){
     const svg = document.getElementById('arrows'), list = [], rings = [];
     if(o.comment) for(const m of marks){ const col = REP_MARK[m[0]] || REP_MARK.G; m.length > 3 ? list.push({ from:m.slice(1, 3), to:m.slice(3, 5), color:col }) : rings.push({ sq:m.slice(1, 3), col }); }
-    if(d.showOn){ const main = repMain(d.c, repKey(p.fen)), mv = main && new Chess(p.fen).move(main[0]); if(mv) list.push({ from:mv.from, to:mv.to, color:'var(--system)' }); }
+    if(d.showOn && !d.done && !d.wrong){ const main = repMain(d.c, repKey(p.fen)), mv = main && new Chess(p.fen).move(main[0]); if(mv) list.push({ from:mv.from, to:mv.to, color:'var(--system)' }); }
     drawArrows(svg, list, 'rp_');
     svg.insertAdjacentHTML('beforeend', rings.map(({ sq, col })=>{ const c = squareCenter(sq); return `<circle cx="${c.x}" cy="${c.y}" r="26" fill="none" stroke="${col}" stroke-width="5" opacity=".85" filter="url(#rp_sh)"/>`; }).join(''));
   }
@@ -11375,8 +11380,7 @@ function renderRepertoire(){
   on('homeBtn', ()=>{ screen = 'home'; render(); });
   on('repReview', ()=>{ rep.view = 'review'; render(); });
   on('repNext', ()=>{ repStart(); repIntro(); render(); });
-  on('repXp', ()=>{ const sans = d.sans.concat(d.wrong.m.san); exploreFrom({ fen:d.wrong.fen, sans, ply:sans.length, flip:d.c==='b' }); });
-  on('repXpDone', ()=>exploreFrom({ fen:d.fens[d.fens.length - 1], sans:d.sans.slice(), ply:d.sans.length, flip:d.c==='b' }));   // (the line complete: in the explorer, at its end)
+  on('repXp', ()=>{ const sans = d.sans.concat(d.wrong && d.wrong.m ? d.wrong.m.san : []); exploreFrom({ fen:d.wrong ? d.wrong.fen : d.fens[d.fens.length - 1], sans, ply:sans.length, flip:d.c==='b' }); });
   on('repRetry', ()=>{ if(d.wrong.m) repSlide(d.wrong.m, true); d.wrong = null; d.msg = ''; d.note = d.noteBefore || ''; render(); });
   on('repShow', ()=>{ d.showOn = !d.showOn; if(d.showOn) d.shown = true; render(); });   // (once shown, the position counts as shown)
   on('repComment', ()=>{ o.comment = !o.comment; repSave(); render(); });
