@@ -294,6 +294,7 @@
   .mx-note{margin:0; color:var(--text-mute); font-size:0.8rem; line-height:1.45;}
   .title-chip + .title-chip{margin-left:8px;}
   .title-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  select.title-chip:focus-visible{outline:none;} html.kb select.title-chip:focus-visible{outline:2px solid var(--accent);}   /* (a dropdown keeps the focus after a click outside closes it: its ring only when using the keyboard) */
   .test-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-bottom:16px;}
   .test-item{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px 12px; display:flex; flex-direction:column; gap:6px;}
   .test-name{font-weight:600;}
@@ -7324,6 +7325,9 @@ document.addEventListener('pointerdown', e=>{
   if(e.button || !e.target.closest || !e.target.closest('#app button, #app .card, #app [role=radio], #side button')) return;
   holdRender(); clearTimeout(holdRender.safety); holdRender.safety = setTimeout(releaseRender, 2000);
 }, true);
+// Keyboard use (Tab) shows the dropdowns' focus ring; a press with the mouse or a finger hides it again
+document.addEventListener('keydown', e=>{ if(e.key==='Tab') document.documentElement.classList.add('kb'); }, true);
+document.addEventListener('pointerdown', ()=>document.documentElement.classList.remove('kb'), true);
 // A dropdown open: no redraw either (it would close it); until a choice, Escape, or a press elsewhere (30 s at most)
 let selHold = false;
 const releaseSel = ()=>{ if(!selHold) return; selHold = false; clearTimeout(releaseSel.safety); if(renderWaiting && !renderHeld){ renderWaiting = false; setTimeout(render, 0); } };

@@ -2,7 +2,7 @@
 # special moves by tapping squares (en passant, castling, promotion via the piece picker), checks
 # the review, and saves screenshots to tests/shots/.
 # Needs: pip install playwright (with a Chromium browser).
-import asyncio, pathlib, sys
+import asyncio, pathlib, re, sys
 from playwright.async_api import async_playwright
 # The questions' Check waits for a first move of the answer (the bar touched, a swap, a grade): tests that
 # answer straight away open it as a player would have.
@@ -74,7 +74,8 @@ async def main():
             await pg.screenshot(path=str(SHOTS/f'{i:02d}_cand_pick.png'))
             await pg.evaluate(UNGATE); await pg.click('#check'); await pg.wait_for_timeout(4500)
             res = await pg.evaluate("[...document.querySelectorAll('.layer:not(.ghost) .review-col')[0].querySelectorAll('.mini-row')].map(r=>r.innerText.replace(/\\s+/g,' ')).join(' | ')")
-            if '—' in res or '…' in res: fails.append(f'{name}: candidate not graded: {res}')
+            # (an ungraded row shows a lone "…" or "—"; "…c6" is a Black move)
+            if '—' in res or re.search(r'…(?![A-Za-z])', res): fails.append(f'{name}: candidate not graded: {res}')
             await pg.screenshot(path=str(SHOTS/f'{i:02d}_cand_review.png'))
             print('cand ', name, '|', picks, '|', res)
             await pg.click('#homeBtn'); await pg.wait_for_timeout(200)
