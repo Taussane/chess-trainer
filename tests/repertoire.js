@@ -86,6 +86,8 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   }
   const w3 = await p.evaluate(() => ({ done: rep.drill.done, prompt: document.querySelector('.layer:not(.ghost) .rep-prompt').textContent, line: rep.drill.sans.join(' ') }));
   check('a line goes to its end', w3.done && /^Line complete/.test(w3.prompt), w3);
+  const xd = await p.evaluate(() => { const n = rep.drill.sans.length; document.querySelector('.layer:not(.ghost) #repXpDone').click(); const r = { screen, at: explorer.at, n: explorer.sans.length, want: n }; exploreReturn(); return Object.assign(r, { back: screen, done: rep.drill.done }); });
+  check('line complete: Explore opens it at its end, back to it', xd.screen === 'explorer' && xd.at === xd.want && xd.n === xd.want && xd.back === 'repertoire' && xd.done, xd);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-done.png' });
   await p.click('#repNext');
   check('next line: from a position not checked (the one shown is checked for today)', await p.evaluate(() => { const d = rep.drill, st = repStore.s[d.c + '|' + repKey(d.fens[d.fens.length - 1])]; return d.sans.length > 0 && (!st || st[1] <= Date.now()); }), await p.evaluate(() => rep.drill.sans));

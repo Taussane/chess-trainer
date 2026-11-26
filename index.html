@@ -11267,7 +11267,8 @@ function repTry(mv){
   }
   repGrade(d, k); repPush(d, m, g); repSlide(m);
   d.note = repComment(d.c, hit); d.msg = ''; d.tries = 0; d.shown = false; d.showOn = false;
-  const reply = (d.plan && d.plan[repKey(g.fen())]) || repReply(d.c, g.fen());
+  if(!d.plan || !(repKey(g.fen()) in d.plan)) repPlan(d);   // (off the planned line: planned again from here)
+  const reply = d.plan[repKey(g.fen())] || null;
   if(!reply){ d.done = true; render(); return; }
   d.wait = true; render();
   setTimeout(()=>{
@@ -11351,7 +11352,7 @@ function renderRepertoire(){
   // (nothing to show here: the toggle stays on or off, and switchable, its icon faded)
   const tg = (id, k, on, off, label)=>`<button class="btn secondary icon-only rep-tg${on ? ' on' : ''}${off ? ' rep-none' : ''}" id="${id}" aria-pressed="${!!on}" ${off==='wait' ? 'disabled' : ''} aria-label="${label}" title="${label}">${REP_ICONS[k]}</button>`;
   const actions = !d ? '' : d.done
-    ? `<a class="btn secondary lichess-open icon-only xp-li" href="https://lichess.org/analysis/pgn/${d.sans.map(s=>encodeURIComponent(s.replace(/[+#]/g, ''))).join('_')}?color=${d.c==='b' ? 'black' : 'white'}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn" id="repNext">Next line</button>`
+    ? `<a class="btn secondary lichess-open icon-only xp-li" href="https://lichess.org/analysis/pgn/${d.sans.map(s=>encodeURIComponent(s.replace(/[+#]/g, ''))).join('_')}?color=${d.c==='b' ? 'black' : 'white'}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn secondary icon-only" id="repXpDone" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><button class="btn" id="repNext">Next line</button>`
     : d.wrong ? `${repLinks(d)}<button class="btn rep-wide" id="repRetry">Try again</button>`
     : `${tg('repComment', 'comment', o.comment, !note, 'Comment')}${tg('repMarks', 'marks', o.marks, !marks.length, 'Marks')}${tg('repShow', 'show', d.showOn, d.wait && 'wait', 'Show move')}<button class="btn secondary" id="repSkip">Skip line</button>`;
   const top = d && d.c==='b' ? 'w' : 'b';
@@ -11406,6 +11407,7 @@ function renderRepertoire(){
   on('repReview', ()=>{ rep.view = 'review'; render(); });
   on('repNext', ()=>{ repStart(); repIntro(); render(); });
   on('repXp', ()=>{ const sans = d.sans.concat(d.wrong.m.san); exploreFrom({ fen:d.wrong.fen, sans, ply:sans.length, flip:d.c==='b' }); });
+  on('repXpDone', ()=>exploreFrom({ fen:d.fens[d.fens.length - 1], sans:d.sans.slice(), ply:d.sans.length, flip:d.c==='b' }));   // (the line complete: in the explorer, at its end)
   on('repSkip', ()=>{ repStart(); repIntro(); render(); });
   on('repRetry', ()=>{ if(d.wrong.m) repSlide(d.wrong.m, true); d.wrong = null; d.msg = ''; d.note = d.noteBefore || ''; render(); });
   on('repShow', ()=>{ d.showOn = !d.showOn; if(d.showOn) d.shown = true; render(); });   // (once shown, the position counts as shown)
