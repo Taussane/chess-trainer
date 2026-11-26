@@ -112,13 +112,27 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-avoid.png' });
   // Review: a reply out of the repertoire in two games (1.d4 c6 2.Bf4) is listed, with a move to add
   await p.evaluate(() => { myGames.push({ id: 't1', me: 'b', sans: ['d4', 'c6', 'Bf4', 'd5', 'e3'], evals: [] }, { id: 't2', me: 'b', sans: ['d4', 'c6', 'Bf4', 'd5', 'Nf3'], evals: [] }, { id: 't3', me: 'b', sans: ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'Nxe4', 'Bf5', 'Bd3', 'Qxd4'], evals: [] }); repGames = null; rep.view = 'review'; render(); });
-  const r0 = await p.evaluate(() => [...document.querySelectorAll('.rep-item .rep-moves')].map(e => e.textContent));
-  check('Review: the London listed', r0.some(t => t === '1.d4 c6 2.Bf4'), r0);
-  await p.evaluate(() => { const x = Object.values(repGameStats().gaps).find(g => g.san === 'Bf4'); repProposals.set(x.id, { san: 'd5', cp: 0, yours: true }); render(); });
+  // (the proposed line given, as the engine would: 2...d5 3.e3 Bf5)
+  const stub = n => p.evaluate(n => { const x = Object.values(repGameStats().gaps).find(g => g.san === 'Bf4'); repStore.prop[x.id] = { n: x.n, line: ['d4', 'c6', 'Bf4', 'd5', 'e3', 'Bf5'], yours: [true, false], cp: 20, done: true }; render(); return x.id; }, n);
+  const id = await stub();
+  const r0 = await p.evaluate(() => { const row = document.querySelector('.layer:not(.ghost) [data-rline]') || document.querySelector('[data-rline]'); const h = row && row.parentElement.previousElementSibling; return { text: row && row.textContent.replace(/\s+/g, ' ').trim(), head: h && h.textContent, lines: document.querySelectorAll('.rep-lines .rep-moves').length }; });
+  check('Review: your lines by chapter, the London proposed under the setup it branches from', /\+ ?2\. Bf4 d5 3\. e3 Bf5/.test(r0.text) && /2 games/.test(r0.text) && /Black · (Slav Defense|Caro-Kann) · Setup/.test(r0.head) && r0.lines > 10, r0);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-review.png' });
-  await p.click('[data-radd]');
-  const r1 = await p.evaluate(() => { const g = new Chess(); ['d4', 'c6', 'Bf4'].forEach(s => g.move(s)); return { main: (repMain('b', repKey(g.fen())) || [])[0], item: repIndex('b').items.includes(repKey(g.fen())) }; });
-  check('Add: your move there, in the drills', r1.main === 'd5' && r1.item, r1);
+  await p.click('[data-rline]');
+  const l0 = await p.evaluate(() => ({ view: rep.view, top: document.querySelector('.pos-title').textContent, ply: rep.lv.ply, cur: (document.querySelector('#repMv .rep-cur') || {}).textContent }));
+  check('the line on the board: games against it, at their move', l0.view === 'line' && /2 games against it/.test(l0.top) && l0.ply === 3 && l0.cur === 'Bf4', l0);
+  await p.click('#repNextMv'); await p.keyboard.press('ArrowRight'); await p.keyboard.press('ArrowLeft');
+  check('back and forth through it (buttons, arrow keys)', await p.evaluate(() => rep.lv.ply === 4), null);
+  if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-line.png' });
+  await p.click('#repSkipLine');
+  check('Skip: no longer proposed', await p.evaluate(() => rep.view === 'review' && !document.querySelector('[data-rline]')), null);
+  await p.evaluate(() => { myGames.push({ id: 't4', me: 'b', sans: ['d4', 'c6', 'Bf4', 'Qb6'], evals: [] }); repGames = null; render(); });
+  await stub();
+  const r2 = await p.evaluate(() => (document.querySelector('[data-rline]') || {}).textContent || '');
+  check('more games against it: proposed again, with the new count', /3 games/.test(r2), r2);
+  await p.click('[data-rline]'); await p.click('#repAddLine');
+  const r1 = await p.evaluate(() => { const g = new Chess(); ['d4', 'c6', 'Bf4'].forEach(s => g.move(s)); const k = repKey(g.fen()); g.move('d5'); g.move('e3'); return { main: (repMain('b', k) || [])[0], main2: (repMain('b', repKey(g.fen())) || [])[0], line: repChunks('b').some(ch => ch.sans.join(' ') === 'd4 c6 Bf4 d5 e3 Bf5'), added: !!document.querySelector('.rep-lines .rep-tag'), copy: repStore.lines.some(l => l.line.join(' ') === 'd4 c6 Bf4 d5 e3 Bf5') }; });
+  check('Add: the whole line in your repertoire, a line to drill, marked Added, to copy', r1.main === 'd5' && r1.main2 === 'Bf5' && r1.line && r1.added && r1.copy, r1);
   await p.close();
   // phone
   const ph = await open(b, { width: 412, height: 915 });
