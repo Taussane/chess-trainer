@@ -677,8 +677,9 @@
   .rep-item-top{display:flex; align-items:center; gap:8px;} .rep-n{margin-left:auto; color:var(--text-mute); font-size:0.82rem;}
   .rep-tag{font-size:0.74rem; font-weight:600; border:1px solid var(--border); border-radius:10px; padding:1px 8px;} .rep-tag.rep-punish{border-color:var(--accent); color:var(--accent);}
   .rep-moves{margin:0; font-size:0.92rem;} .rep-sub{margin:0; font-size:0.84rem; color:var(--text-mute);}
-  .rep-lines{display:flex; flex-direction:column; gap:6px;} .rep-lines > .rep-moves{line-height:1.45;}
-  .rep-prop-row{display:flex; align-items:center; gap:8px; width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
+  .rep-lines{display:flex; flex-direction:column; gap:4px;} .rep-lines > .rep-moves{line-height:1.45;}
+  .rep-branch{margin-left:calc(min(var(--d), 6) * 14px); padding-left:8px; border-left:1px solid var(--border);} .rep-branch[style*="--d:0"]{border-left:0; padding-left:0;}   /* (a branch: indented where it leaves the line above) */
+  .rep-prop-row{display:flex; align-items:center; gap:8px; width:fit-content; min-width:min(100%, 300px); max-width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
   .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-plus{color:var(--accent); font-weight:700;} .rep-cur{color:var(--accent);} #repMv [data-ply]{cursor:pointer;}
   .actions-row.split > .btn.rep-half{flex:1 1 0;}   /* (a proposed line: Skip and Add share the half) */
   .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
@@ -11575,7 +11576,6 @@ function renderRepReview(){
   const rows = groups.flatMap(gr=>gr.rows);
   for(const x of gaps){ const row = rows.find(r=>r.ch.c===x.c && r.keys.has(x.k)); if(row){ row.props.push(x); where[x.id] = row; } }
   const loose = gaps.filter(x=>!where[x.id]);
-  const isAdded = ch=>{ const g = new Chess(); return ch.sans.some(m=>{ const k = repKey(g.fen()); g.move(m); return st.add.some(a=>a.c===ch.c && a.k===k && a.san===m); }); };
   const propRow = x=>{ const pr = repPropose(x), ans = pr.line.slice(x.sans.length - 1);
     return `<button class="rep-prop-row" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(pr.line, x.sans.length - 1)}${pr.done ? '' : ' …'}</span>
       ${x.punish ? '<span class="rep-tag rep-punish">To punish</span>' : ''}<span class="rep-n">${x.n} ${x.n > 1 ? 'games' : 'game'}</span></button>`; };
@@ -11596,7 +11596,7 @@ function renderRepReview(){
       ${!myGames.length ? `<p class="rep-sub">Connect your Lichess or Chess.com account in your profile: your games are compared with your repertoire.</p>` : ''}
       <p class="rep-sub">${gaps.length ? `${gaps.length} ${gaps.length > 1 ? 'lines' : 'line'} to add, from your games` : 'Every reply in your games is in your repertoire.'}</p>
       ${groups.map(gr=>`<h2>${gr.c==='w' ? 'White' : 'Black'} · ${head(gr.ch)}</h2>
-        <div class="rep-lines">${gr.rows.map(r=>`<p class="rep-moves">${repMoveHtml(r.ch.sans)}${isAdded(r.ch) ? ' <span class="rep-tag">Added</span>' : ''}</p>${r.props.map(propRow).join('')}`).join('')}</div>`).join('')}
+        <div class="rep-lines">${repTreeHtml(gr, st, propRow)}</div>`).join('')}
       ${loose.length ? `<h2>Other</h2><div class="rep-lines">${loose.map(propRow).join('')}</div>` : ''}
       <h2>You left your line</h2>
       <p class="rep-sub">These positions come up first in practice.</p>
@@ -11608,6 +11608,32 @@ function renderRepReview(){
   on('repBack', ()=>{ rep.view = 'train'; render(); });
   on('repCopy', ()=>{ const t = added.map(a=>repLineText(a.line)).join('\n'); try{ navigator.clipboard.writeText(t); }catch(e){} const b = document.getElementById('repCopy'); if(b) b.textContent = 'Copied'; });
   app.querySelectorAll('[data-rline]').forEach(b=>b.onclick = ()=>{ const x = gs.gaps[b.dataset.rline]; if(!x) return; rep.view = 'line'; rep.lv = { id:x.id, ply:x.sans.length }; render(); });
+}
+// A chapter's lines as a tree: the moves they share once, then each branch on its own line, indented where it
+// differs (a black move starting a line: "5… Nf6"); a proposal as a branch of its own, in its box, where it leaves
+// your lines; "Added" after a branch holding moves you added
+function repTreeHtml(gr, st, propRow){
+  const root = { kids:[] };
+  const put = (sans, prop)=>{ let n = root; const g = new Chess();
+    sans.forEach((m, i)=>{ const k = repKey(g.fen()); g.move(m);
+      let c = !prop && n.kids.find(x=>x.m===m && !x.prop);
+      if(!c){ c = { m, i, kids:[], prop:null, added: st.add.some(a=>a.c===gr.c && a.k===k && a.san===m) }; n.kids.push(c); }
+      n = c; });
+    return n; };
+  for(const r of gr.rows){ put(r.ch.sans);
+    for(const x of r.props){ let n = root, i = 0; const pre = x.sans.slice(0, -1);   // (the proposal hangs where it leaves your line)
+      for(; i < pre.length; i++){ const c = n.kids.find(k=>k.m===pre[i] && !k.prop); if(!c) break; n = c; }
+      n.kids.push({ prop:x, i }); } }
+  const out = [];
+  const chain = (n, depth)=>{   // n: the first node of a line
+    if(n.prop){ out.push(`<div class="rep-branch" style="--d:${depth}">${propRow(n.prop)}</div>`); return; }
+    const sans = [], from = n.i; let added = false, cur = n;
+    for(;;){ sans[cur.i] = cur.m; added = added || cur.added; if(cur.kids.length!==1 || cur.kids[0].prop) break; cur = cur.kids[0]; }
+    out.push(`<p class="rep-moves rep-branch" style="--d:${depth}">${repMoveHtml(sans, from)}${added ? ' <span class="rep-tag">Added</span>' : ''}</p>`);
+    for(const k of cur.kids) chain(k, depth + 1);
+  };
+  for(const k of root.kids) chain(k, 0);
+  return out.join('');
 }
 // A proposed line on the board: step through it (◀ ▶, the arrow keys, or a move), see how often you met it, add it to
 // your repertoire or skip it (offered again once more games meet it)

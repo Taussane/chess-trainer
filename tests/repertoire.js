@@ -115,7 +115,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   // (the proposed line given, as the engine would: 2...d5 3.e3 Bf5)
   const stub = n => p.evaluate(n => { const x = Object.values(repGameStats().gaps).find(g => g.san === 'Bf4'); repStore.prop[x.id] = { n: x.n, line: ['d4', 'c6', 'Bf4', 'd5', 'e3', 'Bf5'], yours: [true, false], cp: 20, done: true }; render(); return x.id; }, n);
   const id = await stub();
-  const r0 = await p.evaluate(() => { const row = document.querySelector('.layer:not(.ghost) [data-rline]') || document.querySelector('[data-rline]'); const h = row && row.parentElement.previousElementSibling; return { text: row && row.textContent.replace(/\s+/g, ' ').trim(), head: h && h.textContent, lines: document.querySelectorAll('.rep-lines .rep-moves').length }; });
+  const r0 = await p.evaluate(() => { const row = document.querySelector('.layer:not(.ghost) [data-rline]') || document.querySelector('[data-rline]'); const h = row && row.closest('.rep-lines').previousElementSibling; return { text: row && row.textContent.replace(/\s+/g, ' ').trim(), head: h && h.textContent, lines: document.querySelectorAll('.rep-lines .rep-moves').length }; });
   check('Review: your lines by chapter, the London proposed under the setup it branches from', /\+ ?2\. Bf4 d5 3\. e3 Bf5/.test(r0.text) && /2 games/.test(r0.text) && /Black · (Slav Defense|Caro-Kann) · Setup/.test(r0.head) && r0.lines > 10, r0);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-review.png' });
   await p.click('[data-rline]');
