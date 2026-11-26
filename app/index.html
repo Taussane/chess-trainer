@@ -11321,7 +11321,7 @@ function renderRepertoire(){
   const tg = (id, k, on, off, label)=>`<button class="btn secondary icon-only rep-tg${on ? ' on' : ''}${off ? ' rep-none' : ''}" id="${id}" aria-pressed="${!!on}" ${off==='wait' ? 'disabled' : ''} aria-label="${label}" title="${label}">${REP_ICONS[k]}</button>`;
   const actions = !d ? '' : d.done
     ? `<a class="btn secondary lichess-open icon-only xp-li" href="https://lichess.org/analysis/pgn/${d.sans.map(s=>encodeURIComponent(s.replace(/[+#]/g, ''))).join('_')}?color=${d.c==='b' ? 'black' : 'white'}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="btn" id="repNext">Next line</button>`
-    : d.wrong ? `${repLinks(d)}<button class="btn rep-wide" id="repRetry">Try again</button><button class="btn secondary rep-wide" id="repSkip">Skip line</button>`
+    : d.wrong ? `${repLinks(d)}<button class="btn rep-wide" id="repRetry">Try again</button>`
     : `${tg('repComment', 'comment', o.comment, !note, 'Comment')}${tg('repMarks', 'marks', o.marks, !marks.length, 'Marks')}${tg('repShow', 'show', d.showOn, d.wait && 'wait', 'Show move')}<button class="btn secondary" id="repSkip">Skip line</button>`;
   const top = d && d.c==='b' ? 'w' : 'b';
   app.innerHTML = `

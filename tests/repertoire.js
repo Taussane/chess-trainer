@@ -33,7 +33,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   const tryMove = (from, to) => p.evaluate(([f, t]) => { const g = new Chess(rep.drill.fens[rep.drill.fens.length - 1]); repTry(g.moves({ verbose: true }).find(m => m.from === f && m.to === t)); }, [from, to]);
   await tryMove('d2', 'd4');
   const w1 = await p.evaluate(() => ({ n: rep.drill.sans.length, msg: rep.drill.msg, tries: rep.drill.tries, kept: repPos().fen.split(' ')[0] !== rep.drill.fens[0].split(' ')[0], btns: [...document.querySelectorAll('.layer:not(.ghost) .actions-row button')].map(b => b.id) }));
-  check('a move not in your line: said, kept on the board, Try again and Skip line', w1.n === 0 && /Not your move/.test(w1.msg) && w1.tries === 1 && w1.kept && w1.btns.join() === 'repXp,repRetry,repSkip', w1);
+  check('a move not in your line: said, kept on the board, Try again (no Skip line)', w1.n === 0 && /Not your move/.test(w1.msg) && w1.tries === 1 && w1.kept && w1.btns.join() === 'repXp,repRetry', w1);
   await p.waitForFunction(() => rep.drill.msg !== 'Not your move here.', null, { timeout: 60000 }).catch(() => {});
   const w1b = await p.evaluate(() => rep.drill.msg);
   check('1.d4 instead of 1.e4: graded as the reviews grade (Best/Good/Ok), not your move', /^<b style="color:[^"]+">(Good|Ok)<\/b>, but not your move/.test(w1b), w1b);
