@@ -54,7 +54,27 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   await tryMove('e2', 'e4'); await p.waitForTimeout(700);
   const w2 = await p.evaluate(() => ({ sans: rep.drill.sans, mark: rep.drill.marks, st: repStore.s['w|' + repKey(EXPLORER_START)] }));
   check('your move, then the opponent’s reply from the repertoire', w2.sans.length === 2 && w2.sans[0] === 'e4' && w2.mark[0] === 0, w2.sans);
-  check('shown: first in the pile', w2.st && w2.st[0] === 0 && w2.st[1] < Date.now(), w2.st);
+  check('shown: checked for today (back tomorrow), one miss', w2.st && w2.st[0] === 0 && w2.st[1] > Date.now() && w2.st[1] <= new Date().setHours(24, 0, 0, 0) && w2.st[4] === 1, w2.st);
+  // the pile: unchecked first, then checked not played this round, then played this round (earliest first); a round
+  // over once all played: a new one, all still checked
+  const pile = await p.evaluate(() => {
+    const save = JSON.stringify(repStore), now = Date.now(), items = repIndex('w').items, c = rep.c; rep.c = 'w';
+    repStore.s = {}; repStore.r = { t: now - 1000, seed: 1 };
+    items.forEach((k, i) => { repStore.s['w|' + k] = [1, now + 5 * REP_DAY, 1, now - 500 + i, 0]; });   // all checked, played this round
+    const a = items[0], b = items[5];
+    repStore.s['w|' + b][1] = now - 1; repStore.s['w|' + b][4] = 2;   // b not checked
+    repStore.s['w|' + items[3]][3] = now - 5000;                          // items[3]: checked, not played in this round
+    const first = repPick().k;
+    repStore.s['w|' + b][1] = now + REP_DAY;
+    const second = repPick().k;
+    const r0 = repStore.r.t; repStore.s['w|' + items[3]][3] = now;    // everything played this round
+    const p3 = repPick(), newRound = repStore.r.t !== r0, cn = repCounts();
+    const gaps = repGaps();
+    repStore = JSON.parse(save); rep.c = c;
+    return { ok1: first === b, ok2: second === items[3], newRound, checked: cn.total - cn.due - cn.fresh === cn.total, gaps };
+  });
+  check('the pile: not checked, then not played this round, then a new round with all checked', pile.ok1 && pile.ok2 && pile.newRound && pile.checked, pile);
+  check('gaps follow the repertoire: about 3 weeks at most here', pile.gaps[pile.gaps.length - 1] >= 14 && pile.gaps[pile.gaps.length - 1] <= 30, pile.gaps);
   // play the line to its end with the right moves
   for (let i = 0; i < 30; i++) {
     const s = await p.evaluate(() => { const d = rep.drill; if (d.done) return 'done'; const m = repMain(d.c, repKey(d.fens[d.fens.length - 1])); const g = new Chess(d.fens[d.fens.length - 1]); repTry(g.move(m[0])); return m[0]; });
@@ -64,7 +84,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   check('a line goes to its end', w3.done && /^Line complete/.test(w3.prompt), w3);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-done.png' });
   await p.click('#repNext');
-  check('next line: the shown start again first', await p.evaluate(() => rep.drill.sans.length === 0), await p.evaluate(() => rep.drill.sans));
+  check('next line: from a position not checked (the one shown is checked for today)', await p.evaluate(() => { const d = rep.drill, st = repStore.s[d.c + '|' + repKey(d.fens[d.fens.length - 1])]; return d.sans.length > 0 && (!st || st[1] <= Date.now()); }), await p.evaluate(() => rep.drill.sans));
   // Black: a drill starts at your move (after White's)
   await p.evaluate(() => { rep.c = 'b'; repStart(); render(); });
   const b0 = await p.evaluate(() => ({ side: repPos().side, sans: rep.drill.sans, flip: boardFlipped() }));
