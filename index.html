@@ -11293,8 +11293,9 @@ function repWhyNot(d, fen, m){
     const cp = l=>l ? (l.mate!=null ? Math.sign(l.mate) * 1e4 : l.cp) : null;
     const lw = r.lines.find(l=>l.uci===uci(m)), lm = r.lines.find(l=>l.uci===uci(mm));
     if(!lw || !lm){ if(screen==='repertoire' && rep.view!=='review') render(); return; }
-    // graded as the reviews grade a move (winning chances given up), against the study's move
-    const { label } = labelFromWinDrop(winPercent(cp(lm)) - winPercent(cp(lw)), cp(lw) >= cp(lm));
+    // graded as the reviews grade a move (winning chances given up), against the study's move; never Best (that's the
+    // engine's own top move, and only the two moves are searched here): Good at most
+    const { label } = labelFromWinDrop(Math.max(0, winPercent(cp(lm)) - winPercent(cp(lw))), false);
     const grade = `<b style="color:${labelColor(label)}">${label}</b>`;
     let after = '';
     if(lw.pv){ const g = new Chess(fen); g.move(m); const out = [];
