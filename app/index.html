@@ -11075,6 +11075,7 @@ function repIndex(c){
   while(q.length){
     const p = q.shift();
     for(const m of repMoves(c, repKey(p.fen))){
+      if(m[1]===2) continue;   // (not after a move to avoid: the lines past it are only its explanation, not yours to drill)
       const g = new Chess(p.fen), mv = g.move(m[0]); if(!mv) continue;
       const k = repKey(g.fen()); if(at[k]) continue;
       at[k] = { fen:g.fen(), sans:p.sans.concat(mv.san), fens:p.fens.concat(g.fen()), moves:p.moves.concat({ from:mv.from, to:mv.to }), ch:repChapter(c, m) || p.ch };
