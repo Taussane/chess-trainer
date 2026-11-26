@@ -668,7 +668,7 @@
   .title-chip.rep-sel{appearance:none; -webkit-appearance:none; padding-right:30px; background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center;} .title-chip + .title-chip.rep-sel{margin-left:8px;}   /* (Comment, Marks, Show move: on, in yellow) */
 
   .rep-prompt b{font-weight:600;} .rep-prompt{height:2.9em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
-  .rep-note{margin:0; height:2.9em; font-size:0.88rem; line-height:1.45; color:var(--text-mute); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}   /* (prompt and comment: two lines each, the panel never grows) */
+  .rep-note{margin:0; height:calc(1.45em * var(--rep-note-n, 2)); font-size:0.88rem; line-height:1.45; color:var(--text-mute); overflow:hidden; display:-webkit-box; -webkit-line-clamp:var(--rep-note-n, 2); -webkit-box-orient:vertical;}   /* (the prompt two lines, the comment as many as the study's longest takes at this width: the panel never grows nor cuts) */
   .rep-review{display:flex; flex-direction:column; gap:10px; max-width:720px; width:100%;} .rep-review h2{margin:14px 0 0; font-size:1.05rem;}
   .rep-item{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;}
   .rep-item-top{display:flex; align-items:center; gap:8px;} .rep-n{margin-left:auto; color:var(--text-mute); font-size:0.82rem;}
@@ -11285,6 +11285,21 @@ function repIntro(){
 // A line as the study writes it ("5.cxd5 cxd5 6.Qb3"), as the line above the panel: "5. cxd5 cxd5 6. Qb3", moves in bold
 const repLineHtml = t=>String(t).split(/\s+/).filter(Boolean).map(w=>{ const m = w.match(/^(\d+\.+)(.*)$/);
   return m ? m[1] + (m[2] ? ' <b>' + escHtml(m[2]) + '</b>' : '') : '<b>' + escHtml(w) + '</b>'; }).join(' ');
+// The comment's height: the lines the study's longest comment takes at this width (measured once per width)
+let repNoteN = { w:0, n:2 };
+function repNoteLines(){
+  const el = document.querySelector('.layer:not(.ghost) .rep-note') || document.querySelector('.rep-note'); if(!el) return;
+  const w = Math.round(el.getBoundingClientRect().width);
+  if(w && w!==repNoteN.w){
+    const c = el.cloneNode(false);
+    c.style.cssText = `position:absolute; visibility:hidden; height:auto; display:block; overflow:visible; -webkit-line-clamp:unset; width:${w}px`;
+    el.parentNode.appendChild(c);
+    const lh = parseFloat(getComputedStyle(c).lineHeight) || 16; let n = 2;
+    for(const col of ['w', 'b']) for(const t of (REPERTOIRE[col] && REPERTOIRE[col].c) || []){ c.textContent = t; n = Math.max(n, Math.round(c.getBoundingClientRect().height / lh)); }
+    c.remove(); repNoteN = { w, n:Math.min(n, 6) };
+  }
+  document.getElementById('app').style.setProperty('--rep-note-n', repNoteN.n);
+}
 function repPush(d, mv, g){
   d.fens.push(g.fen()); d.sans.push(mv.san); d.moves.push({ from:mv.from, to:mv.to });
 }
@@ -11411,6 +11426,7 @@ function renderRepertoire(){
       <div class="actions-row split">${actions}</div>`, [])}`;
   // a long line: its end in view, or where you scrolled it to (kept through redraws, until the next move); the
   // mouse wheel scrolls it sideways
+  repNoteLines();
   const mvEl = document.getElementById('repMv');
   if(mvEl && d){
     const n = d.sans.length; if(!d.mvScroll || d.mvScroll.n!==n) d.mvScroll = { n, x:null };
