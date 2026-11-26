@@ -3786,7 +3786,7 @@ function exploreFrom(p, back){
     if(fens[p.ply] && key(fens[p.ply])===key(p.fen)){ Object.assign(x, { fens, sans: played, moves, at: p.ply }); ok = true; }
   }
   if(!ok) x.fens = [p.fen];
-  x.flip = p.fen.split(' ')[1]==='b';
+  x.flip = p.flip!=null ? p.flip : p.fen.split(' ')[1]==='b';   // (p.flip: the board as it was where it opened from)
   x.ret = { screen, saved: prev, back };
   try{ if(p.game || p.gameId) x.source = posSource(p); }catch(e){}   // (shown above the board, as in the exercises)
   if(ok && (p.gameId || p.game)){ helpVisible = false; selSquare = null; promoPending = null; explorerLoadGame(p.gameId ? 'mine' : 'masters', p.gameId || p.game, p.ply, { ret: x.ret, mode:'imbalances', flip: x.flip }); return; }
@@ -11405,7 +11405,7 @@ function renderRepertoire(){
   on('homeBtn', ()=>{ screen = 'home'; render(); });
   on('repReview', ()=>{ rep.view = 'review'; render(); });
   on('repNext', ()=>{ repStart(); repIntro(); render(); });
-  on('repXp', ()=>{ const sans = d.sans.concat(d.wrong.m.san); exploreFrom({ fen:d.wrong.fen, sans, ply:sans.length }); });
+  on('repXp', ()=>{ const sans = d.sans.concat(d.wrong.m.san); exploreFrom({ fen:d.wrong.fen, sans, ply:sans.length, flip:d.c==='b' }); });
   on('repSkip', ()=>{ repStart(); repIntro(); render(); });
   on('repRetry', ()=>{ if(d.wrong.m) repSlide(d.wrong.m, true); d.wrong = null; d.msg = ''; d.note = d.noteBefore || ''; render(); });
   on('repShow', ()=>{ d.showOn = !d.showOn; if(d.showOn) d.shown = true; render(); });   // (once shown, the position counts as shown)

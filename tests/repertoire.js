@@ -44,8 +44,8 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   await tryMove('d2', 'd4'); await p.waitForFunction(() => /not your move\.$/.test(rep.drill.msg), null, { timeout: 60000 }).catch(() => {});
   check('the explanation shown while the move is on the board, with Lichess and Explore', await p.evaluate(() => !!rep.drill.wrong && /^(Good|Ok), but not your move/.test(document.querySelector('.layer:not(.ghost) .rep-prompt').textContent) && !!document.querySelector('.layer:not(.ghost) .actions-row a.rep-li[href*="d4"]')), null);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-grade.png' });
-  const xp = await p.evaluate(() => { document.querySelector('.layer:not(.ghost) #repXp').click(); const r = { screen, at: explorer.at, n: explorer.sans.join(' ') }; exploreReturn(); return Object.assign(r, { back: screen, wrong: !!rep.drill.wrong }); });
-  check('Explore: the line and the wrong move in the explorer, back to the drill as it was', xp.screen === 'explorer' && xp.n === 'd4' && xp.at === 1 && xp.back === 'repertoire' && xp.wrong, xp);
+  const xp = await p.evaluate(() => { document.querySelector('.layer:not(.ghost) #repXp').click(); const r = { screen, at: explorer.at, n: explorer.sans.join(' '), flip: explorer.flip }; exploreReturn(); return Object.assign(r, { back: screen, wrong: !!rep.drill.wrong }); });
+  check('Explore: the line and the wrong move in the explorer, back to the drill as it was', xp.screen === 'explorer' && !xp.flip && xp.n === 'd4' && xp.at === 1 && xp.back === 'repertoire' && xp.wrong, xp);
   await p.click('#repRetry');
   const t0 = await p.evaluate(() => ({ back: repPos().fen === rep.drill.fens[0], btns: [...document.querySelectorAll('.layer:not(.ghost) .actions-row button')].map(b => b.id + (b.disabled ? ':off' : '') + (b.classList.contains('rep-none') ? ':none' : '')) }));
   check('Try again: the position back, the toggles (no comment at the start: still switchable, faded)', t0.back && t0.btns.join() === 'repComment:none,repMarks,repShow,repSkip', t0);
