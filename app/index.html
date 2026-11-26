@@ -11050,7 +11050,8 @@ let repStore = null;     // { s: { 'w|key': [box, due, seen] }, add: [{ c, k, sa
 function repLoad(){
   if(repStore) return repStore;
   try{ repStore = JSON.parse(localStorage.getItem('cst.rep') || 'null'); }catch(e){}
-  repStore = Object.assign({ s:{}, add:[], skip:[], c:'both', o:{ comment:false, marks:false } }, repStore || {});
+  repStore = Object.assign({ s:{}, l:{}, add:[], skip:[], c:'both', o:{ comment:false, marks:false } }, repStore || {});
+  if(!repStore.lt) repStore.lt = Date.now();   // (when lines got their own state: positions played before it give a line's first one)
   // (from before the gaps followed the repertoire's size: checked no longer than its longest gap; boxes past it at it)
   try{ const gaps = repGaps(), lim = repMidnight(Date.now()) + gaps[gaps.length - 1] * REP_DAY;
     for(const x of Object.values(repStore.s)){ if(x[1] > lim) x[1] = lim; if(x[0] > gaps.length) x[0] = gaps.length; } }catch(e){}
@@ -11139,8 +11140,39 @@ function repRound(){
 }
 function repRoundCheck(){
   const st = repLoad(), rd = repRound();
-  const done = repColours().every(c=>repIndex(c).items.every(k=>{ const x = st.s[c + '|' + k]; return x && (x[3] || 0) >= rd.t; }));
+  const done = repColours().every(c=>repChunks(c).every(ch=>{ const x = repLineSt(ch); return x && (x[3] || 0) >= rd.t; }));
   if(done){ st.r = { t:Date.now(), seed:Math.floor(Math.random() * 1e9) }; repSave(); }
+}
+// A line's own state, as a position's: [step, checked until, times played, last played, misses]. A line is checked
+// or due as a whole: a retry or a move shown anywhere in it, the whole line again tomorrow. (From before lines: taken
+// from its positions, if all of them played.)
+function repLineSt(ch){
+  const st = repLoad(), id = ch.c + '|' + ch.key;
+  if(!st.l[id]){
+    const ps = ch.pos.map(k=>st.s[ch.c + '|' + k]); if(!ps.length || ps.some(x=>!x || (x[3] || 0) >= st.lt)) return null;
+    st.l[id] = [Math.min(...ps.map(x=>x[0])), Math.min(...ps.map(x=>x[1])), 1, Math.min(...ps.map(x=>x[3] || 0)), Math.max(...ps.map(x=>x[4] || 0))];
+  }
+  return st.l[id];
+}
+function repLineScore(ch, now){
+  const st = repLineSt(ch), rd = repRound(), last = st && st[3] || 0;
+  const stale = st ? Math.min(30, (now - last) / REP_DAY) : 30 - ch.start / 10;
+  const mix = -(st && st[4] || 0) * 10 - stale + repJitter(rd.seed, ch.c + ch.key) * 3;
+  if(!st || st[1] <= now) return -1000 + mix;   // due
+  if(last < rd.t) return mix;                   // checked, not played yet in this round
+  return 1000 + (last - rd.t) / REP_DAY;        // played in this round: the earliest first
+}
+// The line played to its end: graded as a whole (all found first time: the next step; otherwise checked for today,
+// back to the first step, one more miss)
+function repLineGrade(d){
+  const ch = d.chunk; if(!ch || d.graded) return; d.graded = true;
+  const st = repLineSt(ch) || [0, 0, 0, 0, 0], now = Date.now(), checked = st[2] && st[1] > now, gaps = repGaps(), day = repMidnight(now);
+  const clean = d.marks.length && d.marks.every(x=>x===2);
+  repStore.l[ch.c + '|' + ch.key] = clean
+    ? (()=>{ const box = checked ? Math.max(1, Math.min(gaps.length, st[0])) : Math.min(gaps.length, st[0] + 1);
+        return [box, Math.max(checked ? st[1] : 0, day + gaps[box - 1] * REP_DAY), st[2] + 1, now, (st[4] || 0) / 2]; })()
+    : [0, day + REP_DAY, st[2] + 1, now, (st[4] || 0) + 1];
+  repSave();
 }
 const repColours = ()=>rep.c==='both' ? ['w', 'b'] : [rep.c];
 // Lines: every way through your study (your move where it's yours, each of the opponent's replies), cut where its
@@ -11181,14 +11213,14 @@ function repChunks(c){
   repChunkIdx[c] = { idx, list };
   return list;
 }
-const repChunkChecked = (ch, now)=>ch.pos.every(k=>{ const st = repStore.s[ch.c + '|' + k]; return st && st[1] > now; });
 function repCounts(){
   repRoundCheck();
-  // lines, checked today (all your moves in it played since midnight), due (one of them not checked)
+  // lines, checked today (played to its end since midnight), due (never played, missed, or its time out)
   const now = Date.now(), day = repMidnight(now); let today = 0, due = 0, total = 0;
   for(const c of repColours()) for(const ch of repChunks(c)){ total++;
-    if(!repChunkChecked(ch, now)) due++;
-    if(ch.pos.every(k=>{ const st = repStore.s[c + '|' + k]; return st && (st[3] || 0) >= day; })) today++; }
+    const st = repLineSt(ch);
+    if(!st || st[1] <= now) due++;
+    if(st && st[3] >= day) today++; }
   return { today, due, total };
 }
 // The next chunk: the pile's order on its positions (the one most in need), not the chapter just played if another
@@ -11196,7 +11228,7 @@ function repCounts(){
 function repPickChunk(){
   repRoundCheck();
   const now = Date.now(), all = [];
-  for(const c of repColours()) for(const ch of repChunks(c)) all.push({ ch, s: Math.min(...ch.pos.map(k=>repScore(c, k, now))) });
+  for(const c of repColours()) for(const ch of repChunks(c)) all.push({ ch, s: repLineScore(ch, now) });
   if(!all.length) return null;
   all.sort((a, b)=>a.s - b.s);
   const tier = x=>Math.floor((x.s + 500) / 1000), last = rep.lastCh;
@@ -11291,15 +11323,15 @@ function repTry(mv){
   repGrade(d, k); repPush(d, m, g); repSlide(m);
   d.note = repComment(d.c, hit); d.msg = ''; d.tries = 0; d.shown = false; d.showOn = false;
   const reply = d.sans.length < d.end && d.plan[repKey(g.fen())] || null;   // (the chunk's own reply; its end: done)
-  if(!reply){ d.done = true; render(); return; }
+  if(!reply){ d.done = true; repLineGrade(d); render(); return; }
   d.wait = true; render();
   setTimeout(()=>{
     if(!rep || rep.drill!==d) return;
     const g2 = new Chess(g.fen()), r = g2.move(reply[0]); d.wait = false;
-    if(!r){ d.done = true; render(); return; }
+    if(!r){ d.done = true; repLineGrade(d); render(); return; }
     repPush(d, r, g2); if(screen==='repertoire') repSlide(r);
     const c2 = repComment(d.c, reply); if(c2) d.note = c2;
-    if(d.sans.length >= d.end || !repMain(d.c, repKey(g2.fen()))) d.done = true;
+    if(d.sans.length >= d.end || !repMain(d.c, repKey(g2.fen()))){ d.done = true; repLineGrade(d); }
     if(screen==='repertoire') render();
   }, 450);
 }

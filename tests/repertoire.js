@@ -62,26 +62,29 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   // the pile: unchecked first, then checked not played this round, then played this round (earliest first); a round
   // over once all played: a new one, all still checked
   const pile = await p.evaluate(() => {
-    const save = JSON.stringify(repStore), now = Date.now(), items = repIndex('w').items, c = rep.c; rep.c = 'w';
-    repStore.s = {}; repStore.r = { t: now - 1000, seed: 1 };
-    items.forEach((k, i) => { repStore.s['w|' + k] = [1, now + 5 * REP_DAY, 1, now - 500 + i, 0]; });   // all checked, played this round
-    const a = items[0], b = items[5];
-    repStore.s['w|' + b][1] = now - 1; repStore.s['w|' + b][4] = 2;   // b not checked
-    repStore.s['w|' + items[3]][3] = now - 5000;                          // items[3]: checked, not played in this round
-    const first = repPick().k;
-    repStore.s['w|' + b][1] = now + REP_DAY;
-    const second = repPick().k;
-    const r0 = repStore.r.t; repStore.s['w|' + items[3]][3] = now;    // everything played this round
-    const p3 = repPick(), newRound = repStore.r.t !== r0, cn = repCounts();
-    const gaps = repGaps();
-    repStore = JSON.parse(save); rep.c = c;
-    return { ok1: first === b, ok2: second === items[3], newRound, checked: cn.due === 0, gaps };
+    const save = JSON.stringify(repStore), now = Date.now(), c = rep.c; rep.c = 'w';
+    const L = repChunks('w'), id = x => 'w|' + x.key;
+    repStore.l = {}; repStore.r = { t: now - 1000, seed: 1 }; rep.lastCh = null;
+    L.forEach((x, i) => { repStore.l[id(x)] = [1, now + 5 * REP_DAY, 1, now - 500 + i, 0]; });   // all checked, played this round
+    const a = L[5], b = L[3];
+    repStore.l[id(a)][1] = now - 1; repStore.l[id(a)][4] = 2;    // a due
+    repStore.l[id(b)][3] = now - 5000;                            // b checked, not played in this round
+    const first = repPickChunk();
+    repStore.l[id(a)][1] = now + REP_DAY; rep.lastCh = null;
+    const second = repPickChunk();
+    const r0 = repStore.r.t; repStore.l[id(b)][3] = now;          // every line played this round
+    repPickChunk(); const newRound = repStore.r.t !== r0, cn = repCounts(), gaps = repGaps();
+    // a line graded as a whole: a retry anywhere in it, due again tomorrow
+    rep.drill = { chunk: a, marks: [2, 1, 2] }; repLineGrade(rep.drill);
+    const g = repStore.l[id(a)], tomorrow = g[1] === repMidnight(now) + REP_DAY && g[0] === 0;
+    repStore = JSON.parse(save); rep.c = c; repStart();
+    return { ok1: first === a, ok2: second === b, newRound, checked: cn.due === 0, tomorrow, gaps };
   });
-  check('the pile: not checked, then not played this round, then a new round with all checked', pile.ok1 && pile.ok2 && pile.newRound && pile.checked, pile);
+  check('the pile, by lines: due, then not played this round, then a new round with all checked; a retry: the line due tomorrow', pile.ok1 && pile.ok2 && pile.newRound && pile.checked && pile.tomorrow, pile);
   check('no position past a move to avoid (4...Qf6 5.c3 Bc5: only as 5.Be3 Bc5 6.c3)', await p.evaluate(() => repIndex('w').items.every(k => { const it = repIndex('w').at[k]; return !it.sans.join(' ').startsWith('e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Qf6 c3'); })), null);
   const chunks = await p.evaluate(() => ['w', 'b'].map(c => { const l = repChunks(c); return { n: l.length, ok: l.every(x => x.pos.length > 0 && x.sans.length > x.start), setup: l.some(x => x.ch === 'Caro-Kann: Setup') }; }));
   check('lines: chunks by chapter, each with a move of yours (Caro-Kann setup its own)', chunks.every(x => x.n > 20 && x.ok) && chunks[1].setup, chunks);
-  const nx = await p.evaluate(() => { const save = JSON.stringify(repStore); rep.c = 'b'; const out = []; for (let i = 0; i < 6; i++) { repStart(); const d = rep.drill; out.push({ ch: d.ch, start: d.sans.length, mine: d.fens[d.fens.length - 1].split(' ')[1] === 'b' }); d.chunk.pos.forEach(k => { repStore.s['b|' + k] = [1, Date.now() + REP_DAY, 1, Date.now(), 0]; }); } repStore = JSON.parse(save); rep.c = 'w'; return out; });
+  const nx = await p.evaluate(() => { const save = JSON.stringify(repStore); rep.c = 'b'; const out = []; for (let i = 0; i < 6; i++) { repStart(); const d = rep.drill; out.push({ ch: d.ch, start: d.sans.length, mine: d.fens[d.fens.length - 1].split(' ')[1] === 'b' }); repStore.l['b|' + d.chunk.key] = [1, Date.now() + REP_DAY, 1, Date.now(), 0]; } repStore = JSON.parse(save); rep.c = 'w'; return out; });
   check('next lines: each from your first move in its chunk, never the same chapter twice in a row', nx.every((x, i) => x.mine && (i === 0 || x.ch !== nx[i - 1].ch)), nx);
   check('gaps follow the repertoire: about 3 weeks at most here', pile.gaps[pile.gaps.length - 1] >= 14 && pile.gaps[pile.gaps.length - 1] <= 30, pile.gaps);
   // play the line to its end with the right moves
