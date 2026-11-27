@@ -10878,7 +10878,11 @@ const explorerLive = {};
 let explorerLiveT = null;
 function explorerLiveLine(fen, line, d){
   if(!line || line.uci==null) return;
-  explorerLive[fen] = { cp: line.cp, mate: line.mate, uci: line.uci, d };
+  // (the other good moves while it searches: from the deepest depth with its three lines complete, depth 8 at least:
+  // shallower ones jump about)
+  let alts = [];
+  for(let dd = d; dd >= 8; dd--){ const L = sfLinesByDepth[dd]; if(L && L[1] && L[2] && L[3]){ alts = goodAlts([L[1], L[2], L[3]]).filter(u=>u!==line.uci); break; } }
+  explorerLive[fen] = { cp: line.cp, mate: line.mate, uci: line.uci, d, alts };
   if(screen!=='explorer' || explorerLiveT) return;
   explorerLiveT = setTimeout(()=>{ explorerLiveT = null; if(screen==='explorer') render(); }, 200);
 }
@@ -11025,7 +11029,7 @@ function renderExplorer(){
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   const outer = document.querySelector('.board-outer'), top = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   top.setAttribute('class', 'arrows'); top.setAttribute('viewBox', '0 0 480 480'); outer.appendChild(top);
-  if(best && x.engineOn) drawArrows(top, (done ? goodAlts(ev.lines) : []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5 }))
+  if(best && x.engineOn) drawArrows(top, (done ? goodAlts(ev.lines) : live && live.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5 }))
     .concat({ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }), 'xb_');   // (other good moves fainter, under the top one)
   gameMoveBadge(x);
   on('depthBtn', ()=>explorerEngine(!x.engineOn));
