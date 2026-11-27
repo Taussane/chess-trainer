@@ -647,7 +647,8 @@
   .rep-lines{display:flex; flex-direction:column; gap:4px;} .rep-lines > .rep-moves{line-height:1.45;}
   .rep-branch{margin-left:calc(min(var(--d), 6) * 14px); padding-left:8px; border-left:1px solid var(--border);} .rep-branch[style*="--d:0"]{border-left:0; padding-left:0;}   /* (a branch: indented where it leaves the line above) */
   .rep-prop-row{display:flex; align-items:center; gap:8px; width:fit-content; min-width:min(100%, 300px); max-width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
-  .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-plus{color:var(--accent); font-weight:700;} .rep-cur{color:var(--accent);} #repMv [data-ply]{cursor:pointer;}
+  .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-plus{color:var(--accent); font-weight:700;} .rep-meta{color:var(--text-mute); font-size:0.82rem;} .title-row h1 + .rep-sel{margin-left:auto;}
+  .rep-prop-row.rep-skipped{border-color:var(--border);} .rep-prop-row.rep-skipped .rep-plus{color:var(--text-mute);}   /* (seen and skipped: still there, quieter) */ .rep-cur{color:var(--accent);} #repMv [data-ply]{cursor:pointer;}
   .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg, .xp-nav #repPop svg{width:20px; height:20px;} .xp-nav .icon-btn.rep-pop.on{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
   .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
@@ -11444,6 +11445,9 @@ const repPlayer = (fen, c)=>`<div class="pl-line">${c==='w' ? 'White' : 'Black'}
 const REP_ICONS = {
   comment:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>',
   show:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>' };
+// The colour dropdown (drills and Review): White, Black or both
+const repColourSel = ()=>`<select class="title-chip rep-sel" id="repColour" aria-label="Colour">${[['w', 'White'], ['b', 'Black'], ['both', 'Both']].map(([k, l])=>
+  `<option value="${k}"${rep.c===k ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
 function renderRepertoire(){
   repLoad();
   if(!rep) rep = { c: repStore.c, drill:null, view:'train' };
@@ -11451,8 +11455,7 @@ function renderRepertoire(){
   if(rep.view==='line') return renderRepLine();
   if(!rep.drill){ repStart(); repIntro(); }
   const app = document.getElementById('app'), d = rep.drill, p = repPos(), cn = repCounts(), o = repStore.o;
-  const colourSel = `<select class="title-chip rep-sel" id="repColour" aria-label="Colour">${[['w', 'White'], ['b', 'Black'], ['both', 'Both']].map(([k, l])=>
-    `<option value="${k}"${rep.c===k ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+  const colourSel = repColourSel();
   const prompt = !d ? 'No lines in your repertoire yet.' : d.done ? `Line complete${repSummary(d) ? ': ' + repSummary(d) : ''}.` : d.wait ? '…' : (d.wrong && d.wrong.checking ? 'Not the move: evaluating…' : d.msg || 'Your move?');
   const fen = d ? d.fens[d.fens.length - 1] : EXPLORER_START, marks = d ? repMarks(d.c, d.wrong ? d.wrong.fen : fen) : [];
   // the comment: the study's, on the move just played (a wrong move: the study's word on it), with its marks; one
@@ -11555,6 +11558,22 @@ function repFenInfo(fen){
   });
   return null;
 }
+// A move graded against the engine's top move (its lines from the position's search; a move not among them searched
+// on its own), with its evaluation from White's side
+const repMoveG = new Map();
+function repMoveGrade(fen, san, lines){
+  const m = new Chess(fen).move(san); if(!m || !lines || !lines.length) return null;
+  const uci = m.from + m.to + (m.promotion || ''), sgn = fen.split(' ')[1]==='w' ? 1 : -1, val = l=>l.mate!=null ? Math.sign(l.mate) * 1e4 : l.cp;
+  const grade = l=>({ label:labelFromWinDrop(Math.max(0, winPercent(val(lines[0])) - winPercent(val(l))), l.uci===lines[0].uci).label, info:l.mate!=null ? { mate:l.mate * sgn } : { cp:l.cp * sgn } });
+  const inL = lines.find(l=>l.uci===uci); if(inL) return grade(inL);
+  const k = fen + '|' + san; if(repMoveG.has(k)){ const l = repMoveG.get(k); return l ? grade(l) : null; }
+  repMoveG.set(k, null);
+  repEval(fen, { searchmoves:uci, multipv:1, movetime:800, depth:LIVE_DEPTH }).then(r=>{
+    if(evalFailed(r) || !r.lines || !r.lines.length){ repMoveG.delete(k); return; }
+    repMoveG.set(k, r.lines[0]); if(repLineShown()) render();
+  });
+  return null;
+}
 // Your answers in your games to their move, graded against the engine's top move there (as the reviews grade)
 const repAnswers = new Map();
 function repGapAnswers(x){
@@ -11582,9 +11601,10 @@ function repLineText(sans){ return sans.map((s, i)=>i % 2 ? s : (i / 2 + 1) + '.
 function repOffers(){
   const gs = repGameStats(), st = repLoad();
   st.skip = st.skip.map(k=>typeof k==='string' ? { id:k, n:(gs.gaps[k] || {}).n || 0 } : k);   // (skips from before: kept at today's count)
-  return Object.values(gs.gaps).filter(x=>repColours().includes(x.c) && (x.n >= 2 || x.punish) && !repMoves(x.c, x.k).some(m=>m[0]===x.san)
-    && !st.skip.some(k=>k.id===x.id && k.n >= x.n))
-    .sort((a, b)=>(b.punish ? 1 : 0) - (a.punish ? 1 : 0) || b.n - a.n).slice(0, 20);
+  // (skipped and not met in more games since: still listed, marked, last; you can still open and add it)
+  return Object.values(gs.gaps).filter(x=>repColours().includes(x.c) && (x.n >= 2 || x.punish) && !repMoves(x.c, x.k).some(m=>m[0]===x.san))
+    .map(x=>Object.assign(x, { skipped:st.skip.some(k=>k.id===x.id && k.n >= x.n) }))
+    .sort((a, b)=>(a.skipped ? 1 : 0) - (b.skipped ? 1 : 0) || (b.punish ? 1 : 0) - (a.punish ? 1 : 0) || b.n - a.n).slice(0, 30);
 }
 const repMoveHtml = (sans, from = 0, cur = -1)=>sans.map((m, i)=>i < from ? '' : `${i % 2===0 ? (i / 2 + 1) + '. ' : i===from ? Math.floor(i / 2) + 1 + '… ' : ''}<b${i===cur ? ' class="rep-cur"' : ''} data-ply="${i + 1}">${escHtml(m)}</b>`).filter(Boolean).join(' ');
 // Review: your lines chapter by chapter, each proposal under the line it branches from (open it to look at it, add it
@@ -11606,8 +11626,8 @@ function renderRepReview(){
   // (their move only: the line is searched once you open it)
   const propRow = x=>{
     const pre = new Chess(); x.sans.slice(0, -1).forEach(m=>pre.move(m)); const pc = popPct(movePopularity(pre.fen()), x.san);
-    return `<button class="rep-prop-row" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(x.sans, x.sans.length - 1)}</span>${pc ? `<span class="rep-n">${pc}</span>` : ''}
-      ${x.punish ? '<span class="rep-tag rep-punish">To punish</span>' : ''}<span class="rep-n">${x.n} ${x.n > 1 ? 'games' : 'game'}</span></button>`; };
+    return `<button class="rep-prop-row${x.skipped ? ' rep-skipped' : ''}" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(x.sans, x.sans.length - 1)}</span> <span class="rep-meta">${pc ? pc + ' · ' : ''}${x.n} ${x.n > 1 ? 'games' : 'game'}</span>
+      ${x.punish ? '<span class="rep-tag rep-punish">To punish</span>' : ''}${x.skipped ? '<span class="rep-tag">Skipped</span>' : ''}</button>`; };
   const devs = Object.values(gs.devs).filter(x=>repColours().includes(x.c) && x.n >= 1).sort((a, b)=>b.n - a.n).slice(0, 8);
   const devRow = x=>`<div class="rep-item">
       <div class="rep-item-top"><span class="rep-tag">${x.c==='w' ? 'White' : 'Black'}</span><span class="rep-n">${x.n} ${x.n > 1 ? 'games' : 'game'}</span></div>
@@ -11619,11 +11639,11 @@ function renderRepReview(){
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back keep" id="repBack" aria-label="Back">${BACK_ARROW}</button>
-      <h1>Review</h1>
+      <h1>Review</h1>${repColourSel()}
     </div>
     <div class="rep-review">
       ${!myGames.length ? `<p class="rep-sub">Connect your Lichess or Chess.com account in your profile: your games are compared with your repertoire.</p>` : ''}
-      <p class="rep-sub">${gaps.length ? `${gaps.length} ${gaps.length > 1 ? 'lines' : 'line'} to add, from your games` : 'Every reply in your games is in your repertoire.'}</p>
+      ${(()=>{ const n = gaps.filter(x=>!x.skipped).length; return `<p class="rep-sub">${n ? `${n} ${n > 1 ? 'lines' : 'line'} to add, from your games` : 'Every reply in your games is in your repertoire.'}</p>`; })()}
       ${groups.map(gr=>`<h2>${gr.c==='w' ? 'White' : 'Black'} · ${head(gr.ch)}</h2>
         <div class="rep-lines">${repTreeHtml(gr, st, propRow)}</div>`).join('')}
       ${loose.length ? `<h2>Other</h2><div class="rep-lines">${loose.map(propRow).join('')}</div>` : ''}
@@ -11635,6 +11655,7 @@ function renderRepReview(){
     </div>`;
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('repBack', ()=>{ rep.view = 'train'; render(); });
+  const sel = document.getElementById('repColour'); if(sel) sel.onchange = ()=>{ rep.c = repStore.c = sel.value; repSave(); repStart(); render(); };
   on('repCopy', ()=>{ const t = added.map(a=>repLineText(a.line)).join('\n'); try{ navigator.clipboard.writeText(t); }catch(e){} const b = document.getElementById('repCopy'); if(b) b.textContent = 'Copied'; });
   app.querySelectorAll('[data-rline]').forEach(b=>b.onclick = ()=>{ const x = gs.gaps[b.dataset.rline]; if(!x) return;
     rep.view = 'line'; xpBar.shown = null;   // (the bar starts at this line's own reading)
@@ -11710,6 +11731,7 @@ function renderRepLine(){
   // how often their move is played (Lichess, players around your rating), and the most played moves here
   const preG = new Chess(); x.sans.slice(0, -1).forEach(m=>preG.move(m)); const gapPct = popPct(movePopularity(preG.fen()), x.san);
   const popOn = !!st.o.pop, pop = movePopularity(fen), popTop = pop && pop.top ? pop.top.slice(0, 3) : [];
+  const mostG = popOn && popTop.length && done ? repMoveGrade(fen, popTop[0], ev.lines) : null;   // (the most played move, graded against the top one)
   const played = !Object.keys(x.replies).length ? 'Not answered in your games.'
     : `You played ${ans ? ans.map(a=>`<b>${escHtml(a.san)}</b> (<span style="color:${labelColor(a.label)}">${a.label}</span> ${fmtSigned(done && info.san===a.san ? info : a.info)})`).join(', ') : Object.keys(x.replies).map(escHtml).join(', ') + ' …'}${ans ? '.' : ''}`;
   app.innerHTML = `
@@ -11718,13 +11740,13 @@ function renderRepLine(){
       <h1>New line</h1>
       <button class="title-chip" id="repSkipLine">Skip</button><button class="title-chip rep-add" id="repAddLine" ${line.length > gapN ? '' : 'disabled'}>Add</button>
     </div>
-    <div class="posbar"><div class="pos-title">${repGapChapter(x)}<br>${no(gapN - 1)}${escHtml(x.san)} isn't in your study${x.punish ? ' (to punish)' : ''}${gapPct ? ` · ${gapPct} popular` : ''} · ${x.n} ${x.n > 1 ? 'games' : 'game'}</div></div>
+    <div class="posbar"><div class="pos-title">${repGapChapter(x)}<br>${no(gapN - 1)}${escHtml(x.san)} isn't in your study${x.punish ? ' (to punish)' : ''}${gapPct ? ` · ${gapPct}` : ''} · ${x.n} ${x.n > 1 ? 'games' : 'game'}</div></div>
     <div class="stage"><div class="board-col">${explorerHbarHtml(info || lv.lastInfo, pct, x.c==='b', false)}${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
     <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1)}</span></div>
     ${stackedPanel(`
       <p class="prompt rep-prompt">${line.length > gapN ? `New line ends at <b>${endInfo ? fmtSigned(mine(endInfo)) : '…'}</b> for you.` : 'Play your answer.'}</p>
-      <p class="rep-note">${popOn ? (pop ? (popTop.length ? `Most played: ${popTop.map(m=>`<b>${escHtml(m)}</b> ${popPct(pop, m)}`).join(', ')}. ` : 'Not played at your level. ') : lichessAuth && lichessAuth.token ? 'Most played: … ' : 'Most played: sign in with Lichess. ')
-        : info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${fmtSigned(info)}). ` : ''}${ply===gapN ? played : ''}</p>
+      <p class="rep-note">${popOn ? (pop ? (popTop.length ? `Most played: <b>${escHtml(popTop[0])}</b> (${mostG ? `<span style="color:${labelColor(mostG.label)}">${mostG.label}</span> ${fmtSigned(mostG.info)} · ` : '… · '}${popPct(pop, popTop[0])}). ` : 'Not played at your level. ') : lichessAuth && lichessAuth.token ? 'Most played: … ' : 'Most played: sign in with Lichess. ')
+        : info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${done ? `<span style="color:${labelColor('Best')}">Best</span> ` : ''}${fmtSigned(info)}${popPct(pop, info.san) ? ' · ' + popPct(pop, info.san) : ''}). ` : ''}${ply===gapN ? played : ''}</p>
       <div class="actions-row xp-nav">
         <a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="icon-btn" id="repLineXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><button class="icon-btn rep-pop${popOn ? ' on' : ''}" id="repPop" aria-pressed="${popOn}" aria-label="Most played moves" title="Most played moves"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V12M12 20V5M19 20v-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
         <span class="xp-steps"><button class="icon-btn" id="repPrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="repNextMv" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>

@@ -117,7 +117,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   check('the list searches nothing (a line is searched when opened)', await p.evaluate(() => Object.keys(repStore.prop).length === 0), null);
   const id = await stub();
   const r0 = await p.evaluate(() => { const row = document.querySelector('.layer:not(.ghost) [data-rline]') || document.querySelector('[data-rline]'); const h = row && row.closest('.rep-lines').previousElementSibling; return { text: row && row.textContent.replace(/\s+/g, ' ').trim(), head: h && h.textContent, lines: document.querySelectorAll('.rep-lines .rep-moves').length }; });
-  check('Review: your lines by chapter, the London proposed under the setup it branches from', /\+ ?2\. Bf4 2 games/.test(r0.text) && /2 games/.test(r0.text) && /Black · (Slav Defense|Caro-Kann) · Setup/.test(r0.head) && r0.lines > 10, r0);
+  check('Review: your lines by chapter, the London proposed under the setup it branches from', /\+ ?2\. Bf4 ?2 games/.test(r0.text) && /2 games/.test(r0.text) && /Black · (Slav Defense|Caro-Kann) · Setup/.test(r0.head) && r0.lines > 10, r0);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-review.png' });
   await p.click('[data-rline]');
   const l0 = await p.evaluate(() => ({ view: rep.view, top: document.querySelector('.pos-title').textContent, ply: rep.lv.ply, cur: (document.querySelector('#repMv .rep-cur') || {}).textContent }));
@@ -132,11 +132,12 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   const own = await p.evaluate(() => { const x = Object.values(repGameStats().gaps).find(g => g.san === 'Bf4'); return { line: repStore.prop[x.id].line.join(' '), ply: rep.lv.ply }; });
   check('your own move: the line from there is yours', own.line === 'd4 c6 Bf4 Nf6' && own.ply === 4, own);
   await p.click('#repSkipLine');
-  check('Skip: no longer proposed', await p.evaluate(() => rep.view === 'review' && !document.querySelector('[data-rline]')), null);
+  const sk = await p.evaluate(() => { const b = document.querySelector('[data-rline]'); return { view: rep.view, skipped: !!b && b.classList.contains('rep-skipped') && /Skipped/.test(b.textContent), sub: document.querySelector('.rep-review .rep-sub:nth-of-type(1)') && [...document.querySelectorAll('.rep-review > .rep-sub')].map(x => x.textContent).join(' | ') }; });
+  check('Skip: still in the tree, marked Skipped, not counted', sk.view === 'review' && sk.skipped && /Every reply/.test(sk.sub), sk);
   await p.evaluate(() => { myGames.push({ id: 't4', me: 'b', sans: ['d4', 'c6', 'Bf4', 'Qb6'], evals: [] }); repGames = null; render(); });
   await stub();
-  const r2 = await p.evaluate(() => (document.querySelector('[data-rline]') || {}).textContent || '');
-  check('more games against it: proposed again, with the new count', /3 games/.test(r2), r2);
+  const r2 = await p.evaluate(() => { const b = document.querySelector('[data-rline]'); return b ? b.textContent + (b.classList.contains('rep-skipped') ? ' [skipped]' : '') : ''; });
+  check('more games against it: proposed again, with the new count', /3 games/.test(r2) && !/skipped/i.test(r2), r2);
   await p.click('[data-rline]'); await p.click('#repAddLine');
   const r1 = await p.evaluate(() => { const g = new Chess(); ['d4', 'c6', 'Bf4'].forEach(s => g.move(s)); const k = repKey(g.fen()); g.move('d5'); g.move('e3'); return { main: (repMain('b', k) || [])[0], main2: (repMain('b', repKey(g.fen())) || [])[0], line: repChunks('b').some(ch => ch.sans.join(' ') === 'd4 c6 Bf4 d5 e3 Bf5'), added: !!document.querySelector('.rep-lines .rep-tag'), copy: repStore.lines.some(l => l.line.join(' ') === 'd4 c6 Bf4 d5 e3 Bf5') }; });
   check('Add: the whole line in your repertoire, a line to drill, marked Added, to copy', r1.main === 'd5' && r1.main2 === 'Bf5' && r1.line && r1.added && r1.copy, r1);
