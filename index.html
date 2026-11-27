@@ -11849,9 +11849,9 @@ async function repSyncStudy(force){
     if(r.status===404){ st.study = null; repStudyNote = 'Your repertoire study was deleted on Lichess.'; repSave(); return; }
     if(!r.ok) return;
     const pgn = await r.text(); st.studyAt = Date.now();
-    if(pgn!==st.studyPgn){ st.studyPgn = pgn; repApplyData(repFromStudy(pgnRead(pgn))); repStudyNote = 'Synced with your Lichess study.'; setTimeout(repRenameChapters, 0);
+    if(pgn!==st.studyPgn){ st.studyPgn = pgn; repApplyData(repFromStudy(pgnRead(pgn))); repStudyNote = 'Synced with your Lichess study.';
       if(screen==='repertoire'){ if(rep && rep.view==='train' && rep.drill && !rep.drill.sans.length) repStart(); render(); } }
-    repSave();
+    repSave(); setTimeout(repRenameChapters, 0);   // (once: chapters with their colour first)
   }catch(e){} finally{ repSyncing = false; }
 }
 // Chapters named with their colour first (the first study): renamed through their ChapterName tag, if Lichess takes it
