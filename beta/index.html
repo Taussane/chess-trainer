@@ -11851,10 +11851,29 @@ async function repSyncStudy(force){
     if(r.status===404){ st.study = null; repStudyNote = 'Your repertoire study was deleted on Lichess.'; repSave(); return; }
     if(!r.ok) return;
     const pgn = await r.text(); st.studyAt = Date.now();
-    if(pgn!==st.studyPgn){ st.studyPgn = pgn; repApplyData(repFromStudy(pgnRead(pgn))); repStudyNote = 'Synced with your Lichess study.';
+    if(pgn!==st.studyPgn){ st.studyPgn = pgn; repApplyData(repFromStudy(pgnRead(pgn))); repStudyNote = 'Synced with your Lichess study.'; setTimeout(repRenameChapters, 0);
       if(screen==='repertoire'){ if(rep && rep.view==='train' && rep.drill && !rep.drill.sans.length) repStart(); render(); } }
     repSave();
   }catch(e){} finally{ repSyncing = false; }
+}
+// Chapters named with their colour first (the first study): renamed through their ChapterName tag, if Lichess takes it
+// that way (tried on one chapter, then the rest; tried once)
+async function repRenameChapters(){
+  const st = repLoad(), tok = lichessAuth && lichessAuth.studyToken; if(!st.study || !tok || st.renamed || !st.studyPgn) return;
+  const H = { Authorization:'Bearer ' + tok, 'Content-Type':'application/x-www-form-urlencoded' };
+  const old = []; for(const g of st.studyPgn.split(/\n\s*\n(?=\[Event )/)){ const nm = (g.match(/\[ChapterName "([^"]*)"\]/) || [])[1], u = (g.match(/\[ChapterURL "[^"]*\/([A-Za-z0-9]{8})"\]/) || [])[1];
+    if(u && nm && /^(White|Black) · /.test(nm)) old.push({ id:u, name:nm.replace(/^(White|Black) · /, '') }); }
+  st.renamed = true; repSave(); if(!old.length) return;
+  const tag = ch=>fetch(LICHESS + `/api/study/${st.study}/${ch.id}/tags`, { method:'POST', headers:H, body:new URLSearchParams({ pgn:`[ChapterName "${ch.name.replace(/"/g, "'")}"]` }) });
+  try{
+    const r = await tag(old[0]);
+    if(!r.ok){ repStudyNote = `Lichess didn't rename the chapters (${r.status}): delete the study and create it again to get the new names.`; render(); return; }
+    const ex = await (await fetch(LICHESS + `/api/study/${st.study}/${old[0].id}.pgn`, { headers:{ Authorization:'Bearer ' + tok } })).text();
+    const now = (ex.match(/\[ChapterName "([^"]*)"\]/) || [])[1];
+    if(now!==old[0].name){ repStudyNote = "Lichess kept the chapters' names (the tag doesn't rename them): delete the study and create it again to get the new names."; render(); return; }
+    for(const ch of old.slice(1)) await tag(ch);
+    st.studyAt = 0; repSave(); repStudyNote = `Chapters renamed on Lichess (${old.length}).`; repSyncStudy(true); render();
+  }catch(e){ repStudyNote = `Renaming the chapters didn't work: ${e.message}`; render(); }
 }
 // A line added here, into its chapter of the study: the chapter rebuilt (the repertoire as just read from Lichess, and
 // your added moves) and its moves replaced there
