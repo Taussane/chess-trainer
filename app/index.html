@@ -5843,12 +5843,13 @@ let lichessAuth = null;   // { token, username }
 try{ const v = JSON.parse(localStorage.getItem(AUTH_LS) || 'null'); if(v && v.token && v.username) lichessAuth = v; }catch(e){}
 const b64url = bytes=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const oauthRedirect = ()=>location.origin + location.pathname;
-async function lichessLogin(link){   // link: add Lichess to the account you're logged in to
+async function lichessLogin(link, scope){   // link: add Lichess to the account you're logged in to; scope: a second token
+  // with that permission (studies: the repertoire's own study), kept beside the login's, back to the repertoire after
   const verifier = b64url(crypto.getRandomValues(new Uint8Array(32))), state = b64url(crypto.getRandomValues(new Uint8Array(16)));
   const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
-  try{ localStorage.setItem(OAUTH_LS, JSON.stringify({ verifier, state, link: !!link })); }catch(e){}
-  location.href = LICHESS + '/oauth?' + new URLSearchParams({ response_type:'code', client_id:LICHESS_CLIENT_ID,
-    redirect_uri:oauthRedirect(), code_challenge_method:'S256', code_challenge:challenge, state });
+  try{ localStorage.setItem(OAUTH_LS, JSON.stringify({ verifier, state, link: !!link, scope: scope || '' })); }catch(e){}
+  location.href = LICHESS + '/oauth?' + new URLSearchParams(Object.assign({ response_type:'code', client_id:LICHESS_CLIENT_ID,
+    redirect_uri:oauthRedirect(), code_challenge_method:'S256', code_challenge:challenge, state }, scope ? { scope } : {}));
 }
 function setLichessAuth(a){
   lichessAuth = a;
@@ -5862,10 +5863,20 @@ async function finishLichessLogin(){
   let pending = null;
   try{ pending = JSON.parse(localStorage.getItem(OAUTH_LS) || 'null'); localStorage.removeItem(OAUTH_LS); }catch(e){}
   history.replaceState(null, '', location.pathname + location.hash);   // the code is single-use: off the address bar
-  screen = pending && pending.link ? 'mygames' : 'account';
+  screen = pending && pending.scope ? 'repertoire' : pending && pending.link ? 'mygames' : 'account';
   if(q.has('error') || !pending || q.get('state')!==pending.state){
     myImportNote = q.get('error')==='access_denied' ? 'Lichess login cancelled.' : "Lichess login didn't go through. Try again.";
     render(); return;
+  }
+  if(pending.scope){   // (the studies permission: its token beside the login's, back to the Review)
+    try{
+      const tr = await fetch(LICHESS + '/api/token', { method:'POST', headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ grant_type:'authorization_code', code:q.get('code'), code_verifier:pending.verifier, redirect_uri:oauthRedirect(), client_id:LICHESS_CLIENT_ID }) });
+      const tok = tr.ok ? await tr.json() : null; if(!tok || !tok.access_token) throw new Error('token');
+      if(lichessAuth) setLichessAuth(Object.assign({}, lichessAuth, { studyToken:tok.access_token }));
+      repStudyNote = 'Lichess studies allowed: create the study now.';
+    }catch(e){ repStudyNote = "Lichess didn't give the permission. Try again."; }
+    rep = rep || { c:'both', drill:null, view:'review' }; rep.view = 'review'; render(); return;
   }
   myImportNote = 'Logging in with Lichess…'; render();
   try{
@@ -11641,6 +11652,68 @@ function repOffers(){
 }
 const repChkLeft = ()=>{ const st = repLoad(); return repCandidates().filter(x=>repColours().includes(x.c) && repChkDue(st, x)).length; };
 const repMoveHtml = (sans, from = 0, cur = -1, fresh = 1e9)=>sans.map((m, i)=>i < from ? '' : `${i % 2===0 ? (i / 2 + 1) + '. ' : i===from ? Math.floor(i / 2) + 1 + '… ' : ''}<b${i===cur ? ' class="rep-cur"' : i >= fresh ? ' class="rep-new"' : ''} data-ply="${i + 1}">${escHtml(m)}</b>`).filter(Boolean).join(' ');
+// ---- The repertoire's own Lichess study: one study, a chapter per chapter of your repertoire ("Scotch Game ·
+// Classical Variation"), its lines as the trainer has them (with the lines you added), your study's comments and
+// arrows, and the moves to avoid as variations with their answer. Made in your Lichess account (with your
+// permission for studies); the studies it came from stay as they are.
+let repStudyNote = '';
+function repChapterPgn(c, chIdx){
+  const name = REPERTOIRE[c].ch[chIdx], root = { kids:[] }, mk = REPERTOIRE[c].mk || {}, com = REPERTOIRE[c].c || [];
+  const kid = (n, san)=>{ let k = n.kids.find(x=>x.san===san); if(!k){ k = { san, kids:[], com:'' }; n.kids.push(k); } return k; };
+  const marks = key=>{ const m = mk[key] || []; const cal = m.filter(x=>x.length===5).join(','), csl = m.filter(x=>x.length===3).join(',');
+    return (cal ? `[%cal ${cal}]` : '') + (csl ? `[%csl ${csl}]` : ''); };
+  for(const ch of repChunks(c).filter(x=>x.ch===name)){
+    let n = root; const g = new Chess();
+    ch.sans.forEach(san=>{ const k = repKey(g.fen()), m = repMoves(c, k).find(x=>x[0]===san), side = g.turn(); g.move(san);
+      const nn = kid(n, san); nn.key = repKey(g.fen()); nn.mine = side===c;
+      if(m && m[2] >= 0) nn.text = com[m[2]];
+      // (your moves to avoid here: a variation each, with their answer when the study had one)
+      if(side===c) for(const a of repMoves(c, k).filter(x=>x[1]===2)){ const v = kid(n, a[0]); v.avoid = true; if(a[2] >= 0) v.text = com[a[2]];
+        if(a[4] && a[4]!=='=' && !v.kids.length){ let t = v; String(a[4]).split(/\s+/).filter(w=>w && !/^\d+\.+$/.test(w)).forEach(w=>{ t = kid(t, w.replace(/^\d+\.+/, '')); }); } }
+      n = nn; });
+  }
+  // your move first, its alternatives as variations
+  const sortKids = n=>{ n.kids.sort((a, b)=>(a.avoid ? 1 : 0) - (b.avoid ? 1 : 0)); n.kids.forEach(sortKids); }; sortKids(root);
+  const cmt = n=>{ const t = [n.text || '', n.key ? marks(n.key) : ''].filter(Boolean).join(' '); return t ? ` {${t.replace(/[{}]/g, '')}}` : ''; };
+  const out = [];
+  const line = (kids, ply, force)=>{ if(!kids.length) return;
+    const [main, ...alts] = kids, num = (p, f)=>p % 2===0 ? `${p / 2 + 1}. ` : f ? `${Math.floor(p / 2) + 1}... ` : '';
+    out.push(num(ply, force) + main.san + cmt(main));
+    for(const a of alts){ out.push('(' + num(ply, true) + a.san + cmt(a)); line(a.kids, ply + 1, true); out.push(')'); }
+    line(main.kids, ply + 1, alts.length > 0 || !!cmt(main));
+  };
+  const start = marks(repKey(EXPLORER_START));
+  line(root.kids, 0, false);
+  return `[Event "${name.replace(/"/g, "'")}"]\n[Orientation "${c==='w' ? 'white' : 'black'}"]\n\n${start ? `{${start}} ` : ''}${out.join(' ')} *\n`;
+}
+async function repCreateStudy(){
+  const tok = lichessAuth && lichessAuth.studyToken;
+  if(!tok){ lichessLogin(false, 'study:read study:write'); return; }
+  const H = { Authorization:'Bearer ' + tok }, st = repLoad();
+  const say = t=>{ repStudyNote = t; if(screen==='repertoire' && rep && rep.view==='review') render(); };
+  try{
+    say('Creating the study on Lichess…');
+    const r = await fetch(LICHESS + '/api/study', { method:'POST', headers:Object.assign({ 'Content-Type':'application/x-www-form-urlencoded' }, H),
+      body:new URLSearchParams({ name:'ChessStrategy.org repertoire', visibility:'private' }) });
+    const body = await r.text(); let js = null; try{ js = JSON.parse(body); }catch(e){}
+    if(!r.ok || !js || !js.id) throw new Error(`creating it: ${r.status} ${body.slice(0, 160)}`);
+    const id = js.id, chs = [];
+    for(const c of ['w', 'b']) (REPERTOIRE[c] ? REPERTOIRE[c].ch : []).forEach((name, i)=>{ if(repChunks(c).some(x=>x.ch===name)) chs.push({ c, i, name }); });
+    for(let i = 0; i < chs.length; i++){
+      const ch = chs[i], t = ch.name.split(': ');
+      say(`Creating the study on Lichess… chapter ${i + 1} of ${chs.length}`);
+      const rr = await fetch(LICHESS + `/api/study/${id}/import-pgn`, { method:'POST', headers:Object.assign({ 'Content-Type':'application/x-www-form-urlencoded' }, H),
+        body:new URLSearchParams({ pgn:repChapterPgn(ch.c, ch.i), name:(ch.c==='w' ? 'White' : 'Black') + ' · ' + t.join(' · '), orientation:ch.c==='w' ? 'white' : 'black', variant:'standard' }) });
+      if(!rr.ok) throw new Error(`chapter "${ch.name}": ${rr.status} ${(await rr.text()).slice(0, 160)}`);
+    }
+    // (the empty first chapter a new study comes with: removed)
+    try{ const ex = await (await fetch(LICHESS + `/api/study/${id}.pgn`, { headers:H })).text();
+      for(const g of ex.split(/\n\n(?=\[Event )/)){ const u = (g.match(/\[ChapterURL "[^"]*\/([A-Za-z0-9]{8})"\]/) || [])[1];
+        if(u && !/\b1\.\s*\S/.test(g.replace(/^\[.*\]$/gm, ''))){ await fetch(LICHESS + `/api/study/${id}/${u}`, { method:'DELETE', headers:H }); break; } } }catch(e){}
+    st.study = id; repSave();
+    say(`Study created on Lichess, ${chs.length} chapters.`);
+  }catch(e){ say(`The study couldn't be made: ${e.message}`); }
+}
 // Review: your lines chapter by chapter, each proposal under the line it branches from (open it to look at it, add it
 // or skip it); then where your games left your line; then what you added (to copy into your Lichess study)
 function renderRepReview(){
@@ -11689,9 +11762,11 @@ function renderRepReview(){
       <p class="rep-sub">These positions come up first in practice.</p>
       ${devs.length ? devs.map(devRow).join('') : '<p class="rep-sub">You followed your lines in every game.</p>'}
       ${added.length ? `<div class="rep-added"><span class="rep-sub">${added.length} ${added.length > 1 ? 'lines' : 'line'} added</span><button class="btn secondary" id="repCopy">Copy for Lichess</button></div>` : ''}
+      ${lichessAuth ? `<div class="rep-added"><span class="rep-sub">${repStudyNote ? escHtml(repStudyNote) : st.study ? 'Your repertoire study on Lichess' : 'Your repertoire as a study in your Lichess account'}</span>${st.study ? `<a class="btn secondary" href="${LICHESS}/study/${escHtml(st.study)}" target="_blank" rel="noopener">Open</a>` : `<button class="btn secondary" id="repStudy">${lichessAuth.studyToken ? 'Create study' : 'Allow studies'}</button>`}</div>` : ''}
     </div>`;
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   on('repBack', ()=>{ rep.view = 'train'; render(); });
+  on('repStudy', ()=>repCreateStudy());
   const sel = document.getElementById('repColour'); if(sel) sel.onchange = ()=>{ rep.c = repStore.c = sel.value; repSave(); repStart(); render(); };
   on('repCopy', ()=>{ const t = added.map(a=>repLineText(a.line)).join('\n'); try{ navigator.clipboard.writeText(t); }catch(e){} const b = document.getElementById('repCopy'); if(b) b.textContent = 'Copied'; });
   app.querySelectorAll('[data-rline]').forEach(b=>b.onclick = ()=>{ const x = gs.gaps[b.dataset.rline]; if(!x) return;
