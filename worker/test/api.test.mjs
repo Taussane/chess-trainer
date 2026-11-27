@@ -230,7 +230,7 @@ test('limits: games from Lichess and Chess.com only, 300 per site; known setting
   r = await j(await call(env, 'POST', '/api/games', { body: { games: many('ly', 2, 'lichess') } }));
   assert.deepEqual([r.body.saved, r.body.refused], [1, 1], 'room again after a game is removed');
   assert.equal((await call(env, 'PUT', '/api/meta/anything', { body: { data: 1 } })).status, 404, 'unknown settings document');
-  for (const n of ['profile', 'replay', 'settings', 'chesscom', 'games-cleared']) assert.equal((await call(env, 'PUT', '/api/meta/' + n, { body: { data: { x: 1 } } })).status, 200, n);
+  for (const n of ['profile', 'replay', 'settings', 'chesscom', 'games-cleared', 'repertoire']) assert.equal((await call(env, 'PUT', '/api/meta/' + n, { body: { data: { x: 1 } } })).status, 200, n);
   r = await j(await call(env, 'POST', '/api/results', { body: { rows: [{ ts: 1, a: 'final', acc: 50 }, { ts: 2, a: 'final', acc: 50, pad: 'x'.repeat(5000) }] } }));
   assert.equal(r.body.added, 1, 'an oversized result is left out');
 });

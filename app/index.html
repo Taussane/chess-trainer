@@ -11726,7 +11726,7 @@ async function repCreateStudy(){
     try{ const ex = await (await fetch(LICHESS + `/api/study/${id}.pgn`, { headers:H })).text();
       for(const g of ex.split(/\n\n(?=\[Event )/)){ const u = (g.match(/\[ChapterURL "[^"]*\/([A-Za-z0-9]{8})"\]/) || [])[1];
         if(u && !/\b1\.\s*\S/.test(g.replace(/^\[.*\]$/gm, ''))){ await fetch(LICHESS + `/api/study/${id}/${u}`, { method:'DELETE', headers:H }); break; } } }catch(e){}
-    st.study = id; st.studyAt = 0; repSave();
+    st.study = id; st.studyAt = 0; repSave(); repStudySave(id);
     say(`Study created on Lichess, ${chs.length} chapters: kept in sync from now on.`);
   }catch(e){ say(`The study couldn't be made: ${e.message}`); }
 }
@@ -11808,14 +11808,22 @@ function repApplyData(data){
   for(const c of ['w', 'b']) if(data[c] && Object.keys(data[c].n).length) REPERTOIRE[c] = data[c];
   repDataVer++; for(const c of ['w', 'b']){ delete repIdx[c]; delete repChunkIdx[c]; } repGames = null;
 }
-let repSyncing = false;
+let repSyncing = false, repStudyAsked = false;
+// The study's id is kept with your account too (every device finds the same study): read once if this browser doesn't
+// have it, written when it's made or found gone
+const repStudySave = id=>{ if(metaCol) metaCol.doc('repertoire').set({ study:id || null }).catch(()=>{}); };
+async function repStudyFromAccount(){
+  const st = repLoad(); if(st.study || repStudyAsked || !metaCol) return; repStudyAsked = true;
+  try{ const d = await metaCol.doc('repertoire').get(); const v = d.exists && d.data(); if(v && v.study && !st.study){ st.study = v.study; st.studyAt = 0; repSave(); repSyncStudy(true); if(screen==='repertoire') render(); } }catch(e){}
+}
 async function repSyncStudy(force){
+  repStudyFromAccount();
   const st = repLoad(), tok = lichessAuth && lichessAuth.studyToken;
   if(!st.study || !tok || repSyncing || (!force && Date.now() - (st.studyAt || 0) < 120000)) return;
   repSyncing = true;
   try{
     const r = await fetch(LICHESS + `/api/study/${st.study}.pgn?comments=true&variations=true&clocks=false`, { headers:{ Authorization:'Bearer ' + tok } });
-    if(r.status===404){ st.study = null; repStudyNote = 'Your repertoire study was deleted on Lichess.'; repSave(); return; }
+    if(r.status===404){ st.study = null; st.studyPgn = null; repStudyNote = 'Your repertoire study was deleted on Lichess.'; repSave(); repStudySave(null); return; }
     if(!r.ok) return;
     const pgn = await r.text(); st.studyAt = Date.now();
     if(pgn!==st.studyPgn){ st.studyPgn = pgn; repApplyData(repFromStudy(pgnRead(pgn))); repStudyNote = 'Synced with your Lichess study.';

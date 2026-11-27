@@ -21,7 +21,7 @@
 //   GET    /api/games                   all games
 //   POST   /api/games     {games:[…]}   add or replace games
 //   DELETE /api/games/:id               remove one game
-//   GET    /api/meta/:name              a small document (profile, chesscom, replay, games-cleared…)
+//   GET    /api/meta/:name              a small document (profile, chesscom, replay, games-cleared, repertoire…)
 //   PUT    /api/meta/:name              replace it
 //   GET    /api/chesscom/player?user=   a Chess.com player's name as Chess.com spells it (404: none; no sign-in)
 //   GET    /api/chesscom/games?user=&since=&max=  (max: default 100, at most 200)
@@ -60,7 +60,7 @@ const DAY = 864e5, APP_SESSION_DAYS = 180, MAX_ROWS = 500, MAX_GAME_BYTES = 2000
 // What one account can keep. Games: the app keeps per site your newest 100 plus up to 100 older ones with
 // positions still to replay; a sync adds the new ones before the oldest go, hence 300. Results: years of play.
 const GAME_SITES = ['lichess', 'chesscom'], MAX_GAMES_PER_SITE = 300, MAX_RESULTS = 200000;
-const META_NAMES = ['profile', 'replay', 'settings', 'chesscom', 'games-cleared'];
+const META_NAMES = ['profile', 'replay', 'settings', 'chesscom', 'games-cleared', 'repertoire'];   // (repertoire: its Lichess study's id)
 const gameSite = g => typeof g.site === 'string' ? g.site : String(g.id).startsWith('cc-') ? 'chesscom' : 'lichess';   // as the app's siteOf
 
 // Requests per address and minute (Cloudflare's rate limiting, bindings in wrangler.toml; absent when run
