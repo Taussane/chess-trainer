@@ -10423,7 +10423,7 @@ function explorerEval(fen){
     }).then(d=>{
       if(d===EXPLORER_DROPPED){ delete explorerEvals[fen]; return; }
       e.status = 'done'; e.data = d;
-      if(screen==='explorer') render();
+      if(screen==='explorer' || repLineShown()) render();
     });
   }
   return e.status==='done' ? e.data : null;
@@ -10906,7 +10906,9 @@ function explorerVals(fen, noMateCheck){   // noMateCheck: the reading alone, no
   if(!(fen in explorerStatic)){ try{ explorerStatic[fen] = adaptAspects(parseAspects(sfTableLines(fen), fen), fen); }catch(e){ explorerStatic[fen] = null; } }
   return explorerStatic[fen];
 }
-// The engine's reading as it deepens (its best line so far, at every new depth): the bar and the arrow follow it.
+// The engine's reading as it deepens (its best line so far, at every new depth): the bar and the arrow follow it
+// (in the explorer, and in the repertoire's New line, which searches the same way).
+const repLineShown = ()=>screen==='repertoire' && typeof rep!=='undefined' && rep && rep.view==='line';
 const explorerLive = {};
 let explorerLiveT = null;
 function explorerLiveLine(fen, line, d){
@@ -10916,8 +10918,8 @@ function explorerLiveLine(fen, line, d){
   let alts = [];
   for(let dd = d; dd >= 8; dd--){ const L = sfLinesByDepth[dd]; if(L && L[1] && L[2] && L[3]){ alts = goodAlts([L[1], L[2], L[3]]).filter(u=>u!==line.uci); break; } }
   explorerLive[fen] = { cp: line.cp, mate: line.mate, uci: line.uci, d, alts };
-  if(screen!=='explorer' || explorerLiveT) return;
-  explorerLiveT = setTimeout(()=>{ explorerLiveT = null; if(screen==='explorer') render(); }, 200);
+  if((screen!=='explorer' && !repLineShown()) || explorerLiveT) return;
+  explorerLiveT = setTimeout(()=>{ explorerLiveT = null; if(screen==='explorer' || repLineShown()) render(); }, 200);
 }
 // After a move the imbalances change all at once; those whose grade changed pulse once.
 const shownLevel = (vals, key)=>(vals.off || []).includes(key) ? 'off' : String(aspectLevel(vals[key], key, vals));   // (an aspect left out, greyed: no grade to change)
@@ -11661,11 +11663,16 @@ function renderRepLine(){
   if(pr.auto && pr.line.length===gapN && gi && gi.san){ pr.line.push(gi.san); repSave(); }
   const line = pr.line, ply = lv.ply = Math.max(0, Math.min(lv.ply, line.length));
   const g = new Chess(); let last = null; line.slice(0, ply).forEach(m=>{ last = g.move(m); });
-  const fen = g.fen(), top = x.c==='b' ? 'w' : 'b', info = repFenInfo(fen);
-  // (the line's end: when its last move is the engine's top move, that search's evaluation, the same number as shown)
-  const endG = new Chess(); line.slice(0, -1).forEach(m=>endG.move(m)); const prevInfo = line.length > gapN ? repFenInfo(endG.fen()) : null;
-  endG.move(line[line.length - 1]);
-  const endInfo = line.length <= gapN ? null : prevInfo && prevInfo.san===line[line.length - 1] ? prevInfo : repFenInfo(endG.fen());
+  const fen = g.fen(), top = x.c==='b' ? 'w' : 'b';
+  // the position shown: searched as the explorer searches it (1.5 s, three lines, its reading shown as it deepens)
+  const ev = explorerEval(fen), failed = evalFailed(ev), done = ev && !failed && ev.lines.length ? ev.lines[0] : null, live = !ev ? explorerLive[fen] : null;
+  const cur = done || live, info = cur ? Object.assign(toWhitePerspective(cur, fen), { uci:cur.uci, san:(()=>{ const m = cur.uci && new Chess(fen).move({ from:cur.uci.slice(0, 2), to:cur.uci.slice(2, 4), promotion:cur.uci[4] }); return m && m.san; })(),
+    alts:done ? goodAlts(ev.lines) : live.alts || [] }) : null;
+  // (the line's end: the position shown when it is, or the one before when its top move ends the line: the same number
+  // as shown; otherwise its own search)
+  const endG = new Chess(); line.slice(0, -1).forEach(m=>endG.move(m)); const preFen = endG.fen();
+  if(line.length > gapN) endG.move(line[line.length - 1]);
+  const endInfo = line.length <= gapN ? null : ply===line.length ? (done ? info : null) : ply===line.length - 1 && done && info.san===line[line.length - 1] ? info : repFenInfo(endG.fen());
   const mine = v=>v && (v.mate!=null ? { mate:v.mate * (x.c==='w' ? 1 : -1) } : { cp:v.cp * (x.c==='w' ? 1 : -1) });
   const ans = repGapAnswers(x);
   const no = i=>Math.floor(i / 2) + 1 + (i % 2 ? '… ' : '. ');
@@ -11674,7 +11681,7 @@ function renderRepLine(){
   const sansL = line.slice(0, ply);
   const lichess = `https://lichess.org/analysis/pgn/${sansL.map(m=>encodeURIComponent(m.replace(/[+#]/g, ''))).join('_')}?color=${x.c==='b' ? 'black' : 'white'}#${ply}`;
   const played = !Object.keys(x.replies).length ? 'Not answered in your games.'
-    : `You played ${ans ? ans.map(a=>`<b>${escHtml(a.san)}</b> (<span style="color:${labelColor(a.label)}">${a.label}</span> ${fmtSigned(a.info)})`).join(', ') : Object.keys(x.replies).map(escHtml).join(', ') + ' …'}.`;
+    : `You played ${ans ? ans.map(a=>`<b>${escHtml(a.san)}</b> (<span style="color:${labelColor(a.label)}">${a.label}</span> ${fmtSigned(done && info.san===a.san ? info : a.info)})`).join(', ') : Object.keys(x.replies).map(escHtml).join(', ') + ' …'}.`;
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back keep" id="repLineBack" aria-label="Back">${BACK_ARROW}</button>
@@ -11692,11 +11699,11 @@ function renderRepLine(){
         <span class="xp-steps"><button class="icon-btn" id="repPrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="repNextMv" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
       </div>`, [])}`;
   // the board: from their move on, play a move (either side) to change the line there or go on with it
-  const bs = boardObjFromGame(g), live = ply >= gapN && !g.game_over();
-  const dest = live && lv.sel ? g.moves({ square:lv.sel, verbose:true }).map(m=>m.to) : [];
+  const bs = boardObjFromGame(g), canPlay = ply >= gapN && !g.game_over();
+  const dest = canPlay && lv.sel ? g.moves({ square:lv.sel, verbose:true }).map(m=>m.to) : [];
   const playMv = mv=>{ pr.line = line.slice(0, ply).concat(mv.san); pr.auto = false; lv.ply = ply + 1; lv.sel = null; repSave(); repSlide(mv); render(); };
   renderBoard(document.getElementById('board'), bs, last ? { squares:[last.from, last.to] } : null, { selectedSq:lv.sel, destSquares:dest, onSquareClick: sq=>{
-    if(!live) return;
+    if(!canPlay) return;
     if(lv.sel && dest.includes(sq)){
       const legal = g.moves({ square:lv.sel, verbose:true }).filter(m=>m.to===sq);
       if(legal.some(m=>m.promotion)){ promoPending = { from:lv.sel, to:sq }; render(); return; }
@@ -11704,7 +11711,7 @@ function renderRepLine(){
     }
     const pc = bs[sq]; lv.sel = pc && colorOf(pc)===g.turn() && sq!==lv.sel ? sq : null; render();
   } });
-  if(promoPending && live) showPromotionPicker(g, mv=>{ promoPending = null; playMv(mv); });
+  if(promoPending && canPlay) showPromotionPicker(g, mv=>{ promoPending = null; playMv(mv); });
   if(info && info.uci) drawArrows(document.getElementById('arrows'), (info.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5 }))
     .concat({ from:info.uci.slice(0, 2), to:info.uci.slice(2, 4), color:'var(--system)' }), 'rl_');   // (other good moves fainter, under the top one)
   const li = app.querySelector('.layer:not(.ghost) .xp-li') || app.querySelector('.xp-li'); if(li && li.offsetHeight) app.style.setProperty('--xp-btn-h', li.offsetHeight + 'px');   // (the row's buttons as tall as Lichess's, as in the explorer)
