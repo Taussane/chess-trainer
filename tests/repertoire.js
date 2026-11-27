@@ -131,6 +131,9 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   await sq('g8'); await sq('f6');
   const own = await p.evaluate(() => { const x = Object.values(repGameStats().gaps).find(g => g.san === 'Bf4'); return { line: repStore.prop[x.id].line.join(' '), ply: rep.lv.ply }; });
   check('your own move: the line from there is yours', own.line === 'd4 c6 Bf4 Nf6' && own.ply === 4, own);
+  await p.click('#repCut');
+  const cut = await p.evaluate(() => { const x = Object.values(repGameStats().gaps).find(g => g.san === 'Bf4'); return { line: repStore.prop[x.id].line.join(' '), ply: rep.lv.ply, off: document.getElementById('repCut').disabled }; });
+  check('remove: a step back, the end of the line cleared (their move stays)', cut.line === 'd4 c6 Bf4' && cut.ply === 3 && cut.off, cut);
   await p.click('#repSkipLine');
   const sk = await p.evaluate(() => { const b = document.querySelector('[data-rline]'); return { view: rep.view, skipped: !!b && b.classList.contains('rep-skipped') && /Skipped/.test(b.textContent), sub: document.querySelector('.rep-review .rep-sub:nth-of-type(1)') && [...document.querySelectorAll('.rep-review > .rep-sub')].map(x => x.textContent).join(' | ') }; });
   check('Skip: still in the tree, marked Skipped, not counted', sk.view === 'review' && sk.skipped && /Every reply/.test(sk.sub), sk);

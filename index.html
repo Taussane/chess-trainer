@@ -63,6 +63,7 @@
      instead of shrinking the board further. */
   .wrap.ex{height:100vh; height:100dvh; display:flex; flex-direction:column;
     padding-block:max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-bottom));}
+  .wrap.rvw{padding-top:max(9px, env(safe-area-inset-top));}   /* (the repertoire's Review: a page that scrolls, its title at the drills' height) */
   .wrap.ex > #app{flex:1 1 auto; display:flex; flex-direction:column; min-height:0;}
   .stage{flex:1 0 200px; container-type:size; display:flex; align-items:center; justify-content:center;}
   .board-col{display:flex; flex-direction:column; align-items:stretch;}
@@ -679,8 +680,8 @@
   .rep-branch{margin-left:calc(min(var(--d), 6) * 14px); padding-left:8px; border-left:1px solid var(--border);} .rep-branch[style*="--d:0"]{border-left:0; padding-left:0;}   /* (a branch: indented where it leaves the line above) */
   .rep-prop-row{display:flex; align-items:center; gap:8px; width:fit-content; min-width:min(100%, 300px); max-width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
   .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-plus{color:var(--accent); font-weight:700;} .rep-meta{color:var(--text-mute); font-size:0.82rem;} .title-row h1 + .rep-sel{margin-left:auto;}
-  .rep-prop-row.rep-skipped{border-color:var(--border);} .rep-prop-row.rep-skipped .rep-plus{color:var(--text-mute);}   /* (seen and skipped: still there, quieter) */ .rep-cur{color:var(--accent);} #repMv [data-ply]{cursor:pointer;}
-  .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg, .xp-nav #repPop svg{width:20px; height:20px;} .xp-nav .icon-btn.rep-pop.on{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
+  .rep-prop-row.rep-skipped{border-color:var(--border);} .rep-prop-row.rep-skipped .rep-plus{color:var(--text-mute);}   /* (seen and skipped: still there, quieter) */ .rep-cur{color:var(--accent);} #repMv .rep-new{color:var(--text);}   /* (New line: the moves you would add, in white) */ #repMv [data-ply]{cursor:pointer;}
+  .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg, .xp-nav #repPop svg, .xp-nav #repCut svg{width:20px; height:20px;} .xp-nav .icon-btn.rep-pop.on{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
   .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
   .actions-row.pending{visibility:hidden;}
@@ -869,7 +870,7 @@
     html.desk2 .coord-f{bottom:1cqw; left:.5cqw;} html.desk2 .coord-r{top:.5cqw; right:.5cqw;}
     html.desk2 .wrap.ex .stage .board-col > .board-outer{width:min(100cqw, 100cqh - 44px);}
     /* profile: three columns; settings: the controls beside a large preview board */
-    html.desk2 .wrap:not(.ex):not(.home){padding-block:24px;}
+    html.desk2 .wrap:not(.ex):not(.home){padding-block:24px;} html.desk2 .wrap.rvw:not(.ex):not(.home){padding-top:15px;}
     html.desk2 .wrap[data-scr=account] > #app{max-width:900px;}   /* (home, profile and metrics: one width) */
     html.desk2 .wrap[data-scr=support] > #app, html.desk2 .wrap[data-scr=tests] > #app{max-width:560px;}
     /* metrics: a dashboard as wide as the home page */
@@ -11637,7 +11638,7 @@ function repOffers(){
     .map(x=>Object.assign(x, { skipped:st.skip.some(k=>k.id===x.id && k.n >= x.n) }))
     .sort((a, b)=>(a.skipped ? 1 : 0) - (b.skipped ? 1 : 0) || (b.punish ? 1 : 0) - (a.punish ? 1 : 0) || b.n - a.n).slice(0, 30);
 }
-const repMoveHtml = (sans, from = 0, cur = -1)=>sans.map((m, i)=>i < from ? '' : `${i % 2===0 ? (i / 2 + 1) + '. ' : i===from ? Math.floor(i / 2) + 1 + '… ' : ''}<b${i===cur ? ' class="rep-cur"' : ''} data-ply="${i + 1}">${escHtml(m)}</b>`).filter(Boolean).join(' ');
+const repMoveHtml = (sans, from = 0, cur = -1, fresh = 1e9)=>sans.map((m, i)=>i < from ? '' : `${i % 2===0 ? (i / 2 + 1) + '. ' : i===from ? Math.floor(i / 2) + 1 + '… ' : ''}<b${i===cur ? ' class="rep-cur"' : i >= fresh ? ' class="rep-new"' : ''} data-ply="${i + 1}">${escHtml(m)}</b>`).filter(Boolean).join(' ');
 // Review: your lines chapter by chapter, each proposal under the line it branches from (open it to look at it, add it
 // or skip it); then where your games left your line; then what you added (to copy into your Lichess study)
 function renderRepReview(){
@@ -11773,14 +11774,14 @@ function renderRepLine(){
     </div>
     <div class="posbar"><div class="pos-title">${repGapChapter(x)}<br>${no(gapN - 1)}${escHtml(x.san)} isn't in your study${x.punish ? ' (to punish)' : ''}${gapPct ? ` · ${gapPct}` : ''} · ${x.n} ${x.n > 1 ? 'games' : 'game'}</div></div>
     <div class="stage"><div class="board-col">${explorerHbarHtml(info || lv.lastInfo, pct, x.c==='b', false)}${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
-    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1)}</span></div>
+    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1, gapN - 1)}</span></div>
     ${stackedPanel(`
       <p class="prompt rep-prompt">${line.length > gapN ? `New line ends at <b>${endInfo ? fmtSigned(mine(endInfo)) : '…'}</b> for you.` : 'Play your answer.'}</p>
       <p class="rep-note">${popOn ? (pop ? (popTop.length ? `Most played: <b>${escHtml(popTop[0])}</b> (${mostG ? `<span style="color:${labelColor(mostG.label)}">${mostG.label}</span> ${fmtSigned(mostG.info)} · ` : '… · '}${popPct(pop, popTop[0])}). ` : 'Not played at your level. ') : lichessAuth && lichessAuth.token ? 'Most played: … ' : 'Most played: sign in with Lichess. ')
-        : info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${done ? `<span style="color:${labelColor('Best')}">Best</span> ` : ''}${fmtSigned(info)}${popPct(pop, info.san) ? ' · ' + popPct(pop, info.san) : ''}). ` : ''}${ply===gapN ? played : ''}</p>
+        : info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${done ? `<span style="color:${labelColor('Best')}">Best</span> ` : ''}${fmtSigned(info)}${popPct(pop, info.san) ? ' · ' + popPct(pop, info.san) : ''}). ` : ''}${ply===gapN ? '<br>' + played : ''}</p>
       <div class="actions-row xp-nav">
         <a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="icon-btn" id="repLineXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><button class="icon-btn rep-pop${popOn ? ' on' : ''}" id="repPop" aria-pressed="${popOn}" aria-label="Most played moves" title="Most played moves"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V12M12 20V5M19 20v-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
-        <span class="xp-steps"><button class="icon-btn" id="repPrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="repNextMv" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
+        <span class="xp-steps"><button class="icon-btn" id="repCut" aria-label="Remove the last move" title="Remove the last move" ${ply > gapN ? '' : 'disabled'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7z M12 9l6 6 M18 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg></button><button class="icon-btn" id="repPrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="repNextMv" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
       </div>`, [])}`;
   // the board: from their move on, play a move (either side) to change the line there or go on with it
   const bs = boardObjFromGame(g), canPlay = ply >= gapN && !g.game_over();
@@ -11811,6 +11812,8 @@ function renderRepLine(){
     if(dl > 0){ const mv = new Chess(fen).move(line[ply]); if(mv) repSlide(mv); } render(); };
   on('repLineBack', ()=>{ rep.view = 'review'; render(); });
   on('repPrev', ()=>step(-1)); on('repNextMv', ()=>step(1));
+  // a step back, the line cut there (their move stays)
+  on('repCut', ()=>{ if(ply <= gapN) return; pr.line = line.slice(0, ply - 1); pr.auto = false; lv.ply = ply - 1; lv.sel = null; repSave(); render(); });
   on('repPop', ()=>{ st.o.pop = !popOn; repSave(); render(); });
   on('repLineXp', ()=>exploreFrom({ fen, sans:sansL, ply, flip:x.c==='b' }));
   repLineKeys.step = step;
@@ -12769,6 +12772,7 @@ function renderScreen(){
   syncPos();
   const wrap = document.querySelector('.wrap');
   wrap.classList.toggle('ex', ACTIVITIES.includes(screen) || screen==='explorer' || screen==='planq' || screen==='repertoire' && !(rep && rep.view==='review'));
+  wrap.classList.toggle('rvw', screen==='repertoire' && !!(rep && rep.view==='review'));   // (its title where the drills' is)
   wrap.classList.toggle('home', screen==='home');
   wrap.dataset.scr = onProfile() ? 'account' : screen;
   renderSide();
