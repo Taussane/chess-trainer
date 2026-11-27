@@ -11807,7 +11807,7 @@ function repFromStudy(games){
       for(const s of shapes(v.com || '')) if(!ex.mk.includes(s)) ex.mk.push(s);
       graft(ex, v, label); } };
     for(const g of games){
-      const o = (g.headers.Orientation || '').toLowerCase(), name = (g.headers.ChapterName || g.headers.Event || '').replace(' · ', ': ');
+      const o = (g.headers.Orientation || '').toLowerCase(), name = (g.headers.ChapterName || g.headers.Event || '').replace(/^(White|Black) · /, '').replace(' · ', ': ');   // (a first study's chapters began with their colour)
       const col = o ? (o==='black' ? 'b' : 'w') : (REPERTOIRE.b && REPERTOIRE.b.ch.includes(name) ? 'b' : 'w');
       if(col!==c) continue;
       for(const s of shapes(g.root.com || '')) if(!root.mk.includes(s)) root.mk.push(s);
