@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <base href="../">
 <meta name="robots" content="noindex">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://chess-trainer-api.sauveur-guillaume.workers.dev https://lichess.org https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://chess-trainer-api.sauveur-guillaume.workers.dev https://lichess.org https://explorer.lichess.ovh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#12161B">
 <meta name="description" content="Chess strategy training on positions from master games and your own Lichess and Chess.com games.">
@@ -2613,7 +2613,12 @@ function drawArrows(svg, list, keyPrefix){
     const ex = b.x + nx - dx/len*12, ey = b.y + ny - dy/len*12;
     return `<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${m.color}" stroke-width="8" stroke-linecap="butt" marker-end="url(#${keyPrefix}${i})" filter="url(#${keyPrefix}sh)" opacity="${m.opacity ?? .8}"/>`;
   }).join('');
-  svg.innerHTML = `<defs>${defs}</defs>${lines}`;
+  // a label (how often the move is played): a small pill at the arrow's middle, over every arrow
+  const labels = list.filter(m=>m.label).map(m=>{
+    const a = squareCenter(m.from), b = squareCenter(m.to), x = (a.x + b.x) / 2, y = (a.y + b.y) / 2, w = 10 + m.label.length * 8;
+    return `<g class="arrow-label"><rect x="${x - w / 2}" y="${y - 10}" width="${w}" height="20" rx="10" fill="rgba(20,22,28,.82)"/><text x="${x}" y="${y + 4.5}" text-anchor="middle" font-size="13" font-weight="600" fill="#fff">${m.label}</text></g>`;
+  }).join('');
+  svg.innerHTML = `<defs>${defs}</defs>${lines}${labels}`;
 }
 
 
@@ -10400,6 +10405,51 @@ function explorerPos(){
   const fen = explorer.fens[explorer.at], m = explorer.moves[explorer.at - 1];
   return { key:'explorer:' + fen, fen, side: fen.split(' ')[1], moveNo: +fen.split(' ')[5], last: m ? { squares:[m.from, m.to] } : null, hist:{} };
 }
+// How often a move is played: Lichess's opening explorer (games of players around your rating, at your time controls;
+// it needs your Lichess login, so only when you're signed in with Lichess). One request at a time, the position
+// shown first; kept for the session; a "too many requests" pauses it a minute.
+const POP_BANDS = [1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500];
+const popCache = new Map(); let popBusy = false, popNext = null, popPauseUntil = 0;
+function popFilter(){
+  const lg = myGames.filter(g=>siteOf(g)==='lichess').slice(-40);
+  const elos = lg.map(g=>g.me==='w' ? g.whiteElo : g.blackElo).filter(e=>e > 0).sort((a, b)=>a - b);
+  const elo = elos.length ? elos[Math.floor(elos.length / 2)] : 1500;
+  let i = POP_BANDS.findIndex((b, j)=>elo < (POP_BANDS[j + 1] || 1e9)); if(i < 0) i = 0;
+  const ratings = POP_BANDS.slice(Math.max(0, i - 1), i + 2);
+  const sp = [...new Set(lg.map(g=>g.speed).filter(s=>['blitz', 'rapid', 'classical'].includes(s)))];
+  return { ratings, speeds:sp.length ? sp : ['blitz', 'rapid', 'classical'] };
+}
+function movePopularity(fen){
+  if(!lichessAuth || !lichessAuth.token) return null;
+  const k = fen.split(' ').slice(0, 4).join(' ');
+  if(popCache.has(k)) return popCache.get(k);
+  popNext = fen; popPump();
+  return null;
+}
+async function popPump(){
+  if(popBusy || !popNext || Date.now() < popPauseUntil) return;
+  const fen = popNext, k = fen.split(' ').slice(0, 4).join(' '); popNext = null;
+  if(popCache.has(k)) return popPump();
+  popBusy = true;
+  try{
+    const f = popFilter(), url = `https://explorer.lichess.ovh/lichess?variant=standard&fen=${encodeURIComponent(fen)}&speeds=${f.speeds.join(',')}&ratings=${f.ratings.join(',')}&moves=12&topGames=0&recentGames=0`;
+    const r = await fetch(url, { headers:{ Authorization:'Bearer ' + lichessAuth.token } });
+    if(r.status===429){ popPauseUntil = Date.now() + 60000; popNext = popNext || fen; setTimeout(popPump, 61000); }
+    else if(!r.ok) popCache.set(k, { total:0, pct:{} });
+    else{ const d = await r.json(), total = (d.white || 0) + (d.draws || 0) + (d.black || 0), pct = {};
+      for(const m of d.moves || []){ const n = (m.white || 0) + (m.draws || 0) + (m.black || 0); if(total && m.san) pct[m.san] = n / total * 100; }   // (by its SAN: Lichess writes castling as the king taking its rook)
+      popCache.set(k, { total, pct });
+      if(screen==='explorer' || repLineShown()) render(); }
+  }catch(e){ popCache.set(k, { total:0, pct:{} }); }
+  popBusy = false; popPump();
+}
+// "52%", "<1%", "0%" for an arrow's move (the engine's, in UCI); nothing without the numbers
+function popLabel(pop, fen, uci){
+  if(!pop || !pop.total || uci==null) return '';
+  const m = new Chess(fen).move({ from:uci.slice(0, 2), to:uci.slice(2, 4), promotion:uci[4] }); if(!m) return '';
+  const v = pop.pct[m.san];
+  return v==null ? '0%' : v < 1 ? '<1%' : Math.round(v) + '%';
+}
 // Other good moves: the engine's 2nd and 3rd lines when they grade Good against its top one (Ok or worse: not
 // shown); drawn fainter than the top move
 function goodAlts(lines){
@@ -10940,7 +10990,7 @@ function xpBarEase(target){
     const d = xpBar.target - xpBar.shown;
     xpBar.shown = Math.abs(d) < 0.05 ? xpBar.target : xpBar.shown + d * 0.12;
     const el = document.getElementById('xpBarW'); if(el) el.style.setProperty('--w', xpBar.shown + '%');   // (width across, height upright: see the CSS)
-    xpBar.raf = xpBar.shown===xpBar.target || screen!=='explorer' ? 0 : requestAnimationFrame(step);
+    xpBar.raf = xpBar.shown===xpBar.target || (screen!=='explorer' && !repLineShown()) ? 0 : requestAnimationFrame(step);   // (the repertoire's New line has the same bar)
   };
   xpBar.raf = requestAnimationFrame(step);
 }
@@ -11064,8 +11114,9 @@ function renderExplorer(){
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   const outer = document.querySelector('.board-outer'), top = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   top.setAttribute('class', 'arrows'); top.setAttribute('viewBox', '0 0 480 480'); outer.appendChild(top);
-  if(best && x.engineOn) drawArrows(top, (done ? goodAlts(ev.lines) : live && live.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5 }))
-    .concat({ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }), 'xb_');   // (other good moves fainter, under the top one)
+  const pop = x.engineOn ? movePopularity(fen) : null;   // (how often each arrow's move is played, on it)
+  if(best && x.engineOn) drawArrows(top, (done ? goodAlts(ev.lines) : live && live.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5, label:popLabel(pop, fen, u) }))
+    .concat({ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)', label:popLabel(pop, fen, best) }), 'xb_');   // (other good moves fainter, under the top one)
   gameMoveBadge(x);
   on('depthBtn', ()=>explorerEngine(!x.engineOn));
   xpBarEase(pct);
@@ -11620,7 +11671,8 @@ function renderRepReview(){
   on('repBack', ()=>{ rep.view = 'train'; render(); });
   on('repCopy', ()=>{ const t = added.map(a=>repLineText(a.line)).join('\n'); try{ navigator.clipboard.writeText(t); }catch(e){} const b = document.getElementById('repCopy'); if(b) b.textContent = 'Copied'; });
   app.querySelectorAll('[data-rline]').forEach(b=>b.onclick = ()=>{ const x = gs.gaps[b.dataset.rline]; if(!x) return;
-    rep.view = 'line'; rep.lv = { id:x.id, ply:x.sans.length }; render(); });
+    rep.view = 'line'; xpBar.shown = null;   // (the bar starts at this line's own reading)
+    rep.lv = { id:x.id, ply:x.sans.length }; render(); });
 }
 // A chapter's lines as a tree: the moves they share once, then each branch on its own line, indented where it
 // differs (a black move starting a line: "5… Nf6"); a proposal as a branch of its own, in its box, where it leaves
@@ -11676,8 +11728,9 @@ function renderRepLine(){
   const mine = v=>v && (v.mate!=null ? { mate:v.mate * (x.c==='w' ? 1 : -1) } : { cp:v.cp * (x.c==='w' ? 1 : -1) });
   const ans = repGapAnswers(x);
   const no = i=>Math.floor(i / 2) + 1 + (i % 2 ? '… ' : '. ');
-  const pct = info ? (info.mate===0 ? (fen.split(' ')[1]==='b' ? 99 : 1) : cpToPct(info.cp, info.mate)) : 50;
-  const num = info ? (info.mate!=null ? '#' + Math.abs(info.mate) : fmtBarScore(info)) : '…';
+  // the bar as the explorer's: it stays where it was until the new reading, then eases there
+  if(info){ lv.lastPct = info.mate===0 ? (fen.split(' ')[1]==='b' ? 99 : 1) : cpToPct(info.cp, info.mate); lv.lastInfo = info; }
+  const pct = lv.lastPct ?? 50;
   const sansL = line.slice(0, ply);
   const lichess = `https://lichess.org/analysis/pgn/${sansL.map(m=>encodeURIComponent(m.replace(/[+#]/g, ''))).join('_')}?color=${x.c==='b' ? 'black' : 'white'}#${ply}`;
   const played = !Object.keys(x.replies).length ? 'Not answered in your games.'
@@ -11689,7 +11742,7 @@ function renderRepLine(){
       <button class="title-chip" id="repSkipLine">Skip</button><button class="title-chip rep-add" id="repAddLine" ${line.length > gapN ? '' : 'disabled'}>Add</button>
     </div>
     <div class="posbar"><div class="pos-title">${no(gapN - 1)}${escHtml(x.san)} isn't in your study${x.punish ? ' (to punish)' : ''}<br>${x.n} ${x.n > 1 ? 'games' : 'game'} against it</div></div>
-    <div class="stage"><div class="board-col"><div class="pl-line xp-hbar-line"><div class="xp-hbar${x.c==='b' ? ' flip' : ''}" role="img" aria-label="Evaluation ${num}"><div class="xp-hbar-w" style="--w:${pct}%"></div><span class="xp-hbar-num ${pct >= 50 ? 'w' : 'b'}">${num}</span></div></div>${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
+    <div class="stage"><div class="board-col">${explorerHbarHtml(info || lv.lastInfo, pct, x.c==='b', false)}${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
     <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1)}</span></div>
     ${stackedPanel(`
       <p class="prompt rep-prompt">${line.length > gapN ? `New line ends at <b>${endInfo ? fmtSigned(mine(endInfo)) : '…'}</b> for you.` : 'Play your answer.'}</p>
@@ -11712,9 +11765,11 @@ function renderRepLine(){
     const pc = bs[sq]; lv.sel = pc && colorOf(pc)===g.turn() && sq!==lv.sel ? sq : null; render();
   } });
   if(promoPending && canPlay) showPromotionPicker(g, mv=>{ promoPending = null; playMv(mv); });
-  if(info && info.uci) drawArrows(document.getElementById('arrows'), (info.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5 }))
-    .concat({ from:info.uci.slice(0, 2), to:info.uci.slice(2, 4), color:'var(--system)' }), 'rl_');   // (other good moves fainter, under the top one)
+  const pop = movePopularity(fen);
+  if(info && info.uci) drawArrows(document.getElementById('arrows'), (info.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5, label:popLabel(pop, fen, u) }))
+    .concat({ from:info.uci.slice(0, 2), to:info.uci.slice(2, 4), color:'var(--system)', label:popLabel(pop, fen, info.uci) }), 'rl_');   // (other good moves fainter, under the top one)
   const li = app.querySelector('.layer:not(.ghost) .xp-li') || app.querySelector('.xp-li'); if(li && li.offsetHeight) app.style.setProperty('--xp-btn-h', li.offsetHeight + 'px');   // (the row's buttons as tall as Lichess's, as in the explorer)
+  xpBarEase(pct);
   const mvEl = document.getElementById('repMv');
   if(mvEl){ const cur = mvEl.querySelector('.rep-cur'); if(cur) mvEl.scrollLeft = Math.max(0, cur.offsetLeft - mvEl.clientWidth / 2);
     mvEl.querySelectorAll('[data-ply]').forEach(b=>b.onclick = ()=>{ lv.ply = +b.dataset.ply; lv.sel = null; render(); }); }

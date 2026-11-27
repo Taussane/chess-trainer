@@ -7,7 +7,7 @@ root = pathlib.Path(__file__).resolve().parent.parent
 app = (root / 'app' / 'index.html').read_text(encoding='utf-8')
 icon = "icons/icon.svg"   # the white king of the board, on the yellow accent (icons/: the app icons, the same)
 # What the page may load and call (Content-Security-Policy): its own files; the account server, Lichess
-# (logins, games), and the CDNs the engine falls back to. Inline scripts and styles are
+# (logins, games; its opening explorer: how often a move is played), and the CDNs the engine falls back to. Inline scripts and styles are
 # the app itself. A safety net: even injected code couldn't send anything to another site.
 import re
 API = re.search(r"/\*API_BASE\*/'([^']+)'", app).group(1)   # the account server's address, as the app has it
@@ -16,7 +16,7 @@ CSP = '; '.join([
     "default-src 'self'",
     f"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' {CDNS}",
     f"worker-src 'self' blob: {CDNS}",
-    f"connect-src 'self' {API} https://lichess.org {CDNS}",
+    f"connect-src 'self' {API} https://lichess.org https://explorer.lichess.ovh {CDNS}",
     "img-src 'self' data: blob:",
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self' data:",

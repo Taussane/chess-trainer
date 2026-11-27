@@ -98,7 +98,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   check('line complete: Explore opens it at its end, back to it', xd.screen === 'explorer' && xd.at === xd.want && xd.n === xd.want && xd.back === 'repertoire' && xd.done, xd);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-done.png' });
   await p.click('#repNext');
-  check('next line: from a position not checked (the one shown is checked for today)', await p.evaluate(() => { const d = rep.drill, st = repStore.s[d.c + '|' + repKey(d.fens[d.fens.length - 1])]; return d.sans.length > 0 && (!st || st[1] <= Date.now()); }), await p.evaluate(() => rep.drill.sans));
+  check('next line: a line due (the one just played is checked for today, or due again tomorrow)', await p.evaluate(() => { const d = rep.drill, st = repLineSt(d.chunk); return !st || st[1] <= Date.now(); }), await p.evaluate(() => rep.drill.sans));
   // Black: a drill starts at your move (after White's)
   await p.evaluate(() => { rep.c = 'b'; repStart(); render(); });
   const b0 = await p.evaluate(() => ({ side: repPos().side, sans: rep.drill.sans, flip: boardFlipped() }));
