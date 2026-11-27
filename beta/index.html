@@ -681,7 +681,7 @@
   .rep-branch{margin-left:calc(min(var(--d), 6) * 14px); padding-left:8px; border-left:1px solid var(--border);} .rep-branch[style*="--d:0"]{border-left:0; padding-left:0;}   /* (a branch: indented where it leaves the line above) */
   .rep-prop-row{display:flex; align-items:center; gap:8px; width:fit-content; min-width:min(100%, 300px); max-width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
   .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-plus{color:var(--accent); font-weight:700;} .rep-cur{color:var(--accent);} #repMv [data-ply]{cursor:pointer;}
-  .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg{width:20px; height:20px;} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
+  .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg, .xp-nav #repPop svg{width:20px; height:20px;} .xp-nav .icon-btn.rep-pop.on{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
   .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
   .actions-row.pending{visibility:hidden;}
@@ -10409,7 +10409,7 @@ function explorerPos(){
 // it needs your Lichess login, so only when you're signed in with Lichess). One request at a time, the position
 // shown first; kept for the session; a "too many requests" pauses it a minute.
 const POP_BANDS = [1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500];
-const popCache = new Map(); let popBusy = false, popNext = null, popPauseUntil = 0;
+const popCache = new Map(); let popBusy = false, popQ = [], popPauseUntil = 0;   // (popQ: positions to ask for, the latest asked first)
 function popFilter(){
   const lg = myGames.filter(g=>siteOf(g)==='lichess').slice(-40);
   const elos = lg.map(g=>g.me==='w' ? g.whiteElo : g.blackElo).filter(e=>e > 0).sort((a, b)=>a - b);
@@ -10420,34 +10420,33 @@ function popFilter(){
   return { ratings, speeds:sp.length ? sp : ['blitz', 'rapid', 'classical'] };
 }
 function movePopularity(fen){
-  if(!lichessAuth || !lichessAuth.token) return null;
+  if(!BETA || !lichessAuth || !lichessAuth.token) return null;   // (in the beta only, for now)
   const k = fen.split(' ').slice(0, 4).join(' ');
   if(popCache.has(k)) return popCache.get(k);
-  popNext = fen; popPump();
+  popQ = [fen].concat(popQ.filter(f=>f!==fen)).slice(0, 40); popPump();
   return null;
 }
 async function popPump(){
-  if(popBusy || !popNext || Date.now() < popPauseUntil) return;
-  const fen = popNext, k = fen.split(' ').slice(0, 4).join(' '); popNext = null;
+  if(popBusy || !popQ.length || Date.now() < popPauseUntil) return;
+  const fen = popQ.shift(), k = fen.split(' ').slice(0, 4).join(' ');
   if(popCache.has(k)) return popPump();
   popBusy = true;
   try{
     const f = popFilter(), url = `https://explorer.lichess.ovh/lichess?variant=standard&fen=${encodeURIComponent(fen)}&speeds=${f.speeds.join(',')}&ratings=${f.ratings.join(',')}&moves=12&topGames=0&recentGames=0`;
     const r = await fetch(url, { headers:{ Authorization:'Bearer ' + lichessAuth.token } });
-    if(r.status===429){ popPauseUntil = Date.now() + 60000; popNext = popNext || fen; setTimeout(popPump, 61000); }
-    else if(!r.ok) popCache.set(k, { total:0, pct:{} });
+    if(r.status===429){ popPauseUntil = Date.now() + 60000; popQ.unshift(fen); setTimeout(popPump, 61000); }
+    else if(!r.ok) popCache.set(k, { total:0, pct:{}, top:[] });
     else{ const d = await r.json(), total = (d.white || 0) + (d.draws || 0) + (d.black || 0), pct = {};
       for(const m of d.moves || []){ const n = (m.white || 0) + (m.draws || 0) + (m.black || 0); if(total && m.san) pct[m.san] = n / total * 100; }   // (by its SAN: Lichess writes castling as the king taking its rook)
-      popCache.set(k, { total, pct });
-      if(screen==='explorer' || repLineShown()) render(); }
-  }catch(e){ popCache.set(k, { total:0, pct:{} }); }
+      popCache.set(k, { total, pct, top:Object.keys(pct).sort((a, b)=>pct[b] - pct[a]) });
+      if(screen==='repertoire' && rep && (rep.view==='line' || rep.view==='review')) render(); }
+  }catch(e){ popCache.set(k, { total:0, pct:{}, top:[] }); }
   popBusy = false; popPump();
 }
-// "52%", "<1%", "0%" for an arrow's move (the engine's, in UCI); nothing without the numbers
-function popLabel(pop, fen, uci){
-  if(!pop || !pop.total || uci==null) return '';
-  const m = new Chess(fen).move({ from:uci.slice(0, 2), to:uci.slice(2, 4), promotion:uci[4] }); if(!m) return '';
-  const v = pop.pct[m.san];
+// "52%", "<1%", "0%" for a move (by its SAN); nothing without the numbers
+function popPct(pop, san){
+  if(!pop || !pop.total || !san) return '';
+  const v = pop.pct[san];
   return v==null ? '0%' : v < 1 ? '<1%' : Math.round(v) + '%';
 }
 // Other good moves: the engine's 2nd and 3rd lines when they grade Good against its top one (Ok or worse: not
@@ -11114,9 +11113,8 @@ function renderExplorer(){
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   const outer = document.querySelector('.board-outer'), top = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   top.setAttribute('class', 'arrows'); top.setAttribute('viewBox', '0 0 480 480'); outer.appendChild(top);
-  const pop = x.engineOn ? movePopularity(fen) : null;   // (how often each arrow's move is played, on it)
-  if(best && x.engineOn) drawArrows(top, (done ? goodAlts(ev.lines) : live && live.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5, label:popLabel(pop, fen, u) }))
-    .concat({ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)', label:popLabel(pop, fen, best) }), 'xb_');   // (other good moves fainter, under the top one)
+  if(best && x.engineOn) drawArrows(top, (!BETA ? [] : done ? goodAlts(ev.lines) : live && live.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5 }))
+    .concat({ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }), 'xb_');   // (other good moves: in the beta)   // (other good moves fainter, under the top one)
   gameMoveBadge(x);
   on('depthBtn', ()=>explorerEngine(!x.engineOn));
   xpBarEase(pct);
@@ -11640,7 +11638,8 @@ function renderRepReview(){
   const loose = gaps.filter(x=>!where[x.id]);
   // (their move only: the line is searched once you open it)
   const propRow = x=>{
-    return `<button class="rep-prop-row" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(x.sans, x.sans.length - 1)}</span>
+    const pre = new Chess(); x.sans.slice(0, -1).forEach(m=>pre.move(m)); const pc = popPct(movePopularity(pre.fen()), x.san);
+    return `<button class="rep-prop-row" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(x.sans, x.sans.length - 1)}</span>${pc ? `<span class="rep-n">${pc}</span>` : ''}
       ${x.punish ? '<span class="rep-tag rep-punish">To punish</span>' : ''}<span class="rep-n">${x.n} ${x.n > 1 ? 'games' : 'game'}</span></button>`; };
   const devs = Object.values(gs.devs).filter(x=>repColours().includes(x.c) && x.n >= 1).sort((a, b)=>b.n - a.n).slice(0, 8);
   const devRow = x=>`<div class="rep-item">
@@ -11673,6 +11672,14 @@ function renderRepReview(){
   app.querySelectorAll('[data-rline]').forEach(b=>b.onclick = ()=>{ const x = gs.gaps[b.dataset.rline]; if(!x) return;
     rep.view = 'line'; xpBar.shown = null;   // (the bar starts at this line's own reading)
     rep.lv = { id:x.id, ply:x.sans.length }; render(); });
+}
+// The chapter a proposal branches from ("Slav Defense · Main Line"): the first line of yours through its position
+function repGapChapter(x){
+  for(const ch of repChunks(x.c)){
+    if(!ch.keys){ ch.keys = new Set(); const g = new Chess(); ch.sans.forEach((m, i)=>{ if(i >= Math.max(0, ch.start - 1)) ch.keys.add(repKey(g.fen())); g.move(m); }); }
+    if(ch.keys.has(x.k)){ const i = ch.ch.indexOf(': '); return escHtml(i < 0 ? ch.ch : ch.ch.slice(0, i) + ' · ' + ch.ch.slice(i + 2)); }
+  }
+  return 'Your repertoire';
 }
 // A chapter's lines as a tree: the moves they share once, then each branch on its own line, indented where it
 // differs (a black move starting a line: "5… Nf6"); a proposal as a branch of its own, in its box, where it leaves
@@ -11733,22 +11740,26 @@ function renderRepLine(){
   const pct = lv.lastPct ?? 50;
   const sansL = line.slice(0, ply);
   const lichess = `https://lichess.org/analysis/pgn/${sansL.map(m=>encodeURIComponent(m.replace(/[+#]/g, ''))).join('_')}?color=${x.c==='b' ? 'black' : 'white'}#${ply}`;
+  // how often their move is played (Lichess, players around your rating), and the most played moves here
+  const preG = new Chess(); x.sans.slice(0, -1).forEach(m=>preG.move(m)); const gapPct = popPct(movePopularity(preG.fen()), x.san);
+  const popOn = !!st.o.pop, pop = movePopularity(fen), popTop = pop && pop.top ? pop.top.slice(0, 3) : [];
   const played = !Object.keys(x.replies).length ? 'Not answered in your games.'
-    : `You played ${ans ? ans.map(a=>`<b>${escHtml(a.san)}</b> (<span style="color:${labelColor(a.label)}">${a.label}</span> ${fmtSigned(done && info.san===a.san ? info : a.info)})`).join(', ') : Object.keys(x.replies).map(escHtml).join(', ') + ' …'}.`;
+    : `You played ${ans ? ans.map(a=>`<b>${escHtml(a.san)}</b> (<span style="color:${labelColor(a.label)}">${a.label}</span> ${fmtSigned(done && info.san===a.san ? info : a.info)})`).join(', ') : Object.keys(x.replies).map(escHtml).join(', ') + ' …'}${ans ? '.' : ''}`;
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back keep" id="repLineBack" aria-label="Back">${BACK_ARROW}</button>
       <h1>New line</h1>
       <button class="title-chip" id="repSkipLine">Skip</button><button class="title-chip rep-add" id="repAddLine" ${line.length > gapN ? '' : 'disabled'}>Add</button>
     </div>
-    <div class="posbar"><div class="pos-title">${no(gapN - 1)}${escHtml(x.san)} isn't in your study${x.punish ? ' (to punish)' : ''}<br>${x.n} ${x.n > 1 ? 'games' : 'game'} against it</div></div>
+    <div class="posbar"><div class="pos-title">${repGapChapter(x)}<br>${no(gapN - 1)}${escHtml(x.san)} isn't in your study${x.punish ? ' (to punish)' : ''}${gapPct ? ` · ${gapPct} popular` : ''} · ${x.n} ${x.n > 1 ? 'games' : 'game'}</div></div>
     <div class="stage"><div class="board-col">${explorerHbarHtml(info || lv.lastInfo, pct, x.c==='b', false)}${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
     <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1)}</span></div>
     ${stackedPanel(`
       <p class="prompt rep-prompt">${line.length > gapN ? `New line ends at <b>${endInfo ? fmtSigned(mine(endInfo)) : '…'}</b> for you.` : 'Play your answer.'}</p>
-      <p class="rep-note">${info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${fmtSigned(info)}). ` : ''}${ply===gapN ? played : ''}</p>
+      <p class="rep-note">${popOn ? (pop ? (popTop.length ? `Most played: ${popTop.map(m=>`<b>${escHtml(m)}</b> ${popPct(pop, m)}`).join(', ')}. ` : 'Not played at your level. ') : lichessAuth && lichessAuth.token ? 'Most played: … ' : 'Most played: sign in with Lichess. ')
+        : info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${fmtSigned(info)}). ` : ''}${ply===gapN ? played : ''}</p>
       <div class="actions-row xp-nav">
-        <a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="icon-btn" id="repLineXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button>
+        <a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="icon-btn" id="repLineXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><button class="icon-btn rep-pop${popOn ? ' on' : ''}" id="repPop" aria-pressed="${popOn}" aria-label="Most played moves" title="Most played moves"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V12M12 20V5M19 20v-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
         <span class="xp-steps"><button class="icon-btn" id="repPrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="repNextMv" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
       </div>`, [])}`;
   // the board: from their move on, play a move (either side) to change the line there or go on with it
@@ -11765,9 +11776,11 @@ function renderRepLine(){
     const pc = bs[sq]; lv.sel = pc && colorOf(pc)===g.turn() && sq!==lv.sel ? sq : null; render();
   } });
   if(promoPending && canPlay) showPromotionPicker(g, mv=>{ promoPending = null; playMv(mv); });
-  const pop = movePopularity(fen);
-  if(info && info.uci) drawArrows(document.getElementById('arrows'), (info.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5, label:popLabel(pop, fen, u) }))
-    .concat({ from:info.uci.slice(0, 2), to:info.uci.slice(2, 4), color:'var(--system)', label:popLabel(pop, fen, info.uci) }), 'rl_');   // (other good moves fainter, under the top one)
+  // arrows: the engine's top move and other good ones; or, Most played on, the three most played moves with how often
+  if(popOn){ const ms = popTop.map(m=>new Chess(fen).move(m)).filter(Boolean);
+    drawArrows(document.getElementById('arrows'), ms.slice().reverse().map((m, i, a)=>({ from:m.from, to:m.to, color:'var(--system)', opacity:i===a.length - 1 ? .8 : .5, label:popPct(pop, m.san) })), 'rl_'); }
+  else if(info && info.uci) drawArrows(document.getElementById('arrows'), (info.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5 }))
+    .concat({ from:info.uci.slice(0, 2), to:info.uci.slice(2, 4), color:'var(--system)' }), 'rl_');   // (other good moves fainter, under the top one)
   const li = app.querySelector('.layer:not(.ghost) .xp-li') || app.querySelector('.xp-li'); if(li && li.offsetHeight) app.style.setProperty('--xp-btn-h', li.offsetHeight + 'px');   // (the row's buttons as tall as Lichess's, as in the explorer)
   xpBarEase(pct);
   const mvEl = document.getElementById('repMv');
@@ -11778,6 +11791,7 @@ function renderRepLine(){
     if(dl > 0){ const mv = new Chess(fen).move(line[ply]); if(mv) repSlide(mv); } render(); };
   on('repLineBack', ()=>{ rep.view = 'review'; render(); });
   on('repPrev', ()=>step(-1)); on('repNextMv', ()=>step(1));
+  on('repPop', ()=>{ st.o.pop = !popOn; repSave(); render(); });
   on('repLineXp', ()=>exploreFrom({ fen, sans:sansL, ply, flip:x.c==='b' }));
   repLineKeys.step = step;
   on('repSkipLine', ()=>{ st.skip = st.skip.filter(k=>k.id!==x.id).concat({ id:x.id, n:x.n }); repSave(); rep.view = 'review'; render(); });

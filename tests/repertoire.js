@@ -121,7 +121,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-review.png' });
   await p.click('[data-rline]');
   const l0 = await p.evaluate(() => ({ view: rep.view, top: document.querySelector('.pos-title').textContent, ply: rep.lv.ply, cur: (document.querySelector('#repMv .rep-cur') || {}).textContent }));
-  check('the line on the board: their move not in your study, games against it, at their move', l0.view === 'line' && /2\. Bf4 isn't in your study/.test(l0.top) && /2 games against it/.test(l0.top) && l0.ply === 3 && l0.cur === 'Bf4', l0);
+  check('the line on the board: its chapter, their move not in your study, games, at their move', l0.view === 'line' && /· Setup\n?.*2\. Bf4 isn't in your study/s.test(l0.top) && /· 2 games/.test(l0.top) && l0.ply === 3 && l0.cur === 'Bf4', l0);
   await p.click('#repNextMv'); await p.keyboard.press('ArrowRight'); await p.keyboard.press('ArrowLeft');
   check('back and forth through it (buttons, arrow keys)', await p.evaluate(() => rep.lv.ply === 4), null);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-line.png' });
