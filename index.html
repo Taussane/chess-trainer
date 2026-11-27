@@ -11745,7 +11745,8 @@ async function repCreateStudy(){
     }
     if(!r.ok || !js || !js.id) throw new Error(`creating it: ${r.status} ${body.slice(0, 400)}`);   // (Lichess answers which field it didn't like)
     const id = js.id, chs = [];
-    for(const c of ['w', 'b']) (REPERTOIRE[c] ? REPERTOIRE[c].ch : []).forEach((name, i)=>{ if(repChunks(c).some(x=>x.ch===name)) chs.push({ c, i, name }); });
+    // (in the Review's order: as your lines come, each study's chapters together)
+    for(const c of ['w', 'b']) for(const name of [...new Set(repChunks(c).map(x=>x.ch))]) chs.push({ c, i:REPERTOIRE[c].ch.indexOf(name), name });
     for(let i = 0; i < chs.length; i++){
       const ch = chs[i], t = ch.name.split(': ');
       say(`Creating the study on Lichess… chapter ${i + 1} of ${chs.length}`);
