@@ -10400,6 +10400,13 @@ function explorerPos(){
   const fen = explorer.fens[explorer.at], m = explorer.moves[explorer.at - 1];
   return { key:'explorer:' + fen, fen, side: fen.split(' ')[1], moveNo: +fen.split(' ')[5], last: m ? { squares:[m.from, m.to] } : null, hist:{} };
 }
+// Other good moves: the engine's 2nd and 3rd lines when they grade Good against its top one (Ok or worse: not
+// shown); drawn fainter than the top move
+function goodAlts(lines){
+  if(!lines || lines.length < 2) return [];
+  const v = l=>winPercent(l.mate!=null ? null : l.cp, l.mate), top = v(lines[0]);
+  return lines.slice(1, 3).filter(l=>l && l.uci && labelFromWinDrop(Math.max(0, top - v(l)), false).label==='Good').map(l=>l.uci);
+}
 // The engine on the position shown, 1.5 s; a position left before its turn comes is dropped from the queue
 // (searched again if you come back).
 const explorerEvals = {};
@@ -11051,7 +11058,8 @@ function renderExplorer(){
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   const outer = document.querySelector('.board-outer'), top = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   top.setAttribute('class', 'arrows'); top.setAttribute('viewBox', '0 0 480 480'); outer.appendChild(top);
-  if(best && x.engineOn) drawArrows(top, [{ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }], 'xb_');
+  if(best && x.engineOn) drawArrows(top, (done ? goodAlts(ev.lines) : []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5 }))
+    .concat({ from: best.slice(0, 2), to: best.slice(2, 4), color:'var(--system)' }), 'xb_');   // (other good moves fainter, under the top one)
   gameMoveBadge(x);
   on('depthBtn', ()=>explorerEngine(!x.engineOn));
   xpBarEase(pct);
@@ -11517,10 +11525,10 @@ function repFenInfo(fen){
   repInfo.set(k, null);
   const g = new Chess(fen);
   if(!g.moves().length){ const v = g.in_checkmate ? (g.in_checkmate() ? { mate:0 } : { cp:0 }) : { cp:0 }; repInfo.set(k, v); return v; }
-  repEval(fen, { multipv:1, movetime:800, depth:LIVE_DEPTH }).then(r=>{
+  repEval(fen, { multipv:3, movetime:800, depth:LIVE_DEPTH }).then(r=>{
     if(evalFailed(r) || !r.lines || !r.lines.length){ repInfo.delete(k); return; }
     const l = r.lines[0], sgn = fen.split(' ')[1]==='w' ? 1 : -1, m = new Chess(fen).move({ from:l.uci.slice(0, 2), to:l.uci.slice(2, 4), promotion:l.uci[4] });
-    repInfo.set(k, { cp:l.mate!=null ? null : l.cp * sgn, mate:l.mate!=null ? l.mate * sgn : null, uci:l.uci, san:m && m.san, stmCp:l.mate!=null ? Math.sign(l.mate) * 1e4 : l.cp });
+    repInfo.set(k, { cp:l.mate!=null ? null : l.cp * sgn, mate:l.mate!=null ? l.mate * sgn : null, uci:l.uci, san:m && m.san, alts:goodAlts(r.lines) });
     if(screen==='repertoire' && rep && rep.view==='line') render();
   });
   return null;
@@ -11534,11 +11542,11 @@ function repGapAnswers(x){
   const mv = Object.entries(x.replies).sort((a, b)=>b[1] - a[1]).map(([m])=>new Chess(fen).move(m)).filter(Boolean);
   if(!mv.length){ repAnswers.set(x.id, []); return []; }
   const val = l=>l.mate!=null ? Math.sign(l.mate) * 1e4 : l.cp;
-  Promise.all([repEval(fen, { multipv:1, movetime:800, depth:LIVE_DEPTH }), repEval(fen, { searchmoves:mv.map(m=>m.from + m.to + (m.promotion || '')).join(' '), multipv:mv.length, movetime:800, depth:LIVE_DEPTH })]).then(([b, r])=>{
+  Promise.all([repEval(fen, { multipv:3, movetime:800, depth:LIVE_DEPTH }), repEval(fen, { searchmoves:mv.map(m=>m.from + m.to + (m.promotion || '')).join(' '), multipv:mv.length, movetime:800, depth:LIVE_DEPTH })]).then(([b, r])=>{
     if(evalFailed(b) || evalFailed(r) || !b.lines.length){ repAnswers.delete(x.id); return; }
     const best = b.lines[0], bm = new Chess(fen).move({ from:best.uci.slice(0, 2), to:best.uci.slice(2, 4), promotion:best.uci[4] });
     // (the same numbers everywhere: this search is the position's top move too, and the top move's own grade reads it)
-    repInfo.set(fen.split(' ').slice(0, 4).join(' '), { cp:best.mate!=null ? null : best.cp * sgn, mate:best.mate!=null ? best.mate * sgn : null, uci:best.uci, san:bm && bm.san });
+    repInfo.set(fen.split(' ').slice(0, 4).join(' '), { cp:best.mate!=null ? null : best.cp * sgn, mate:best.mate!=null ? best.mate * sgn : null, uci:best.uci, san:bm && bm.san, alts:goodAlts(b.lines) });
     repAnswers.set(x.id, mv.map(m=>{ let l = r.lines.find(z=>z.uci.slice(0, 4)===m.from + m.to); if(!l) return null; if(l.uci===best.uci) l = best;
       const { label } = labelFromWinDrop(Math.max(0, winPercent(val(best)) - winPercent(val(l))), l.uci===best.uci);
       return { san:m.san, label, info:l.mate!=null ? { mate:l.mate * sgn } : { cp:l.cp * sgn } }; }).filter(Boolean));
@@ -11693,7 +11701,8 @@ function renderRepLine(){
     const pc = bs[sq]; lv.sel = pc && colorOf(pc)===g.turn() && sq!==lv.sel ? sq : null; render();
   } });
   if(promoPending && live) showPromotionPicker(g, mv=>{ promoPending = null; playMv(mv); });
-  if(info && info.uci) drawArrows(document.getElementById('arrows'), [{ from:info.uci.slice(0, 2), to:info.uci.slice(2, 4), color:'var(--system)' }], 'rl_');
+  if(info && info.uci) drawArrows(document.getElementById('arrows'), (info.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5 }))
+    .concat({ from:info.uci.slice(0, 2), to:info.uci.slice(2, 4), color:'var(--system)' }), 'rl_');   // (other good moves fainter, under the top one)
   const li = app.querySelector('.layer:not(.ghost) .xp-li') || app.querySelector('.xp-li'); if(li && li.offsetHeight) app.style.setProperty('--xp-btn-h', li.offsetHeight + 'px');   // (the row's buttons as tall as Lichess's, as in the explorer)
   const mvEl = document.getElementById('repMv');
   if(mvEl){ const cur = mvEl.querySelector('.rep-cur'); if(cur) mvEl.scrollLeft = Math.max(0, cur.offsetLeft - mvEl.clientWidth / 2);
