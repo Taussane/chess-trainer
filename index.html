@@ -11725,9 +11725,12 @@ async function repCreateStudy(){
   try{
     say('Creating the study on Lichess…');
     const r = await fetch(LICHESS + '/api/study', { method:'POST', headers:Object.assign({ 'Content-Type':'application/x-www-form-urlencoded' }, H),
-      body:new URLSearchParams({ name:'ChessStrategy.org repertoire', visibility:'private' }) });
+      // (the study's settings, all required: private; engine and explorer for everyone who can see it, that's you;
+      // cloning and sharing yours only; no chat)
+      body:new URLSearchParams({ name:'ChessStrategy.org repertoire', visibility:'private', computer:'everyone', explorer:'everyone',
+        cloneable:'owner', shareable:'owner', chat:'nobody', sticky:'false', description:'false' }) });
     const body = await r.text(); let js = null; try{ js = JSON.parse(body); }catch(e){}
-    if(!r.ok || !js || !js.id) throw new Error(`creating it: ${r.status} ${body.slice(0, 160)}`);
+    if(!r.ok || !js || !js.id) throw new Error(`creating it: ${r.status} ${body.slice(0, 400)}`);
     const id = js.id, chs = [];
     for(const c of ['w', 'b']) (REPERTOIRE[c] ? REPERTOIRE[c].ch : []).forEach((name, i)=>{ if(repChunks(c).some(x=>x.ch===name)) chs.push({ c, i, name }); });
     for(let i = 0; i < chs.length; i++){
