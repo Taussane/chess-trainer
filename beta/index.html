@@ -11168,6 +11168,7 @@ const repMidnight = t=>new Date(t).setHours(0, 0, 0, 0);
 // a position's place in a shuffle: the same through the round
 const repJitter = (seed, k)=>{ let h = seed >>> 0; for(let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 2654435761) >>> 0; return (h % 1000) / 1000; };
 const repKey = fen=>fen.split(' ').slice(0, 3).join(' ');
+let repDataVer = 0;   // (the repertoire's data changed: synced from its Lichess study)
 let rep = null;          // { c: 'w' | 'b' | 'both', drill, view: 'train' | 'review' }
 let repStore = null;     // { s: { 'w|key': [box, due, seen] }, add: [{ c, k, san, flag }], skip: ['w|key|san'] }
 function repLoad(){
@@ -11177,6 +11178,7 @@ function repLoad(){
   // (lines added from before proposals were whole lines: their answer, as the copy for Lichess)
   if(!repStore.lines.length) repStore.lines = repStore.add.filter(a=>a.line).map(a=>({ c:a.c, line:a.line }));
   if(!repStore.lt) repStore.lt = Date.now();
+  if(repStore.study && repStore.studyPgn) try{ repApplyData(repFromStudy(pgnRead(repStore.studyPgn))); }catch(e){}   // (the study as last read)
   // (moves added before they kept their chapter: the one your study's moves take from the same position)
   for(const a of repStore.add) if(a.ch==null && REPERTOIRE[a.c] && REPERTOIRE[a.c].n[a.k]){ const m = REPERTOIRE[a.c].n[a.k].find(m=>m[3] >= 0); a.ch = m ? m[3] : -1; }   // (when lines got their own state: positions played before it give a line's first one)
   // (from before the gaps followed the repertoire's size: checked no longer than its longest gap; boxes past it at it)
@@ -11198,7 +11200,7 @@ const repChapter = (c, m)=>m && m[3] >= 0 ? REPERTOIRE[c].ch[m[3]] : '';
 // every position of a colour, from the start: the shortest way there (fens, sans, the chapter of each move)
 const repIdx = {};
 function repIndex(c){
-  const sig = repLoad().add.length; if(repIdx[c] && repIdx[c].sig===sig) return repIdx[c];
+  const sig = repLoad().add.length + '|' + repDataVer; if(repIdx[c] && repIdx[c].sig===sig) return repIdx[c];
   const at = {}, q = [{ fen:EXPLORER_START, sans:[], fens:[EXPLORER_START], moves:[], ch:'' }];
   at[repKey(EXPLORER_START)] = q[0];
   while(q.length){
@@ -11496,6 +11498,7 @@ const REP_ICONS = {
 const repColourSel = ()=>`<select class="title-chip rep-sel" id="repColour" aria-label="Colour">${[['w', 'White'], ['b', 'Black'], ['both', 'Both']].map(([k, l])=>
   `<option value="${k}"${rep.c===k ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
 function renderRepertoire(){
+  repSyncStudy();   // (your Lichess study: its latest, when it changed)
   if(repOn() && !repCheckAll.t && !repChkRun) repCheckAll.t = setTimeout(()=>{ repCheckAll.t = 0; repCheckAll(); }, 3000);   // (your games' replies checked in the background, ready for Review)
   repLoad();
   if(!rep) rep = { c: repStore.c, drill:null, view:'train' };
@@ -11695,14 +11698,19 @@ function repChapterPgn(c, chIdx){
   const kid = (n, san)=>{ let k = n.kids.find(x=>x.san===san); if(!k){ k = { san, kids:[], com:'' }; n.kids.push(k); } return k; };
   const marks = key=>{ const m = mk[key] || []; const cal = m.filter(x=>x.length===5).join(','), csl = m.filter(x=>x.length===3).join(',');
     return (cal ? `[%cal ${cal}]` : '') + (csl ? `[%csl ${csl}]` : ''); };
+  const mainKeys = new Set(); for(const ch of repChunks(c)){ const g = new Chess(); mainKeys.add(repKey(g.fen())); ch.sans.forEach(m=>{ g.move(m); mainKeys.add(repKey(g.fen())); }); }
   for(const ch of repChunks(c).filter(x=>x.ch===name)){
     let n = root; const g = new Chess();
-    ch.sans.forEach(san=>{ const k = repKey(g.fen()), m = repMoves(c, k).find(x=>x[0]===san), side = g.turn(); g.move(san);
+    ch.sans.forEach(san=>{ const before = g.fen(), k = repKey(before), m = repMoves(c, k).find(x=>x[0]===san), side = g.turn(); g.move(san);
       const nn = kid(n, san); nn.key = repKey(g.fen()); nn.mine = side===c;
       if(m && m[2] >= 0) nn.text = com[m[2]];
-      // (your moves to avoid here: a variation each, with their answer when the study had one)
+      // (your moves to avoid here: a variation each, with what your study has after it, up to where it comes back into
+      // your lines)
       if(side===c) for(const a of repMoves(c, k).filter(x=>x[1]===2)){ const v = kid(n, a[0]); v.avoid = true; if(a[2] >= 0) v.text = com[a[2]];
-        if(a[4] && a[4]!=='=' && !v.kids.length){ let t = v; String(a[4]).split(/\s+/).filter(w=>w && !/^\d+\.+$/.test(w)).forEach(w=>{ t = kid(t, w.replace(/^\d+\.+/, '')); }); } }
+        const g2 = new Chess(before); g2.move(a[0]); v.key = repKey(g2.fen());
+        if(!v.kids.length){ let t = v;
+          if(a[4] && a[4]!=='=') String(a[4]).split(/\s+/).map(w=>w.replace(/^\d+\.+/, '')).filter(Boolean).forEach(w=>{ if(g2.move(w)){ t = kid(t, w); t.key = repKey(g2.fen()); } });
+          else if(a[4]==='=') for(let i = 0; i < 3; i++){ const nx = repMoves(c, repKey(g2.fen()))[0]; if(!nx || !g2.move(nx[0])) break; t = kid(t, nx[0]); t.key = repKey(g2.fen()); if(mainKeys.has(t.key)) break; } } }
       n = nn; });
   }
   // your move first, its alternatives as variations
@@ -11726,29 +11734,144 @@ async function repCreateStudy(){
   const say = t=>{ repStudyNote = t; if(screen==='repertoire' && rep && rep.view==='review') render(); };
   try{
     say('Creating the study on Lichess…');
-    const r = await fetch(LICHESS + '/api/study', { method:'POST', headers:Object.assign({ 'Content-Type':'application/x-www-form-urlencoded' }, H),
+    let r = await fetch(LICHESS + '/api/study', { method:'POST', headers:Object.assign({ 'Content-Type':'application/x-www-form-urlencoded' }, H),
       // (the study's settings, all required: private; engine and explorer for everyone who can see it, that's you;
       // cloning and sharing yours only; no chat)
-      body:new URLSearchParams({ name:'ChessStrategy.org repertoire', visibility:'private', computer:'everyone', explorer:'everyone',
+      body:new URLSearchParams({ name:'ChessStrategy.org', flair:'objects.crown', visibility:'private', computer:'everyone', explorer:'everyone',
         cloneable:'owner', shareable:'owner', chat:'nobody', sticky:'false', description:'false' }) });
-    const body = await r.text(); let js = null; try{ js = JSON.parse(body); }catch(e){}
-    if(!r.ok || !js || !js.id) throw new Error(`creating it: ${r.status} ${body.slice(0, 400)}`);
+    let body = await r.text(), js = null; try{ js = JSON.parse(body); }catch(e){}
+    if(r.status===400 && /flair/i.test(body)){   // (the crown not taken as a flair: the study without it)
+      r = await fetch(LICHESS + '/api/study', { method:'POST', headers:Object.assign({ 'Content-Type':'application/x-www-form-urlencoded' }, H),
+        body:new URLSearchParams({ name:'ChessStrategy.org', visibility:'private', computer:'everyone', explorer:'everyone', cloneable:'owner', shareable:'owner', chat:'nobody', sticky:'false', description:'false' }) });
+      body = await r.text(); js = null; try{ js = JSON.parse(body); }catch(e){}
+    }
+    if(!r.ok || !js || !js.id) throw new Error(`creating it: ${r.status} ${body.slice(0, 400)}`);   // (Lichess answers which field it didn't like)
     const id = js.id, chs = [];
     for(const c of ['w', 'b']) (REPERTOIRE[c] ? REPERTOIRE[c].ch : []).forEach((name, i)=>{ if(repChunks(c).some(x=>x.ch===name)) chs.push({ c, i, name }); });
     for(let i = 0; i < chs.length; i++){
       const ch = chs[i], t = ch.name.split(': ');
       say(`Creating the study on Lichess… chapter ${i + 1} of ${chs.length}`);
       const rr = await fetch(LICHESS + `/api/study/${id}/import-pgn`, { method:'POST', headers:Object.assign({ 'Content-Type':'application/x-www-form-urlencoded' }, H),
-        body:new URLSearchParams({ pgn:repChapterPgn(ch.c, ch.i), name:(ch.c==='w' ? 'White' : 'Black') + ' · ' + t.join(' · '), orientation:ch.c==='w' ? 'white' : 'black', variant:'standard' }) });
+        body:new URLSearchParams({ pgn:repChapterPgn(ch.c, ch.i), name:t.join(' · '), orientation:ch.c==='w' ? 'white' : 'black', variant:'standard' }) });
       if(!rr.ok) throw new Error(`chapter "${ch.name}": ${rr.status} ${(await rr.text()).slice(0, 160)}`);
     }
     // (the empty first chapter a new study comes with: removed)
     try{ const ex = await (await fetch(LICHESS + `/api/study/${id}.pgn`, { headers:H })).text();
       for(const g of ex.split(/\n\n(?=\[Event )/)){ const u = (g.match(/\[ChapterURL "[^"]*\/([A-Za-z0-9]{8})"\]/) || [])[1];
         if(u && !/\b1\.\s*\S/.test(g.replace(/^\[.*\]$/gm, ''))){ await fetch(LICHESS + `/api/study/${id}/${u}`, { method:'DELETE', headers:H }); break; } } }catch(e){}
-    st.study = id; repSave();
-    say(`Study created on Lichess, ${chs.length} chapters.`);
+    st.study = id; st.studyAt = 0; repSave();
+    say(`Study created on Lichess, ${chs.length} chapters: kept in sync from now on.`);
   }catch(e){ say(`The study couldn't be made: ${e.message}`); }
+}
+// ---- Kept in sync with that study. Your edits on Lichess (comments, arrows, new lines, a chapter added) come back
+// here each time you open the repertoire (asked at most every 2 minutes; only when it changed): the study read with
+// the build's rules (scripts/repertoire.py), the repertoire rebuilt, your progress kept for the lines that stay. A
+// line you add here goes into its chapter there (the chapter rebuilt from the repertoire, just read from Lichess, and
+// your added line).
+// A PGN with its variations: [{ headers, root }], root = { fen, kids:[{ san, fen, com, kids }], com }
+function pgnRead(text){
+  const games = [];
+  for(const part of text.replace(/\r/g, '').split(/\n\s*\n(?=\[)/)){
+    const headers = {}; part.replace(/^\[(\w+)\s+"((?:[^"\\]|\\.)*)"\]\s*$/gm, (_, k, v)=>{ headers[k] = v.replace(/\\"/g, '"'); return ''; });
+    const body = part.replace(/^\[.*\]\s*$/gm, '');
+    const fen0 = headers.FEN || EXPLORER_START, root = { fen:fen0, kids:[], com:'' };
+    let cur = root, last = null; const stack = [];
+    const re = /\{([^}]*)\}|;[^\n]*|\(|\)|\$\d+|\d+\.(?:\.\.)?|1-0|0-1|1\/2-1\/2|\*|([^\s(){};$]+)/g; let m;
+    while((m = re.exec(body))){
+      const t = m[0];
+      if(m[1]!=null){ (last || cur).com = ((last || cur).com ? (last || cur).com + ' ' : '') + m[1].trim(); }
+      else if(t==='('){ stack.push(cur); cur = cur.parent || root; last = null; }
+      else if(t===')'){ cur = stack.pop() || root; last = cur; }
+      else if(m[2]!=null && !/^\d+\.+$/.test(t)){
+        const g = new Chess(cur.fen), sn = t.replace(/[!?]+$/, ''), mv = g.move(sn) || g.move(sn, { sloppy:true }); if(!mv) continue;   // (strict first: sloppy reads "bxc6" as a bishop)
+        let k = cur.kids.find(x=>x.san===mv.san); if(!k){ k = { san:mv.san, fen:g.fen(), kids:[], com:'', parent:cur }; cur.kids.push(k); }
+        cur = k; last = k;
+      }
+    }
+    if(root.kids.length || root.com) games.push({ headers, root });
+  }
+  return games;
+}
+// The repertoire from its study's chapters: the build's rules (the same move from the same position merged, comments
+// joined, marks kept by position; where it's your move, the first move is yours and the others are moves to avoid, with
+// the study's answer to them, up to 3 moves, '=' when it comes back into your line; the opponent keeps all theirs)
+function repFromStudy(games){
+  const text = c=>c.replace(/\[%[^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
+  const shapes = c=>{ const out = []; c.replace(/\[%(cal|csl)\s+([^\]]*)\]/g, (_, t, v)=>{ v.split(',').map(x=>x.trim()).filter(Boolean).forEach(x=>out.push(x)); return ''; }); return out; };
+  const data = {};
+  for(const c of ['w', 'b']){
+    const root = { kids:[], com:'', fen:EXPLORER_START, mk:[] };
+    const graft = (dst, src, label)=>{ for(const v of src.kids){ let ex = dst.kids.find(d=>d.san===v.san);
+      if(!ex){ ex = { san:v.san, fen:v.fen, kids:[], com:'', mk:[], ch:label }; dst.kids.push(ex); }
+      const t = text(v.com || ''); if(t && !ex.com.includes(t)) ex.com = (ex.com + ' ' + t).trim();
+      for(const s of shapes(v.com || '')) if(!ex.mk.includes(s)) ex.mk.push(s);
+      graft(ex, v, label); } };
+    for(const g of games){
+      const o = (g.headers.Orientation || '').toLowerCase(), name = (g.headers.ChapterName || g.headers.Event || '').replace(' · ', ': ');
+      const col = o ? (o==='black' ? 'b' : 'w') : (REPERTOIRE.b && REPERTOIRE.b.ch.includes(name) ? 'b' : 'w');
+      if(col!==c) continue;
+      for(const s of shapes(g.root.com || '')) if(!root.mk.includes(s)) root.mk.push(s);
+      graft(root, g.root, name);
+    }
+    const nodes = {}, comments = [], names = [], marks = {}, all = [];
+    const walk = n=>{ all.push(n); n.kids.forEach(walk); }; walk(root);
+    const cid = t=>{ if(!t) return -1; let i = comments.indexOf(t); if(i < 0){ comments.push(t); i = comments.length - 1; } return i; };
+    // (your lines' positions: your first move, all of theirs; an answer ending on one of them comes back into your line)
+    const mainKeys = new Set(); const mw = n=>{ mainKeys.add(repKey(n.fen)); (n.fen.split(' ')[1]===c ? n.kids.slice(0, 1) : n.kids).forEach(mw); }; mw(root);
+    for(const n of all){
+      const k = repKey(n.fen), side = n.fen.split(' ')[1], lst = nodes[k] = nodes[k] || [];
+      for(const s of n.mk){ const m = s[0].toUpperCase() + s.slice(1, 3) + (s.slice(3, 5)===s.slice(1, 3) ? '' : s.slice(3, 5)); (marks[k] = marks[k] || []).includes(m) || marks[k].push(m); }
+      n.kids.forEach((v, i)=>{
+        const flag = side===c ? (i===0 ? 1 : 2) : 0;
+        if(!names.includes(v.ch)) names.push(v.ch);
+        const old = lst.find(m=>m[0]===v.san); if(old){ if(flag===1) old[1] = 1; return; }
+        const row = [v.san, flag, cid(v.com), names.indexOf(v.ch)];
+        if(flag===2){ const ref = []; let x = v;
+          while(x.kids.length && ref.length < 3){ const f = x.fen.split(' '), nx = x.kids[0]; ref.push((f[1]==='w' ? f[5] + '.' : ref.length ? '' : f[5] + '...') + nx.san); x = nx; }
+          row.push(mainKeys.has(repKey(x.fen)) ? '=' : ref.join(' ')); }
+        lst.push(row);
+      });
+    }
+    for(const lst of Object.values(nodes)){ const mains = lst.filter(m=>m[1]===1); mains.slice(1).forEach(m=>{ m[1] = 2; }); }
+    data[c] = { n:Object.fromEntries(Object.entries(nodes).filter(([, v])=>v.length)), c:comments, ch:names, mk:marks };
+  }
+  return data;
+}
+function repApplyData(data){
+  for(const c of ['w', 'b']) if(data[c] && Object.keys(data[c].n).length) REPERTOIRE[c] = data[c];
+  repDataVer++; for(const c of ['w', 'b']){ delete repIdx[c]; delete repChunkIdx[c]; } repGames = null;
+}
+let repSyncing = false;
+async function repSyncStudy(force){
+  const st = repLoad(), tok = lichessAuth && lichessAuth.studyToken;
+  if(!st.study || !tok || repSyncing || (!force && Date.now() - (st.studyAt || 0) < 120000)) return;
+  repSyncing = true;
+  try{
+    const r = await fetch(LICHESS + `/api/study/${st.study}.pgn?comments=true&variations=true&clocks=false`, { headers:{ Authorization:'Bearer ' + tok } });
+    if(r.status===404){ st.study = null; repStudyNote = 'Your repertoire study was deleted on Lichess.'; repSave(); return; }
+    if(!r.ok) return;
+    const pgn = await r.text(); st.studyAt = Date.now();
+    if(pgn!==st.studyPgn){ st.studyPgn = pgn; repApplyData(repFromStudy(pgnRead(pgn))); repStudyNote = 'Synced with your Lichess study.';
+      if(screen==='repertoire'){ if(rep && rep.view==='train' && rep.drill && !rep.drill.sans.length) repStart(); render(); } }
+    repSave();
+  }catch(e){} finally{ repSyncing = false; }
+}
+// A line added here, into its chapter of the study: the chapter rebuilt (the repertoire as just read from Lichess, and
+// your added moves) and its moves replaced there
+async function repPushChapter(c, chIdx){
+  const st = repLoad(), tok = lichessAuth && lichessAuth.studyToken; if(!st.study || !tok) return;
+  const H = { Authorization:'Bearer ' + tok }, name = REPERTOIRE[c].ch[chIdx], shown = name.split(': ').join(' · ');
+  try{
+    await repSyncStudy(true);
+    const ex = st.studyPgn || await (await fetch(LICHESS + `/api/study/${st.study}.pgn`, { headers:H })).text();
+    let chId = null; for(const g of ex.split(/\n\s*\n(?=\[Event )/)){ const nm = (g.match(/\[ChapterName "([^"]*)"\]/) || [])[1], u = (g.match(/\[ChapterURL "[^"]*\/([A-Za-z0-9]{8})"\]/) || [])[1]; if(u && (nm===shown || nm===name)){ chId = u; break; } }
+    const pgn = repChapterPgn(c, chIdx);
+    const r = chId ? await fetch(LICHESS + `/api/study/${st.study}/${chId}/moves`, { method:'POST', headers:Object.assign({ 'Content-Type':'application/x-www-form-urlencoded' }, H), body:new URLSearchParams({ pgn }) })
+      : await fetch(LICHESS + `/api/study/${st.study}/import-pgn`, { method:'POST', headers:Object.assign({ 'Content-Type':'application/x-www-form-urlencoded' }, H), body:new URLSearchParams({ pgn, name:shown, orientation:c==='w' ? 'white' : 'black', variant:'standard' }) });
+    repStudyNote = r.ok ? `Added to your Lichess study (${shown}).` : `Not added to your Lichess study: ${r.status} ${(await r.text()).slice(0, 300)}`;
+    st.studyAt = 0; repSave(); if(r.ok) repSyncStudy(true);
+  }catch(e){ repStudyNote = `Not added to your Lichess study: ${e.message}`; }
+  if(screen==='repertoire') render();
 }
 // Review: your lines chapter by chapter, each proposal under the line it branches from (open it to look at it, add it
 // or skip it); then where your games left your line; then what you added (to copy into your Lichess study)
@@ -11947,6 +12070,7 @@ function renderRepLine(){
     line.forEach((m, i)=>{ const k = repKey(g2.fen()), side = g2.turn(); g2.move(m);
       if(i >= gapN - 1 && !repMoves(x.c, k).some(a=>a[0]===m)) st.add.push({ c:x.c, k, san:m, flag:side===x.c ? 1 : 0, ch:i===gapN - 1 ? repGapChIdx(x.c, x.k) : -1 }); });   // (the first move: the chapter it was proposed in; the rest follow it)
     (st.lines = st.lines || []).push({ c:x.c, line:line.slice() });
+    if(st.study) repPushChapter(x.c, repGapChIdx(x.c, x.k));   // (into your Lichess study too)
     delete st.prop[x.id]; repSave(); repGames = null; rep.view = 'review'; render();
   });
 }

@@ -86,6 +86,14 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   check('lines: chunks by chapter, each with a move of yours (Caro-Kann setup its own)', chunks.every(x => x.n > 20 && x.ok) && chunks[1].setup, chunks);
   const nx = await p.evaluate(() => { const save = JSON.stringify(repStore); rep.c = 'b'; const out = []; for (let i = 0; i < 6; i++) { repStart(); const d = rep.drill; out.push({ ch: d.ch, start: d.sans.length, mine: d.fens[d.fens.length - 1].split(' ')[1] === 'b' }); repStore.l['b|' + d.chunk.key] = [1, Date.now() + REP_DAY, 1, Date.now(), 0]; } repStore = JSON.parse(save); rep.c = 'w'; return out; });
   check('next lines: each from your first move in its chunk, never the same chapter twice in a row', nx.every((x, i) => x.mine && (i === 0 || x.ch !== nx[i - 1].ch)), nx);
+  // the repertoire's study: written as its chapters, read back with the build's rules: the same repertoire
+  const rt = await p.evaluate(() => {
+    const games = []; for (const c of ['w', 'b']) REPERTOIRE[c].ch.forEach((n, i) => { if (repChunks(c).some(x => x.ch === n)) games.push(repChapterPgn(c, i).replace(/^\[Event "[^"]*"\]\n/, `[Event "x"]\n[ChapterName "${n.split(': ').join(' · ')}"]\n`)); });
+    const data = repFromStudy(pgnRead(games.join('\n\n')));
+    const rows = d => { const m = {}; for (const [k, l] of Object.entries(d.n)) for (const x of l) m[k + '|' + x[0]] = [x[1], x[2] >= 0 ? d.c[x[2]] : '', x[3] >= 0 ? d.ch[x[3]] : '', x[4] || '']; return JSON.stringify(Object.keys(m).sort().map(k => [k, m[k]])); };
+    return ['w', 'b'].map(c => rows(REPERTOIRE[c]) === rows(data[c]));
+  });
+  check('the study round trip: the same repertoire, both colours', rt[0] && rt[1], rt);
   check('gaps follow the repertoire: about 3 weeks at most here', pile.gaps[pile.gaps.length - 1] >= 14 && pile.gaps[pile.gaps.length - 1] <= 30, pile.gaps);
   // play the line to its end with the right moves
   for (let i = 0; i < 30; i++) {
