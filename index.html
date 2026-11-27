@@ -679,7 +679,7 @@
   .rep-lines{display:flex; flex-direction:column; gap:4px;} .rep-lines > .rep-moves{line-height:1.45;}
   .rep-branch{margin-left:calc(min(var(--d), 6) * 14px); padding-left:8px; border-left:1px solid var(--border);} .rep-branch[style*="--d:0"]{border-left:0; padding-left:0;}   /* (a branch: indented where it leaves the line above) */
   .rep-prop-row{display:flex; align-items:center; gap:8px; width:fit-content; min-width:min(100%, 300px); max-width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
-  .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-plus{color:var(--accent); font-weight:700;} .rep-meta{color:var(--text-mute); font-size:0.82rem;} .title-row h1 + .rep-sel{margin-left:auto;}
+  .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-plus{color:var(--accent); font-weight:700;} .rep-meta{margin-left:auto; color:var(--text-mute); font-size:0.82rem; white-space:nowrap;} .title-row h1 + .rep-sel{margin-left:auto;}
   .rep-prop-row.rep-skipped{border-color:var(--border);} .rep-prop-row.rep-skipped .rep-plus{color:var(--text-mute);}   /* (seen and skipped: still there, quieter) */ .rep-cur{color:var(--accent);} #repMv .rep-new{color:var(--text);}   /* (New line: the moves you would add, in white) */ #repMv [data-ply]{cursor:pointer;}
   .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg, .xp-nav #repPop svg, .xp-nav #repCut svg{width:20px; height:20px;} .xp-nav .icon-btn.rep-pop.on{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
   .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
@@ -10443,6 +10443,8 @@ async function popPump(){
   }catch(e){ popCache.set(k, { total:0, pct:{}, top:[] }); }
   popBusy = false; popPump();
 }
+// A move's share, a number (0 when not played there); null without the numbers
+const popNum = (pop, san)=>!pop || !pop.total || !san ? null : pop.pct[san] || 0;
 // "52%", "<1%", "0%" for a move (by its SAN); nothing without the numbers
 function popPct(pop, san){
   if(!pop || !pop.total || !san) return '';
@@ -11623,7 +11625,7 @@ function repGapAnswers(x){
     repAnswers.set(x.id, mv.map(m=>{ let l = r.lines.find(z=>z.uci.slice(0, 4)===m.from + m.to); if(!l) return null; if(l.uci===best.uci) l = best;
       const { label } = labelFromWinDrop(Math.max(0, winPercent(val(best)) - winPercent(val(l))), l.uci===best.uci);
       return { san:m.san, label, info:l.mate!=null ? { mate:l.mate * sgn } : { cp:l.cp * sgn } }; }).filter(Boolean));
-    if(screen==='repertoire' && rep && rep.view==='line') render();
+    if(screen==='repertoire' && rep && (rep.view==='line' || rep.view==='review')) render();   // (the Review list hides a rare move you met well)
   });
   return null;
 }
@@ -11636,6 +11638,10 @@ function repOffers(){
   // (skipped and not met in more games since: still listed, marked, last; you can still open and add it)
   return Object.values(gs.gaps).filter(x=>repColours().includes(x.c) && (x.n >= 2 || x.punish) && !repMoves(x.c, x.k).some(m=>m[0]===x.san))
     .map(x=>Object.assign(x, { skipped:st.skip.some(k=>k.id===x.id && k.n >= x.n) }))
+    // a rare move (under 10% at your level) you already met well (every answer Best or Good): not worth drilling
+    .filter(x=>{ const pre = new Chess(); x.sans.slice(0, -1).forEach(m=>pre.move(m)); const pc = popNum(movePopularity(pre.fen()), x.san);
+      if(pc==null || pc >= 10 || !Object.keys(x.replies).length) return true;
+      const ans = repGapAnswers(x); return !(ans && ans.length && ans.every(a=>a.label==='Best' || a.label==='Good')); })
     .sort((a, b)=>(a.skipped ? 1 : 0) - (b.skipped ? 1 : 0) || (b.punish ? 1 : 0) - (a.punish ? 1 : 0) || b.n - a.n).slice(0, 30);
 }
 const repMoveHtml = (sans, from = 0, cur = -1, fresh = 1e9)=>sans.map((m, i)=>i < from ? '' : `${i % 2===0 ? (i / 2 + 1) + '. ' : i===from ? Math.floor(i / 2) + 1 + '… ' : ''}<b${i===cur ? ' class="rep-cur"' : i >= fresh ? ' class="rep-new"' : ''} data-ply="${i + 1}">${escHtml(m)}</b>`).filter(Boolean).join(' ');

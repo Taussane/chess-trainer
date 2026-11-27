@@ -142,7 +142,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   const r2 = await p.evaluate(() => { const b = document.querySelector('[data-rline]'); return b ? b.textContent + (b.classList.contains('rep-skipped') ? ' [skipped]' : '') : ''; });
   check('more games against it: proposed again, with the new count', /3 games/.test(r2) && !/skipped/i.test(r2), r2);
   await p.click('[data-rline]'); await p.click('#repAddLine');
-  const r1 = await p.evaluate(() => { const g = new Chess(); ['d4', 'c6', 'Bf4'].forEach(s => g.move(s)); const k = repKey(g.fen()); g.move('d5'); g.move('e3'); return { main: (repMain('b', k) || [])[0], main2: (repMain('b', repKey(g.fen())) || [])[0], line: repChunks('b').some(ch => ch.sans.join(' ') === 'd4 c6 Bf4 d5 e3 Bf5'), added: !!document.querySelector('.rep-lines .rep-tag'), copy: repStore.lines.some(l => l.line.join(' ') === 'd4 c6 Bf4 d5 e3 Bf5') }; });
+  const r1 = await p.evaluate(() => { const g = new Chess(); ['d4', 'c6', 'Bf4'].forEach(s => g.move(s)); const k = repKey(g.fen()); g.move('d5'); g.move('e3'); return { main: (repMain('b', k) || [])[0], main2: (repMain('b', repKey(g.fen())) || [])[0], line: repChunks('b').some(ch => ch.sans.join(' ') === 'd4 c6 Bf4 d5 e3 Bf5'), added: [...document.querySelectorAll('.rep-lines .rep-tag')].some(t => t.textContent === 'Added'), copy: repStore.lines.some(l => l.line.join(' ') === 'd4 c6 Bf4 d5 e3 Bf5') }; });
   check('Add: the whole line in your repertoire, a line to drill, marked Added, to copy', r1.main === 'd5' && r1.main2 === 'Bf5' && r1.line && r1.added && r1.copy, r1);
   await p.close();
   // phone
