@@ -648,7 +648,7 @@
   .rep-lines{display:flex; flex-direction:column; gap:4px;} .rep-lines > .rep-moves{line-height:1.45;}
   .rep-branch{margin-left:calc(min(var(--d), 6) * 14px); padding-left:8px; border-left:1px solid var(--border);} .rep-branch[style*="--d:0"]{border-left:0; padding-left:0;}   /* (a branch: indented where it leaves the line above) */
   .rep-prop-row{display:flex; align-items:center; gap:8px; width:fit-content; min-width:min(100%, 300px); max-width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
-  .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-plus{color:var(--accent); font-weight:700;} .rep-meta{margin-left:auto; color:var(--text-mute); font-size:0.82rem; white-space:nowrap;} .title-row h1 + .rep-sel{margin-left:auto;}
+  .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-plus{color:var(--accent); font-weight:700;} .rep-checking{color:var(--text-mute);} .rep-meta{margin-left:auto; color:var(--text-mute); font-size:0.82rem; white-space:nowrap;} .title-row h1 + .rep-sel{margin-left:auto;}
   .rep-prop-row.rep-skipped{border-color:var(--border);} .rep-prop-row.rep-skipped .rep-plus{color:var(--text-mute);}   /* (seen and skipped: still there, quieter) */ .rep-cur{color:var(--accent);} #repMv .rep-new{color:var(--text);}   /* (New line: the moves you would add, in white) */ #repMv [data-ply]{cursor:pointer;}
   .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg, .xp-nav #repPop svg, .xp-nav #repCut svg{width:20px; height:20px;} .xp-nav .icon-btn.rep-pop.on{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
   .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
@@ -11128,10 +11128,12 @@ let repStore = null;     // { s: { 'w|key': [box, due, seen] }, add: [{ c, k, sa
 function repLoad(){
   if(repStore) return repStore;
   try{ repStore = JSON.parse(localStorage.getItem('cst.rep') || 'null'); }catch(e){}
-  repStore = Object.assign({ s:{}, l:{}, add:[], skip:[], prop:{}, lines:[], c:'both', o:{ comment:false } }, repStore || {});
+  repStore = Object.assign({ s:{}, l:{}, add:[], skip:[], prop:{}, lines:[], chk:{}, c:'both', o:{ comment:false } }, repStore || {});
   // (lines added from before proposals were whole lines: their answer, as the copy for Lichess)
   if(!repStore.lines.length) repStore.lines = repStore.add.filter(a=>a.line).map(a=>({ c:a.c, line:a.line }));
-  if(!repStore.lt) repStore.lt = Date.now();   // (when lines got their own state: positions played before it give a line's first one)
+  if(!repStore.lt) repStore.lt = Date.now();
+  // (moves added before they kept their chapter: the one your study's moves take from the same position)
+  for(const a of repStore.add) if(a.ch==null && REPERTOIRE[a.c] && REPERTOIRE[a.c].n[a.k]){ const m = REPERTOIRE[a.c].n[a.k].find(m=>m[3] >= 0); a.ch = m ? m[3] : -1; }   // (when lines got their own state: positions played before it give a line's first one)
   // (from before the gaps followed the repertoire's size: checked no longer than its longest gap; boxes past it at it)
   try{ const gaps = repGaps(), lim = repMidnight(Date.now()) + gaps[gaps.length - 1] * REP_DAY;
     for(const x of Object.values(repStore.s)){ if(x[1] > lim) x[1] = lim; if(x[0] > gaps.length) x[0] = gaps.length; } }catch(e){}
@@ -11142,7 +11144,7 @@ function repSave(){ try{ localStorage.setItem('cst.rep', JSON.stringify(repStore
 // the moves at a position: [san, flag (0 opponent, 1 your move, 2 your sideline), comment, chapter]; your additions too
 function repMoves(c, k){
   const base = (REPERTOIRE[c] && REPERTOIRE[c].n[k]) || [];
-  const add = repLoad().add.filter(a=>a.c===c && a.k===k && !base.some(m=>m[0]===a.san)).map(a=>[a.san, a.flag, -1, -1]);
+  const add = repLoad().add.filter(a=>a.c===c && a.k===k && !base.some(m=>m[0]===a.san)).map(a=>[a.san, a.flag, -1, a.ch==null ? -1 : a.ch]);   // (its chapter: the one it was proposed in)
   return add.length ? base.concat(add) : base;
 }
 const repMain = (c, k)=>repMoves(c, k).find(m=>m[1]===1);
@@ -11452,6 +11454,7 @@ const REP_ICONS = {
 const repColourSel = ()=>`<select class="title-chip rep-sel" id="repColour" aria-label="Colour">${[['w', 'White'], ['b', 'Black'], ['both', 'Both']].map(([k, l])=>
   `<option value="${k}"${rep.c===k ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
 function renderRepertoire(){
+  if(repOn() && !repCheckAll.t && !repChkRun) repCheckAll.t = setTimeout(()=>{ repCheckAll.t = 0; repCheckAll(); }, 3000);   // (your games' replies checked in the background, ready for Review)
   repLoad();
   if(!rep) rep = { c: repStore.c, drill:null, view:'train' };
   if(rep.view==='review') return renderRepReview();
@@ -11601,18 +11604,45 @@ function repGapAnswers(x){
 function repLineText(sans){ return sans.map((s, i)=>i % 2 ? s : (i / 2 + 1) + '.' + s).join(' '); }
 // The proposals worth showing: a reply your study has no answer to, met in 2 games or more (or one to punish), not
 // skipped, or skipped and met in more games since
+// Replies your study has no answer to, met in 2 games or more (or one to punish), all colours
+function repCandidates(){
+  const gs = repGameStats();
+  return Object.values(gs.gaps).filter(x=>(x.n >= 2 || x.punish) && !repMoves(x.c, x.k).some(m=>m[0]===x.san));
+}
+// Each candidate checked once, in the background (from any repertoire page), kept with the repertoire and checked
+// again only when more games meet it: how often their move is played at your level and, a rare one (under 10%), how
+// well you answered it. A rare move you already met well (every answer Best or Good) isn't proposed.
+let repChkRun = false;
+const repWait = (fn, ms)=>new Promise(ok=>{ const t0 = Date.now(); const tick = ()=>{ const v = fn(); if(v!=null || Date.now() - t0 > ms) ok(v); else setTimeout(tick, 250); }; tick(); });
+const repChkDue = (st, x)=>!st.chk[x.id] || st.chk[x.id].n!==x.n;
+async function repCheckAll(){
+  if(repChkRun) return; repChkRun = true;
+  try{
+    for(;;){
+      const st = repLoad(), x = repCandidates().find(x=>repChkDue(st, x)); if(!x) break;
+      const pre = new Chess(); x.sans.slice(0, -1).forEach(m=>pre.move(m));
+      const pct = BETA && lichessAuth && lichessAuth.token ? popNum(await repWait(()=>movePopularity(pre.fen()), 30000), x.san) : null;
+      let show = true;
+      if(pct!=null && pct < 10 && Object.keys(x.replies).length){
+        const ans = await repWait(()=>repGapAnswers(x), 60000);
+        if(ans && ans.length && ans.every(a=>a.label==='Best' || a.label==='Good')) show = false;
+      }
+      st.chk[x.id] = { n:x.n, pct, show }; repSave();
+      if(screen==='repertoire' && rep && rep.view==='review') render();
+    }
+  } finally { repChkRun = false; }
+}
+// The proposals shown: checked and worth it, in the colours shown; skipped ones (not met in more games since) still
+// listed, marked, last (you can still open and add them)
 function repOffers(){
   const gs = repGameStats(), st = repLoad();
   st.skip = st.skip.map(k=>typeof k==='string' ? { id:k, n:(gs.gaps[k] || {}).n || 0 } : k);   // (skips from before: kept at today's count)
-  // (skipped and not met in more games since: still listed, marked, last; you can still open and add it)
-  return Object.values(gs.gaps).filter(x=>repColours().includes(x.c) && (x.n >= 2 || x.punish) && !repMoves(x.c, x.k).some(m=>m[0]===x.san))
-    .map(x=>Object.assign(x, { skipped:st.skip.some(k=>k.id===x.id && k.n >= x.n) }))
-    // a rare move (under 10% at your level) you already met well (every answer Best or Good): not worth drilling
-    .filter(x=>{ const pre = new Chess(); x.sans.slice(0, -1).forEach(m=>pre.move(m)); const pc = popNum(movePopularity(pre.fen()), x.san);
-      if(pc==null || pc >= 10 || !Object.keys(x.replies).length) return true;
-      const ans = repGapAnswers(x); return !(ans && ans.length && ans.every(a=>a.label==='Best' || a.label==='Good')); })
+  repCheckAll();
+  return repCandidates().filter(x=>repColours().includes(x.c) && !repChkDue(st, x) && st.chk[x.id].show)
+    .map(x=>Object.assign(x, { skipped:st.skip.some(k=>k.id===x.id && k.n >= x.n), pct:st.chk[x.id].pct }))
     .sort((a, b)=>(a.skipped ? 1 : 0) - (b.skipped ? 1 : 0) || (b.punish ? 1 : 0) - (a.punish ? 1 : 0) || b.n - a.n).slice(0, 30);
 }
+const repChkLeft = ()=>{ const st = repLoad(); return repCandidates().filter(x=>repColours().includes(x.c) && repChkDue(st, x)).length; };
 const repMoveHtml = (sans, from = 0, cur = -1, fresh = 1e9)=>sans.map((m, i)=>i < from ? '' : `${i % 2===0 ? (i / 2 + 1) + '. ' : i===from ? Math.floor(i / 2) + 1 + '… ' : ''}<b${i===cur ? ' class="rep-cur"' : i >= fresh ? ' class="rep-new"' : ''} data-ply="${i + 1}">${escHtml(m)}</b>`).filter(Boolean).join(' ');
 // Review: your lines chapter by chapter, each proposal under the line it branches from (open it to look at it, add it
 // or skip it); then where your games left your line; then what you added (to copy into your Lichess study)
@@ -11628,11 +11658,12 @@ function renderRepReview(){
     }
   }
   const rows = groups.flatMap(gr=>gr.rows);
-  for(const x of gaps){ const row = rows.find(r=>r.ch.c===x.c && r.keys.has(x.k)); if(row){ row.props.push(x); where[x.id] = row; } }
+  for(const x of gaps){ const want = REPERTOIRE[x.c].ch[repGapChIdx(x.c, x.k)];   // (in its chapter's tree, as its header says)
+    const row = rows.find(r=>r.ch.c===x.c && r.ch.ch===want && r.keys.has(x.k)) || rows.find(r=>r.ch.c===x.c && r.keys.has(x.k)); if(row){ row.props.push(x); where[x.id] = row; } }
   const loose = gaps.filter(x=>!where[x.id]);
   // (their move only: the line is searched once you open it)
   const propRow = x=>{
-    const pre = new Chess(); x.sans.slice(0, -1).forEach(m=>pre.move(m)); const pc = popPct(movePopularity(pre.fen()), x.san);
+    const pc = x.pct==null ? '' : x.pct < 1 ? '<1%' : Math.round(x.pct) + '%';
     return `<button class="rep-prop-row${x.skipped ? ' rep-skipped' : ''}" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(x.sans, x.sans.length - 1)}</span> <span class="rep-meta">${pc ? pc + ' · ' : ''}${x.n} ${x.n > 1 ? 'games' : 'game'}</span>
       ${x.punish ? '<span class="rep-tag rep-punish">To punish</span>' : ''}${x.skipped ? '<span class="rep-tag">Skipped</span>' : ''}</button>`; };
   const devs = Object.values(gs.devs).filter(x=>repColours().includes(x.c) && x.n >= 1).sort((a, b)=>b.n - a.n).slice(0, 8);
@@ -11650,7 +11681,8 @@ function renderRepReview(){
     </div>
     <div class="rep-review">
       ${!myGames.length ? `<p class="rep-sub">Connect your Lichess or Chess.com account in your profile: your games are compared with your repertoire.</p>` : ''}
-      ${(()=>{ const n = gaps.filter(x=>!x.skipped).length; return `<p class="rep-sub">${n ? `${n} ${n > 1 ? 'lines' : 'line'} to add, from your games` : 'Every reply in your games is in your repertoire.'}</p>`; })()}
+      ${(()=>{ const n = gaps.filter(x=>!x.skipped).length, left = repChkLeft();
+        return `<p class="rep-sub">${n ? `${n} ${n > 1 ? 'lines' : 'line'} to add, from your games` : left ? 'Looking at your games…' : 'Every reply in your games is in your repertoire.'}${left ? ` <span class="rep-checking">· checking ${left} more</span>` : ''}</p>`; })()}
       ${groups.map(gr=>`<h2>${gr.c==='w' ? 'White' : 'Black'} · ${head(gr.ch)}</h2>
         <div class="rep-lines">${repTreeHtml(gr, st, propRow)}</div>`).join('')}
       ${loose.length ? `<h2>Other</h2><div class="rep-lines">${loose.map(propRow).join('')}</div>` : ''}
@@ -11668,13 +11700,21 @@ function renderRepReview(){
     rep.view = 'line'; xpBar.shown = null;   // (the bar starts at this line's own reading)
     rep.lv = { id:x.id, ply:x.sans.length }; render(); });
 }
-// The chapter a proposal branches from ("Slav Defense · Main Line"): the first line of yours through its position
-function repGapChapter(x){
-  for(const ch of repChunks(x.c)){
-    if(!ch.keys){ ch.keys = new Set(); const g = new Chess(); ch.sans.forEach((m, i)=>{ if(i >= Math.max(0, ch.start - 1)) ch.keys.add(repKey(g.fen())); g.move(m); }); }
-    if(ch.keys.has(x.k)){ const i = ch.ch.indexOf(': '); return escHtml(i < 0 ? ch.ch : ch.ch.slice(0, i) + ' · ' + ch.ch.slice(i + 2)); }
+// The chapter a proposal belongs to: the one your study's own moves take from its position (3. c5 after 1. d4 c6 2. c4
+// d5: the Slav's Main Line, where 3. Nc3 and 3. Nf3 are); otherwise the first line of yours through it. Its index in
+// the study's chapters (-1: none), and as shown ("Slav Defense · Main Line").
+function repGapChIdx(c, k){
+  const base = (REPERTOIRE[c] && REPERTOIRE[c].n[k]) || [], m = base.find(m=>m[3] >= 0);
+  if(m) return m[3];
+  for(const ch of repChunks(c)){
+    if(!ch.keys){ ch.keys = new Set(); const g = new Chess(); ch.sans.forEach((mv, i)=>{ if(i >= Math.max(0, ch.start - 1)) ch.keys.add(repKey(g.fen())); g.move(mv); }); }
+    if(ch.keys.has(k)) return REPERTOIRE[c].ch.indexOf(ch.ch);
   }
-  return 'Your repertoire';
+  return -1;
+}
+function repGapChapter(x){
+  const i = repGapChIdx(x.c, x.k), t = i >= 0 ? REPERTOIRE[x.c].ch[i] : '', j = t.indexOf(': ');
+  return !t ? 'Your repertoire' : escHtml(j < 0 ? t : t.slice(0, j) + ' · ' + t.slice(j + 2));
 }
 // A chapter's lines as a tree: the moves they share once, then each branch on its own line, indented where it
 // differs (a black move starting a line: "5… Nf6"); a proposal as a branch of its own, in its box, where it leaves
@@ -11796,7 +11836,7 @@ function renderRepLine(){
   on('repAddLine', ()=>{
     const g2 = new Chess();
     line.forEach((m, i)=>{ const k = repKey(g2.fen()), side = g2.turn(); g2.move(m);
-      if(i >= gapN - 1 && !repMoves(x.c, k).some(a=>a[0]===m)) st.add.push({ c:x.c, k, san:m, flag:side===x.c ? 1 : 0 }); });
+      if(i >= gapN - 1 && !repMoves(x.c, k).some(a=>a[0]===m)) st.add.push({ c:x.c, k, san:m, flag:side===x.c ? 1 : 0, ch:i===gapN - 1 ? repGapChIdx(x.c, x.k) : -1 }); });   // (the first move: the chapter it was proposed in; the rest follow it)
     (st.lines = st.lines || []).push({ c:x.c, line:line.slice() });
     delete st.prop[x.id]; repSave(); repGames = null; rep.view = 'review'; render();
   });
