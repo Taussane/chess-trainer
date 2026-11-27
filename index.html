@@ -672,6 +672,7 @@
   .rep-prompt b{font-weight:600;} .rep-prompt{height:2.9em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
   .rep-note{margin:0; height:calc(1.45em * var(--rep-note-n, 2)); font-size:0.88rem; line-height:1.45; color:var(--text-mute); overflow:hidden; display:-webkit-box; -webkit-line-clamp:var(--rep-note-n, 2); -webkit-box-orient:vertical;}   /* (the prompt two lines, the comment as many as the study's longest takes at this width: the panel never grows nor cuts) */
   .rep-review{display:flex; flex-direction:column; gap:10px; max-width:720px; width:100%;} .rep-review h2{margin:14px 0 0; font-size:1.05rem;}
+  .rep-review h2.rep-hc{font-size:1.3rem; margin-top:18px;} .rep-review h3.rep-hs{margin:14px 0 0; font-size:1.05rem;} .rep-review h4.rep-hch{margin:4px 0 0; font-size:0.92rem; color:var(--text-mute); font-weight:600;}   /* (colour, study, chapter: each once) */
   .rep-item{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;}
   .rep-item-top{display:flex; align-items:center; gap:8px;} .rep-n{margin-left:auto; color:var(--text-mute); font-size:0.82rem;}
   .rep-tag{font-size:0.74rem; font-weight:600; border:1px solid var(--border); border-radius:10px; padding:1px 8px;}
@@ -11700,7 +11701,6 @@ function renderRepReview(){
       <p class="rep-sub">Your line: <b>${escHtml(x.main)}</b> · you played ${escHtml(Object.entries(x.played).map(([s, n])=>`${s} (${n})`).join(', '))}</p>
     </div>`;
   const added = st.lines || [];
-  const head = ch=>{ const i = ch.indexOf(': '); return escHtml(i < 0 ? ch : ch.slice(0, i) + ' · ' + ch.slice(i + 2)); };
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back keep" id="repBack" aria-label="Back">${BACK_ARROW}</button>
@@ -11710,8 +11710,11 @@ function renderRepReview(){
       ${!myGames.length ? `<p class="rep-sub">Connect your Lichess or Chess.com account in your profile: your games are compared with your repertoire.</p>` : ''}
       ${(()=>{ const n = gaps.filter(x=>!x.skipped).length, left = repChkLeft();
         return `<p class="rep-sub">${n ? `${n} ${n > 1 ? 'lines' : 'line'} to examine, from your games` : left ? 'Looking at your games…' : 'Every reply in your games is in your repertoire.'}${left ? ` <span class="rep-checking">· checking ${left} more</span>` : ''}</p>`; })()}
-      ${groups.map(gr=>`<h2>${gr.c==='w' ? 'White' : 'Black'} · ${head(gr.ch)}</h2>
-        <div class="rep-lines">${repTreeHtml(gr, st, propRow)}</div>`).join('')}
+      ${groups.map((gr, gi)=>{ const sp = t=>{ const i = t.indexOf(': '); return i < 0 ? [t, ''] : [t.slice(0, i), t.slice(i + 2)]; };
+        const prev = groups[gi - 1], [study, chap] = sp(gr.ch), newC = !prev || prev.c!==gr.c, newS = newC || sp(prev.ch)[0]!==study;
+        // (the colour, then the study, then each chapter: each said once)
+        return `${newC ? `<h2 class="rep-hc">${gr.c==='w' ? 'White' : 'Black'}</h2>` : ''}${newS ? `<h3 class="rep-hs">${escHtml(study)}</h3>` : ''}${chap ? `<h4 class="rep-hch">${escHtml(chap)}</h4>` : ''}
+        <div class="rep-lines">${repTreeHtml(gr, st, propRow)}</div>`; }).join('')}
       ${loose.length ? `<h2>Other</h2><div class="rep-lines">${loose.map(propRow).join('')}</div>` : ''}
       <h2>You left your line</h2>
       <p class="rep-sub">These positions come up first in practice.</p>
