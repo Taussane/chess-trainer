@@ -11713,7 +11713,7 @@ function renderRepReview(){
     <div class="rep-review">
       ${!myGames.length ? `<p class="rep-sub">Connect your Lichess or Chess.com account in your profile: your games are compared with your repertoire.</p>` : ''}
       ${(()=>{ const n = gaps.filter(x=>!x.skipped).length, left = repChkLeft();
-        return `<p class="rep-sub">${n ? `${n} ${n > 1 ? 'lines' : 'line'} to add, from your games` : left ? 'Looking at your games…' : 'Every reply in your games is in your repertoire.'}${left ? ` <span class="rep-checking">· checking ${left} more</span>` : ''}</p>`; })()}
+        return `<p class="rep-sub">${n ? `${n} ${n > 1 ? 'lines' : 'line'} to examine, from your games` : left ? 'Looking at your games…' : 'Every reply in your games is in your repertoire.'}${left ? ` <span class="rep-checking">· checking ${left} more</span>` : ''}</p>`; })()}
       ${groups.map(gr=>`<h2>${gr.c==='w' ? 'White' : 'Black'} · ${head(gr.ch)}</h2>
         <div class="rep-lines">${repTreeHtml(gr, st, propRow)}</div>`).join('')}
       ${loose.length ? `<h2>Other</h2><div class="rep-lines">${loose.map(propRow).join('')}</div>` : ''}
