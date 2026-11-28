@@ -127,6 +127,11 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   const r0 = await p.evaluate(() => { const row = document.querySelector('.layer:not(.ghost) [data-rline]') || document.querySelector('[data-rline]'); const h = row && row.closest('.rep-lines').previousElementSibling; const hs = [...document.querySelectorAll('.rep-review h2, .rep-review h3')].map(e => e.textContent); return { colour: hs.includes('Black'), study: hs.includes('Caro-Kann') || hs.includes('Slav Defense'), text: row && row.textContent.replace(/\s+/g, ' ').trim(), head: h && h.textContent, lines: document.querySelectorAll('.rep-lines .rep-moves').length }; });
   check('Review: your lines by chapter, the London proposed under the setup it branches from', /\+ ?2\. Bf4 ?2 games/.test(r0.text) && /2 games/.test(r0.text) && /^Setup$/.test(r0.head) && r0.study && r0.colour && r0.lines > 10, r0);
   if (process.env.SHOTS) await p.screenshot({ path: '/tmp/rep-desk-review.png' });
+  // any of your lines: a move in the tree opens the line there
+  const see = await p.evaluate(() => { const b = [...document.querySelectorAll('.rep-view [data-ply]')].find(x => x.textContent === 'c6'); const want = +b.dataset.ply; b.click();
+    const r = { view: rep.view, ply: rep.vw.ply, want, cur: (document.querySelector('#repMv .rep-cur') || {}).textContent, flip: boardFlipped(), title: document.querySelector('.title-row h1').textContent };
+    document.getElementById('repSeeNext').click(); r.next = rep.vw.ply; document.getElementById('repSeeBack').click(); r.back = rep.view; return r; });
+  check('a line of yours from the tree: on the board at that move, step on, back to Review', see.view === 'see' && see.ply === see.want && see.cur === 'c6' && see.flip && see.next === see.want + 1 && see.back === 'review', see);
   await p.click('[data-rline]');
   const l0 = await p.evaluate(() => ({ view: rep.view, top: document.querySelector('.pos-title').textContent, ply: rep.lv.ply, cur: (document.querySelector('#repMv .rep-cur') || {}).textContent }));
   check('the line on the board: its chapter, their move not in your study, games, at their move', l0.view === 'line' && /· Setup\n?.*2\. Bf4 isn't in your study/s.test(l0.top) && /· 2 games/.test(l0.top) && l0.ply === 3 && l0.cur === 'Bf4', l0);
