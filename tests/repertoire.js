@@ -132,6 +132,12 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
     const r = { view: rep.view, ply: rep.vw.ply, want, cur: (document.querySelector('#repMv .rep-cur') || {}).textContent, flip: boardFlipped(), title: document.querySelector('.title-row h1').textContent };
     document.getElementById('repSeeNext').click(); r.next = rep.vw.ply; document.getElementById('repSeeBack').click(); r.back = rep.view; return r; });
   check('a line of yours from the tree: on the board at that move, step on, back to Review', see.view === 'see' && see.ply === see.want && see.cur === 'c6' && see.flip && see.next === see.want + 1 && see.back === 'review', see);
+  // the phone's back button: a line → Review → the drills
+  await p.evaluate(() => [...document.querySelectorAll('.rep-view [data-ply]')].find(x => x.textContent === 'c6').click());
+  const back = async () => { await p.evaluate(() => history.back()); await p.waitForTimeout(300); return p.evaluate(() => screen + ':' + rep.view); };
+  const bk = [await back(), await back()];
+  check('the back button: from a line to Review, then to the drills', bk[0] === 'repertoire:review' && bk[1] === 'repertoire:train', bk);
+  await p.evaluate(() => { rep.view = 'review'; render(); });
   await p.click('[data-rline]');
   const l0 = await p.evaluate(() => ({ view: rep.view, top: document.querySelector('.pos-title').textContent, ply: rep.lv.ply, cur: (document.querySelector('#repMv .rep-cur') || {}).textContent }));
   check('the line on the board: its chapter, their move not in your study, games, at their move', l0.view === 'line' && /· Setup\n?.*2\. Bf4 isn't in your study/s.test(l0.top) && /· 2 games/.test(l0.top) && l0.ply === 3 && l0.cur === 'Bf4', l0);

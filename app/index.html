@@ -7438,6 +7438,7 @@ function pageDepth0(){
   let d = ['settings', 'metrics', 'tests'].includes(screen) ? 2
         : screen==='support' ? (supportFrom==='home' ? 1 : 2)
         : ACTIVITIES.includes(screen) ? (testMode ? 3 : replayMode || rushMode ? 2 : 1) : 1;
+  if(screen==='repertoire' && typeof rep!=='undefined' && rep) d += rep.view==='review' ? 1 : rep.view==='line' || rep.view==='see' ? 2 : 0;   // (the drills 1, Review 2, a line from it 3)
   if(aspPicker) d++;
   return d;
 }
@@ -7463,7 +7464,7 @@ window.addEventListener('popstate', e=>{
       const m = openModal();
       if(m){ m.click(); if(m.isConnected) break; continue; }   // (as a tap outside it: each pop-up's own rule; one that stays open stays)
       if(aspPicker){ closeAspPicker(); continue; }
-      const b = document.getElementById('homeBtn');
+      const b = document.getElementById('repLineBack') || document.getElementById('repSeeBack') || document.getElementById('repBack') || document.getElementById('homeBtn');   // (in the repertoire: a level up, as its own arrow)
       if(b) b.click(); else { screen = 'home'; render(); }
     }
   } finally { histPopping = false; }
