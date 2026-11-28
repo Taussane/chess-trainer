@@ -11142,7 +11142,7 @@ let repStore = null;     // { s: { 'w|key': [box, due, seen] }, add: [{ c, k, sa
 function repLoad(){
   if(repStore) return repStore;
   try{ repStore = JSON.parse(localStorage.getItem('cst.rep') || 'null'); }catch(e){}
-  repStore = Object.assign({ s:{}, l:{}, add:[], skip:[], skipL:[], prop:{}, lines:[], chk:{}, c:'both', o:{ comment:false } }, repStore || {});
+  repStore = Object.assign({ s:{}, l:{}, add:[], skip:[], skipL:[], rm:[], prop:{}, lines:[], chk:{}, c:'both', o:{ comment:false } }, repStore || {});
   // (lines added from before proposals were whole lines: their answer, as the copy for Lichess)
   if(!repStore.lines.length) repStore.lines = repStore.add.filter(a=>a.line).map(a=>({ c:a.c, line:a.line }));
   if(!repStore.lt) repStore.lt = Date.now();
@@ -11158,7 +11158,8 @@ function repLoad(){
 function repSave(){ try{ localStorage.setItem('cst.rep', JSON.stringify(repStore)); }catch(e){} }
 // the moves at a position: [san, flag (0 opponent, 1 your move, 2 your sideline), comment, chapter]; your additions too
 function repMoves(c, k){
-  const base = (REPERTOIRE[c] && REPERTOIRE[c].n[k]) || [];
+  const rm = repLoad().rm || [], base0 = (REPERTOIRE[c] && REPERTOIRE[c].n[k]) || [];
+  const base = rm.some(x=>x.c===c && x.k===k) ? base0.filter(m=>!rm.some(x=>x.c===c && x.k===k && x.san===m[0])) : base0;   // (less the moves you removed, until your study has them no more)
   const add = repLoad().add.filter(a=>a.c===c && a.k===k && !base.some(m=>m[0]===a.san)).map(a=>[a.san, a.flag, -1, a.ch==null ? -1 : a.ch]);   // (its chapter: the one it was proposed in)
   return add.length ? base.concat(add) : base;
 }
@@ -11168,7 +11169,7 @@ const repChapter = (c, m)=>m && m[3] >= 0 ? REPERTOIRE[c].ch[m[3]] : '';
 // every position of a colour, from the start: the shortest way there (fens, sans, the chapter of each move)
 const repIdx = {};
 function repIndex(c){
-  const sig = repLoad().add.length + '|' + repDataVer; if(repIdx[c] && repIdx[c].sig===sig) return repIdx[c];
+  const sig = repLoad().add.length + '|' + (repLoad().rm || []).length + '|' + repDataVer; if(repIdx[c] && repIdx[c].sig===sig) return repIdx[c];
   const at = {}, q = [{ fen:EXPLORER_START, sans:[], fens:[EXPLORER_START], moves:[], ch:'' }];
   at[repKey(EXPLORER_START)] = q[0];
   while(q.length){
@@ -11843,7 +11844,8 @@ async function repSyncStudy(force){
     if(r.status===404){ st.study = null; st.studyPgn = null; repStudyNote = 'Your repertoire study was deleted on Lichess.'; repSave(); repStudySave(null); return; }
     if(!r.ok) return;
     const pgn = await r.text(); st.studyAt = Date.now();
-    if(pgn!==st.studyPgn){ st.studyPgn = pgn; repApplyData(repFromStudy(pgnRead(pgn))); repStudyNote = 'Synced with your Lichess study.';
+    if(pgn!==st.studyPgn){ st.studyPgn = pgn; repApplyData(repFromStudy(pgnRead(pgn)));
+      st.rm = (st.rm || []).filter(x=>((REPERTOIRE[x.c] && REPERTOIRE[x.c].n[x.k]) || []).some(m=>m[0]===x.san));   // (removed there too: nothing left to hide) repStudyNote = 'Synced with your Lichess study.';
       if(screen==='repertoire'){ if(rep && rep.view==='train' && rep.drill && !rep.drill.sans.length) repStart(); render(); } }
     repSave(); setTimeout(repRenameChapters, 0);   // (once: chapters with their colour first)
   }catch(e){} finally{ repSyncing = false; }
@@ -11879,9 +11881,9 @@ async function repPushChapter(c, chIdx){
     const pgn = repChapterPgn(c, chIdx);
     const r = chId ? await fetch(LICHESS + `/api/study/${st.study}/${chId}/moves`, { method:'POST', headers:Object.assign({ 'Content-Type':'application/x-www-form-urlencoded' }, H), body:new URLSearchParams({ pgn }) })
       : await fetch(LICHESS + `/api/study/${st.study}/import-pgn`, { method:'POST', headers:Object.assign({ 'Content-Type':'application/x-www-form-urlencoded' }, H), body:new URLSearchParams({ pgn, name:shown, orientation:c==='w' ? 'white' : 'black', variant:'standard' }) });
-    repStudyNote = r.ok ? `Added to your Lichess study (${shown}).` : `Not added to your Lichess study: ${r.status} ${(await r.text()).slice(0, 300)}`;
+    repStudyNote = r.ok ? `Updated in your Lichess study (${shown}).` : `Not updated in your Lichess study: ${r.status} ${(await r.text()).slice(0, 300)}`;
     st.studyAt = 0; repSave(); if(r.ok) repSyncStudy(true);
-  }catch(e){ repStudyNote = `Not added to your Lichess study: ${e.message}`; }
+  }catch(e){ repStudyNote = `Not updated in your Lichess study: ${e.message}`; }
   if(screen==='repertoire') render();
 }
 // Review: your lines chapter by chapter, each proposal under the line it branches from (open it to look at it, add it
@@ -11904,8 +11906,7 @@ function renderRepReview(){
   // (their move only: the line is searched once you open it)
   const propRow = x=>{
     const pc = x.pct==null ? '' : x.pct < 1 ? '<1%' : Math.round(x.pct) + '%';
-    return `<button class="rep-prop-row${x.skipped ? ' rep-skipped' : ''}" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(x.sans, x.sans.length - 1)}</span> ${x.skipped ? '' : `<span class="rep-meta">${pc ? pc + ' · ' : ''}${x.n} ${x.n > 1 ? 'games' : 'game'}</span>`}
-      ${x.skipped ? '<span class="rep-tag">Skipped</span>' : ''}</button>`; };
+    return `<button class="rep-prop-row${x.skipped ? ' rep-skipped' : ''}" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(x.sans, x.sans.length - 1)}</span> ${x.skipped ? '' : `<span class="rep-meta">${pc ? pc + ' · ' : ''}${x.n} ${x.n > 1 ? 'games' : 'game'}</span>`}</button>`; };
   const devs = Object.values(gs.devs).filter(x=>repColours().includes(x.c) && x.n >= 1).sort((a, b)=>b.n - a.n).slice(0, 8);
   const devRow = x=>`<div class="rep-item">
       <div class="rep-item-top"><span class="rep-tag">${x.c==='w' ? 'White' : 'Black'}</span><span class="rep-n">${x.n} ${x.n > 1 ? 'games' : 'game'}</span></div>
@@ -11985,9 +11986,9 @@ function repTreeHtml(gr, st, propRow){
     // (a row: the line on the board from where the row starts, followed to its end)
     let end = cur; while(end.kids.some(k=>!k.prop)) end = end.kids.find(k=>!k.prop);
     const p = end.path.join(' ');   // (the line a row opens: skipped as a whole)
-    repViewLines.push({ c:gr.c, ch:gr.ch, line:end.path, from, p });
-    const skip = cur===end && repSkippedAt(gr.c, p);
-    out.push(`<p class="rep-moves rep-branch rep-view${skip ? ' rep-skipped' : ''}" style="--d:${depth}" data-vline="${repViewLines.length - 1}">${repMoveHtml(sans, from)}${added ? ' <span class="rep-tag">Added</span>' : ''}${skip ? ' <span class="rep-tag">Skipped</span>' : ''}</p>`);
+    repViewLines.push({ c:gr.c, ch:gr.ch, line:end.path, from, p, leaf:cur===end });
+    const skip = cur===end && repSkippedAt(gr.c, p);   // (greyed out)
+    out.push(`<p class="rep-moves rep-branch rep-view${skip ? ' rep-skipped' : ''}" style="--d:${depth}" data-vline="${repViewLines.length - 1}">${added ? '<span class="rep-plus">+</span> ' : ''}${repMoveHtml(sans, from)}</p>`);   // (+: added from your games)
     for(const k of cur.kids) chain(k, depth + 1);
   };
   for(const k of root.kids) chain(k, 0);
@@ -12044,7 +12045,7 @@ function renderRepLine(){
     <div class="title-row">
       <button class="icon-btn back keep" id="repLineBack" aria-label="Back">${BACK_ARROW}</button>
       <h1>${ed ? 'Edit line' : 'New line'}</h1>
-      <button class="title-chip" id="repSkipLine">${ed && repSkippedAt(ed.c, ed.p) ? 'Unskip' : 'Skip'}</button><button class="title-chip rep-add" id="repAddLine" ${hasNew && !clash ? '' : 'disabled'}>Add</button>
+      ${ed && ed.leaf ? `<button class="title-chip" id="repRmLine">${lv.rmAsk ? 'Confirm' : 'Remove'}</button>` : ''}<button class="title-chip" id="repSkipLine">${ed ? (repSkippedAt(ed.c, ed.p) ? 'Unskip' : 'Skip') : st.skip.some(k=>k.id===x.id) ? 'Unskip' : 'Skip'}</button><button class="title-chip rep-add" id="repAddLine" ${hasNew && !clash ? '' : 'disabled'}>Add</button>
     </div>
     <div class="posbar"><div class="pos-title">${ed ? repSeeChapter(ed) : `${repGapChapter(x)}<br>${no(gapN - 1)}${escHtml(x.san)} isn't in your study${gapPct ? ` · ${gapPct}` : ''} · ${x.n} ${x.n > 1 ? 'games' : 'game'}`}</div></div>
     <div class="stage"><div class="board-col">${explorerHbarHtml(info || lv.lastInfo, pct, x.c==='b', false)}${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
@@ -12093,8 +12094,18 @@ function renderRepLine(){
   repLineKeys.step = step;
   on('repSkipLine', ()=>{
     if(ed){ const was = repSkippedAt(ed.c, ed.p); st.skipL = (st.skipL || []).filter(k=>!(k.c===ed.c && k.p===ed.p)); if(!was) st.skipL.push({ c:ed.c, p:ed.p }); }   // (this line out of the drills)
-    else st.skip = st.skip.filter(k=>k.id!==x.id).concat({ id:x.id, n:x.n });
+    else { const was = st.skip.some(k=>k.id===x.id); st.skip = st.skip.filter(k=>k.id!==x.id); if(!was) st.skip.push({ id:x.id, n:x.n }); }   // (Unskip: proposed again)
     repSave(); rep.view = 'review'; render(); });
+  // Remove (a line with nothing branching from it): its own moves out of your study, here and in its Lichess chapter
+  on('repRmLine', ()=>{
+    if(!lv.rmAsk){ lv.rmAsk = true; render(); return; }
+    const g4 = new Chess(); ed.line.forEach((m, i)=>{ const k = repKey(g4.fen()); g4.move(m); if(i < ed.from) return;
+      const ai = st.add.findIndex(a=>a.c===ed.c && a.k===k && a.san===m);
+      if(ai >= 0) st.add.splice(ai, 1); else (st.rm = st.rm || []).push({ c:ed.c, k, san:m }); });
+    st.skipL = (st.skipL || []).filter(k=>!(k.c===ed.c && k.p===ed.p));
+    const chI = REPERTOIRE[ed.c].ch.indexOf(ed.ch);
+    repSave(); repGames = null; if(st.study && chI >= 0) repPushChapter(ed.c, chI);
+    rep.view = 'review'; render(); });
   on('repAddLine', ()=>{
     if(!hasNew || clash) return;
     const chI = ed ? REPERTOIRE[x.c].ch.indexOf(ed.ch) : repGapChIdx(x.c, x.k), g2 = new Chess();
