@@ -682,7 +682,7 @@
   .rep-lines{display:flex; flex-direction:column; gap:4px;} .rep-lines > .rep-moves{line-height:1.45;}
   .rep-branch{margin-left:calc(min(var(--d), 6) * 14px); padding-left:8px; border-left:1px solid var(--border);} .rep-branch[style*="--d:0"]{border-left:0; padding-left:0;}   /* (a branch: indented where it leaves the line above) */
   .rep-prop-row{display:flex; align-items:center; gap:8px; width:fit-content; min-width:min(100%, 300px); max-width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
-  .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-view [data-ply]{cursor:pointer;} .rep-view [data-ply]:hover{color:var(--accent);} .rep-plus{color:var(--accent); font-weight:700;} .rep-checking{color:var(--text-mute);} .rep-added{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px;} .rep-meta{margin-left:auto; color:var(--text-mute); font-size:0.82rem; white-space:nowrap;} .title-row h1 + .rep-sel{margin-left:auto;}
+  .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-view{cursor:pointer;} .rep-view:hover, .rep-view:hover b{color:var(--accent);} .rep-plus{color:var(--accent); font-weight:700;} .rep-checking{color:var(--text-mute);} .rep-added{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px;} .rep-meta{margin-left:auto; color:var(--text-mute); font-size:0.82rem; white-space:nowrap;} .title-row h1 + .rep-sel{margin-left:auto;}
   .rep-prop-row.rep-skipped{border-color:var(--border);} .rep-prop-row.rep-skipped .rep-plus{color:var(--text-mute);}   /* (seen and skipped: still there, quieter) */ .rep-cur{color:var(--accent);} #repMv .rep-new{color:var(--text);}   /* (New line: the moves you would add, in white) */ #repMv [data-ply]{cursor:pointer;}
   .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg, .xp-nav #repPop svg, .xp-nav #repCut svg, .xp-nav #repSeeXp svg, .xp-nav #repSeeCm svg{width:20px; height:20px;} .xp-nav .icon-btn.rep-pop.on{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
   .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
@@ -11546,11 +11546,8 @@ function renderRepertoire(){
   if(mvEl && d){
     const n = d.sans.length; if(!d.mvScroll || d.mvScroll.n!==n) d.mvScroll = { n, x:null };
     mvEl.scrollLeft = d.mvScroll.x==null ? mvEl.scrollWidth : d.mvScroll.x;
-    const fade = ()=>{ const end = mvEl.scrollLeft >= mvEl.scrollWidth - mvEl.clientWidth - 2;
-      mvEl.classList.toggle('fade-l', mvEl.scrollLeft > 2); mvEl.classList.toggle('fade-r', !end); return end; };
-    fade();
+    const fade = repMvFade(mvEl);
     mvEl.onscroll = ()=>{ d.mvScroll.x = fade() ? null : mvEl.scrollLeft; };
-    mvEl.onwheel = e=>{ if(mvEl.scrollWidth <= mvEl.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; mvEl.scrollLeft += e.deltaY; e.preventDefault(); };
   }
   const g = new Chess(p.fen), bs = boardObjFromGame(g);
   const live = d && !d.done && !d.wait && !d.wrong && p.side===d.c;
@@ -11689,6 +11686,13 @@ function repOffers(){
     .sort((a, b)=>(a.skipped ? 1 : 0) - (b.skipped ? 1 : 0) || b.n - a.n).slice(0, 30);
 }
 const repChkLeft = ()=>{ const st = repLoad(); return repCandidates().filter(x=>repColours().includes(x.c) && repChkDue(st, x)).length; };
+// The line above the panel, too long for its width: its edges fade where there's more (scrolled with the wheel too)
+function repMvFade(el){
+  const f = ()=>{ const end = el.scrollLeft >= el.scrollWidth - el.clientWidth - 2; el.classList.toggle('fade-l', el.scrollLeft > 2); el.classList.toggle('fade-r', !end); return end; };
+  f(); el.addEventListener('scroll', f);
+  el.onwheel = e=>{ if(el.scrollWidth <= el.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; el.scrollLeft += e.deltaY; e.preventDefault(); };
+  return f;
+}
 const repMoveHtml = (sans, from = 0, cur = -1, fresh = 1e9)=>sans.map((m, i)=>i < from ? '' : `${i % 2===0 ? (i / 2 + 1) + '. ' : i===from ? Math.floor(i / 2) + 1 + '… ' : ''}<b${i===cur ? ' class="rep-cur"' : i >= fresh ? ' class="rep-new"' : ''} data-ply="${i + 1}">${escHtml(m)}</b>`).filter(Boolean).join(' ');
 // ---- The repertoire's own Lichess study: one study, a chapter per chapter of your repertoire ("Scotch Game ·
 // Classical Variation"), its lines as the trainer has them (with the lines you added), your study's comments and
@@ -11958,8 +11962,8 @@ function renderRepReview(){
   on('repStudy', ()=>repCreateStudy());
   const sel = document.getElementById('repColour'); if(sel) sel.onchange = ()=>{ rep.c = repStore.c = sel.value; repSave(); repStart(); render(); };
   on('repCopy', ()=>{ const t = added.map(a=>repLineText(a.line)).join('\n'); try{ navigator.clipboard.writeText(t); }catch(e){} const b = document.getElementById('repCopy'); if(b) b.textContent = 'Copied'; });
-  app.querySelectorAll('.rep-view [data-ply]').forEach(b=>b.onclick = ()=>{ const v = repViewLines[+b.closest('.rep-view').dataset.vline]; if(!v) return;
-    rep.view = 'see'; xpBar.shown = null; rep.vw = Object.assign({}, v, { ply:+b.dataset.ply }); render(); });
+  app.querySelectorAll('.rep-view').forEach(b=>b.onclick = ()=>{ const v = repViewLines[+b.dataset.vline]; if(!v) return;   // (a row: one button, its line from where the row starts)
+    rep.view = 'see'; rep.vw = Object.assign({}, v, { ply:v.from }); render(); });
   app.querySelectorAll('[data-rline]').forEach(b=>b.onclick = ()=>{ const x = gs.gaps[b.dataset.rline]; if(!x) return;
     rep.view = 'line'; xpBar.shown = null;   // (the bar starts at this line's own reading)
     rep.lv = { id:x.id, ply:x.sans.length }; render(); });
@@ -12001,9 +12005,9 @@ function repTreeHtml(gr, st, propRow){
     if(n.prop){ out.push(`<div class="rep-branch" style="--d:${depth}">${propRow(n.prop)}</div>`); return; }
     const sans = [], from = n.i; let added = false, cur = n;
     for(;;){ sans[cur.i] = cur.m; added = added || cur.added; if(cur.kids.length!==1 || cur.kids[0].prop) break; cur = cur.kids[0]; }
-    // (a move: the line on the board, from that move; the line followed to its end)
+    // (a row: the line on the board from where the row starts, followed to its end)
     let end = cur; while(end.kids.some(k=>!k.prop)) end = end.kids.find(k=>!k.prop);
-    repViewLines.push({ c:gr.c, ch:gr.ch, line:end.path });
+    repViewLines.push({ c:gr.c, ch:gr.ch, line:end.path, from });
     out.push(`<p class="rep-moves rep-branch rep-view" style="--d:${depth}" data-vline="${repViewLines.length - 1}">${repMoveHtml(sans, from)}${added ? ' <span class="rep-tag">Added</span>' : ''}</p>`);
     for(const k of cur.kids) chain(k, depth + 1);
   };
@@ -12088,7 +12092,7 @@ function renderRepLine(){
   const li = app.querySelector('.layer:not(.ghost) .xp-li') || app.querySelector('.xp-li'); if(li && li.offsetHeight) app.style.setProperty('--xp-btn-h', li.offsetHeight + 'px');   // (the row's buttons as tall as Lichess's, as in the explorer)
   xpBarEase(pct);
   const mvEl = document.getElementById('repMv');
-  if(mvEl){ const cur = mvEl.querySelector('.rep-cur'); if(cur) mvEl.scrollLeft = Math.max(0, cur.offsetLeft - mvEl.clientWidth / 2);
+  if(mvEl){ const cur = mvEl.querySelector('.rep-cur'); if(cur) mvEl.scrollLeft = Math.max(0, cur.offsetLeft - mvEl.clientWidth / 2); repMvFade(mvEl);
     mvEl.querySelectorAll('[data-ply]').forEach(b=>b.onclick = ()=>{ lv.ply = +b.dataset.ply; lv.sel = null; render(); }); }
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   const step = dl=>{ const n = Math.max(0, Math.min(line.length, ply + dl)); if(n===ply) return; lv.ply = n; lv.sel = null;
@@ -12138,7 +12142,7 @@ function renderRepSee(){
     </div>
     <div class="posbar"><div class="pos-title">${chName}<br>${c==='w' ? 'White' : 'Black'} · ${Math.ceil(line.length / 2)} moves</div></div>
     <div class="stage"><div class="board-col">${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
-    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1)}</span></div>
+    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1, vw.from || 0)}</span></div>
     ${stackedPanel(`
       <p class="prompt rep-prompt">${prompt}</p>
       <p class="rep-note">${o.comment && note ? escHtml(note) : ''}</p>
@@ -12154,7 +12158,7 @@ function renderRepSee(){
   const li = app.querySelector('.layer:not(.ghost) .xp-li') || app.querySelector('.xp-li'); if(li && li.offsetHeight) app.style.setProperty('--xp-btn-h', li.offsetHeight + 'px');
   repNoteLines();
   const mvEl = document.getElementById('repMv');
-  if(mvEl){ const cm = mvEl.querySelector('.rep-cur'); if(cm) mvEl.scrollLeft = Math.max(0, cm.offsetLeft - mvEl.clientWidth / 2);
+  if(mvEl){ const cm = mvEl.querySelector('.rep-cur'); if(cm) mvEl.scrollLeft = Math.max(0, cm.offsetLeft - mvEl.clientWidth / 2); repMvFade(mvEl);
     mvEl.querySelectorAll('[data-ply]').forEach(b=>b.onclick = ()=>{ vw.ply = +b.dataset.ply; render(); }); }
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   const step = dl=>{ const n = Math.max(0, Math.min(line.length, ply + dl)); if(n===ply) return; vw.ply = n;
