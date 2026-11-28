@@ -10421,7 +10421,7 @@ async function popPump(){
     else{ const d = await r.json(), total = (d.white || 0) + (d.draws || 0) + (d.black || 0), pct = {};
       for(const m of d.moves || []){ const n = (m.white || 0) + (m.draws || 0) + (m.black || 0); if(total && m.san) pct[m.san] = n / total * 100; }   // (by its SAN: Lichess writes castling as the king taking its rook)
       popCache.set(k, { total, pct, top:Object.keys(pct).sort((a, b)=>pct[b] - pct[a]) });
-      if(screen==='repertoire' && rep && (rep.view==='line' || rep.view==='review')) render(); }
+      if(screen==='repertoire' && rep && (rep.view==='line' || rep.view==='review' || rep.view==='see')) render(); }
   }catch(e){ popCache.set(k, { total:0, pct:{}, top:[] }); }
   popBusy = false; popPump();
 }
@@ -12090,7 +12090,11 @@ function renderRepSee(){
   const fen = g.fen(), top = c==='b' ? 'w' : 'b', marks = repMarks(c, fen);
   const note = lastM && lastM[2] >= 0 ? repComment(c, lastM) : '';
   const nx = line[ply], mine = fen.split(' ')[1]===c;
-  const prompt = nx ? `${mine ? 'Your move' : 'Their move'}: <b>${escHtml(nx)}</b>.` : 'End of the line.';
+  // the next move graded as the reviews grade, its evaluation and how often it's played at your level
+  const ev = nx ? explorerEval(fen) : null, gr = ev && !evalFailed(ev) && ev.lines.length ? repMoveGrade(fen, nx, ev.lines) : null;
+  const pp = nx ? popPct(movePopularity(fen), nx) : '';
+  const about = [gr ? `<span style="color:${labelColor(gr.label)}">${gr.label}</span> ${fmtSigned(gr.info)}` : '…', pp].filter(Boolean).join(' · ');
+  const prompt = nx ? `${mine ? 'Your move' : 'Their move'}: <b>${escHtml(nx)}</b> (${about}).` : 'End of the line.';
   const t = vw.ch.indexOf(': '), chName = escHtml(t < 0 ? vw.ch : vw.ch.slice(0, t) + ' · ' + vw.ch.slice(t + 2));
   const lichess = `https://lichess.org/analysis/pgn/${line.slice(0, ply).map(m=>encodeURIComponent(m.replace(/[+#]/g, ''))).join('_')}?color=${c==='b' ? 'black' : 'white'}#${ply}`;
   const none = !note && !marks.length;
