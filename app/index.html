@@ -7438,7 +7438,7 @@ function pageDepth0(){
   let d = ['settings', 'metrics', 'tests'].includes(screen) ? 2
         : screen==='support' ? (supportFrom==='home' ? 1 : 2)
         : ACTIVITIES.includes(screen) ? (testMode ? 3 : replayMode || rushMode ? 2 : 1) : 1;
-  if(screen==='repertoire' && typeof rep!=='undefined' && rep) d += rep.view==='review' ? 1 : rep.view==='line' || rep.view==='see' ? 2 : 0;   // (the drills 1, Review 2, a line from it 3)
+  if(screen==='repertoire' && typeof rep!=='undefined' && rep) d += rep.view==='review' ? 1 : rep.view==='line' && rep.lv && rep.lv.edit ? 3 : rep.view==='line' || rep.view==='see' ? 2 : 0;   // (the drills 1, Review 2, a line from it 3)
   if(aspPicker) d++;
   return d;
 }
@@ -11142,7 +11142,7 @@ let repStore = null;     // { s: { 'w|key': [box, due, seen] }, add: [{ c, k, sa
 function repLoad(){
   if(repStore) return repStore;
   try{ repStore = JSON.parse(localStorage.getItem('cst.rep') || 'null'); }catch(e){}
-  repStore = Object.assign({ s:{}, l:{}, add:[], skip:[], prop:{}, lines:[], chk:{}, c:'both', o:{ comment:false } }, repStore || {});
+  repStore = Object.assign({ s:{}, l:{}, add:[], skip:[], skipL:[], prop:{}, lines:[], chk:{}, c:'both', o:{ comment:false } }, repStore || {});
   // (lines added from before proposals were whole lines: their answer, as the copy for Lichess)
   if(!repStore.lines.length) repStore.lines = repStore.add.filter(a=>a.line).map(a=>({ c:a.c, line:a.line }));
   if(!repStore.lt) repStore.lt = Date.now();
@@ -11228,9 +11228,12 @@ function repRound(){
   if(!st.r || repMidnight(st.r.t) !== repMidnight(now)){ st.r = { t:now, seed:Math.floor(Math.random() * 1e9) }; repSave(); }
   return st.r;
 }
+// Lines in the drills: your study's, less the ones you skipped (a row of Review's tree and the lines on from it)
+const repSkippedAt = (c, key)=>(repLoad().skipL || []).some(x=>x.c===c && (key===x.p || key.startsWith(x.p + ' ')));
+const repDrillChunks = c=>repChunks(c).filter(ch=>!repSkippedAt(c, ch.key));
 function repRoundCheck(){
   const st = repLoad(), rd = repRound();
-  const done = repColours().every(c=>repChunks(c).every(ch=>{ const x = repLineSt(ch); return x && (x[3] || 0) >= rd.t; }));
+  const done = repColours().every(c=>repDrillChunks(c).every(ch=>{ const x = repLineSt(ch); return x && (x[3] || 0) >= rd.t; }));
   if(done){ st.r = { t:Date.now(), seed:Math.floor(Math.random() * 1e9) }; repSave(); }
 }
 // A line's own state, as a position's: [step, checked until, times played, last played, misses]. A line is checked
@@ -11307,7 +11310,7 @@ function repCounts(){
   repRoundCheck();
   // lines, checked today (played to its end since midnight), due (never played, missed, or its time out)
   const now = Date.now(), day = repMidnight(now); let today = 0, due = 0, total = 0;
-  for(const c of repColours()) for(const ch of repChunks(c)){ total++;
+  for(const c of repColours()) for(const ch of repDrillChunks(c)){ total++;
     const st = repLineSt(ch);
     if(!st || st[1] <= now) due++;
     if(st && st[3] >= day) today++; }
@@ -11318,7 +11321,7 @@ function repCounts(){
 function repPickChunk(){
   repRoundCheck();
   const now = Date.now(), all = [];
-  for(const c of repColours()) for(const ch of repChunks(c)) all.push({ ch, s: repLineScore(ch, now) });
+  for(const c of repColours()) for(const ch of repDrillChunks(c)) all.push({ ch, s: repLineScore(ch, now) });
   if(!all.length) return null;
   all.sort((a, b)=>a.s - b.s);
   const tier = x=>Math.floor((x.s + 500) / 1000), last = rep.lastCh;
@@ -11447,7 +11450,7 @@ function repPos(){
   const d = rep && rep.drill, w = d && d.wrong, fen = w ? w.fen : d ? d.fens[d.fens.length - 1] : EXPLORER_START, m = w || d && d.moves[d.moves.length - 1];
   return { key:'rep:' + fen, fen, side: fen.split(' ')[1], moveNo: +fen.split(' ')[5], last: m ? { squares:[m.from, m.to] } : null, hist:{} };
 }
-const repFlip = ()=>{ if(rep && rep.view==='see') return !!rep.vw && rep.vw.c==='b'; if(rep && rep.view==='line'){ const x = rep.lv && repGameStats().gaps[rep.lv.id]; return !!x && x.c==='b'; } return !!(rep && rep.drill && rep.drill.c==='b'); };   // (a proposed line: your side at the bottom)
+const repFlip = ()=>{ if(rep && rep.view==='see') return !!rep.vw && rep.vw.c==='b'; if(rep && rep.view==='line'){ if(rep.lv && rep.lv.edit) return rep.lv.edit.c==='b'; const x = rep.lv && repGameStats().gaps[rep.lv.id]; return !!x && x.c==='b'; } return !!(rep && rep.drill && rep.drill.c==='b'); };   // (a proposed line: your side at the bottom)
 // The study's marks on a position: 'Ge2e4' an arrow, 'Re4' a circled square; green, red, blue, yellow: the 1st to
 // 4th arrow colours of Settings (the same by default)
 const REP_MARK = { G:'var(--pick1)', R:'var(--pick2)', B:'var(--pick3)', Y:'var(--system)' };
@@ -11975,8 +11978,9 @@ function repTreeHtml(gr, st, propRow){
     for(;;){ sans[cur.i] = cur.m; added = added || cur.added; if(cur.kids.length!==1 || cur.kids[0].prop) break; cur = cur.kids[0]; }
     // (a row: the line on the board from where the row starts, followed to its end)
     let end = cur; while(end.kids.some(k=>!k.prop)) end = end.kids.find(k=>!k.prop);
-    repViewLines.push({ c:gr.c, ch:gr.ch, line:end.path, from });
-    out.push(`<p class="rep-moves rep-branch rep-view" style="--d:${depth}" data-vline="${repViewLines.length - 1}">${repMoveHtml(sans, from)}${added ? ' <span class="rep-tag">Added</span>' : ''}</p>`);
+    const p = n.path.join(' ');
+    repViewLines.push({ c:gr.c, ch:gr.ch, line:end.path, from, p });
+    out.push(`<p class="rep-moves rep-branch rep-view" style="--d:${depth}" data-vline="${repViewLines.length - 1}">${repMoveHtml(sans, from)}${added ? ' <span class="rep-tag">Added</span>' : ''}${repSkippedAt(gr.c, p) ? ' <span class="rep-tag">Skipped</span>' : ''}</p>`);
     for(const k of cur.kids) chain(k, depth + 1);
   };
   for(const k of root.kids) chain(k, 0);
@@ -11987,14 +11991,22 @@ function repTreeHtml(gr, st, propRow){
 // moves (either side) to change or extend the line, step through it, then add it or skip it (offered again once
 // more games meet it)
 function renderRepLine(){
-  const app = document.getElementById('app'), gs = repGameStats(), st = repLoad(), lv = rep.lv, x = lv && gs.gaps[lv.id];
+  // (Edit: one of your lines, changed from any of their moves; nothing kept until you add it)
+  const app = document.getElementById('app'), gs = repGameStats(), st = repLoad(), lv = rep.lv, ed = lv && lv.edit;
+  const x = ed ? { id:'edit', c:ed.c, sans:[], replies:{} } : lv && gs.gaps[lv.id];
   if(!x){ rep.view = 'review'; return renderRepReview(); }
-  let pr = st.prop[x.id];
-  if(!pr || !Array.isArray(pr.line) || 'done' in pr || pr.line.slice(0, x.sans.length).join(' ')!==x.sans.join(' ')) pr = st.prop[x.id] = { line:x.sans.slice(), auto:true };
-  const gapN = x.sans.length, gFen = (()=>{ const g = new Chess(); x.sans.forEach(m=>g.move(m)); return g.fen(); })();
+  let pr = ed ? lv.pr : st.prop[x.id];
+  if(!ed && (!pr || !Array.isArray(pr.line) || 'done' in pr || pr.line.slice(0, x.sans.length).join(' ')!==x.sans.join(' '))) pr = st.prop[x.id] = { line:x.sans.slice(), auto:true };
+  const gapN = x.sans.length;
   // (the engine's top answer, proposed until you play a move of your own)
-  const gi = repFenInfo(gFen);
-  if(pr.auto && pr.line.length===gapN && gi && gi.san){ pr.line.push(gi.san); repSave(); }
+  if(!ed){ const gFen = (()=>{ const g = new Chess(); x.sans.forEach(m=>g.move(m)); return g.fen(); })(), gi = repFenInfo(gFen);
+    if(pr.auto && pr.line.length===gapN && gi && gi.san){ pr.line.push(gi.san); repSave(); } }
+  // (what's new in it: the moves not in your study; one of yours where your study has another: changed on Lichess)
+  let firstNew = -1, clash = false;
+  { const g3 = new Chess(); pr.line.forEach((m, i)=>{ const k = repKey(g3.fen()), ms = repMoves(x.c, k);
+      if(i >= gapN - 1 && !ms.some(a=>a[0]===m)){ if(firstNew < 0) firstNew = i; if(ed && g3.turn()===x.c && ms.some(a=>a[1]===1)) clash = true; }
+      g3.move(m); }); }
+  const hasNew = ed ? firstNew >= 0 : pr.line.length > gapN;
   const line = pr.line, ply = lv.ply = Math.max(0, Math.min(lv.ply, line.length));
   const g = new Chess(); let last = null; line.slice(0, ply).forEach(m=>{ last = g.move(m); });
   const fen = g.fen(), top = x.c==='b' ? 'w' : 'b';
@@ -12005,8 +12017,8 @@ function renderRepLine(){
   // (the line's end: the position shown when it is, or the one before when its top move ends the line: the same number
   // as shown; otherwise its own search)
   const endG = new Chess(); line.slice(0, -1).forEach(m=>endG.move(m)); const preFen = endG.fen();
-  if(line.length > gapN) endG.move(line[line.length - 1]);
-  const endInfo = line.length <= gapN ? null : ply===line.length ? (done ? info : null) : ply===line.length - 1 && done && info.san===line[line.length - 1] ? info : repFenInfo(endG.fen());
+  if(line.length) endG.move(line[line.length - 1]);
+  const endInfo = !hasNew ? null : ply===line.length ? (done ? info : null) : ply===line.length - 1 && done && info.san===line[line.length - 1] ? info : repFenInfo(endG.fen());
   const mine = v=>v && (v.mate!=null ? { mate:v.mate * (x.c==='w' ? 1 : -1) } : { cp:v.cp * (x.c==='w' ? 1 : -1) });
   const ans = repGapAnswers(x);
   const no = i=>Math.floor(i / 2) + 1 + (i % 2 ? '… ' : '. ');
@@ -12024,16 +12036,16 @@ function renderRepLine(){
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back keep" id="repLineBack" aria-label="Back">${BACK_ARROW}</button>
-      <h1>New line</h1>
-      <button class="title-chip" id="repSkipLine">Skip</button><button class="title-chip rep-add" id="repAddLine" ${line.length > gapN ? '' : 'disabled'}>Add</button>
+      <h1>${ed ? 'Edit line' : 'New line'}</h1>
+      <button class="title-chip" id="repSkipLine">${ed && repSkippedAt(ed.c, ed.p) ? 'Unskip' : 'Skip'}</button><button class="title-chip rep-add" id="repAddLine" ${hasNew && !clash ? '' : 'disabled'}>Add</button>
     </div>
-    <div class="posbar"><div class="pos-title">${repGapChapter(x)}<br>${no(gapN - 1)}${escHtml(x.san)} isn't in your study${gapPct ? ` · ${gapPct}` : ''} · ${x.n} ${x.n > 1 ? 'games' : 'game'}</div></div>
+    <div class="posbar"><div class="pos-title">${ed ? repSeeChapter(ed) : `${repGapChapter(x)}<br>${no(gapN - 1)}${escHtml(x.san)} isn't in your study${gapPct ? ` · ${gapPct}` : ''} · ${x.n} ${x.n > 1 ? 'games' : 'game'}`}</div></div>
     <div class="stage"><div class="board-col">${explorerHbarHtml(info || lv.lastInfo, pct, x.c==='b', false)}${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
-    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1, gapN - 1)}</span></div>
+    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1, ed ? (firstNew < 0 ? line.length : firstNew) : gapN - 1)}</span></div>
     ${stackedPanel(`
-      <p class="prompt rep-prompt">${line.length > gapN ? `New line ends at <b>${endInfo ? fmtSigned(mine(endInfo)) : '…'}</b> for you.` : 'Play your answer.'}</p>
+      <p class="prompt rep-prompt">${clash ? 'Change your own moves on Lichess.' : hasNew ? `New line ends at <b>${endInfo ? fmtSigned(mine(endInfo)) : '…'}</b> for you.` : ed ? 'Play another move for them.' : 'Play your answer.'}</p>
       <p class="rep-note">${popOn ? (pop ? (popTop.length ? `Most played: <b>${escHtml(popTop[0])}</b> (${mostG ? `<span style="color:${labelColor(mostG.label)}">${mostG.label}</span> ${fmtSigned(mostG.info)} · ` : '… · '}${popPct(pop, popTop[0])}). ` : 'Not played at your level. ') : lichessAuth && lichessAuth.token ? 'Most played: … ' : 'Most played: sign in with Lichess. ')
-        : info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${done ? `<span style="color:${labelColor('Best')}">Best</span> ` : ''}${fmtSigned(info)}${popPct(pop, info.san) ? ' · ' + popPct(pop, info.san) : ''}). ` : ''}${ply===gapN ? '<br>' + played : ''}</p>
+        : info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${done ? `<span style="color:${labelColor('Best')}">Best</span> ` : ''}${fmtSigned(info)}${popPct(pop, info.san) ? ' · ' + popPct(pop, info.san) : ''}). ` : ''}${ply===gapN && !ed ? '<br>' + played : ''}</p>
       <div class="actions-row xp-nav">
         <a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="icon-btn" id="repLineXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><button class="icon-btn rep-pop${popOn ? ' on' : ''}" id="repPop" aria-pressed="${popOn}" aria-label="Most played moves" title="Most played moves"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V12M12 20V5M19 20v-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
         <span class="xp-steps"><button class="icon-btn" id="repCut" aria-label="Remove the last move" title="Remove the last move" ${ply > gapN ? '' : 'disabled'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7z M12 9l6 6 M18 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg></button><button class="icon-btn" id="repPrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="repNextMv" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
@@ -12041,7 +12053,7 @@ function renderRepLine(){
   // the board: from their move on, play a move (either side) to change the line there or go on with it
   const bs = boardObjFromGame(g), canPlay = ply >= gapN && !g.game_over();
   const dest = canPlay && lv.sel ? g.moves({ square:lv.sel, verbose:true }).map(m=>m.to) : [];
-  const playMv = mv=>{ pr.line = line.slice(0, ply).concat(mv.san); pr.auto = false; lv.ply = ply + 1; lv.sel = null; repSave(); repSlide(mv); render(); };
+  const playMv = mv=>{ pr.line = line[ply]===mv.san ? line : line.slice(0, ply).concat(mv.san); pr.auto = false; lv.ply = ply + 1; lv.sel = null; repSave(); repSlide(mv); render(); };   // (the line's own move: the line goes on)
   renderBoard(document.getElementById('board'), bs, last ? { squares:[last.from, last.to] } : null, { selectedSq:lv.sel, destSquares:dest, onSquareClick: sq=>{
     if(!canPlay) return;
     if(lv.sel && dest.includes(sq)){
@@ -12065,25 +12077,31 @@ function renderRepLine(){
   const on = (id, f)=>{ const el = document.getElementById(id); if(el) el.onclick = f; };
   const step = dl=>{ const n = Math.max(0, Math.min(line.length, ply + dl)); if(n===ply) return; lv.ply = n; lv.sel = null;
     if(dl > 0){ const mv = new Chess(fen).move(line[ply]); if(mv) repSlide(mv); } render(); };
-  on('repLineBack', ()=>{ rep.view = 'review'; render(); });
+  on('repLineBack', ()=>{ rep.view = ed ? 'see' : 'review'; render(); });
   on('repPrev', ()=>step(-1)); on('repNextMv', ()=>step(1));
   // a step back, the line cut there (their move stays)
   on('repCut', ()=>{ if(ply <= gapN) return; pr.line = line.slice(0, ply - 1); pr.auto = false; lv.ply = ply - 1; lv.sel = null; repSave(); render(); });
   on('repPop', ()=>{ st.o.pop = !popOn; repSave(); render(); });
   on('repLineXp', ()=>exploreFrom({ fen, sans:sansL, ply, flip:x.c==='b' }));
   repLineKeys.step = step;
-  on('repSkipLine', ()=>{ st.skip = st.skip.filter(k=>k.id!==x.id).concat({ id:x.id, n:x.n }); repSave(); rep.view = 'review'; render(); });
+  on('repSkipLine', ()=>{
+    if(ed){ const was = repSkippedAt(ed.c, ed.p); st.skipL = (st.skipL || []).filter(k=>!(k.c===ed.c && (k.p===ed.p || k.p.startsWith(ed.p + ' ')))); if(!was) st.skipL.push({ c:ed.c, p:ed.p }); }   // (out of the drills, the lines on from it too)
+    else st.skip = st.skip.filter(k=>k.id!==x.id).concat({ id:x.id, n:x.n });
+    repSave(); rep.view = 'review'; render(); });
   on('repAddLine', ()=>{
-    const g2 = new Chess();
+    if(!hasNew || clash) return;
+    const chI = ed ? REPERTOIRE[x.c].ch.indexOf(ed.ch) : repGapChIdx(x.c, x.k), g2 = new Chess();
     line.forEach((m, i)=>{ const k = repKey(g2.fen()), side = g2.turn(); g2.move(m);
-      if(i >= gapN - 1 && !repMoves(x.c, k).some(a=>a[0]===m)) st.add.push({ c:x.c, k, san:m, flag:side===x.c ? 1 : 0, ch:i===gapN - 1 ? repGapChIdx(x.c, x.k) : -1 }); });   // (the first move: the chapter it was proposed in; the rest follow it)
+      if(i >= gapN - 1 && !repMoves(x.c, k).some(a=>a[0]===m)) st.add.push({ c:x.c, k, san:m, flag:side===x.c ? 1 : 0, ch:i===firstNew ? chI : -1 }); });   // (the first new move: the chapter of the line; the rest follow it)
     (st.lines = st.lines || []).push({ c:x.c, line:line.slice() });
-    if(st.study) repPushChapter(x.c, repGapChIdx(x.c, x.k));   // (into your Lichess study too)
-    delete st.prop[x.id]; repSave(); repGames = null; rep.view = 'review'; render();
+    if(st.study) repPushChapter(x.c, chI);   // (into your Lichess study too)
+    if(!ed) delete st.prop[x.id]; repSave(); repGames = null; rep.view = 'review'; render();
   });
 }
 // One of your lines on the board (from the Review's tree): step through it, the engine's top move and other good ones
 // (or the most played), the study's comment on each move; Lichess, Explore
+const repSeeChapter = v=>{ const t = v.ch.indexOf(': ');
+  return escHtml(t < 0 ? v.ch : v.ch.slice(0, t) + ' · ' + v.ch.slice(t + 2)) + `<br>${v.c==='w' ? 'White' : 'Black'} · ${Math.ceil(v.line.length / 2)} moves`; };
 function renderRepSee(){
   // one of your lines, as in the drills: the study's comment and marks (the Comment toggle, shared with the drills),
   // the next move of the line; Lichess, Explore, ◀ ▶
@@ -12100,15 +12118,16 @@ function renderRepSee(){
   const pp = nx ? popPct(movePopularity(fen), nx) : '';
   const about = [gr ? `<span style="color:${labelColor(gr.label)}">${gr.label}</span> ${fmtSigned(gr.info)}` : '…', pp].filter(Boolean).join(' · ');
   const prompt = nx ? `${mine ? 'Your move' : 'Their move'}: <b>${escHtml(nx)}</b> (${about}).` : 'End of the line.';
-  const t = vw.ch.indexOf(': '), chName = escHtml(t < 0 ? vw.ch : vw.ch.slice(0, t) + ' · ' + vw.ch.slice(t + 2));
+
   const lichess = `https://lichess.org/analysis/pgn/${line.slice(0, ply).map(m=>encodeURIComponent(m.replace(/[+#]/g, ''))).join('_')}?color=${c==='b' ? 'black' : 'white'}#${ply}`;
   const none = !note && !marks.length;
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back keep" id="repSeeBack" aria-label="Back">${BACK_ARROW}</button>
       <h1>Your line</h1>
+      <button class="title-chip" id="repSeeEdit">Edit</button>
     </div>
-    <div class="posbar"><div class="pos-title">${chName}<br>${c==='w' ? 'White' : 'Black'} · ${Math.ceil(line.length / 2)} moves</div></div>
+    <div class="posbar"><div class="pos-title">${repSeeChapter(vw)}</div></div>
     <div class="stage"><div class="board-col">${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
     <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1, vw.from || 0)}</span></div>
     ${stackedPanel(`
@@ -12132,6 +12151,7 @@ function renderRepSee(){
   const step = dl=>{ const n = Math.max(0, Math.min(line.length, ply + dl)); if(n===ply) return; vw.ply = n;
     if(dl > 0){ const mv = new Chess(fen).move(line[ply]); if(mv) repSlide(mv); } render(); };
   on('repSeeBack', ()=>{ rep.view = 'review'; render(); });
+  on('repSeeEdit', ()=>{ rep.view = 'line'; xpBar.shown = null; rep.lv = { edit:vw, ply, pr:{ line:line.slice(), auto:false } }; render(); });
   on('repSeePrev', ()=>step(-1)); on('repSeeNext', ()=>step(1));
   on('repSeeCm', ()=>{ o.comment = !o.comment; repSave(); render(); });
   on('repSeeXp', ()=>exploreFrom({ fen, sans:line.slice(0, ply), ply, flip:c==='b' }));

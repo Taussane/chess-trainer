@@ -142,6 +142,19 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   const au = await p.evaluate(() => ({ ply: rep.vw.ply, want: window._w }));
   await p.evaluate(() => { rep.view = 'train'; render(); });
   check('a row starting with their move: played for you', au.ply === au.want, au);
+  // Edit: their other move a new line to add; one of yours changed only on Lichess; Skip out of the drills
+  const edt = await p.evaluate(() => { rep.view = 'review'; render(); const n0 = repCounts().total;
+    const row = [...document.querySelectorAll('.rep-view')].find(x => +x.querySelector('[data-ply]').dataset.ply > 3), v = repViewLines[+row.dataset.vline]; row.click();
+    rep.vw.ply = v.from; rep.vw.auto = false; render(); document.getElementById('repSeeEdit').click();
+    const st = () => ({ title: document.querySelector('.title-row h1').textContent, add: document.getElementById('repAddLine').disabled, prompt: document.querySelector('.rep-prompt').textContent });
+    const r = { open: st() };
+    const other = (sans, i) => { const g = new Chess(); sans.slice(0, i).forEach(m => g.move(m)); return g.moves().find(m => m !== sans[i]); };
+    rep.lv.pr.line = v.line.slice(0, v.from).concat(other(v.line, v.from)); render(); r.theirs = st();
+    rep.lv.pr.line = v.line.slice(0, v.from + 1).concat(other(v.line, v.from + 1)); render(); r.mine = st();
+    document.getElementById('repSkipLine').click(); r.n0 = n0; r.n1 = repCounts().total; r.tag = /Skipped/.test(document.querySelector(`.rep-view[data-vline]`) && [...document.querySelectorAll('.rep-view')].map(x => x.textContent).join('|'));
+    const row2 = [...document.querySelectorAll('.rep-view')].find(x => repViewLines[+x.dataset.vline].p === v.p); row2.click(); document.getElementById('repSeeEdit').click(); r.unskip = document.getElementById('repSkipLine').textContent;
+    document.getElementById('repSkipLine').click(); r.n2 = repCounts().total; return r; });
+  check('Edit: their other move to add, yours changed on Lichess, Skip out of the drills and back', edt.open.title === 'Edit line' && edt.open.add && edt.open.prompt === 'Play another move for them.' && !edt.theirs.add && /^New line ends at/.test(edt.theirs.prompt) && edt.mine.add && edt.mine.prompt === 'Change your own moves on Lichess.' && edt.n1 < edt.n0 && edt.tag && edt.unskip === 'Unskip' && edt.n2 === edt.n0, edt);
   check('the back button: from a line to Review, then to the drills', bk[0] === 'repertoire:review' && bk[1] === 'repertoire:train', bk);
   await p.evaluate(() => { rep.view = 'review'; render(); });
   await p.click('[data-rline]');
