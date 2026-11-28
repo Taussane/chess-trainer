@@ -11261,9 +11261,15 @@ function repRound(){
   if(!st.r || repMidnight(st.r.t) !== repMidnight(now)){ st.r = { t:now, seed:Math.floor(Math.random() * 1e9) }; repSave(); }
   return st.r;
 }
-// Lines in the drills: your study's, less the ones you skipped (a row of Review's tree and the lines on from it)
-const repSkippedAt = (c, key)=>(repLoad().skipL || []).some(x=>x.c===c && (key===x.p || key.startsWith(x.p + ' ')));
-const repDrillChunks = c=>repChunks(c).filter(ch=>!repSkippedAt(c, ch.key));
+// Lines in the drills: your study's, less the ones you skipped (a whole line, to its end: the moves it shares with
+// another line stay in the drills with it)
+const repSkippedAt = (c, line)=>(repLoad().skipL || []).some(x=>x.c===c && x.p===line);
+function repDrillChunks(c){
+  const list = repChunks(c), sk = new Set((repLoad().skipL || []).filter(x=>x.c===c).map(x=>x.p)); if(!sk.size) return list;
+  const on = (x, y)=>y.key===x.key || y.key.startsWith(x.key + ' ');
+  const ends = list.filter(x=>!list.some(y=>y!==x && on(x, y)));
+  return list.filter(ch=>{ const ls = ends.filter(e=>on(ch, e)); return !ls.length || !ls.every(e=>sk.has(e.key)); });
+}
 function repRoundCheck(){
   const st = repLoad(), rd = repRound();
   const done = repColours().every(c=>repDrillChunks(c).every(ch=>{ const x = repLineSt(ch); return x && (x[3] || 0) >= rd.t; }));
@@ -12011,9 +12017,9 @@ function repTreeHtml(gr, st, propRow){
     for(;;){ sans[cur.i] = cur.m; added = added || cur.added; if(cur.kids.length!==1 || cur.kids[0].prop) break; cur = cur.kids[0]; }
     // (a row: the line on the board from where the row starts, followed to its end)
     let end = cur; while(end.kids.some(k=>!k.prop)) end = end.kids.find(k=>!k.prop);
-    const p = n.path.join(' ');
+    const p = end.path.join(' ');   // (the line a row opens: skipped as a whole)
     repViewLines.push({ c:gr.c, ch:gr.ch, line:end.path, from, p });
-    out.push(`<p class="rep-moves rep-branch rep-view" style="--d:${depth}" data-vline="${repViewLines.length - 1}">${repMoveHtml(sans, from)}${added ? ' <span class="rep-tag">Added</span>' : ''}${repSkippedAt(gr.c, p) ? ' <span class="rep-tag">Skipped</span>' : ''}</p>`);
+    out.push(`<p class="rep-moves rep-branch rep-view" style="--d:${depth}" data-vline="${repViewLines.length - 1}">${repMoveHtml(sans, from)}${added ? ' <span class="rep-tag">Added</span>' : ''}${cur===end && repSkippedAt(gr.c, p) ? ' <span class="rep-tag">Skipped</span>' : ''}</p>`);
     for(const k of cur.kids) chain(k, depth + 1);
   };
   for(const k of root.kids) chain(k, 0);
@@ -12118,7 +12124,7 @@ function renderRepLine(){
   on('repLineXp', ()=>exploreFrom({ fen, sans:sansL, ply, flip:x.c==='b' }));
   repLineKeys.step = step;
   on('repSkipLine', ()=>{
-    if(ed){ const was = repSkippedAt(ed.c, ed.p); st.skipL = (st.skipL || []).filter(k=>!(k.c===ed.c && (k.p===ed.p || k.p.startsWith(ed.p + ' ')))); if(!was) st.skipL.push({ c:ed.c, p:ed.p }); }   // (out of the drills, the lines on from it too)
+    if(ed){ const was = repSkippedAt(ed.c, ed.p); st.skipL = (st.skipL || []).filter(k=>!(k.c===ed.c && k.p===ed.p)); if(!was) st.skipL.push({ c:ed.c, p:ed.p }); }   // (this line out of the drills)
     else st.skip = st.skip.filter(k=>k.id!==x.id).concat({ id:x.id, n:x.n });
     repSave(); rep.view = 'review'; render(); });
   on('repAddLine', ()=>{
