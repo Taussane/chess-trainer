@@ -684,7 +684,7 @@
   .rep-prop-row{display:flex; align-items:center; gap:8px; width:fit-content; min-width:min(100%, 300px); max-width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
   .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-view [data-ply]{cursor:pointer;} .rep-view [data-ply]:hover{color:var(--accent);} .rep-plus{color:var(--accent); font-weight:700;} .rep-checking{color:var(--text-mute);} .rep-added{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px;} .rep-meta{margin-left:auto; color:var(--text-mute); font-size:0.82rem; white-space:nowrap;} .title-row h1 + .rep-sel{margin-left:auto;}
   .rep-prop-row.rep-skipped{border-color:var(--border);} .rep-prop-row.rep-skipped .rep-plus{color:var(--text-mute);}   /* (seen and skipped: still there, quieter) */ .rep-cur{color:var(--accent);} #repMv .rep-new{color:var(--text);}   /* (New line: the moves you would add, in white) */ #repMv [data-ply]{cursor:pointer;}
-  .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg, .xp-nav #repPop svg, .xp-nav #repCut svg, .xp-nav #repSeeXp svg, .xp-nav #repSeePop svg{width:20px; height:20px;} .xp-nav .icon-btn.rep-pop.on{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
+  .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg, .xp-nav #repPop svg, .xp-nav #repCut svg, .xp-nav #repSeeXp svg, .xp-nav #repSeeCm svg{width:20px; height:20px;} .xp-nav .icon-btn.rep-pop.on{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
   .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
   .actions-row.pending{visibility:hidden;}
@@ -12113,44 +12113,42 @@ function renderRepLine(){
 // One of your lines on the board (from the Review's tree): step through it, the engine's top move and other good ones
 // (or the most played), the study's comment on each move; Lichess, Explore
 function renderRepSee(){
-  const app = document.getElementById('app'), st = repLoad(), vw = rep.vw;
+  // one of your lines, as in the drills: the study's comment and marks (the Comment toggle, shared with the drills),
+  // the next move of the line; Lichess, Explore, ◀ ▶
+  const app = document.getElementById('app'), st = repLoad(), o = st.o, vw = rep.vw;
   if(!vw){ rep.view = 'review'; return renderRepReview(); }
   const line = vw.line, ply = vw.ply = Math.max(0, Math.min(vw.ply, line.length)), c = vw.c;
   const g = new Chess(); let last = null, lastM = null;
   line.slice(0, ply).forEach(m=>{ const k = repKey(g.fen()); lastM = repMoves(c, k).find(x=>x[0]===m); last = g.move(m); });
-  const fen = g.fen(), top = c==='b' ? 'w' : 'b';
-  const ev = explorerEval(fen), done = ev && !evalFailed(ev) && ev.lines.length ? ev.lines[0] : null, live = !ev ? explorerLive[fen] : null;
-  const cur = done || live, info = cur ? Object.assign(toWhitePerspective(cur, fen), { uci:cur.uci, san:(()=>{ const m = cur.uci && new Chess(fen).move({ from:cur.uci.slice(0, 2), to:cur.uci.slice(2, 4), promotion:cur.uci[4] }); return m && m.san; })(),
-    alts:done ? goodAlts(ev.lines) : live.alts || [] }) : null;
-  if(info){ vw.lastPct = info.mate===0 ? (fen.split(' ')[1]==='b' ? 99 : 1) : cpToPct(info.cp, info.mate); vw.lastInfo = info; }
-  const pct = vw.lastPct ?? 50, popOn = !!st.o.pop, pop = movePopularity(fen), popTop = pop && pop.top ? pop.top.slice(0, 3) : [];
-  const mostG = popOn && popTop.length && done ? repMoveGrade(fen, popTop[0], ev.lines) : null;
+  const fen = g.fen(), top = c==='b' ? 'w' : 'b', marks = repMarks(c, fen);
   const note = lastM && lastM[2] >= 0 ? repComment(c, lastM) : '';
+  const nx = line[ply], mine = fen.split(' ')[1]===c;
+  const prompt = nx ? `${mine ? 'Your move' : 'Their move'}: <b>${escHtml(nx)}</b>.` : 'End of the line.';
   const t = vw.ch.indexOf(': '), chName = escHtml(t < 0 ? vw.ch : vw.ch.slice(0, t) + ' · ' + vw.ch.slice(t + 2));
   const lichess = `https://lichess.org/analysis/pgn/${line.slice(0, ply).map(m=>encodeURIComponent(m.replace(/[+#]/g, ''))).join('_')}?color=${c==='b' ? 'black' : 'white'}#${ply}`;
+  const none = !note && !marks.length;
   app.innerHTML = `
     <div class="title-row">
       <button class="icon-btn back keep" id="repSeeBack" aria-label="Back">${BACK_ARROW}</button>
       <h1>Your line</h1>
     </div>
     <div class="posbar"><div class="pos-title">${chName}<br>${c==='w' ? 'White' : 'Black'} · ${Math.ceil(line.length / 2)} moves</div></div>
-    <div class="stage"><div class="board-col">${explorerHbarHtml(info || vw.lastInfo, pct, c==='b', false)}${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
+    <div class="stage"><div class="board-col">${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
     <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1)}</span></div>
     ${stackedPanel(`
-      <p class="prompt rep-prompt">${popOn ? (pop ? (popTop.length ? `Most played: <b>${escHtml(popTop[0])}</b> (${mostG ? `<span style="color:${labelColor(mostG.label)}">${mostG.label}</span> ${fmtSigned(mostG.info)} · ` : '… · '}${popPct(pop, popTop[0])}).` : 'Not played at your level.') : 'Most played: …')
-        : info && info.san ? `Top move: <b>${escHtml(info.san)}</b> (${done ? `<span style="color:${labelColor('Best')}">Best</span> ` : ''}${fmtSigned(info)}${popPct(pop, info.san) ? ' · ' + popPct(pop, info.san) : ''}).` : g.game_over() ? 'The game is over here.' : 'Searching…'}</p>
-      <p class="rep-note">${note ? escHtml(note) : ''}</p>
+      <p class="prompt rep-prompt">${prompt}</p>
+      <p class="rep-note">${o.comment && note ? escHtml(note) : ''}</p>
       <div class="actions-row xp-nav">
-        <a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="icon-btn" id="repSeeXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><button class="icon-btn rep-pop${popOn ? ' on' : ''}" id="repSeePop" aria-pressed="${popOn}" aria-label="Most played moves" title="Most played moves"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V12M12 20V5M19 20v-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+        <a class="btn secondary lichess-open icon-only xp-li" href="${lichess}" target="_blank" rel="noopener" aria-label="Analyze on Lichess" title="Analyze on Lichess">${LICHESS_LOGO}</a><button class="icon-btn" id="repSeeXp" aria-label="Explore" title="Explore">${SIDE_ICONS.explorer}</button><button class="icon-btn rep-pop rep-tg${o.comment ? ' on' : ''}${none ? ' rep-none' : ''}" id="repSeeCm" aria-pressed="${!!o.comment}" aria-label="Comment and marks" title="Comment and marks">${REP_ICONS.comment}</button>
         <span class="xp-steps"><span class="icon-btn rep-gap" aria-hidden="true"></span><button class="icon-btn" id="repSeePrev" aria-label="Previous move" ${ply ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3L5 8l6 5z" fill="currentColor"/></svg></button><button class="icon-btn" id="repSeeNext" aria-label="Next move" ${ply < line.length ? '' : 'disabled'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l6 5-6 5z" fill="currentColor"/></svg></button></span>
       </div>`, [])}`;
   renderBoard(document.getElementById('board'), boardObjFromGame(g), last ? { squares:[last.from, last.to] } : null, {});
-  if(popOn){ const ms = popTop.map(m=>new Chess(fen).move(m)).filter(Boolean);
-    drawArrows(document.getElementById('arrows'), ms.slice().reverse().map((m, i, a)=>({ from:m.from, to:m.to, color:'var(--system)', opacity:i===a.length - 1 ? .8 : .5, label:popPct(pop, m.san) })), 'rs_'); }
-  else if(info && info.uci) drawArrows(document.getElementById('arrows'), (info.alts || []).map(u=>({ from:u.slice(0, 2), to:u.slice(2, 4), color:'var(--system)', opacity:.5 }))
-    .concat({ from:info.uci.slice(0, 2), to:info.uci.slice(2, 4), color:'var(--system)' }), 'rs_');
+  { const svg = document.getElementById('arrows'), list = [], rings = [];
+    if(o.comment) for(const m of marks){ const col = REP_MARK[m[0]] || REP_MARK.G; m.length > 3 ? list.push({ from:m.slice(1, 3), to:m.slice(3, 5), color:col }) : rings.push({ sq:m.slice(1, 3), col }); }
+    drawArrows(svg, list, 'rs_');
+    svg.insertAdjacentHTML('beforeend', rings.map(({ sq, col })=>{ const q = squareCenter(sq); return `<circle cx="${q.x}" cy="${q.y}" r="26" fill="none" stroke="${col}" stroke-width="5" opacity=".85" filter="url(#rs_sh)"/>`; }).join('')); }
   const li = app.querySelector('.layer:not(.ghost) .xp-li') || app.querySelector('.xp-li'); if(li && li.offsetHeight) app.style.setProperty('--xp-btn-h', li.offsetHeight + 'px');
-  xpBarEase(pct);
+  repNoteLines();
   const mvEl = document.getElementById('repMv');
   if(mvEl){ const cm = mvEl.querySelector('.rep-cur'); if(cm) mvEl.scrollLeft = Math.max(0, cm.offsetLeft - mvEl.clientWidth / 2);
     mvEl.querySelectorAll('[data-ply]').forEach(b=>b.onclick = ()=>{ vw.ply = +b.dataset.ply; render(); }); }
@@ -12159,7 +12157,7 @@ function renderRepSee(){
     if(dl > 0){ const mv = new Chess(fen).move(line[ply]); if(mv) repSlide(mv); } render(); };
   on('repSeeBack', ()=>{ rep.view = 'review'; render(); });
   on('repSeePrev', ()=>step(-1)); on('repSeeNext', ()=>step(1));
-  on('repSeePop', ()=>{ st.o.pop = !popOn; repSave(); render(); });
+  on('repSeeCm', ()=>{ o.comment = !o.comment; repSave(); render(); });
   on('repSeeXp', ()=>exploreFrom({ fen, sans:line.slice(0, ply), ply, flip:c==='b' }));
   repLineKeys.step = step;
 }
