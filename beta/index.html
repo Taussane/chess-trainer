@@ -11468,7 +11468,8 @@ function repWhyNot(d, fen, m){
 }
 function repMovesText(d){
   const out = []; let no = 1, w = true;
-  d.sans.forEach(s=>{ out.push((w ? no + '. ' : '') + '<b>' + escHtml(s) + '</b>'); if(!w) no++; w = !w; });   // (the moves in bold, the numbers as they are)
+  const from = d.chunk ? d.chunk.start : 0;
+  d.sans.forEach((s, i)=>{ out.push((w ? no + '. ' : '') + `<b${i >= from ? ' class="rep-new"' : ''}>` + escHtml(s) + '</b>'); if(!w) no++; w = !w; });   // (the moves in bold, the numbers as they are; the line you're checking in white)
   return out.join(' ');
 }
 function repSummary(d){
@@ -11963,7 +11964,7 @@ function renderRepReview(){
   const sel = document.getElementById('repColour'); if(sel) sel.onchange = ()=>{ rep.c = repStore.c = sel.value; repSave(); repStart(); render(); };
   on('repCopy', ()=>{ const t = added.map(a=>repLineText(a.line)).join('\n'); try{ navigator.clipboard.writeText(t); }catch(e){} const b = document.getElementById('repCopy'); if(b) b.textContent = 'Copied'; });
   app.querySelectorAll('.rep-view').forEach(b=>b.onclick = ()=>{ const v = repViewLines[+b.dataset.vline]; if(!v) return;   // (a row: one button, its line from where the row starts)
-    rep.view = 'see'; rep.vw = Object.assign({}, v, { ply:v.from }); render(); });
+    rep.view = 'see'; rep.vw = Object.assign({}, v, { ply:v.from, auto:true }); render(); });   // (their move first: played for you)
   app.querySelectorAll('[data-rline]').forEach(b=>b.onclick = ()=>{ const x = gs.gaps[b.dataset.rline]; if(!x) return;
     rep.view = 'line'; xpBar.shown = null;   // (the bar starts at this line's own reading)
     rep.lv = { id:x.id, ply:x.sans.length }; render(); });
@@ -12168,6 +12169,7 @@ function renderRepSee(){
   on('repSeeCm', ()=>{ o.comment = !o.comment; repSave(); render(); });
   on('repSeeXp', ()=>exploreFrom({ fen, sans:line.slice(0, ply), ply, flip:c==='b' }));
   repLineKeys.step = step;
+  if(vw.auto){ vw.auto = false; if(nx && !mine) setTimeout(()=>{ if(rep.vw===vw && vw.ply===ply) step(1); }, 350); }
 }
 // ← and → step through a new line
 const repLineKeys = { step:null };

@@ -136,6 +136,12 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   await p.evaluate(() => [...document.querySelectorAll('.rep-view [data-ply]')].find(x => x.textContent === 'c6').click());
   const back = async () => { await p.evaluate(() => history.back()); await p.waitForTimeout(300); return p.evaluate(() => screen + ':' + rep.view); };
   const bk = [await back(), await back()];
+  // their move first: played for you
+  await p.evaluate(() => { rep.view = 'review'; render(); const row = [...document.querySelectorAll('.rep-view')].find(x => +x.querySelector('[data-ply]').dataset.ply > 3); window._w = +row.querySelector('[data-ply]').dataset.ply; row.click(); });
+  await p.waitForTimeout(900);
+  const au = await p.evaluate(() => ({ ply: rep.vw.ply, want: window._w }));
+  await p.evaluate(() => { rep.view = 'train'; render(); });
+  check('a row starting with their move: played for you', au.ply === au.want, au);
   check('the back button: from a line to Review, then to the drills', bk[0] === 'repertoire:review' && bk[1] === 'repertoire:train', bk);
   await p.evaluate(() => { rep.view = 'review'; render(); });
   await p.click('[data-rline]');
