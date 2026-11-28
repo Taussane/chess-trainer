@@ -12074,7 +12074,7 @@ function renderRepLine(){
     </div>
     <div class="posbar"><div class="pos-title">${ed ? repSeeChapter(ed) : `${repGapChapter(x)}<br>${no(gapN - 1)}${escHtml(x.san)} isn't in your study${gapPct ? ` · ${gapPct}` : ''} · ${x.n} ${x.n > 1 ? 'games' : 'game'}`}</div></div>
     <div class="stage"><div class="board-col">${explorerHbarHtml(info || lv.lastInfo, pct, x.c==='b', false)}${repPlayer(fen, top)}<div class="board-outer"><div class="board" id="board"></div><svg class="arrows" id="arrows" viewBox="0 0 480 480"></svg></div>${repPlayer(fen, top==='w' ? 'b' : 'w')}</div></div>
-    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1, ed ? (firstNew < 0 ? line.length : firstNew) : gapN - 1)}</span></div>
+    <div class="xp-sides sides-desk rep-mv"><span id="repMv">${repMoveHtml(line, 0, ply - 1, ed ? Math.min(ed.from, firstNew < 0 ? ed.from : firstNew) : gapN - 1)}</span></div>
     ${stackedPanel(`
       <p class="prompt rep-prompt">${clash ? 'Change your own moves on Lichess.' : hasNew ? `New line ends at <b>${endInfo ? fmtSigned(mine(endInfo)) : '…'}</b> for you.` : ed ? 'Play another move for them.' : 'Play your answer.'}</p>
       <p class="rep-note">${popOn ? (pop ? (popTop.length ? `Most played: <b>${escHtml(popTop[0])}</b> (${mostG ? `<span style="color:${labelColor(mostG.label)}">${mostG.label}</span> ${fmtSigned(mostG.info)} · ` : '… · '}${popPct(pop, popTop[0])}). ` : 'Not played at your level. ') : lichessAuth && lichessAuth.token ? 'Most played: … ' : 'Most played: sign in with Lichess. ')
