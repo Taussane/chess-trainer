@@ -151,7 +151,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
     const other = (sans, i) => { const g = new Chess(); sans.slice(0, i).forEach(m => g.move(m)); return g.moves().find(m => m !== sans[i]); };
     rep.lv.pr.line = v.line.slice(0, v.from).concat(other(v.line, v.from)); render(); r.theirs = st();
     rep.lv.pr.line = v.line.slice(0, v.from + 1).concat(other(v.line, v.from + 1)); render(); r.mine = st();
-    document.getElementById('repSkipLine').click(); r.n0 = n0; r.n1 = repCounts().total; r.tag = [...document.querySelectorAll('.rep-view')].filter(x => /Skipped/.test(x.textContent)).length;
+    document.getElementById('repSkipLine').click(); r.n0 = n0; r.n1 = repCounts().total; r.tag = [...document.querySelectorAll('.rep-view')].filter(x => /Skipped/.test(x.textContent) && x.classList.contains('rep-skipped')).length;
     const row2 = [...document.querySelectorAll('.rep-view')].find(x => repViewLines[+x.dataset.vline].p === v.p); row2.click(); document.getElementById('repSeeEdit').click(); r.unskip = document.getElementById('repSkipLine').textContent;
     document.getElementById('repSkipLine').click(); r.n2 = repCounts().total; return r; });
   check('Edit: their other move to add, yours changed on Lichess, Skip that line alone out of the drills (not its branches) and back', edt.open.title === 'Edit line' && edt.open.add && edt.open.prompt === 'Play another move for them.' && !edt.theirs.add && /^New line ends at/.test(edt.theirs.prompt) && edt.mine.add && edt.mine.prompt === 'Change your own moves on Lichess.' && edt.n1 < edt.n0 && edt.tag === 1 && edt.unskip === 'Unskip' && edt.n2 === edt.n0, edt);
@@ -173,7 +173,7 @@ const play = async (p, from, to) => { await p.click(`#board [data-sq="${from}"]`
   const cut = await p.evaluate(() => { const x = Object.values(repGameStats().gaps).find(g => g.san === 'Bf4'); return { line: repStore.prop[x.id].line.join(' '), ply: rep.lv.ply, off: document.getElementById('repCut').disabled }; });
   check('remove: a step back, the end of the line cleared (their move stays)', cut.line === 'd4 c6 Bf4' && cut.ply === 3 && cut.off, cut);
   await p.click('#repSkipLine');
-  const sk = await p.evaluate(() => { const b = document.querySelector('[data-rline]'); return { view: rep.view, skipped: !!b && b.classList.contains('rep-skipped') && /Skipped/.test(b.textContent), sub: document.querySelector('.rep-review .rep-sub:nth-of-type(1)') && [...document.querySelectorAll('.rep-review > .rep-sub')].map(x => x.textContent).join(' | ') }; });
+  const sk = await p.evaluate(() => { const b = document.querySelector('[data-rline]'); return { view: rep.view, skipped: !!b && b.classList.contains('rep-skipped') && /Skipped/.test(b.textContent) && !/game/.test(b.textContent) && getComputedStyle(b).borderTopWidth === '0px', sub: document.querySelector('.rep-review .rep-sub:nth-of-type(1)') && [...document.querySelectorAll('.rep-review > .rep-sub')].map(x => x.textContent).join(' | ') }; });
   check('Skip: still in the tree, marked Skipped, not counted', sk.view === 'review' && sk.skipped && /Every reply/.test(sk.sub), sk);
   await p.evaluate(() => { myGames.push({ id: 't4', me: 'b', sans: ['d4', 'c6', 'Bf4', 'Qb6'], evals: [] }); repGames = null; render(); });
   await stub();

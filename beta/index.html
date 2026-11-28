@@ -683,7 +683,7 @@
   .rep-branch{margin-left:calc(min(var(--d), 6) * 14px); padding-left:8px; border-left:1px solid var(--border);} .rep-branch[style*="--d:0"]{border-left:0; padding-left:0;}   /* (a branch: indented where it leaves the line above) */
   .rep-prop-row{display:flex; align-items:center; gap:8px; width:fit-content; min-width:min(100%, 300px); max-width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; cursor:pointer;}
   .rep-prop-row .rep-pm{font-size:0.92rem;} .rep-view{cursor:pointer;} .rep-view:hover, .rep-view:hover b{color:var(--accent);} .rep-plus{color:var(--accent); font-weight:700;} .rep-checking{color:var(--text-mute);} .rep-added{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px;} .rep-meta{margin-left:auto; color:var(--text-mute); font-size:0.82rem; white-space:nowrap;} .title-row h1 + .rep-sel{margin-left:auto;}
-  .rep-prop-row.rep-skipped{border-color:var(--border);} .rep-prop-row.rep-skipped .rep-plus{color:var(--text-mute);}   /* (seen and skipped: still there, quieter) */ .rep-cur{color:var(--accent);} #repMv .rep-new{color:var(--text);}   /* (New line: the moves you would add, in white) */ #repMv [data-ply]{cursor:pointer;}
+  .rep-prop-row.rep-skipped{border:0; background:none; padding:0; min-width:0;} .rep-skipped, .rep-skipped b, .rep-prop-row.rep-skipped .rep-plus{color:var(--text-mute);}   /* (skipped: still there, greyed out as a line of the tree) */ .rep-cur{color:var(--accent);} #repMv .rep-new{color:var(--text);}   /* (New line: the moves you would add, in white) */ #repMv [data-ply]{cursor:pointer;}
   .actions-row.split > .btn.rep-half{flex:1 1 0;} .xp-nav #repLineXp svg, .xp-nav #repPop svg, .xp-nav #repCut svg, .xp-nav #repSeeXp svg, .xp-nav #repSeeCm svg{width:20px; height:20px;} .xp-nav .icon-btn.rep-pop.on{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip.rep-add{background:var(--accent); color:#1b1b1b; border-color:var(--accent);} .title-chip:disabled{opacity:.45; cursor:default;}   /* (a proposed line: Skip and Add share the half) */
   .rep-item-act{display:flex; align-items:center; gap:8px;} .rep-prop{margin-right:auto; font-size:0.9rem;} .rep-item-act .btn{padding:6px 14px;}
   /* Buttons that will fade in later already take their space, so nothing grows when they appear. */
@@ -11937,7 +11937,7 @@ function renderRepReview(){
   // (their move only: the line is searched once you open it)
   const propRow = x=>{
     const pc = x.pct==null ? '' : x.pct < 1 ? '<1%' : Math.round(x.pct) + '%';
-    return `<button class="rep-prop-row${x.skipped ? ' rep-skipped' : ''}" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(x.sans, x.sans.length - 1)}</span> <span class="rep-meta">${pc ? pc + ' · ' : ''}${x.n} ${x.n > 1 ? 'games' : 'game'}</span>
+    return `<button class="rep-prop-row${x.skipped ? ' rep-skipped' : ''}" data-rline="${escHtml(x.id)}"><span class="rep-plus">+</span><span class="rep-pm">${repMoveHtml(x.sans, x.sans.length - 1)}</span> ${x.skipped ? '' : `<span class="rep-meta">${pc ? pc + ' · ' : ''}${x.n} ${x.n > 1 ? 'games' : 'game'}</span>`}
       ${x.skipped ? '<span class="rep-tag">Skipped</span>' : ''}</button>`; };
   const devs = Object.values(gs.devs).filter(x=>repColours().includes(x.c) && x.n >= 1).sort((a, b)=>b.n - a.n).slice(0, 8);
   const devRow = x=>`<div class="rep-item">
@@ -12019,7 +12019,8 @@ function repTreeHtml(gr, st, propRow){
     let end = cur; while(end.kids.some(k=>!k.prop)) end = end.kids.find(k=>!k.prop);
     const p = end.path.join(' ');   // (the line a row opens: skipped as a whole)
     repViewLines.push({ c:gr.c, ch:gr.ch, line:end.path, from, p });
-    out.push(`<p class="rep-moves rep-branch rep-view" style="--d:${depth}" data-vline="${repViewLines.length - 1}">${repMoveHtml(sans, from)}${added ? ' <span class="rep-tag">Added</span>' : ''}${cur===end && repSkippedAt(gr.c, p) ? ' <span class="rep-tag">Skipped</span>' : ''}</p>`);
+    const skip = cur===end && repSkippedAt(gr.c, p);
+    out.push(`<p class="rep-moves rep-branch rep-view${skip ? ' rep-skipped' : ''}" style="--d:${depth}" data-vline="${repViewLines.length - 1}">${repMoveHtml(sans, from)}${added ? ' <span class="rep-tag">Added</span>' : ''}${skip ? ' <span class="rep-tag">Skipped</span>' : ''}</p>`);
     for(const k of cur.kids) chain(k, depth + 1);
   };
   for(const k of root.kids) chain(k, 0);
